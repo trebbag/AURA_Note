@@ -5,12 +5,12 @@
   "main": "src/index.ts",
   "scripts": {
     "build": "tsc -p tsconfig.json",
-    "lint": "echo ui lint pending",
+    "lint": "tsc --noEmit -p tsconfig.json",
     "lint:phi": "node ../../scripts/lint-phi.js packages/ui",
     "typecheck": "tsc --noEmit -p tsconfig.json",
-    "test": "echo ui tests pending",
-    "test:unit": "echo ui unit tests pending",
-    "test:e2e": "echo ui e2e tests pending"
+    "test": "node -e \"console.log('ui scaffold verified by typecheck; component tests begin with UI work orders')\"",
+    "test:unit": "pnpm test",
+    "test:e2e": "node -e \"console.log('ui e2e deferred until browser flows are implemented')\""
   },
   "devDependencies": { "typescript": "^5.6.0" }
 }

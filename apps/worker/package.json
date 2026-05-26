@@ -4,12 +4,12 @@
   "scripts": {
     "dev": "tsx src/main.ts",
     "build": "tsc -p tsconfig.json",
-    "lint": "echo worker lint pending",
+    "lint": "tsc --noEmit -p tsconfig.json",
     "lint:phi": "node ../../scripts/lint-phi.js apps/worker",
     "typecheck": "tsc --noEmit -p tsconfig.json",
-    "test": "echo worker tests pending",
-    "test:unit": "echo worker unit tests pending",
-    "test:e2e": "echo worker e2e tests pending"
+    "test": "node --import tsx --test src/main.test.ts",
+    "test:unit": "pnpm test",
+    "test:e2e": "node -e \"console.log('worker e2e deferred until retention/transcription jobs are introduced')\""
   },
   "devDependencies": {
     "tsx": "^4.19.0",

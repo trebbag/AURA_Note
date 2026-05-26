@@ -195,3 +195,75 @@ components:
         code: { type: string }
         message: { type: string }
         severity: { type: string, enum: [info, warning, error] }
+    Appointment:
+      type: object
+      required: [appointmentId, tenantId, siteId, safePatientId, clinicianId, noteId, state, startsAt, mode]
+      properties:
+        appointmentId: { type: string }
+        tenantId: { type: string }
+        siteId: { type: string }
+        safePatientId: { type: string }
+        clinicianId: { type: string }
+        noteId: { type: string }
+        state:
+          type: string
+          enum: [scheduled, checked_in, in_room, visit_started, visit_paused, visit_completed, finalization_in_progress, finalized, cancelled, no_show]
+        startsAt: { type: string, format: date-time }
+        mode: { type: string, enum: [standalone, clinicos_integrated] }
+    Note:
+      type: object
+      required: [noteId, appointmentId, tenantId, siteId, safePatientId, clinicianId, state, mode]
+      properties:
+        noteId: { type: string }
+        appointmentId: { type: string }
+        tenantId: { type: string }
+        siteId: { type: string }
+        safePatientId: { type: string }
+        clinicianId: { type: string }
+        state:
+          type: string
+          enum: [shell_created, draft_not_started, visit_active, visit_paused, documentation_in_progress, ready_to_finalize, finalization_code_review, finalization_suggestion_review, finalization_compose, finalization_compare_edit, finalization_billing_attest, finalization_sign_dispatch, blocked_compliance, blocked_history_gap, blocked_billing_review, finalized, exported, writeback_pending, writeback_complete, writeback_failed]
+        mode: { type: string, enum: [standalone, clinicos_integrated] }
+    VisitSession:
+      type: object
+      required: [visitSessionId, noteId, timerState, recordingState, editorUnlocked]
+      properties:
+        visitSessionId: { type: string }
+        noteId: { type: string }
+        timerState: { type: string, enum: [not_started, running, paused, stopped] }
+        recordingState: { type: string, enum: [not_started, recording, paused, stopped, exception_approved] }
+        editorUnlocked: { type: boolean }
+        exceptionReason: { type: string }
+    Task:
+      type: object
+      required: [taskId, title, blocksSigning, adjudicationStatus]
+      properties:
+        taskId: { type: string }
+        noteId: { type: string }
+        safePatientId: { type: string }
+        title: { type: string }
+        blocksSigning: { type: boolean }
+        adjudicationStatus: { type: string, enum: [open, answered, closed, assigned, deferred] }
+        ownerRole: { type: string }
+    AuraNoteEvent:
+      type: object
+      required: [eventId, eventType, schemaVersion, tenantId, siteId, producer, eventTime, traceId, idempotencyKey, sensitivity, retentionClass, payload]
+      properties:
+        eventId: { type: string }
+        eventType:
+          type: string
+          enum: [appointment.created.v1, note.shell_created.v1, visit.started.v1, visit.paused.v1, visit.resumed.v1, visit.stopped.v1, recording.started.v1, recording.exception_approved.v1, recording.stopped.v1, task.blocker_changed.v1, low_confidence_diagnosis.override_recorded.v1, finalization.started.v1, finalization.step_completed.v1, audit.event_recorded.v1]
+        schemaVersion: { type: string, enum: [v1] }
+        tenantId: { type: string }
+        siteId: { type: string }
+        patientIdHash: { type: string }
+        appointmentId: { type: string }
+        noteId: { type: string }
+        visitSessionId: { type: string }
+        producer: { type: string }
+        eventTime: { type: string, format: date-time }
+        traceId: { type: string }
+        idempotencyKey: { type: string }
+        sensitivity: { type: string, enum: [non_phi, phi_reference, restricted] }
+        retentionClass: { type: string, enum: [standard, audit, transcript, audio_ephemeral] }
+        payload: { type: object }

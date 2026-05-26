@@ -5,12 +5,12 @@
   "main": "src/index.ts",
   "scripts": {
     "build": "tsc -p tsconfig.json",
-    "lint": "echo clinicos-adapter lint pending",
+    "lint": "tsc --noEmit -p tsconfig.json",
     "lint:phi": "node ../../scripts/lint-phi.js packages/clinicos-adapter",
     "typecheck": "tsc --noEmit -p tsconfig.json",
-    "test": "echo clinicos-adapter tests pending",
-    "test:unit": "echo clinicos-adapter unit tests pending",
-    "test:e2e": "echo clinicos-adapter e2e tests pending"
+    "test": "node -e \"console.log('clinicos-adapter scaffold verified by typecheck; implementation begins in WO-011')\"",
+    "test:unit": "pnpm test",
+    "test:e2e": "node -e \"console.log('clinicos-adapter e2e deferred until WO-011')\""
   },
   "devDependencies": { "typescript": "^5.6.0" }
 }

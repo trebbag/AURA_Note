@@ -1,23 +1,79 @@
-export const demoTenant = { id: 'demo-tenant', name: 'AURA Demo Clinic' };
-export const demoSite = { id: 'demo-site', tenantId: demoTenant.id, name: 'Main Demo Site' };
+import type { AppointmentDto, NoteDto, TaskDto, VisitSessionDto } from '@aura-note/contracts';
+import type { AccessContext } from '@aura-note/security';
 
-export const demoAppointments = [
-  {
-    id: 'appt-awv-001',
-    tenantId: demoTenant.id,
-    siteId: demoSite.id,
-    patientDisplay: 'Synthetic Patient A',
-    visitType: 'awv_plus_problem',
-    clinicianId: 'user-clinician-001',
-    startsAt: '2026-05-19T09:00:00.000Z'
-  },
-  {
-    id: 'appt-tcm-001',
-    tenantId: demoTenant.id,
-    siteId: demoSite.id,
-    patientDisplay: 'Synthetic Patient B',
-    visitType: 'tcm',
-    clinicianId: 'user-clinician-001',
-    startsAt: '2026-05-19T10:00:00.000Z'
-  }
-];
+export const syntheticIds = {
+  tenantId: 'tenant-synthetic-primary',
+  siteId: 'site-synthetic-primary',
+  safePatientId: 'safe-patient-synthetic-001',
+  clinicianId: 'user-clinician-synthetic-001',
+  maUserId: 'user-ma-synthetic-001',
+  billingUserId: 'user-billing-synthetic-001',
+  appointmentId: 'appt-synthetic-001',
+  noteId: 'note-synthetic-001',
+  visitSessionId: 'visit-session-synthetic-001'
+} as const;
+
+export function createSyntheticAppointment(overrides: Partial<AppointmentDto> = {}): AppointmentDto {
+  return {
+    appointmentId: syntheticIds.appointmentId,
+    tenantId: syntheticIds.tenantId,
+    siteId: syntheticIds.siteId,
+    safePatientId: syntheticIds.safePatientId,
+    clinicianId: syntheticIds.clinicianId,
+    noteId: syntheticIds.noteId,
+    state: 'scheduled',
+    startsAt: '2026-05-26T14:00:00.000Z',
+    mode: 'standalone',
+    ...overrides
+  };
+}
+
+export function createSyntheticNote(overrides: Partial<NoteDto> = {}): NoteDto {
+  return {
+    noteId: syntheticIds.noteId,
+    appointmentId: syntheticIds.appointmentId,
+    tenantId: syntheticIds.tenantId,
+    siteId: syntheticIds.siteId,
+    safePatientId: syntheticIds.safePatientId,
+    clinicianId: syntheticIds.clinicianId,
+    state: 'shell_created',
+    mode: 'standalone',
+    ...overrides
+  };
+}
+
+export function createSyntheticVisitSession(overrides: Partial<VisitSessionDto> = {}): VisitSessionDto {
+  return {
+    visitSessionId: syntheticIds.visitSessionId,
+    noteId: syntheticIds.noteId,
+    timerState: 'not_started',
+    recordingState: 'not_started',
+    editorUnlocked: false,
+    ...overrides
+  };
+}
+
+export function createSyntheticBlockingTask(overrides: Partial<TaskDto> = {}): TaskDto {
+  return {
+    taskId: 'task-synthetic-blocker-001',
+    noteId: syntheticIds.noteId,
+    safePatientId: syntheticIds.safePatientId,
+    title: 'Synthetic follow-up question requires adjudication',
+    blocksSigning: true,
+    adjudicationStatus: 'open',
+    ownerRole: 'ma',
+    ...overrides
+  };
+}
+
+export function createAccessContext(overrides: Partial<AccessContext> = {}): AccessContext {
+  return {
+    role: 'clinician',
+    linkedToPatient: true,
+    linkedToVisit: true,
+    treatingClinician: true,
+    billingReviewTriggered: false,
+    authorizedAdmin: false,
+    ...overrides
+  };
+}
