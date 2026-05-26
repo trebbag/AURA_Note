@@ -30,3 +30,9 @@ Codex must complete work orders sequentially unless a checkpoint or blocker stop
 - Update tests and docs with every work order.
 - Stop at checkpoint gates.
 - Create SPEC_GAPs instead of inventing missing behavior.
+
+## Post-CP4 planning
+
+The defined AURA Note v1 synthetic local-first work-order sequence ends at `WO-014`.
+
+Post-CP4 productionization candidates are documented in `docs/POST_CP4_PRODUCTIONIZATION_BACKLOG.md`. They are planning artifacts only until a tranche is promoted into a numbered `work_orders/WO-###_*.md` file and `repo_status.json` is updated deliberately.
