@@ -7,6 +7,10 @@ import {
   type AuditEventDto,
   type CreateAppointmentRequestDto,
   type CreateAppointmentResponseDto,
+  type DocumentationWorkspaceDto,
+  type DraftNotesViewDto,
+  type FinalizedNoteSummaryDto,
+  type FinalizedNotesViewDto,
   type NoteDto,
   type ScheduleAppointmentDto,
   type ScheduleViewDto,
@@ -14,6 +18,7 @@ import {
   type VisitSessionDto
 } from '@aura-note/contracts';
 import {
+  canEditNote,
   canStartVisit,
   createAppointmentLifecycle,
   createAppointmentNoteInvariant,
@@ -21,7 +26,7 @@ import {
   validateAppointmentDraft,
   type AppointmentLifecycle
 } from '@aura-note/domain';
-import { canPerform, type AccessContext, type Role } from '@aura-note/security';
+import { canPerform, canViewTranscript, type AccessContext, type Role } from '@aura-note/security';
 
 const TENANT_ID = 'tenant-synthetic-primary';
 const SITE_ID = 'site-synthetic-primary';
@@ -210,6 +215,106 @@ export class ScheduleService {
     );
   }
 
+  listDraftNotes(context: RequestContext): ApiEnvelope<DraftNotesViewDto> {
+    const linkedContext = this.createLinkedVisitContext(context.access);
+    if (!canPerform('draft_note:view', linkedContext)) {
+      throw new ForbiddenException('role cannot view draft notes');
+    }
+
+    const notes = [...this.appointments.values()]
+      .filter((entry) => entry.lifecycle.noteVisibleInDrafts && entry.note.state !== 'finalized')
+      .map((entry) => {
+        const gate = entry.visitSession ?? {
+          visitSessionId: 'visit-session-not-started',
+          noteId: entry.note.noteId,
+          timerState: 'not_started' as const,
+          recordingState: 'not_started' as const,
+          editorUnlocked: false
+        };
+        const editorUnlocked = canEditNote(gate);
+        return {
+          noteId: entry.note.noteId,
+          appointmentId: entry.appointment.appointmentId,
+          safePatientId: entry.appointment.safePatientId,
+          clinicianId: entry.appointment.clinicianId,
+          visitType: entry.appointment.visitType,
+          startsAt: entry.appointment.startsAt,
+          noteStatus: entry.note.state,
+          appointmentStatus: entry.appointment.state,
+          workflowStatusLabel: this.workflowStatusLabel(entry.note.state),
+          editorLocked: !editorUnlocked,
+          ...(editorUnlocked ? {} : { editorLockedReason: this.editorLockedReason(gate) })
+        };
+      });
+
+    return createApiEnvelope(
+      {
+        notes,
+        emptyState: notes.length > 0 ? 'ready' : 'empty'
+      },
+      this.createMeta(context)
+    );
+  }
+
+  listFinalizedNotes(context: RequestContext): ApiEnvelope<FinalizedNotesViewDto> {
+    if (!canPerform('final_note:view', this.createLinkedPatientContext(context.access))) {
+      throw new ForbiddenException('role cannot view finalized notes');
+    }
+
+    const notes = [...this.appointments.values()]
+      .filter((entry) => entry.note.state === 'finalized')
+      .map((entry) => this.toFinalizedNoteSummary(entry, context.access));
+
+    return createApiEnvelope(
+      {
+        notes,
+        emptyState: notes.length > 0 ? 'ready' : 'empty',
+        readOnly: true
+      },
+      this.createMeta(context)
+    );
+  }
+
+  getFinalizedNote(noteId: string, context: RequestContext): ApiEnvelope<FinalizedNoteSummaryDto> {
+    if (!canPerform('final_note:view', this.createLinkedPatientContext(context.access))) {
+      throw new ForbiddenException('role cannot view finalized notes');
+    }
+
+    const stored = this.getStoredByNoteId(noteId);
+    if (stored.note.state !== 'finalized') {
+      return createApiEnvelope(
+        {
+          noteId: stored.note.noteId,
+          appointmentId: stored.appointment.appointmentId,
+          safePatientId: stored.appointment.safePatientId,
+          clinicianId: stored.appointment.clinicianId,
+          readOnly: true,
+          finalNoteAvailable: false,
+          patientSummaryAvailable: false,
+          transcriptAvailableForRole: false
+        },
+        this.createMeta(context),
+        [
+          {
+            code: 'FINAL_NOTE_NOT_AVAILABLE',
+            message: 'Finalized note viewer is read-only; this note is not finalized in the CP-1 shell.',
+            severity: 'info'
+          }
+        ]
+      );
+    }
+
+    return createApiEnvelope(this.toFinalizedNoteSummary(stored, context.access), this.createMeta(context));
+  }
+
+  getDocumentationWorkspaceByAppointment(
+    appointmentId: string,
+    context: RequestContext
+  ): ApiEnvelope<DocumentationWorkspaceDto> {
+    const stored = this.getStoredAppointment(appointmentId);
+    return createApiEnvelope(this.toDocumentationWorkspace(stored, context), this.createMeta(context));
+  }
+
   createRequestContext(headers: Record<string, string | string[] | undefined>): RequestContext {
     const roleHeader = this.headerValue(headers['x-aura-role']);
     const role = this.parseRole(roleHeader);
@@ -247,6 +352,119 @@ export class ScheduleService {
       ehrSchedulingEnabled: false,
       clinicOsSchedulingEnabled: false
     };
+  }
+
+  private toDocumentationWorkspace(entry: StoredAppointment, context: RequestContext): DocumentationWorkspaceDto {
+    const linkedContext = this.createLinkedVisitContext(context.access);
+    if (!canPerform('draft_note:view', linkedContext)) {
+      throw new ForbiddenException('role cannot open documentation workspace');
+    }
+
+    const gate = entry.visitSession ?? {
+      visitSessionId: 'visit-session-not-started',
+      noteId: entry.note.noteId,
+      timerState: 'not_started' as const,
+      recordingState: 'not_started' as const,
+      editorUnlocked: false
+    };
+    const editorUnlocked = canEditNote(gate);
+    const editorLockedReason = editorUnlocked ? undefined : this.editorLockedReason(gate);
+    const finalizedReadOnly = entry.note.state === 'finalized';
+
+    return {
+      appointment: entry.appointment,
+      note: entry.note,
+      ...(entry.visitSession ? { visitSession: entry.visitSession } : {}),
+      editorLocked: !editorUnlocked || finalizedReadOnly,
+      ...(editorLockedReason ? { editorLockedReason } : {}),
+      finalizedReadOnly,
+      availableStates: [
+        'empty',
+        'loading',
+        'ready',
+        'saving',
+        'warning',
+        'blocked',
+        'failed',
+        'permission_denied',
+        'finalized_read_only',
+        'demo_fixture'
+      ],
+      panels: [
+        { panelId: 'visit_context', label: 'Visit Context', state: 'ready', itemCount: 1 },
+        {
+          panelId: 'controls',
+          label: 'Visit Controls',
+          state: entry.visitSession ? 'ready' : 'blocked',
+          itemCount: entry.visitSession ? 1 : 0,
+          ...(entry.visitSession ? {} : { blockedReason: 'Start Visit is required before timer controls are active.' })
+        },
+        {
+          panelId: 'editor',
+          label: 'Note Editor',
+          state: finalizedReadOnly ? 'finalized_read_only' : editorUnlocked ? 'ready' : 'blocked',
+          itemCount: editorUnlocked ? 1 : 0,
+          ...(editorLockedReason ? { blockedReason: editorLockedReason } : {})
+        },
+        { panelId: 'visit_selections', label: 'Visit Selections', state: 'empty', itemCount: 0 },
+        { panelId: 'suggestions', label: 'Suggestions', state: 'empty', itemCount: 0 },
+        { panelId: 'transcript', label: 'Transcript', state: 'empty', itemCount: 0 },
+        { panelId: 'compliance', label: 'Compliance & Quality Review', state: 'empty', itemCount: 0 },
+        { panelId: 'history_gap', label: 'History Gap Review', state: 'empty', itemCount: 0 }
+      ]
+    };
+  }
+
+  private toFinalizedNoteSummary(entry: StoredAppointment, access: AccessContext): FinalizedNoteSummaryDto {
+    return {
+      noteId: entry.note.noteId,
+      appointmentId: entry.appointment.appointmentId,
+      safePatientId: entry.appointment.safePatientId,
+      clinicianId: entry.appointment.clinicianId,
+      readOnly: true,
+      finalNoteAvailable: entry.note.state === 'finalized',
+      patientSummaryAvailable: entry.note.state === 'finalized',
+      transcriptAvailableForRole: canViewTranscript(this.createLinkedVisitContext(access))
+    };
+  }
+
+  private workflowStatusLabel(noteState: NoteDto['state']): string {
+    const labels: Record<NoteDto['state'], string> = {
+      shell_created: 'Shell created',
+      draft_not_started: 'Draft not started',
+      visit_active: 'Visit active',
+      visit_paused: 'Visit paused',
+      documentation_in_progress: 'Documentation in progress',
+      ready_to_finalize: 'Ready to finalize',
+      finalization_code_review: 'Finalization: code review',
+      finalization_suggestion_review: 'Finalization: suggestion review',
+      finalization_compose: 'Finalization: compose',
+      finalization_compare_edit: 'Finalization: compare/edit',
+      finalization_billing_attest: 'Finalization: billing & attest',
+      finalization_sign_dispatch: 'Finalization: sign & dispatch',
+      blocked_compliance: 'Blocked by compliance',
+      blocked_history_gap: 'Blocked by History Gap',
+      blocked_billing_review: 'Blocked by billing review',
+      finalized: 'Finalized',
+      exported: 'Exported',
+      writeback_pending: 'Writeback pending',
+      writeback_complete: 'Writeback complete',
+      writeback_failed: 'Writeback failed'
+    };
+    return labels[noteState];
+  }
+
+  private editorLockedReason(gate: VisitSessionDto): string {
+    if (gate.timerState === 'running') {
+      return 'Editor is available.';
+    }
+    if (gate.recordingState === 'exception_approved') {
+      return 'Editor is available through an approved recording exception.';
+    }
+    if (gate.timerState === 'not_started') {
+      return 'Start Visit and run the timer before documenting.';
+    }
+    return 'Resume the visit timer or approve a recording exception before documenting.';
   }
 
   private toCreateResponse(
@@ -334,6 +552,30 @@ export class ScheduleService {
       throw new NotFoundException('appointment not found');
     }
     return stored;
+  }
+
+  private getStoredByNoteId(noteId: string): StoredAppointment {
+    const stored = [...this.appointments.values()].find((entry) => entry.note.noteId === noteId);
+    if (!stored) {
+      throw new NotFoundException('note not found');
+    }
+    return stored;
+  }
+
+  private createLinkedVisitContext(access: AccessContext): AccessContext {
+    return {
+      ...access,
+      linkedToPatient: true,
+      linkedToVisit: true,
+      treatingClinician: access.role === 'clinician' || access.treatingClinician
+    };
+  }
+
+  private createLinkedPatientContext(access: AccessContext): AccessContext {
+    return {
+      ...access,
+      linkedToPatient: true
+    };
   }
 
   private nextId(prefix: string): string {

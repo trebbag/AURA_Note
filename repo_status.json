@@ -1,13 +1,13 @@
 {
   "project": "AURA Note v1",
-  "mode": "cp0_foundation_complete",
+  "mode": "cp1_in_progress",
   "current_checkpoint": "CP-1",
-  "next_work_order": "WO-002",
+  "next_work_order": "WO-004",
   "work_orders": {
     "WO-000": "done",
     "WO-001": "done",
     "WO-002": "done",
-    "WO-003": "todo",
+    "WO-003": "done",
     "WO-004": "todo",
     "WO-005": "todo",
     "WO-006": "todo",
@@ -20,8 +20,7 @@
     "WO-013": "todo",
     "WO-014": "todo"
   },
-  "last_updated_by": "Codex WO-002 tranche",
-  "last_updated_at": "2026-05-26T14:16:40Z",
-  "next_work_order": "WO-003",
-  "notes": "WO-002 completed on tranche/wo-002-schedule-lifecycle. Next implementation scope is WO-003 Draft/Finalized Notes and Documentation Workspace shell."
+  "last_updated_by": "Codex WO-003 tranche",
+  "last_updated_at": "2026-05-26T15:20:00Z",
+  "notes": "WO-003 completed on tranche/wo-003-notes-workspace-shell. Next implementation scope is WO-004 Timer Recording Gate Transcription Scaffold."
 }

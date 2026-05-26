@@ -102,7 +102,11 @@ export default function ScheduleBuilderPage() {
           <p className="eyebrow">AURA Note / Schedule Builder</p>
           <h1>Standalone Appointment-to-Note Lifecycle</h1>
         </div>
-        <a href="/status">Status</a>
+        <nav className="header-nav" aria-label="AURA Note sections">
+          <a href="/aura-note/drafts">Draft Notes</a>
+          <a href="/aura-note/finalized">Finalized Notes</a>
+          <a href="/status">Status</a>
+        </nav>
       </header>
 
       <section className="status-band" aria-live="polite">
@@ -242,6 +246,9 @@ export default function ScheduleBuilderPage() {
               >
                 Start Visit
               </button>
+              <a className="button-link" href={`/aura-note/workspace/${appointment.appointmentId}`}>
+                Open Workspace
+              </a>
             </article>
           ))}
         </section>

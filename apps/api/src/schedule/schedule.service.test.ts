@@ -92,4 +92,54 @@ describe('ScheduleService', () => {
     service.startVisit(appointment.appointmentId, clinician);
     assert.throws(() => service.startVisit(appointment.appointmentId, clinician), BadRequestException);
   });
+
+  it('opens a documentation workspace from the schedule with the editor locked before timer activation', () => {
+    const service = new ScheduleService();
+    const appointment = service
+      .createAppointment(createRequest, service.createRequestContext({ 'x-aura-role': 'ma' }))
+      .data.appointment;
+
+    const workspace = service.getDocumentationWorkspaceByAppointment(
+      appointment.appointmentId,
+      service.createRequestContext({ 'x-aura-role': 'clinician' })
+    );
+
+    assert.equal(workspace.data.note.noteId, appointment.noteId);
+    assert.equal(workspace.data.editorLocked, true);
+    assert.match(workspace.data.editorLockedReason ?? '', /Start Visit/);
+    assert.equal(workspace.data.panels.some((panel) => panel.panelId === 'history_gap'), true);
+    assert.equal(workspace.data.panels.find((panel) => panel.panelId === 'editor')?.state, 'blocked');
+  });
+
+  it('lists active notes in Draft Notes after Start Visit', () => {
+    const service = new ScheduleService();
+    const appointment = service
+      .createAppointment(createRequest, service.createRequestContext({ 'x-aura-role': 'ma' }))
+      .data.appointment;
+
+    assert.equal(service.listDraftNotes(service.createRequestContext({ 'x-aura-role': 'clinician' })).data.notes.length, 0);
+    service.startVisit(appointment.appointmentId, service.createRequestContext({ 'x-aura-role': 'clinician' }));
+
+    const drafts = service.listDraftNotes(service.createRequestContext({ 'x-aura-role': 'clinician' }));
+
+    assert.equal(drafts.data.notes.length, 1);
+    assert.equal(drafts.data.notes[0]?.noteStatus, 'visit_active');
+    assert.equal(drafts.data.notes[0]?.editorLocked, false);
+  });
+
+  it('returns a read-only finalized note placeholder without pretending a final note exists', () => {
+    const service = new ScheduleService();
+    const appointment = service
+      .createAppointment(createRequest, service.createRequestContext({ 'x-aura-role': 'ma' }))
+      .data.appointment;
+
+    const finalized = service.getFinalizedNote(
+      appointment.noteId,
+      service.createRequestContext({ 'x-aura-role': 'clinician' })
+    );
+
+    assert.equal(finalized.data.readOnly, true);
+    assert.equal(finalized.data.finalNoteAvailable, false);
+    assert.equal(finalized.warnings?.[0]?.code, 'FINAL_NOTE_NOT_AVAILABLE');
+  });
 });

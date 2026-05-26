@@ -40,6 +40,10 @@ The first browser-testable Schedule Builder shell lives at `/aura-note/schedule`
 
 Start Visit in `WO-002` activates the note shell and demonstrates Draft Notes visibility. Full timer, recording, transcription, editor unlock depth, and exception workflow behavior remain scoped to `WO-004`.
 
+### WO-003 implementation status
+
+The first CP-1 notes shell adds browser-testable routes for `/aura-note/drafts`, `/aura-note/finalized`, `/aura-note/finalized/[noteId]`, and `/aura-note/workspace/[appointmentId]`. These routes are workflow scaffolds: Draft Notes shows active demo documentation work, Finalized Notes is read-only, and the Documentation Workspace exposes all required regions with explicit empty/blocked/ready states. Timer, recording, transcript depth, Suggestions, Visit Selections behavior, Compliance logic, and History Gap task routing remain scoped to `WO-004` and `WO-005`.
+
 ## Draft Notes
 
 Draft Notes should show notes that are active or have entered the note workflow. Draft statuses should reflect note workflow state, such as:
