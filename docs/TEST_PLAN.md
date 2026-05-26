@@ -11,6 +11,8 @@ Codex should add tests as implementation proceeds.
 - Low-confidence diagnosis override.
 - Task blocker logic.
 - Finalization wizard step requirements.
+- Signed-output artifact readiness.
+- EHR writeback queue readiness states.
 - RBAC/ABAC decisions.
 - PHI scrubber.
 - AI response validation.
@@ -27,6 +29,8 @@ Codex should add tests as implementation proceeds.
 - Billing review triggers transcript access for billing staff.
 - Sign & Dispatch creates final note/patient summary/export artifacts.
 - EHR writeback queue behaves correctly in mock mode.
+- Export/copy/PDF actions are blocked before signing.
+- Patient summary exports reject internal billing/revenue details.
 
 ## Browser / Playwright journeys
 
@@ -37,9 +41,10 @@ Codex should add tests as implementation proceeds.
 5. Billing review triggers transcript access for billing staff.
 6. Final note viewer is read-only after dispatch.
 7. Patient summary PDF download flow.
-8. Admin template and dot phrase creation.
-9. Coaching own-scorecard visibility.
-10. ClinicOS mode mock context loads without changing core UX.
+8. Copy/export/writeback failure states remain visible in Finalized Notes.
+9. Admin template and dot phrase creation.
+10. Coaching own-scorecard visibility.
+11. ClinicOS mode mock context loads without changing core UX.
 
 ## Security tests
 

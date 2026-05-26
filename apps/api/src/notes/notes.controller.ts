@@ -3,6 +3,7 @@ import type {
   AddVisitSelectionRequestDto,
   ApprovalRequestDto,
   BillingAttestRequestDto,
+  EhrWritebackRequestDto,
   AppendTranscriptSegmentRequestDto,
   CompareEditUpdateRequestDto,
   CreateHistoryGapTaskRequestDto,
@@ -292,5 +293,45 @@ export class NotesController {
     @Headers() headers: Record<string, string | string[] | undefined>
   ) {
     return this.scheduleService.signAndDispatch(noteId, this.scheduleService.createRequestContext(headers));
+  }
+
+  @Post('notes/:noteId/exports/final-note-pdf')
+  generateFinalNotePdf(@Param('noteId') noteId: string, @Headers() headers: Record<string, string | string[] | undefined>) {
+    return this.scheduleService.generateFinalNotePdf(noteId, this.scheduleService.createRequestContext(headers));
+  }
+
+  @Post('notes/:noteId/exports/patient-summary-pdf')
+  generatePatientSummaryPdf(
+    @Param('noteId') noteId: string,
+    @Headers() headers: Record<string, string | string[] | undefined>
+  ) {
+    return this.scheduleService.generatePatientSummaryPdf(noteId, this.scheduleService.createRequestContext(headers));
+  }
+
+  @Post('notes/:noteId/exports/final-note-copy')
+  copyFinalNote(@Param('noteId') noteId: string, @Headers() headers: Record<string, string | string[] | undefined>) {
+    return this.scheduleService.copyFinalNote(noteId, this.scheduleService.createRequestContext(headers));
+  }
+
+  @Post('notes/:noteId/exports/patient-summary-copy')
+  copyPatientSummary(@Param('noteId') noteId: string, @Headers() headers: Record<string, string | string[] | undefined>) {
+    return this.scheduleService.copyPatientSummary(noteId, this.scheduleService.createRequestContext(headers));
+  }
+
+  @Post('notes/:noteId/exports/structured')
+  exportStructuredFinalNote(
+    @Param('noteId') noteId: string,
+    @Headers() headers: Record<string, string | string[] | undefined>
+  ) {
+    return this.scheduleService.exportStructuredFinalNote(noteId, this.scheduleService.createRequestContext(headers));
+  }
+
+  @Post('notes/:noteId/ehr-writeback')
+  requestEhrWriteback(
+    @Param('noteId') noteId: string,
+    @Body() body: EhrWritebackRequestDto,
+    @Headers() headers: Record<string, string | string[] | undefined>
+  ) {
+    return this.scheduleService.requestEhrWriteback(noteId, body, this.scheduleService.createRequestContext(headers));
   }
 }

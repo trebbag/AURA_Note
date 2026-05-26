@@ -60,6 +60,18 @@ function completeThroughCompareEdit(service: ScheduleService) {
   return { appointment, clinician };
 }
 
+function completeThroughSignDispatch(service: ScheduleService) {
+  const { appointment, clinician } = completeThroughCompareEdit(service);
+  service.generateDraftClaimPreview(appointment.noteId, clinician);
+  service.completeBillingAttest(
+    appointment.noteId,
+    { acceptedStatements: billingStatements, estimateCaveatAcknowledged: true, routeToBillingReview: true },
+    clinician
+  );
+  service.signAndDispatch(appointment.noteId, clinician);
+  return { appointment, clinician };
+}
+
 describe('ScheduleService', () => {
   it('creates an appointment and exactly one note shell', () => {
     const service = new ScheduleService();
@@ -538,5 +550,74 @@ describe('ScheduleService', () => {
     assert.equal(signed.data.domainEvents.map((event) => event.eventType).includes('note.dispatched.v1'), true);
     assert.equal(service.listDraftNotes(clinician).data.notes.length, 0);
     assert.equal(service.getFinalizedNote(appointment.noteId, clinician).data.finalNoteAvailable, true);
+  });
+
+  it('blocks copy export and PDF actions before Sign & Dispatch', () => {
+    const service = new ScheduleService();
+    const { appointment, clinician } = completeThroughCompareEdit(service);
+
+    assert.throws(() => service.generateFinalNotePdf(appointment.noteId, clinician), BadRequestException);
+    assert.throws(() => service.copyPatientSummary(appointment.noteId, clinician), BadRequestException);
+  });
+
+  it('generates signed final note and patient summary export artifacts', () => {
+    const service = new ScheduleService();
+    const { appointment, clinician } = completeThroughSignDispatch(service);
+
+    const notePdf = service.generateFinalNotePdf(appointment.noteId, clinician);
+    const summaryPdf = service.generatePatientSummaryPdf(appointment.noteId, clinician);
+    const copySummary = service.copyPatientSummary(appointment.noteId, clinician);
+    const structured = service.exportStructuredFinalNote(appointment.noteId, clinician);
+
+    assert.equal(notePdf.data.artifact.mimeType, 'application/pdf');
+    assert.match(notePdf.data.artifact.content, /^%PDF-1\.4 synthetic/);
+    assert.equal(summaryPdf.data.artifact.patientSummaryInternalDetailsExcluded, true);
+    assert.equal(copySummary.data.artifact.mimeType, 'text/plain');
+    assert.equal(structured.data.artifact.mimeType, 'application/json');
+    assert.equal(notePdf.data.domainEvents[0]?.eventType, 'export.generated.v1');
+    assert.equal(notePdf.data.finalizedNote.exportArtifacts.length, 1);
+  });
+
+  it('shows finalized note details and enforces linked-staff visibility', () => {
+    const service = new ScheduleService();
+    const { appointment, clinician } = completeThroughSignDispatch(service);
+    const linkedMa = service.createRequestContext({ 'x-aura-role': 'ma', 'x-aura-linked-patient': 'true' });
+    const unlinkedMa = service.createRequestContext({ 'x-aura-role': 'ma', 'x-aura-linked-patient': 'false' });
+
+    const finalized = service.getFinalizedNote(appointment.noteId, linkedMa);
+
+    assert.equal(finalized.data.readOnly, true);
+    assert.equal(finalized.data.finalNote?.readOnly, true);
+    assert.equal(finalized.data.availableActions.copyPatientSummary, true);
+    assert.throws(() => service.getFinalizedNote(appointment.noteId, unlinkedMa), ForbiddenException);
+    assert.equal(service.listFinalizedNotes(clinician).data.notes[0]?.writebackStatus, 'not_configured');
+  });
+
+  it('records EHR writeback disabled, queued, and failure states without marking writeback complete', () => {
+    const service = new ScheduleService();
+    const { appointment, clinician } = completeThroughSignDispatch(service);
+
+    const notConfigured = service.requestEhrWriteback(
+      appointment.noteId,
+      { target: 'final_note', humanApproved: true, scaffoldMode: 'not_configured' },
+      clinician
+    );
+    const queued = service.requestEhrWriteback(
+      appointment.noteId,
+      { target: 'both', humanApproved: true, scaffoldMode: 'mock_queue' },
+      clinician
+    );
+    const failed = service.requestEhrWriteback(
+      appointment.noteId,
+      { target: 'final_note', humanApproved: true, scaffoldMode: 'simulate_failure' },
+      clinician
+    );
+
+    assert.equal(notConfigured.data.writeback.status, 'not_configured');
+    assert.equal(queued.data.writeback.status, 'queued');
+    assert.equal(queued.data.domainEvents[0]?.eventType, 'ehr_writeback.queued.v1');
+    assert.equal(failed.data.writeback.status, 'failed');
+    assert.equal(failed.data.writeback.retryable, true);
+    assert.equal(failed.data.writeback.externalJobId, undefined);
   });
 });

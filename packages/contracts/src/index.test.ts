@@ -7,7 +7,10 @@ import {
   type ComplianceReviewDto,
   type DocumentationWorkspaceDto,
   type DraftNoteSummaryDto,
+  type ExportActionResponseDto,
   type FinalizationSessionDto,
+  type FinalizedNoteDetailDto,
+  type EhrWritebackActionResponseDto,
   type ReviewActionResponseDto,
   type SuggestionDto,
   type TranscriptViewDto,
@@ -275,6 +278,17 @@ describe('finalization contracts', () => {
       unusedAuditItems: [],
       composePhases: [],
       patientOpportunities: [],
+      exportArtifacts: [],
+      writeback: {
+        writebackJobId: 'writeback-disabled-001',
+        noteId: 'note-001',
+        target: 'final_note',
+        vendor: 'athenahealth',
+        status: 'disabled',
+        configured: false,
+        humanApproved: false,
+        retryable: false
+      },
       finalNoteApproved: false,
       patientSummaryApproved: false,
       readyForBillingAttest: false,
@@ -347,6 +361,88 @@ describe('finalization contracts', () => {
     assert.equal(session.draftClaimPreview?.submittedClaim, false);
     assert.equal(session.finalNote?.readOnly, true);
     assert.equal(session.patientSummary?.internalBillingDetailsExcluded, true);
+  });
+
+  it('represents signed-only export artifacts and conservative writeback status', () => {
+    const finalizedNote: FinalizedNoteDetailDto = {
+      noteId: 'note-001',
+      appointmentId: 'appt-001',
+      safePatientId: 'safe-patient-001',
+      clinicianId: 'clinician-001',
+      finalizedAt: '2026-05-26T16:00:00.000Z',
+      readOnly: true,
+      finalNoteAvailable: true,
+      patientSummaryAvailable: true,
+      transcriptAvailableForRole: true,
+      exportStatus: 'generated',
+      patientSummaryStatus: 'final',
+      billingReviewStatus: 'routed',
+      writebackStatus: 'not_configured',
+      finalNote: {
+        finalNoteId: 'final-note-001',
+        noteId: 'note-001',
+        appointmentId: 'appt-001',
+        safePatientId: 'safe-patient-001',
+        clinicianId: 'clinician-001',
+        finalNoteText: 'Synthetic final note',
+        finalizedAt: '2026-05-26T16:00:00.000Z',
+        readOnly: true
+      },
+      patientSummary: {
+        patientSummaryId: 'patient-summary-001',
+        noteId: 'note-001',
+        patientSummaryText: 'Synthetic patient summary',
+        finalizedAt: '2026-05-26T16:00:00.000Z',
+        patientFacing: true,
+        internalBillingDetailsExcluded: true
+      },
+      exportArtifacts: [
+        {
+          exportArtifactId: 'export-001',
+          noteId: 'note-001',
+          artifactType: 'final_note_pdf',
+          status: 'generated',
+          mimeType: 'application/pdf',
+          fileName: 'note-001-final-note.pdf',
+          generatedAt: '2026-05-26T16:05:00.000Z',
+          generatedByUserId: 'clinician-001',
+          sourceFinalizedAt: '2026-05-26T16:00:00.000Z',
+          signedVersionLocked: true,
+          content: '%PDF-1.4 synthetic final note',
+          checksum: 'synthetic-checksum'
+        }
+      ],
+      writeback: {
+        writebackJobId: 'writeback-001',
+        noteId: 'note-001',
+        target: 'final_note',
+        vendor: 'athenahealth',
+        status: 'not_configured',
+        configured: false,
+        humanApproved: false,
+        retryable: false
+      },
+      availableActions: {
+        copyFinalNote: true,
+        copyPatientSummary: true,
+        downloadFinalNotePdf: true,
+        downloadPatientSummaryPdf: true,
+        exportStructured: true,
+        queueEhrWriteback: false
+      }
+    };
+    const exportResponse: Pick<ExportActionResponseDto, 'artifact' | 'finalizedNote'> = {
+      artifact: finalizedNote.exportArtifacts[0]!,
+      finalizedNote
+    };
+    const writebackResponse: Pick<EhrWritebackActionResponseDto, 'writeback' | 'finalizedNote'> = {
+      writeback: finalizedNote.writeback,
+      finalizedNote
+    };
+
+    assert.equal(exportResponse.artifact.signedVersionLocked, true);
+    assert.equal(finalizedNote.patientSummary?.internalBillingDetailsExcluded, true);
+    assert.equal(writebackResponse.writeback.status, 'not_configured');
   });
 });
 

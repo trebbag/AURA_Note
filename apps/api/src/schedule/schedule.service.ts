@@ -24,7 +24,13 @@ import {
   type BillingAttestRequestDto,
   type CompareEditUpdateRequestDto,
   type DraftClaimPreviewDto,
+  type EhrWritebackActionResponseDto,
+  type EhrWritebackQueueDto,
+  type EhrWritebackRequestDto,
+  type ExportActionResponseDto,
+  type ExportArtifactDto,
   type FinalNoteRecordDto,
+  type FinalizedNoteDetailDto,
   type ScheduleAppointmentDto,
   type ScheduleViewDto,
   type FinalizationActionResponseDto,
@@ -57,6 +63,7 @@ import {
   canCompleteCompose,
   canCompleteSuggestionReview,
   canCompleteBillingAttest,
+  canGenerateFinalArtifact,
   canAcceptSuggestion,
   complianceBlocksFinalize,
   canStartFinalization,
@@ -68,6 +75,7 @@ import {
   createTranscriptRetentionMetadata,
   pauseVisitGate,
   patientSummaryContainsInternalDetails,
+  resolveEhrWritebackStatus,
   resumeVisitGate,
   startVisitLifecycle,
   stopVisitGate,
@@ -360,7 +368,7 @@ export class ScheduleService {
   }
 
   listFinalizedNotes(context: RequestContext): ApiEnvelope<FinalizedNotesViewDto> {
-    if (!canPerform('final_note:view', this.createLinkedPatientContext(context.access))) {
+    if (!canPerform('final_note:view', context.access)) {
       throw new ForbiddenException('role cannot view finalized notes');
     }
 
@@ -378,8 +386,8 @@ export class ScheduleService {
     );
   }
 
-  getFinalizedNote(noteId: string, context: RequestContext): ApiEnvelope<FinalizedNoteSummaryDto> {
-    if (!canPerform('final_note:view', this.createLinkedPatientContext(context.access))) {
+  getFinalizedNote(noteId: string, context: RequestContext): ApiEnvelope<FinalizedNoteDetailDto> {
+    if (!canPerform('final_note:view', context.access)) {
       throw new ForbiddenException('role cannot view finalized notes');
     }
 
@@ -394,7 +402,21 @@ export class ScheduleService {
           readOnly: true,
           finalNoteAvailable: false,
           patientSummaryAvailable: false,
-          transcriptAvailableForRole: false
+          transcriptAvailableForRole: false,
+          exportStatus: 'not_generated',
+          patientSummaryStatus: 'not_available',
+          billingReviewStatus: 'not_routed',
+          writebackStatus: 'disabled',
+          exportArtifacts: [],
+          writeback: this.createWritebackQueue(stored, 'final_note', 'disabled', false),
+          availableActions: {
+            copyFinalNote: false,
+            copyPatientSummary: false,
+            downloadFinalNotePdf: false,
+            downloadPatientSummaryPdf: false,
+            exportStructured: false,
+            queueEhrWriteback: false
+          }
         },
         this.createMeta(context),
         [
@@ -407,7 +429,7 @@ export class ScheduleService {
       );
     }
 
-    return createApiEnvelope(this.toFinalizedNoteSummary(stored, context.access), this.createMeta(context));
+    return createApiEnvelope(this.toFinalizedNoteDetail(stored, context.access), this.createMeta(context));
   }
 
   getDocumentationWorkspaceByAppointment(
@@ -1112,6 +1134,7 @@ export class ScheduleService {
     const finalizedAt = new Date().toISOString();
     stored.finalization.finalNote = this.createFinalNoteRecord(stored, finalizedAt);
     stored.finalization.patientSummary = this.createPatientSummaryRecord(stored, finalizedAt);
+    stored.finalization.writeback = this.createWritebackQueue(stored, 'final_note', 'not_configured', false, finalizedAt);
     stored.finalization.completedSteps = Array.from(new Set([...stored.finalization.completedSteps, 'sign_dispatch']));
     stored.finalization.stepStatuses = {
       ...stored.finalization.stepStatuses,
@@ -1137,12 +1160,84 @@ export class ScheduleService {
     ]);
   }
 
+  generateFinalNotePdf(noteId: string, context: RequestContext): ApiEnvelope<ExportActionResponseDto> {
+    return this.generateExportArtifact(noteId, context, 'final_note_pdf', 'export.final_note_pdf_generate');
+  }
+
+  generatePatientSummaryPdf(noteId: string, context: RequestContext): ApiEnvelope<ExportActionResponseDto> {
+    return this.generateExportArtifact(noteId, context, 'patient_summary_pdf', 'export.patient_summary_pdf_generate');
+  }
+
+  copyFinalNote(noteId: string, context: RequestContext): ApiEnvelope<ExportActionResponseDto> {
+    return this.generateExportArtifact(noteId, context, 'final_note_copy', 'export.final_note_copy_prepare');
+  }
+
+  copyPatientSummary(noteId: string, context: RequestContext): ApiEnvelope<ExportActionResponseDto> {
+    return this.generateExportArtifact(noteId, context, 'patient_summary_copy', 'export.patient_summary_copy_prepare');
+  }
+
+  exportStructuredFinalNote(noteId: string, context: RequestContext): ApiEnvelope<ExportActionResponseDto> {
+    return this.generateExportArtifact(noteId, context, 'structured_export', 'export.structured_final_note_generate');
+  }
+
+  requestEhrWriteback(
+    noteId: string,
+    request: EhrWritebackRequestDto,
+    context: RequestContext
+  ): ApiEnvelope<EhrWritebackActionResponseDto> {
+    const stored = this.getSignedFinalizedNote(noteId, context);
+    if (!canPerform('ehr_writeback:queue', context.access)) {
+      throw new ForbiddenException('role cannot queue EHR writeback');
+    }
+
+    const mode = request.scaffoldMode ?? 'not_configured';
+    const status = this.resolveScaffoldWritebackStatus(stored, request);
+    const now = new Date().toISOString();
+    const writeback = this.createWritebackQueue(stored, request.target, status, request.humanApproved, now);
+    stored.finalization.writeback =
+      mode === 'simulate_failure'
+        ? {
+            ...writeback,
+            failedAt: now,
+            failureReason: 'Synthetic EHR writeback failure state for WO-008 queue coverage.',
+            retryable: true
+          }
+        : writeback;
+
+    return createApiEnvelope(
+      {
+        writeback: stored.finalization.writeback,
+        finalizedNote: this.toFinalizedNoteDetail(stored, context.access),
+        auditEvent: this.createAuditEvent('ehr.writeback_request', 'Note', stored.note.noteId, context),
+        domainEvents: [
+          this.createDomainEventForNote(
+            stored,
+            context,
+            stored.finalization.writeback.status === 'queued' ? 'ehr_writeback.queued.v1' : 'ehr_writeback.failed.v1',
+            {
+              status: stored.finalization.writeback.status,
+              target: stored.finalization.writeback.target,
+              configured: stored.finalization.writeback.configured,
+              retryable: stored.finalization.writeback.retryable
+            }
+          )
+        ]
+      },
+      this.createMeta(context)
+    );
+  }
+
   createRequestContext(headers: Record<string, string | string[] | undefined>): RequestContext {
     const roleHeader = this.headerValue(headers['x-aura-role']);
     const role = this.parseRole(roleHeader);
     const requestId = this.headerValue(headers['x-request-id']) ?? this.nextId('req');
     const traceId = this.headerValue(headers['x-trace-id']) ?? this.nextId('trace');
     const idempotencyKey = this.headerValue(headers['idempotency-key']);
+    const linkedToPatient =
+      this.parseBooleanHeader(this.headerValue(headers['x-aura-linked-patient'])) ?? role !== 'billing_staff';
+    const linkedToVisit = this.parseBooleanHeader(this.headerValue(headers['x-aura-linked-visit'])) ?? role === 'clinician';
+    const billingReviewTriggered =
+      this.parseBooleanHeader(this.headerValue(headers['x-aura-billing-review-triggered'])) ?? false;
 
     const context: RequestContext = {
       requestId,
@@ -1150,10 +1245,10 @@ export class ScheduleService {
       actorUserId: this.headerValue(headers['x-aura-user-id']) ?? `synthetic-${role}`,
       access: {
         role,
-        linkedToPatient: role !== 'billing_staff',
-        linkedToVisit: role === 'clinician',
-        treatingClinician: role === 'clinician',
-        billingReviewTriggered: false,
+        linkedToPatient,
+        linkedToVisit,
+        treatingClinician: role === 'clinician' && linkedToVisit,
+        billingReviewTriggered,
         authorizedAdmin: role === 'authorized_admin' || role === 'admin'
       }
     };
@@ -1266,6 +1361,158 @@ export class ScheduleService {
     };
   }
 
+  private generateExportArtifact(
+    noteId: string,
+    context: RequestContext,
+    artifactType: ExportArtifactDto['artifactType'],
+    auditAction: string
+  ): ApiEnvelope<ExportActionResponseDto> {
+    const stored = this.getSignedFinalizedNote(noteId, context);
+    const permission: 'patient_summary:export' | 'final_note:export' =
+      artifactType === 'patient_summary_pdf' || artifactType === 'patient_summary_copy'
+        ? 'patient_summary:export'
+        : 'final_note:export';
+    if (!canPerform(permission, context.access)) {
+      throw new ForbiddenException('role cannot export this finalized artifact');
+    }
+    if (
+      !canGenerateFinalArtifact({
+        signedAndDispatched: stored.finalization.signedAndDispatched,
+        finalNoteAvailable: Boolean(stored.finalization.finalNote),
+        patientSummaryAvailable: Boolean(stored.finalization.patientSummary),
+        artifactType
+      })
+    ) {
+      throw new BadRequestException('copy/export/PDF actions require signed final note and patient summary records');
+    }
+    if (artifactType === 'patient_summary_pdf' || artifactType === 'patient_summary_copy') {
+      const patientSummaryText = stored.finalization.patientSummary?.patientSummaryText ?? '';
+      if (patientSummaryContainsInternalDetails(patientSummaryText)) {
+        throw new BadRequestException('patient summary export blocked because internal details were detected');
+      }
+    }
+
+    const artifact = this.createExportArtifact(stored, artifactType, context);
+    stored.finalization.exportArtifacts = [...stored.finalization.exportArtifacts, artifact];
+    stored.finalization.updatedAt = artifact.generatedAt;
+
+    return createApiEnvelope(
+      {
+        artifact,
+        finalizedNote: this.toFinalizedNoteDetail(stored, context.access),
+        auditEvent: this.createAuditEvent(auditAction, 'Note', stored.note.noteId, context),
+        domainEvents: [
+          this.createDomainEventForNote(stored, context, 'export.generated.v1', {
+            artifactType: artifact.artifactType,
+            fileName: artifact.fileName,
+            mimeType: artifact.mimeType,
+            signedVersionLocked: artifact.signedVersionLocked
+          })
+        ]
+      },
+      this.createMeta(context)
+    );
+  }
+
+  private createExportArtifact(
+    entry: StoredAppointment & { finalization: FinalizationSessionDto },
+    artifactType: ExportArtifactDto['artifactType'],
+    context: RequestContext
+  ): ExportArtifactDto {
+    if (!entry.finalization.finalNote || !entry.finalization.patientSummary) {
+      throw new BadRequestException('export artifact requires signed final records');
+    }
+
+    const generatedAt = new Date().toISOString();
+    const fileName = this.exportFileName(entry, artifactType);
+    const content = this.exportArtifactContent(entry, artifactType, generatedAt);
+    return {
+      exportArtifactId: this.nextId('export'),
+      noteId: entry.note.noteId,
+      artifactType,
+      status: 'generated',
+      mimeType: artifactType.endsWith('_pdf') ? 'application/pdf' : artifactType === 'structured_export' ? 'application/json' : 'text/plain',
+      fileName,
+      generatedAt,
+      generatedByUserId: context.actorUserId,
+      sourceFinalizedAt: entry.finalization.finalNote.finalizedAt,
+      signedVersionLocked: true,
+      ...(artifactType === 'patient_summary_pdf' || artifactType === 'patient_summary_copy'
+        ? { patientSummaryInternalDetailsExcluded: true as const }
+        : {}),
+      content,
+      checksum: this.syntheticChecksum(content)
+    };
+  }
+
+  private exportArtifactContent(
+    entry: StoredAppointment & { finalization: FinalizationSessionDto },
+    artifactType: ExportArtifactDto['artifactType'],
+    generatedAt: string
+  ): string {
+    const finalNote = entry.finalization.finalNote;
+    const patientSummary = entry.finalization.patientSummary;
+    if (!finalNote || !patientSummary) {
+      throw new BadRequestException('export artifact requires signed final records');
+    }
+    const header = [
+      'AURA Note Synthetic Export',
+      `Clinic: ${SITE_ID}`,
+      `Patient: ${entry.appointment.safePatientId}`,
+      `Visit: ${entry.appointment.visitType} on ${entry.appointment.startsAt.slice(0, 10)}`,
+      `Clinician: ${entry.appointment.clinicianId}`
+    ].join('\n');
+    const footer = `Generated: ${generatedAt}\nDocument type: ${artifactType}\nSigned source timestamp: ${finalNote.finalizedAt}`;
+
+    if (artifactType === 'structured_export') {
+      return JSON.stringify(
+        {
+          header: {
+            clinic: SITE_ID,
+            patient: entry.appointment.safePatientId,
+            visitType: entry.appointment.visitType,
+            clinician: entry.appointment.clinicianId,
+            generatedAt
+          },
+          finalNote: finalNote.finalNoteText,
+          patientSummary: patientSummary.patientSummaryText,
+          draftClaimPreview: entry.finalization.draftClaimPreview ?? null,
+          signedVersionLocked: true,
+          claimSubmissionPerformed: false
+        },
+        null,
+        2
+      );
+    }
+
+    const body =
+      artifactType === 'patient_summary_pdf' || artifactType === 'patient_summary_copy'
+        ? patientSummary.patientSummaryText
+        : finalNote.finalNoteText;
+    if (artifactType.endsWith('_pdf')) {
+      return [`%PDF-1.4 synthetic`, header, body, footer, '%%EOF'].join('\n\n');
+    }
+    return [header, body, footer].join('\n\n');
+  }
+
+  private exportFileName(
+    entry: StoredAppointment & { finalization: FinalizationSessionDto },
+    artifactType: ExportArtifactDto['artifactType']
+  ): string {
+    const base = `${entry.note.noteId}-${artifactType.replaceAll('_', '-')}`;
+    if (artifactType.endsWith('_pdf')) return `${base}.pdf`;
+    if (artifactType === 'structured_export') return `${base}.json`;
+    return `${base}.txt`;
+  }
+
+  private syntheticChecksum(content: string): string {
+    let hash = 0;
+    for (let index = 0; index < content.length; index += 1) {
+      hash = (hash * 31 + content.charCodeAt(index)) >>> 0;
+    }
+    return `synthetic-${hash.toString(16).padStart(8, '0')}`;
+  }
+
   private createFinalNoteRecord(
     entry: StoredAppointment & { finalization: FinalizationSessionDto },
     finalizedAt: string
@@ -1336,6 +1583,8 @@ export class ScheduleService {
       unusedAuditItems: [],
       composePhases: [],
       patientOpportunities: this.createDeterministicPatientOpportunities(entry),
+      exportArtifacts: [],
+      writeback: this.createWritebackQueue(entry, 'final_note', 'disabled', false),
       finalNoteApproved: false,
       patientSummaryApproved: false,
       readyForBillingAttest: false,
@@ -1597,6 +1846,80 @@ export class ScheduleService {
       },
       this.createMeta(context)
     );
+  }
+
+  private getSignedFinalizedNote(
+    noteId: string,
+    context: RequestContext
+  ): StoredAppointment & { finalization: FinalizationSessionDto } {
+    const stored = this.getStoredByNoteId(noteId);
+    if (!canPerform('final_note:view', context.access)) {
+      throw new ForbiddenException('role cannot view finalized notes');
+    }
+    if (!stored.finalization?.signedAndDispatched || stored.note.state !== 'finalized') {
+      throw new BadRequestException('final note actions require Sign & Dispatch completion');
+    }
+    return stored as StoredAppointment & { finalization: FinalizationSessionDto };
+  }
+
+  private resolveScaffoldWritebackStatus(
+    entry: StoredAppointment & { finalization: FinalizationSessionDto },
+    request: EhrWritebackRequestDto
+  ): EhrWritebackQueueDto['status'] {
+    const mode = request.scaffoldMode ?? 'not_configured';
+    if (mode === 'simulate_failure') return 'failed';
+    return resolveEhrWritebackStatus({
+      signedAndDispatched: entry.finalization.signedAndDispatched,
+      finalNoteAvailable: Boolean(entry.finalization.finalNote),
+      destinationConfigured: mode === 'mock_queue' || mode === 'unsupported_by_vendor',
+      humanApproved: request.humanApproved,
+      vendorSupportsWriteback: mode !== 'unsupported_by_vendor'
+    });
+  }
+
+  private createWritebackQueue(
+    entry: StoredAppointment,
+    target: EhrWritebackQueueDto['target'],
+    status: EhrWritebackQueueDto['status'],
+    humanApproved: boolean,
+    timestamp = new Date().toISOString()
+  ): EhrWritebackQueueDto {
+    const configured = status !== 'disabled' && status !== 'not_configured';
+    return {
+      writebackJobId: this.nextId('writeback'),
+      noteId: entry.note.noteId,
+      target,
+      vendor: 'athenahealth',
+      status,
+      configured,
+      humanApproved,
+      retryable: status === 'failed',
+      ...(status === 'queued' ? { queuedAt: timestamp, externalJobId: `synthetic-athena-writeback-${entry.note.noteId}` } : {}),
+      ...(status === 'failed' ? { failedAt: timestamp, failureReason: 'Synthetic writeback failure state.' } : {})
+    };
+  }
+
+  private createDomainEventForNote(
+    entry: StoredAppointment,
+    context: RequestContext,
+    eventType: CoreEventType,
+    payload: Record<string, unknown>
+  ) {
+    return createEventEnvelope({
+      eventId: this.nextId('evt'),
+      eventType,
+      tenantId: TENANT_ID,
+      siteId: SITE_ID,
+      appointmentId: entry.appointment.appointmentId,
+      noteId: entry.note.noteId,
+      ...(entry.visitSession ? { visitSessionId: entry.visitSession.visitSessionId } : {}),
+      producer: 'aura-note-api',
+      traceId: context.traceId,
+      idempotencyKey: context.idempotencyKey ?? this.nextId('idem'),
+      sensitivity: 'phi_reference',
+      retentionClass: 'audit',
+      payload
+    });
   }
 
   private createDeterministicSuggestions(entry: StoredAppointment): SuggestionDto[] {
@@ -1874,8 +2197,14 @@ export class ScheduleService {
   private toFinalizedNoteSummary(entry: StoredAppointment, access: AccessContext): FinalizedNoteSummaryDto {
     const transcriptContext =
       entry.finalization?.draftClaimPreview?.billingReviewTriggered && access.role === 'billing_staff'
-        ? { ...this.createLinkedVisitContext(access), billingReviewTriggered: true }
-        : this.createLinkedVisitContext(access);
+        ? { ...access, billingReviewTriggered: true }
+        : access;
+    const exportStatus =
+      (entry.finalization?.exportArtifacts.length ?? 0) > 0
+        ? 'generated'
+        : entry.note.state === 'finalized'
+          ? 'not_generated'
+          : undefined;
 
     return {
       noteId: entry.note.noteId,
@@ -1886,7 +2215,40 @@ export class ScheduleService {
       readOnly: true,
       finalNoteAvailable: entry.note.state === 'finalized',
       patientSummaryAvailable: entry.note.state === 'finalized',
-      transcriptAvailableForRole: canViewTranscript(transcriptContext)
+      transcriptAvailableForRole: canViewTranscript(transcriptContext),
+      ...(exportStatus ? { exportStatus } : {}),
+      patientSummaryStatus: entry.finalization?.patientSummary ? 'final' : 'not_available',
+      billingReviewStatus: entry.finalization?.draftClaimPreview?.billingReviewTriggered ? 'routed' : 'not_routed',
+      writebackStatus: entry.finalization?.writeback.status ?? 'disabled'
+    };
+  }
+
+  private toFinalizedNoteDetail(entry: StoredAppointment, access: AccessContext): FinalizedNoteDetailDto {
+    const summary = this.toFinalizedNoteSummary(entry, access);
+    const finalNoteAvailable = Boolean(entry.finalization?.signedAndDispatched && entry.finalization.finalNote);
+    const patientSummaryAvailable = Boolean(entry.finalization?.signedAndDispatched && entry.finalization.patientSummary);
+
+    return {
+      ...summary,
+      finalNoteAvailable,
+      patientSummaryAvailable,
+      ...(entry.finalization?.finalNote ? { finalNote: entry.finalization.finalNote } : {}),
+      ...(entry.finalization?.patientSummary ? { patientSummary: entry.finalization.patientSummary } : {}),
+      ...(entry.finalization?.draftClaimPreview ? { draftClaimPreview: entry.finalization.draftClaimPreview } : {}),
+      exportArtifacts: entry.finalization?.exportArtifacts ?? [],
+      writeback: entry.finalization?.writeback ?? this.createWritebackQueue(entry, 'final_note', 'disabled', false),
+      availableActions: {
+        copyFinalNote: finalNoteAvailable && canPerform('final_note:export', access),
+        copyPatientSummary: patientSummaryAvailable && canPerform('patient_summary:export', access),
+        downloadFinalNotePdf: finalNoteAvailable && canPerform('final_note:export', access),
+        downloadPatientSummaryPdf: patientSummaryAvailable && canPerform('patient_summary:export', access),
+        exportStructured:
+          finalNoteAvailable &&
+          patientSummaryAvailable &&
+          canPerform('final_note:export', access) &&
+          canPerform('patient_summary:export', access),
+        queueEhrWriteback: finalNoteAvailable && canPerform('ehr_writeback:queue', access)
+      }
     };
   }
 
@@ -2048,6 +2410,13 @@ export class ScheduleService {
 
   private headerValue(value: string | string[] | undefined): string | undefined {
     return Array.isArray(value) ? value[0] : value;
+  }
+
+  private parseBooleanHeader(value: string | undefined): boolean | undefined {
+    if (value === undefined) return undefined;
+    if (value.toLowerCase() === 'true') return true;
+    if (value.toLowerCase() === 'false') return false;
+    return undefined;
   }
 
   private parseRole(value: string | undefined): Role {

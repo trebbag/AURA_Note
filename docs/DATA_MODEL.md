@@ -211,3 +211,16 @@ Completing Step 4 moves the note to `finalization_billing_attest` and sets `read
 - signing moves the note and appointment to `finalized` and removes the note from Draft Notes while making it available in Finalized Notes.
 
 The `WO-007` scaffold does not create PDFs, exports, copy artifacts, claim submissions, charge submissions, EHR writeback jobs, or autonomous billing decisions. Those output actions remain scoped to `WO-008`.
+
+## WO-008 export, PDF, copy, and finalized viewer scaffold status
+
+`WO-008` adds signed-output artifact records over the finalized note:
+
+- `ExportArtifact` records represent final-note PDF, patient-summary PDF, final-note copy, patient-summary copy, and structured export artifacts generated from the signed read-only version;
+- PDF artifacts include deterministic synthetic PDF-safe payload text with clinic, patient-safe identifier, visit, clinician, generated timestamp, document type, and signed-source timestamp metadata;
+- patient-summary artifacts are blocked if internal billing, coding, confidence, payer, revenue, or coaching details are detected;
+- export/copy/PDF actions are disabled until Sign & Dispatch creates `FinalNoteRecord` and `PatientSummaryRecord`;
+- `EhrWritebackQueue` records represent conservative statuses: `disabled`, `not_configured`, `pending_approval`, `queued`, `failed`, and `unsupported_by_vendor`;
+- EHR writeback defaults to `not_configured` after signing and never marks writeback complete in the scaffold.
+
+Finalized-note detail views include the read-only final note, patient summary, draft claim preview reference, export artifact list, writeback status, and role-derived available actions. `WO-008` still uses process-local synthetic data and does not connect to object storage, EHR vendors, claim submission, external AI, or production PHI paths.

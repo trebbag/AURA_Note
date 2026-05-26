@@ -64,6 +64,18 @@ describe('final note and coaching access', () => {
       }),
       true
     );
+
+    assert.equal(
+      canViewFinalNote({
+        role: 'support',
+        linkedToPatient: true,
+        linkedToVisit: true,
+        treatingClinician: false,
+        billingReviewTriggered: false,
+        authorizedAdmin: false
+      }),
+      false
+    );
   });
 
   it('limits coaching to own clinician report or authorized admin dashboard', () => {
@@ -91,6 +103,29 @@ describe('final note and coaching access', () => {
       }),
       false
     );
+  });
+
+  it('allows export/copy actions only for linked permitted roles', () => {
+    const linkedClinician = {
+      role: 'clinician' as const,
+      linkedToPatient: true,
+      linkedToVisit: true,
+      treatingClinician: true,
+      billingReviewTriggered: false,
+      authorizedAdmin: false
+    };
+    const linkedBilling = {
+      ...linkedClinician,
+      role: 'billing_staff' as const,
+      treatingClinician: false,
+      billingReviewTriggered: true
+    };
+
+    assert.equal(canPerform('final_note:export', linkedClinician), true);
+    assert.equal(canPerform('patient_summary:export', linkedClinician), true);
+    assert.equal(canPerform('ehr_writeback:queue', linkedClinician), true);
+    assert.equal(canPerform('final_note:export', linkedBilling), false);
+    assert.equal(canPerform('patient_summary:export', linkedBilling), false);
   });
 });
 

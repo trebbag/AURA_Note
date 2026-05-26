@@ -304,6 +304,8 @@ Must support:
 - Draft moves to finalized/read-only state.
 - Export/PDF/copy/writeback actions become available according to configuration.
 
+`WO-008` completes the CP-2 browser shell by adding a read-only finalized-note viewer with Final Note and Patient Summary tabs, copy buttons, PDF buttons, structured export, and EHR writeback status controls. The viewer shows signed/read-only state, makes export artifact states visible, and keeps EHR writeback configuration-gated with not-configured, queued, and failed scaffold states. The finalization screen now links to the finalized viewer only after Sign & Dispatch; before signing, copy/export/PDF/writeback actions remain visibly disabled.
+
 ## Required accessibility and UX states
 
 Every screen must have empty, loading, ready, saving, blocked, failed, permission-denied, and read-only states.

@@ -308,4 +308,104 @@ describe('schedule appointment lifecycle API', () => {
     const finalized = await request(app.getHttpServer()).get(`/api/v1/notes/finalized/${noteId}`).set('x-aura-role', 'clinician').expect(200);
     assert.equal(finalized.body.data.finalNoteAvailable, true);
   });
+
+  it('runs WO-008 finalized viewer export PDF copy and writeback queue endpoints', async () => {
+    const created = await request(app.getHttpServer())
+      .post('/api/v1/schedule/appointments')
+      .set('x-aura-role', 'ma')
+      .set('idempotency-key', 'idem-e2e-wo008')
+      .send({
+        safePatientId: 'safe-patient-e2e-008',
+        clinicianId: 'clinician-e2e-008',
+        visitType: 'Chronic follow-up',
+        startsAt: '2026-05-26T19:00:00.000Z',
+        durationMinutes: 30,
+        modality: 'in_person',
+        reasonForVisit: 'Synthetic final export visit'
+      })
+      .expect(201);
+
+    const noteId = created.body.data.note.noteId;
+    const appointmentId = created.body.data.appointment.appointmentId;
+    await request(app.getHttpServer()).post(`/api/v1/notes/${noteId}/exports/final-note-pdf`).set('x-aura-role', 'clinician').expect(400);
+    await request(app.getHttpServer())
+      .post(`/api/v1/schedule/appointments/${appointmentId}/start-visit`)
+      .set('x-aura-role', 'clinician')
+      .expect(201);
+    await request(app.getHttpServer())
+      .post(`/api/v1/notes/${noteId}/visit-selections`)
+      .set('x-aura-role', 'clinician')
+      .send({ category: 'cpt', label: 'CPT 99214 candidate', confidence: 0.82 })
+      .expect(201);
+    const started = await request(app.getHttpServer())
+      .post(`/api/v1/notes/${noteId}/finalization/start`)
+      .set('x-aura-role', 'clinician')
+      .expect(201);
+    const selectionId = started.body.data.finalizationSession.frozenSnapshot.visitSelections[0].visitSelectionId;
+    await request(app.getHttpServer())
+      .post(`/api/v1/notes/${noteId}/finalization/code-review/selections/${selectionId}`)
+      .set('x-aura-role', 'clinician')
+      .send({ decision: 'keep' })
+      .expect(201);
+    await request(app.getHttpServer())
+      .post(`/api/v1/notes/${noteId}/finalization/code-review/complete`)
+      .set('x-aura-role', 'clinician')
+      .expect(201);
+    for (const suggestionId of ['suggestion-demo-cpt-99214', 'suggestion-demo-icd10-e119', 'suggestion-demo-quality-bp']) {
+      await request(app.getHttpServer())
+        .post(`/api/v1/notes/${noteId}/finalization/suggestion-review/suggestions/${suggestionId}`)
+        .set('x-aura-role', 'clinician')
+        .send({ decision: 'remove', reason: 'Synthetic final-pass e2e removal' })
+        .expect(201);
+    }
+    await request(app.getHttpServer())
+      .post(`/api/v1/notes/${noteId}/finalization/suggestion-review/complete`)
+      .set('x-aura-role', 'clinician')
+      .expect(201);
+    await request(app.getHttpServer()).post(`/api/v1/notes/${noteId}/finalization/compose`).set('x-aura-role', 'clinician').expect(201);
+    await request(app.getHttpServer())
+      .post(`/api/v1/notes/${noteId}/finalization/compare-edit/approve-note`)
+      .set('x-aura-role', 'clinician')
+      .send({ approved: true, attestation: 'Synthetic final note approval' })
+      .expect(201);
+    await request(app.getHttpServer())
+      .post(`/api/v1/notes/${noteId}/finalization/compare-edit/approve-summary`)
+      .set('x-aura-role', 'clinician')
+      .send({ approved: true, attestation: 'Synthetic patient summary approval' })
+      .expect(201);
+    await request(app.getHttpServer())
+      .post(`/api/v1/notes/${noteId}/finalization/billing-attest/draft-claim-preview`)
+      .set('x-aura-role', 'clinician')
+      .expect(201);
+    await request(app.getHttpServer())
+      .post(`/api/v1/notes/${noteId}/finalization/billing-attest/complete`)
+      .set('x-aura-role', 'clinician')
+      .send({ acceptedStatements: billingStatements, estimateCaveatAcknowledged: true, routeToBillingReview: true })
+      .expect(201);
+    await request(app.getHttpServer())
+      .post(`/api/v1/notes/${noteId}/finalization/sign-dispatch`)
+      .set('x-aura-role', 'clinician')
+      .expect(201);
+
+    const finalNotePdf = await request(app.getHttpServer())
+      .post(`/api/v1/notes/${noteId}/exports/final-note-pdf`)
+      .set('x-aura-role', 'clinician')
+      .expect(201);
+    const summaryCopy = await request(app.getHttpServer())
+      .post(`/api/v1/notes/${noteId}/exports/patient-summary-copy`)
+      .set('x-aura-role', 'clinician')
+      .expect(201);
+    const writebackFailed = await request(app.getHttpServer())
+      .post(`/api/v1/notes/${noteId}/ehr-writeback`)
+      .set('x-aura-role', 'clinician')
+      .send({ target: 'final_note', humanApproved: true, scaffoldMode: 'simulate_failure' })
+      .expect(201);
+    const finalized = await request(app.getHttpServer()).get(`/api/v1/notes/finalized/${noteId}`).set('x-aura-role', 'ma').expect(200);
+
+    assert.match(finalNotePdf.body.data.artifact.content, /^%PDF-1\.4 synthetic/);
+    assert.equal(summaryCopy.body.data.artifact.patientSummaryInternalDetailsExcluded, true);
+    assert.equal(writebackFailed.body.data.writeback.status, 'failed');
+    assert.equal(finalized.body.data.readOnly, true);
+    assert.equal(finalized.body.data.exportArtifacts.length, 2);
+  });
 });

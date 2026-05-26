@@ -60,6 +60,19 @@ export type WizardStep =
 export type WizardStepStatus = 'not_started' | 'in_progress' | 'completed' | 'blocked';
 export type FinalizationSelectionDecision = 'keep' | 'remove' | 'convert_to_task' | 'send_follow_up';
 export type FinalizationSuggestionDecision = 'keep' | 'remove';
+export type ExportArtifactType =
+  | 'final_note_pdf'
+  | 'patient_summary_pdf'
+  | 'final_note_copy'
+  | 'patient_summary_copy'
+  | 'structured_export';
+export type EhrWritebackStatus =
+  | 'disabled'
+  | 'not_configured'
+  | 'pending_approval'
+  | 'queued'
+  | 'failed'
+  | 'unsupported_by_vendor';
 
 export const FINALIZATION_WIZARD_STEPS: readonly WizardStep[] = [
   'code_review',
@@ -214,6 +227,21 @@ export interface BillingAttestReadiness {
 
 export interface SignDispatchGateReadiness extends SignDispatchReadiness {
   billingAttested: boolean;
+}
+
+export interface FinalArtifactReadiness {
+  signedAndDispatched: boolean;
+  finalNoteAvailable: boolean;
+  patientSummaryAvailable: boolean;
+  artifactType: ExportArtifactType;
+}
+
+export interface EhrWritebackReadiness {
+  signedAndDispatched: boolean;
+  finalNoteAvailable: boolean;
+  destinationConfigured: boolean;
+  humanApproved: boolean;
+  vendorSupportsWriteback: boolean;
 }
 
 export const LOW_CONFIDENCE_DIAGNOSIS_THRESHOLD = 0.75;
@@ -467,6 +495,25 @@ export function canCompleteBillingAttest(readiness: BillingAttestReadiness): boo
 
 export function canSignAndDispatchAfterBilling(readiness: SignDispatchGateReadiness): boolean {
   return readiness.billingAttested && canSignAndDispatch(readiness);
+}
+
+export function canGenerateFinalArtifact(readiness: FinalArtifactReadiness): boolean {
+  if (!readiness.signedAndDispatched) return false;
+  if (readiness.artifactType === 'patient_summary_pdf' || readiness.artifactType === 'patient_summary_copy') {
+    return readiness.patientSummaryAvailable;
+  }
+  if (readiness.artifactType === 'structured_export') {
+    return readiness.finalNoteAvailable && readiness.patientSummaryAvailable;
+  }
+  return readiness.finalNoteAvailable;
+}
+
+export function resolveEhrWritebackStatus(readiness: EhrWritebackReadiness): EhrWritebackStatus {
+  if (!readiness.signedAndDispatched || !readiness.finalNoteAvailable) return 'disabled';
+  if (!readiness.destinationConfigured) return 'not_configured';
+  if (!readiness.vendorSupportsWriteback) return 'unsupported_by_vendor';
+  if (!readiness.humanApproved) return 'pending_approval';
+  return 'queued';
 }
 
 export function canStartFinalization(readiness: FinalizationStartReadiness): boolean {
