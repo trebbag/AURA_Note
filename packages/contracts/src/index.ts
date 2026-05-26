@@ -47,6 +47,13 @@ export type CoreEventType =
   | 'finalization.step_completed.v1'
   | 'final_note.approved.v1'
   | 'patient_summary.approved.v1'
+  | 'billing_review.triggered.v1'
+  | 'draft_claim_preview.generated.v1'
+  | 'billing_attestation.completed.v1'
+  | 'final_note.created.v1'
+  | 'patient_summary.finalized.v1'
+  | 'note.signed.v1'
+  | 'note.dispatched.v1'
   | 'audit.event_recorded.v1';
 
 export interface ApiMeta {
@@ -312,6 +319,61 @@ export interface PatientOpportunityDto {
   revenueHiddenFromPatient: true;
 }
 
+export interface DraftClaimPreviewDto {
+  draftClaimPreviewId: string;
+  noteId: string;
+  status: 'draft_preview';
+  claimReadiness: 'ready' | 'needs_billing_review' | 'blocked';
+  patientReference: string;
+  encounterDate: string;
+  renderingClinicianId: string;
+  placeOfService: string;
+  visitType: string;
+  cptCandidates: string[];
+  hcpcsCandidates: string[];
+  icd10Candidates: string[];
+  emCandidate: string;
+  diagnosisToServiceLinks: string[];
+  payerReadableJustification: string;
+  missingEvidence: string[];
+  denialRiskFlags: string[];
+  estimateStatus: 'unavailable_caveated' | 'configured';
+  estimateCaveat: string;
+  billingReviewTriggered: boolean;
+  submittedClaim: false;
+}
+
+export interface BillingAttestationDto {
+  billingAttestationId: string;
+  noteId: string;
+  requiredStatements: string[];
+  acceptedStatements: string[];
+  estimateCaveatAcknowledged: boolean;
+  billingReviewTriggered: boolean;
+  attestedByUserId: string;
+  attestedAt: string;
+}
+
+export interface FinalNoteRecordDto {
+  finalNoteId: string;
+  noteId: string;
+  appointmentId: string;
+  safePatientId: string;
+  clinicianId: string;
+  finalNoteText: string;
+  finalizedAt: string;
+  readOnly: true;
+}
+
+export interface PatientSummaryRecordDto {
+  patientSummaryId: string;
+  noteId: string;
+  patientSummaryText: string;
+  finalizedAt: string;
+  patientFacing: true;
+  internalBillingDetailsExcluded: true;
+}
+
 export interface FinalizationSessionDto {
   finalizationSessionId: string;
   noteId: string;
@@ -332,9 +394,15 @@ export interface FinalizationSessionDto {
   composePhases: ComposeProgressPhaseDto[];
   composeOutput?: FinalizationComposeOutputDto;
   patientOpportunities: PatientOpportunityDto[];
+  draftClaimPreview?: DraftClaimPreviewDto;
+  billingAttestation?: BillingAttestationDto;
+  finalNote?: FinalNoteRecordDto;
+  patientSummary?: PatientSummaryRecordDto;
   finalNoteApproved: boolean;
   patientSummaryApproved: boolean;
   readyForBillingAttest: boolean;
+  billingAttested: boolean;
+  signedAndDispatched: boolean;
   createdAt: string;
   updatedAt: string;
 }
@@ -360,6 +428,12 @@ export interface RebeautifyRequestDto {
 export interface ApprovalRequestDto {
   approved: boolean;
   attestation: string;
+}
+
+export interface BillingAttestRequestDto {
+  acceptedStatements: string[];
+  estimateCaveatAcknowledged: boolean;
+  routeToBillingReview: boolean;
 }
 
 export interface FinalizationActionResponseDto {

@@ -372,7 +372,8 @@ textarea {
 .decision-row,
 .compose-phases,
 .compare-grid,
-.opportunity-list {
+.opportunity-list,
+.draft-claim-preview {
   display: grid;
   gap: 14px;
 }
@@ -398,7 +399,8 @@ textarea {
 
 .wizard-progress li,
 .compose-phases span,
-.opportunity-list span {
+.opportunity-list span,
+.draft-claim-preview span {
   border: 1px solid #d5dae3;
   background: #fff;
   padding: 10px;
@@ -460,6 +462,21 @@ textarea {
 
 .wizard-actions {
   grid-template-columns: repeat(5, minmax(120px, 1fr));
+}
+
+.billing-actions {
+  grid-template-columns: repeat(2, minmax(140px, 1fr));
+}
+
+.check-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.check-row input {
+  width: auto;
+  min-height: auto;
 }
 
 @media (max-width: 860px) {

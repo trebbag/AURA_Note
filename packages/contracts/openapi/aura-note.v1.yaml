@@ -505,16 +505,43 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/FinalizationActionResponse'
-  /notes/{noteId}/finalization/billing-attest:
+  /notes/{noteId}/finalization/billing-attest/draft-claim-preview:
+    post:
+      operationId: generateDraftClaimPreview
+      description: Generate an internal draft claim preview. This does not submit a claim or finalize billing.
+      responses:
+        '201':
+          description: Draft claim preview generated.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FinalizationActionResponse'
+  /notes/{noteId}/finalization/billing-attest/complete:
     post:
       operationId: completeBillingAttest
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BillingAttestRequest'
       responses:
-        '200': { description: Billing & Attest completed }
+        '201':
+          description: Billing & Attest completed.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FinalizationActionResponse'
   /notes/{noteId}/finalization/sign-dispatch:
     post:
       operationId: signAndDispatch
       responses:
-        '200': { description: Signed and dispatched }
+        '201':
+          description: Signed and dispatched.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FinalizationActionResponse'
   /notes/{noteId}/exports/final-note-pdf:
     post:
       operationId: generateFinalNotePdf
@@ -994,9 +1021,18 @@ components:
       properties:
         approved: { type: boolean }
         attestation: { type: string }
+    BillingAttestRequest:
+      type: object
+      required: [acceptedStatements, estimateCaveatAcknowledged, routeToBillingReview]
+      properties:
+        acceptedStatements:
+          type: array
+          items: { type: string }
+        estimateCaveatAcknowledged: { type: boolean }
+        routeToBillingReview: { type: boolean }
     FinalizationSession:
       type: object
-      required: [finalizationSessionId, noteId, appointmentId, currentStep, completedSteps, stepStatuses, frozenSnapshot, selectionDecisions, suggestionDecisions, unusedAuditItems, composePhases, patientOpportunities, finalNoteApproved, patientSummaryApproved, readyForBillingAttest, createdAt, updatedAt]
+      required: [finalizationSessionId, noteId, appointmentId, currentStep, completedSteps, stepStatuses, frozenSnapshot, selectionDecisions, suggestionDecisions, unusedAuditItems, composePhases, patientOpportunities, finalNoteApproved, patientSummaryApproved, readyForBillingAttest, billingAttested, signedAndDispatched, createdAt, updatedAt]
       properties:
         finalizationSessionId: { type: string }
         noteId: { type: string }
@@ -1104,9 +1140,82 @@ components:
               detail: { type: string }
               patientFacingAllowed: { type: boolean }
               revenueHiddenFromPatient: { type: boolean, const: true }
+        draftClaimPreview:
+          type: object
+          properties:
+            draftClaimPreviewId: { type: string }
+            noteId: { type: string }
+            status: { type: string, enum: [draft_preview] }
+            claimReadiness: { type: string, enum: [ready, needs_billing_review, blocked] }
+            patientReference: { type: string }
+            encounterDate: { type: string }
+            renderingClinicianId: { type: string }
+            placeOfService: { type: string }
+            visitType: { type: string }
+            cptCandidates:
+              type: array
+              items: { type: string }
+            hcpcsCandidates:
+              type: array
+              items: { type: string }
+            icd10Candidates:
+              type: array
+              items: { type: string }
+            emCandidate: { type: string }
+            diagnosisToServiceLinks:
+              type: array
+              items: { type: string }
+            payerReadableJustification: { type: string }
+            missingEvidence:
+              type: array
+              items: { type: string }
+            denialRiskFlags:
+              type: array
+              items: { type: string }
+            estimateStatus: { type: string, enum: [unavailable_caveated, configured] }
+            estimateCaveat: { type: string }
+            billingReviewTriggered: { type: boolean }
+            submittedClaim: { type: boolean, const: false }
+        billingAttestation:
+          type: object
+          properties:
+            billingAttestationId: { type: string }
+            noteId: { type: string }
+            requiredStatements:
+              type: array
+              items: { type: string }
+            acceptedStatements:
+              type: array
+              items: { type: string }
+            estimateCaveatAcknowledged: { type: boolean }
+            billingReviewTriggered: { type: boolean }
+            attestedByUserId: { type: string }
+            attestedAt: { type: string, format: date-time }
+        finalNote:
+          type: object
+          properties:
+            finalNoteId: { type: string }
+            noteId: { type: string }
+            appointmentId: { type: string }
+            safePatientId: { type: string }
+            clinicianId: { type: string }
+            finalNoteText: { type: string }
+            finalizedAt: { type: string, format: date-time }
+            readOnly: { type: boolean, const: true }
+        patientSummary:
+          type: object
+          properties:
+            patientSummaryId: { type: string }
+            noteId: { type: string }
+            patientSummaryText: { type: string }
+            finalizedAt: { type: string, format: date-time }
+            patientFacing: { type: boolean, const: true }
+            internalBillingDetailsExcluded: { type: boolean, const: true }
         finalNoteApproved: { type: boolean }
         patientSummaryApproved: { type: boolean }
         readyForBillingAttest: { type: boolean }
+        billingAttested: { type: boolean }
+        signedAndDispatched: { type: boolean }
         createdAt: { type: string, format: date-time }
         updatedAt: { type: string, format: date-time }
     Note:

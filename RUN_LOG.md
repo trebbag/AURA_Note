@@ -89,3 +89,17 @@ Codex must append a dated entry after each work order or meaningful implementati
 - **Accepted risks:** Finalization state is still synthetic and process-local. Compose uses deterministic mock text and does not claim live AI behavior. Patient Opportunity Analysis is a shell with clinical-first synthetic items and no patient-facing revenue exposure.
 - **Open SPEC_GAPs:** None discovered for `WO-006`.
 - **Next step:** Open PR for `WO-006`, confirm GitHub Actions, merge when green, then begin `WO-007`.
+
+## 2026-05-26T18:20:00Z — WO-007 Billing & Attest draft claim Sign & Dispatch
+
+- **Work order:** `WO-007` Billing Attest Draft Claim Sign Dispatch.
+- **Summary of changes:** Added Step 5 Billing & Attest and Step 6 Sign & Dispatch behavior on top of the synthetic finalization session.
+- **Backend behavior:** Added draft claim preview generation, billing attestation completion, billing review routing, purpose-limited billing transcript access after routing, Sign & Dispatch gating, final note record creation, patient summary record creation, Draft Notes removal, and Finalized Notes availability.
+- **UX behavior:** Extended `/aura-note/finalization/[noteId]` with Step 5 draft claim preview/caveat/attestation controls and Step 6 Sign & Dispatch shell states.
+- **Files changed:** `apps/api/src/notes/*`, `apps/api/src/schedule/*`, `apps/web/app/aura-note/finalization/*`, `apps/web/app/globals.css`, shared domain/contracts packages, OpenAPI contract, `docs/API_EVENT_CONTRACTS.md`, `docs/DATA_MODEL.md`, `docs/UX_BUILD_SPEC.md`, and `repo_status.json`.
+- **Tests run:** `pnpm --filter @aura-note/domain test`; `pnpm --filter @aura-note/contracts test`; `pnpm --filter @aura-note/api typecheck`; `pnpm --filter @aura-note/web typecheck`; `pnpm --filter @aura-note/api test`; `pnpm --filter @aura-note/api test:e2e`; `pnpm install --frozen-lockfile`; `pnpm lint`; `pnpm lint:phi`; `pnpm typecheck`; `pnpm test`; `pnpm test:e2e`; `pnpm build`; `node scripts/status.js`; `git diff --check`.
+- **Browser verification:** Ran the Next app on `http://localhost:3002`, opened `/aura-note/finalization/note-demo-001`, completed Code Review, Suggestion Review, mock Compose, note and summary approvals, generated the synthetic draft claim preview, acknowledged the patient-estimate caveat, routed billing review, completed Billing & Attest, and confirmed Sign & Dispatch created final note and patient summary records with signed status `yes`.
+- **Tests not run:** Export, PDF, copy, finalized-note viewer deepening, and EHR writeback queue behavior remain scoped to `WO-008`. Live claim submission, external EHR writeback, production billing, production PHI, and live AI paths remain out of scope.
+- **Accepted risks:** Draft claim preview is synthetic, candidate-only, and explicitly non-submitting. Final records are process-local until persistence work is introduced.
+- **Open SPEC_GAPs:** None discovered for `WO-007`.
+- **Next step:** Open PR for `WO-007`, confirm GitHub Actions, merge when green, then begin `WO-008`.

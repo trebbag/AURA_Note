@@ -278,6 +278,8 @@ describe('finalization contracts', () => {
       finalNoteApproved: false,
       patientSummaryApproved: false,
       readyForBillingAttest: false,
+      billingAttested: false,
+      signedAndDispatched: false,
       createdAt: '2026-05-26T16:00:00.000Z',
       updatedAt: '2026-05-26T16:00:00.000Z'
     };
@@ -285,6 +287,66 @@ describe('finalization contracts', () => {
     assert.equal(session.frozenSnapshot.visitSelections.length, 1);
     assert.equal(session.frozenSnapshot.finalPassSuggestions[0]?.confidence, 0.88);
     assert.equal(session.stepStatuses.billing_attest, 'not_started');
+  });
+
+  it('represents draft claim preview and final output records without claim submission', () => {
+    const session: Pick<FinalizationSessionDto, 'draftClaimPreview' | 'billingAttestation' | 'finalNote' | 'patientSummary'> = {
+      draftClaimPreview: {
+        draftClaimPreviewId: 'draft-claim-001',
+        noteId: 'note-001',
+        status: 'draft_preview',
+        claimReadiness: 'needs_billing_review',
+        patientReference: 'safe-patient-001',
+        encounterDate: '2026-05-26',
+        renderingClinicianId: 'clinician-001',
+        placeOfService: 'office',
+        visitType: 'Chronic follow-up',
+        cptCandidates: ['99214'],
+        hcpcsCandidates: [],
+        icd10Candidates: ['E11.9'],
+        emCandidate: '99214',
+        diagnosisToServiceLinks: ['E11.9 -> 99214'],
+        payerReadableJustification: 'Synthetic payer-readable support.',
+        missingEvidence: [],
+        denialRiskFlags: ['billing review routed'],
+        estimateStatus: 'unavailable_caveated',
+        estimateCaveat: 'Estimate unavailable.',
+        billingReviewTriggered: true,
+        submittedClaim: false
+      },
+      billingAttestation: {
+        billingAttestationId: 'billing-attest-001',
+        noteId: 'note-001',
+        requiredStatements: ['I reviewed the final note.'],
+        acceptedStatements: ['I reviewed the final note.'],
+        estimateCaveatAcknowledged: true,
+        billingReviewTriggered: true,
+        attestedByUserId: 'clinician-001',
+        attestedAt: '2026-05-26T16:00:00.000Z'
+      },
+      finalNote: {
+        finalNoteId: 'final-note-001',
+        noteId: 'note-001',
+        appointmentId: 'appt-001',
+        safePatientId: 'safe-patient-001',
+        clinicianId: 'clinician-001',
+        finalNoteText: 'Synthetic final note',
+        finalizedAt: '2026-05-26T16:00:00.000Z',
+        readOnly: true
+      },
+      patientSummary: {
+        patientSummaryId: 'patient-summary-001',
+        noteId: 'note-001',
+        patientSummaryText: 'Synthetic patient summary',
+        finalizedAt: '2026-05-26T16:00:00.000Z',
+        patientFacing: true,
+        internalBillingDetailsExcluded: true
+      }
+    };
+
+    assert.equal(session.draftClaimPreview?.submittedClaim, false);
+    assert.equal(session.finalNote?.readOnly, true);
+    assert.equal(session.patientSummary?.internalBillingDetailsExcluded, true);
   });
 });
 

@@ -6,9 +6,11 @@ import {
   canCompleteCompareEdit,
   canCompleteCompose,
   canCompleteSuggestionReview,
+  canCompleteBillingAttest,
   canEditNote,
   canAcceptSuggestion,
   canSignAndDispatch,
+  canSignAndDispatchAfterBilling,
   canStartFinalization,
   canStartVisit,
   complianceBlocksFinalize,
@@ -322,6 +324,45 @@ describe('finalization gates', () => {
       }),
       true
     );
+  });
+
+  it('requires draft claim preview, attestations, caveat acknowledgement, and clear blockers for Billing & Attest', () => {
+    assert.equal(
+      canCompleteBillingAttest({
+        finalNoteApproved: true,
+        patientSummaryApproved: true,
+        draftClaimPreviewGenerated: true,
+        requiredAttestationsAccepted: false,
+        estimateCaveatAcknowledged: true,
+        unresolvedBlockerTaskCount: 0,
+        criticalPayerEvidenceGapCount: 0
+      }),
+      false
+    );
+    assert.equal(
+      canCompleteBillingAttest({
+        finalNoteApproved: true,
+        patientSummaryApproved: true,
+        draftClaimPreviewGenerated: true,
+        requiredAttestationsAccepted: true,
+        estimateCaveatAcknowledged: true,
+        unresolvedBlockerTaskCount: 0,
+        criticalPayerEvidenceGapCount: 0
+      }),
+      true
+    );
+  });
+
+  it('requires Billing & Attest completion before Sign & Dispatch can finalize outputs', () => {
+    const readiness = {
+      finalNoteApproved: true,
+      patientSummaryApproved: true,
+      tasks: [],
+      billingAttested: false
+    };
+
+    assert.equal(canSignAndDispatchAfterBilling(readiness), false);
+    assert.equal(canSignAndDispatchAfterBilling({ ...readiness, billingAttested: true }), true);
   });
 
   it('blocks signing for unresolved blocker tasks', () => {

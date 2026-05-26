@@ -290,6 +290,8 @@ Must support:
 - unavailable/caveat state when data is missing;
 - billing review routing;
 - clinician attestation;
+
+`WO-007` extends `/aura-note/finalization/[noteId]` with browser-testable Step 5 and Step 6 shell states. Step 5 shows a draft-only claim preview, estimate-unavailable caveat, billing review routing toggle, and required attestation completion. Step 6 creates read-only final note and patient summary records in the synthetic flow. It explicitly keeps claim submission, charge finalization, export/PDF/copy, and EHR writeback out of scope.
 - no autonomous billing finalization.
 
 ### Step 6 — Sign & Dispatch

@@ -21,7 +21,10 @@ import {
   type ComplianceReviewDto,
   type CreateHistoryGapTaskRequestDto,
   type ApprovalRequestDto,
+  type BillingAttestRequestDto,
   type CompareEditUpdateRequestDto,
+  type DraftClaimPreviewDto,
+  type FinalNoteRecordDto,
   type ScheduleAppointmentDto,
   type ScheduleViewDto,
   type FinalizationActionResponseDto,
@@ -29,6 +32,7 @@ import {
   type FinalizationSelectionDecisionRequestDto,
   type FinalizationSessionDto,
   type FinalizationSuggestionDecisionRequestDto,
+  type PatientSummaryRecordDto,
   type ReviewActionResponseDto,
   type RebeautifyRequestDto,
   type SuggestionDecisionRequestDto,
@@ -52,9 +56,11 @@ import {
   canCompleteCompareEdit,
   canCompleteCompose,
   canCompleteSuggestionReview,
+  canCompleteBillingAttest,
   canAcceptSuggestion,
   complianceBlocksFinalize,
   canStartFinalization,
+  canSignAndDispatchAfterBilling,
   canStartVisit,
   createAppointmentLifecycle,
   createAppointmentNoteInvariant,
@@ -543,7 +549,12 @@ export class ScheduleService {
 
   getTranscriptByAppointment(appointmentId: string, context: RequestContext): ApiEnvelope<TranscriptViewDto> {
     const stored = this.getStoredAppointment(appointmentId);
-    if (!canPerform('transcript:view', this.createLinkedVisitContext(context.access))) {
+    const linkedContext = this.createLinkedVisitContext(context.access);
+    const billingReviewContext =
+      stored.finalization?.draftClaimPreview?.billingReviewTriggered && context.access.role === 'billing_staff'
+        ? { ...linkedContext, billingReviewTriggered: true }
+        : linkedContext;
+    if (!canPerform('transcript:view', billingReviewContext)) {
       throw new ForbiddenException('role cannot view transcript');
     }
 
@@ -1006,6 +1017,126 @@ export class ScheduleService {
     return this.approveCompareEditArtifact(noteId, request, context, 'patient_summary');
   }
 
+  generateDraftClaimPreview(noteId: string, context: RequestContext): ApiEnvelope<FinalizationActionResponseDto> {
+    const stored = this.getActiveFinalization(noteId, context, 'billing_attest');
+    stored.finalization.draftClaimPreview = this.createDraftClaimPreview(stored);
+    stored.finalization.updatedAt = new Date().toISOString();
+
+    return this.createFinalizationEnvelope(stored, context, 'billing.draft_claim_preview_generate', [
+      'draft_claim_preview.generated.v1',
+      ...(stored.finalization.draftClaimPreview.billingReviewTriggered ? (['billing_review.triggered.v1'] as CoreEventType[]) : [])
+    ]);
+  }
+
+  completeBillingAttest(
+    noteId: string,
+    request: BillingAttestRequestDto,
+    context: RequestContext
+  ): ApiEnvelope<FinalizationActionResponseDto> {
+    const stored = this.getActiveFinalization(noteId, context, 'billing_attest');
+    if (!stored.finalization.draftClaimPreview) {
+      stored.finalization.draftClaimPreview = this.createDraftClaimPreview(stored);
+    }
+    const requiredStatements = this.requiredBillingAttestations();
+    const acceptedSet = new Set(request.acceptedStatements);
+    const allStatementsAccepted = requiredStatements.every((statement) => acceptedSet.has(statement));
+    const unresolvedBlockerTaskCount = this.countUnresolvedBlockerTasks(stored);
+    const criticalPayerEvidenceGapCount = stored.finalization.draftClaimPreview.claimReadiness === 'blocked' ? 1 : 0;
+
+    if (
+      !canCompleteBillingAttest({
+        finalNoteApproved: stored.finalization.finalNoteApproved,
+        patientSummaryApproved: stored.finalization.patientSummaryApproved,
+        draftClaimPreviewGenerated: Boolean(stored.finalization.draftClaimPreview),
+        requiredAttestationsAccepted: allStatementsAccepted,
+        estimateCaveatAcknowledged: request.estimateCaveatAcknowledged,
+        unresolvedBlockerTaskCount,
+        criticalPayerEvidenceGapCount
+      })
+    ) {
+      throw new BadRequestException({
+        code: 'BILLING_ATTEST_BLOCKED',
+        message: 'Billing & Attest requires all attestations, estimate caveat acknowledgement, draft claim preview, and no open blockers.'
+      });
+    }
+
+    const now = new Date().toISOString();
+    const billingReviewTriggered = request.routeToBillingReview || stored.finalization.draftClaimPreview.billingReviewTriggered;
+    stored.finalization.draftClaimPreview = {
+      ...stored.finalization.draftClaimPreview,
+      billingReviewTriggered,
+      claimReadiness: billingReviewTriggered ? 'needs_billing_review' : 'ready'
+    };
+    stored.finalization.billingAttestation = {
+      billingAttestationId: this.nextId('billing-attestation'),
+      noteId,
+      requiredStatements,
+      acceptedStatements: request.acceptedStatements,
+      estimateCaveatAcknowledged: request.estimateCaveatAcknowledged,
+      billingReviewTriggered,
+      attestedByUserId: context.actorUserId,
+      attestedAt: now
+    };
+    stored.finalization.billingAttested = true;
+    this.advanceFinalizationStep(stored, 'billing_attest', 'sign_dispatch', now);
+
+    return this.createFinalizationEnvelope(stored, context, 'billing.attest_complete', [
+      'billing_attestation.completed.v1',
+      ...(billingReviewTriggered ? (['billing_review.triggered.v1'] as CoreEventType[]) : []),
+      'finalization.step_completed.v1'
+    ]);
+  }
+
+  signAndDispatch(noteId: string, context: RequestContext): ApiEnvelope<FinalizationActionResponseDto> {
+    const stored = this.getActiveFinalization(noteId, context, 'sign_dispatch');
+    if (stored.finalization.signedAndDispatched) {
+      throw new BadRequestException('note has already been signed and dispatched');
+    }
+    if (
+      !canSignAndDispatchAfterBilling({
+        billingAttested: stored.finalization.billingAttested,
+        finalNoteApproved: stored.finalization.finalNoteApproved,
+        patientSummaryApproved: stored.finalization.patientSummaryApproved,
+        tasks: stored.tasks ?? []
+      })
+    ) {
+      throw new BadRequestException({
+        code: 'SIGN_DISPATCH_BLOCKED',
+        message: 'Sign & Dispatch requires billing attestation, final note approval, patient summary approval, and no unresolved blockers.'
+      });
+    }
+    if (!stored.finalization.composeOutput) {
+      throw new BadRequestException('Sign & Dispatch requires a composed final note and patient summary');
+    }
+
+    const finalizedAt = new Date().toISOString();
+    stored.finalization.finalNote = this.createFinalNoteRecord(stored, finalizedAt);
+    stored.finalization.patientSummary = this.createPatientSummaryRecord(stored, finalizedAt);
+    stored.finalization.completedSteps = Array.from(new Set([...stored.finalization.completedSteps, 'sign_dispatch']));
+    stored.finalization.stepStatuses = {
+      ...stored.finalization.stepStatuses,
+      sign_dispatch: 'completed'
+    };
+    stored.finalization.signedAndDispatched = true;
+    stored.finalization.updatedAt = finalizedAt;
+    stored.appointment = { ...stored.appointment, state: 'finalized' };
+    stored.note = { ...stored.note, state: 'finalized' };
+    stored.lifecycle = {
+      ...stored.lifecycle,
+      appointmentState: 'finalized',
+      noteState: 'finalized',
+      noteVisibleInDrafts: false
+    };
+
+    return this.createFinalizationEnvelope(stored, context, 'finalization.sign_dispatch', [
+      'note.signed.v1',
+      'final_note.created.v1',
+      'patient_summary.finalized.v1',
+      'note.dispatched.v1',
+      'finalization.step_completed.v1'
+    ]);
+  }
+
   createRequestContext(headers: Record<string, string | string[] | undefined>): RequestContext {
     const roleHeader = this.headerValue(headers['x-aura-role']);
     const role = this.parseRole(roleHeader);
@@ -1086,6 +1217,93 @@ export class ScheduleService {
     );
   }
 
+  private requiredBillingAttestations(): string[] {
+    return [
+      'I have reviewed and accepted the final note.',
+      'I have reviewed and accepted the patient summary.',
+      'I have reviewed selected codes/items and understand they remain my responsibility.',
+      'I have resolved, closed, or assigned open history questions.',
+      'I understand the draft claim preview is a support tool and not an automated claim submission.'
+    ];
+  }
+
+  private createDraftClaimPreview(entry: StoredAppointment & { finalization: FinalizationSessionDto }): DraftClaimPreviewDto {
+    const selections = entry.visitSelections ?? [];
+    const cptCandidates = selections.filter((selection) => selection.category === 'cpt').map((selection) => selection.label);
+    const hcpcsCandidates = selections.filter((selection) => selection.category === 'hcpcs').map((selection) => selection.label);
+    const icd10Candidates = selections.filter((selection) => selection.category === 'icd10').map((selection) => selection.label);
+    const billingReviewTriggered =
+      entry.finalization.unusedAuditItems.length > 0 ||
+      selections.some((selection) => selection.category === 'icd10' && Boolean(selection.overrideReason));
+
+    return {
+      draftClaimPreviewId: this.nextId('draft-claim'),
+      noteId: entry.note.noteId,
+      status: 'draft_preview',
+      claimReadiness: billingReviewTriggered ? 'needs_billing_review' : 'ready',
+      patientReference: entry.appointment.safePatientId,
+      encounterDate: entry.appointment.startsAt.slice(0, 10),
+      renderingClinicianId: entry.appointment.clinicianId,
+      placeOfService: entry.appointment.modality === 'telehealth' ? 'telehealth' : 'office',
+      visitType: entry.appointment.visitType,
+      cptCandidates: cptCandidates.length > 0 ? cptCandidates : ['No CPT candidate selected in synthetic preview'],
+      hcpcsCandidates,
+      icd10Candidates,
+      emCandidate: cptCandidates.find((candidate) => candidate.includes('99214')) ?? 'E/M level not selected',
+      diagnosisToServiceLinks: icd10Candidates.flatMap((diagnosis) =>
+        cptCandidates.length > 0 ? cptCandidates.map((code) => `${diagnosis} -> ${code}`) : []
+      ),
+      payerReadableJustification:
+        entry.finalization.composeOutput?.payerReadableSupportSection ??
+        'Payer-readable support unavailable until Compose completes.',
+      missingEvidence: billingReviewTriggered ? ['Billing review routed because final-pass items or overrides require review.'] : [],
+      denialRiskFlags: billingReviewTriggered ? ['billing_review_required'] : [],
+      estimateStatus: 'unavailable_caveated',
+      estimateCaveat:
+        'Estimate unavailable: this clinic has not configured fee schedule, payer contract, or patient responsibility data for this service.',
+      billingReviewTriggered,
+      submittedClaim: false
+    };
+  }
+
+  private createFinalNoteRecord(
+    entry: StoredAppointment & { finalization: FinalizationSessionDto },
+    finalizedAt: string
+  ): FinalNoteRecordDto {
+    if (!entry.finalization.composeOutput) {
+      throw new BadRequestException('final note requires compose output');
+    }
+
+    return {
+      finalNoteId: this.nextId('final-note'),
+      noteId: entry.note.noteId,
+      appointmentId: entry.appointment.appointmentId,
+      safePatientId: entry.appointment.safePatientId,
+      clinicianId: entry.appointment.clinicianId,
+      finalNoteText: entry.finalization.composeOutput.enhancedNoteText,
+      finalizedAt,
+      readOnly: true
+    };
+  }
+
+  private createPatientSummaryRecord(
+    entry: StoredAppointment & { finalization: FinalizationSessionDto },
+    finalizedAt: string
+  ): PatientSummaryRecordDto {
+    if (!entry.finalization.composeOutput) {
+      throw new BadRequestException('patient summary requires compose output');
+    }
+
+    return {
+      patientSummaryId: this.nextId('patient-summary'),
+      noteId: entry.note.noteId,
+      patientSummaryText: entry.finalization.composeOutput.patientSummaryText,
+      finalizedAt,
+      patientFacing: true,
+      internalBillingDetailsExcluded: true
+    };
+  }
+
   private createFinalizationSession(entry: StoredAppointment): FinalizationSessionDto {
     const now = new Date().toISOString();
     const finalPassSuggestions = (entry.suggestions ?? this.createDeterministicSuggestions(entry)).filter(
@@ -1121,6 +1339,8 @@ export class ScheduleService {
       finalNoteApproved: false,
       patientSummaryApproved: false,
       readyForBillingAttest: false,
+      billingAttested: false,
+      signedAndDispatched: false,
       createdAt: now,
       updatedAt: now
     };
@@ -1367,7 +1587,10 @@ export class ScheduleService {
               unusedAuditItems: finalization.unusedAuditItems.length,
               finalNoteApproved: finalization.finalNoteApproved,
               patientSummaryApproved: finalization.patientSummaryApproved,
-              readyForBillingAttest: finalization.readyForBillingAttest
+              readyForBillingAttest: finalization.readyForBillingAttest,
+              billingAttested: finalization.billingAttested,
+              signedAndDispatched: finalization.signedAndDispatched,
+              draftClaimPreviewGenerated: Boolean(finalization.draftClaimPreview)
             }
           })
         )
@@ -1649,15 +1872,21 @@ export class ScheduleService {
   }
 
   private toFinalizedNoteSummary(entry: StoredAppointment, access: AccessContext): FinalizedNoteSummaryDto {
+    const transcriptContext =
+      entry.finalization?.draftClaimPreview?.billingReviewTriggered && access.role === 'billing_staff'
+        ? { ...this.createLinkedVisitContext(access), billingReviewTriggered: true }
+        : this.createLinkedVisitContext(access);
+
     return {
       noteId: entry.note.noteId,
       appointmentId: entry.appointment.appointmentId,
       safePatientId: entry.appointment.safePatientId,
       clinicianId: entry.appointment.clinicianId,
+      ...(entry.finalization?.finalNote ? { finalizedAt: entry.finalization.finalNote.finalizedAt } : {}),
       readOnly: true,
       finalNoteAvailable: entry.note.state === 'finalized',
       patientSummaryAvailable: entry.note.state === 'finalized',
-      transcriptAvailableForRole: canViewTranscript(this.createLinkedVisitContext(access))
+      transcriptAvailableForRole: canViewTranscript(transcriptContext)
     };
   }
 

@@ -52,11 +52,17 @@ export function FinalizationClient({ noteId }: FinalizationClientProps) {
   const [sourceEdited, setSourceEdited] = useState(false);
   const [finalNoteApproved, setFinalNoteApproved] = useState(false);
   const [summaryApproved, setSummaryApproved] = useState(false);
+  const [draftClaimReady, setDraftClaimReady] = useState(false);
+  const [estimateCaveatAcknowledged, setEstimateCaveatAcknowledged] = useState(false);
+  const [billingReviewRouted, setBillingReviewRouted] = useState(false);
+  const [billingAttested, setBillingAttested] = useState(false);
+  const [signedAndDispatched, setSignedAndDispatched] = useState(false);
   const [message, setMessage] = useState('Frozen synthetic snapshot is ready for Code Review.');
 
   const allSelectionsDecided = initialSelections.every((selection) => selectionDecisions[selection.id] && selectionDecisions[selection.id] !== 'pending');
   const allSuggestionsDecided = initialSuggestions.every((suggestion) => suggestionDecisions[suggestion.id] && suggestionDecisions[suggestion.id] !== 'pending');
   const billingReady = finalNoteApproved && summaryApproved && composeComplete && !sourceEdited;
+  const dispatchReady = billingReady && billingAttested && !signedAndDispatched;
 
   const progress = useMemo(
     () =>
@@ -143,6 +149,30 @@ export function FinalizationClient({ noteId }: FinalizationClientProps) {
     setMessage('Steps 1-4 are complete. Billing & Attest is the next work order.');
   }
 
+  function generateDraftClaimPreview() {
+    setDraftClaimReady(true);
+    setMessage('Draft claim preview generated as an internal candidate only. No claim was submitted.');
+  }
+
+  function completeBillingAttest() {
+    if (!draftClaimReady || !estimateCaveatAcknowledged) {
+      setMessage('Billing & Attest requires a draft claim preview and estimate caveat acknowledgement.');
+      return;
+    }
+    setBillingAttested(true);
+    setCurrentStep('sign_dispatch');
+    setMessage('Billing & Attest complete. Sign & Dispatch is available when no blockers are open.');
+  }
+
+  function signAndDispatch() {
+    if (!dispatchReady) {
+      setMessage('Sign & Dispatch requires Billing & Attest completion and both approvals.');
+      return;
+    }
+    setSignedAndDispatched(true);
+    setMessage('Final note and patient summary records created. Export, PDF, copy, and writeback are scoped to WO-008.');
+  }
+
   return (
     <main className="wizard-shell">
       <header className="page-header">
@@ -169,7 +199,11 @@ export function FinalizationClient({ noteId }: FinalizationClientProps) {
           </div>
           <div>
             <dt>Billing Ready</dt>
-            <dd>{billingReady ? 'yes' : 'no'}</dd>
+            <dd>{billingReady || billingAttested ? 'yes' : 'no'}</dd>
+          </div>
+          <div>
+            <dt>Signed</dt>
+            <dd>{signedAndDispatched ? 'yes' : 'no'}</dd>
           </div>
         </dl>
       </section>
@@ -280,6 +314,54 @@ export function FinalizationClient({ noteId }: FinalizationClientProps) {
             <span>Quality / Human-review-required measure follow-up</span>
             <span>Internal revenue values hidden from patient outputs</span>
           </div>
+        </article>
+
+        <article>
+          <h2>Step 5 / Billing & Attest</h2>
+          <div className="draft-claim-preview">
+            <span>Draft only / not submitted / not final coding</span>
+            <span>CPT candidates: 99214 candidate</span>
+            <span>Estimate unavailable until fee schedule and payer data are configured</span>
+            <span>Billing review: {billingReviewRouted ? 'routed' : 'not routed'}</span>
+          </div>
+          <label className="check-row">
+            <input
+              type="checkbox"
+              checked={estimateCaveatAcknowledged}
+              disabled={currentStep !== 'billing_attest'}
+              onChange={(event) => setEstimateCaveatAcknowledged(event.target.checked)}
+            />
+            Estimate caveat acknowledged
+          </label>
+          <label className="check-row">
+            <input
+              type="checkbox"
+              checked={billingReviewRouted}
+              disabled={currentStep !== 'billing_attest'}
+              onChange={(event) => setBillingReviewRouted(event.target.checked)}
+            />
+            Route to billing review
+          </label>
+          <div className="controls-bar billing-actions">
+            <button type="button" disabled={currentStep !== 'billing_attest'} onClick={generateDraftClaimPreview}>
+              Generate Preview
+            </button>
+            <button type="button" disabled={currentStep !== 'billing_attest'} onClick={completeBillingAttest}>
+              Complete Attest
+            </button>
+          </div>
+        </article>
+
+        <article>
+          <h2>Step 6 / Sign & Dispatch</h2>
+          <div className="opportunity-list">
+            <span>Final note record: {signedAndDispatched ? 'created read-only' : 'pending'}</span>
+            <span>Patient summary record: {signedAndDispatched ? 'created patient-facing' : 'pending'}</span>
+            <span>Claim submission: never performed in this workflow</span>
+          </div>
+          <button type="button" disabled={currentStep !== 'sign_dispatch' || signedAndDispatched} onClick={signAndDispatch}>
+            Sign & Dispatch
+          </button>
         </article>
       </section>
     </main>

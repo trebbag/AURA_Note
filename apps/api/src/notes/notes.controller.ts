@@ -2,6 +2,7 @@ import { Body, Controller, Get, Headers, Inject, Param, Post } from '@nestjs/com
 import type {
   AddVisitSelectionRequestDto,
   ApprovalRequestDto,
+  BillingAttestRequestDto,
   AppendTranscriptSegmentRequestDto,
   CompareEditUpdateRequestDto,
   CreateHistoryGapTaskRequestDto,
@@ -266,5 +267,30 @@ export class NotesController {
     @Headers() headers: Record<string, string | string[] | undefined>
   ) {
     return this.scheduleService.approvePatientSummary(noteId, body, this.scheduleService.createRequestContext(headers));
+  }
+
+  @Post('notes/:noteId/finalization/billing-attest/draft-claim-preview')
+  generateDraftClaimPreview(
+    @Param('noteId') noteId: string,
+    @Headers() headers: Record<string, string | string[] | undefined>
+  ) {
+    return this.scheduleService.generateDraftClaimPreview(noteId, this.scheduleService.createRequestContext(headers));
+  }
+
+  @Post('notes/:noteId/finalization/billing-attest/complete')
+  completeBillingAttest(
+    @Param('noteId') noteId: string,
+    @Body() body: BillingAttestRequestDto,
+    @Headers() headers: Record<string, string | string[] | undefined>
+  ) {
+    return this.scheduleService.completeBillingAttest(noteId, body, this.scheduleService.createRequestContext(headers));
+  }
+
+  @Post('notes/:noteId/finalization/sign-dispatch')
+  signAndDispatch(
+    @Param('noteId') noteId: string,
+    @Headers() headers: Record<string, string | string[] | undefined>
+  ) {
+    return this.scheduleService.signAndDispatch(noteId, this.scheduleService.createRequestContext(headers));
   }
 }

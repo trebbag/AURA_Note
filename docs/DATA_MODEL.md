@@ -199,3 +199,15 @@ Diagnosis/ICD suggestions below 75 percent require override metadata before they
 - Step 4 Compare & Edit can mark the enhanced output stale when the original-side note changes, requires Re-beautify before approval, and requires separate final-note and patient-summary approvals.
 
 Completing Step 4 moves the note to `finalization_billing_attest` and sets `readyForBillingAttest = true`; Billing & Attest, Sign & Dispatch, final records, exports, PDFs, and writeback remain scoped to `WO-007` and `WO-008`.
+
+## WO-007 Billing & Attest and Sign & Dispatch scaffold status
+
+`WO-007` adds synthetic finalization Step 5 and Step 6 records:
+
+- `DraftClaimPreview` is an internal draft/readiness object with selected candidate items, payer-readable support, missing evidence, denial risk flags, estimate caveat language, billing review status, and `submittedClaim = false`;
+- `BillingAttestation` records required clinician acknowledgements, estimate caveat acknowledgement, billing review routing, actor, and timestamp;
+- billing review routing grants billing staff transcript access only for the routed visit and only through the existing transcript permission gate;
+- `FinalNoteRecord` and `PatientSummaryRecord` are created by Sign & Dispatch after Billing & Attest, final note approval, patient summary approval, and blocker checks pass;
+- signing moves the note and appointment to `finalized` and removes the note from Draft Notes while making it available in Finalized Notes.
+
+The `WO-007` scaffold does not create PDFs, exports, copy artifacts, claim submissions, charge submissions, EHR writeback jobs, or autonomous billing decisions. Those output actions remain scoped to `WO-008`.
