@@ -12,6 +12,7 @@
     "lint": "turbo lint",
     "lint:phi": "turbo lint:phi",
     "typecheck": "turbo typecheck",
+    "acceptance:readiness": "node scripts/acceptance-readiness.js",
     "storybook": "pnpm --filter @aura-note/web storybook",
     "status": "node scripts/status.js"
   },

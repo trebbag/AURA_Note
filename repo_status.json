@@ -1,8 +1,8 @@
 {
   "project": "AURA Note v1",
-  "mode": "cp4_in_progress",
+  "mode": "cp4_complete",
   "current_checkpoint": "CP-4",
-  "next_work_order": "WO-014",
+  "next_work_order": null,
   "work_orders": {
     "WO-000": "done",
     "WO-001": "done",
@@ -18,9 +18,9 @@
     "WO-011": "done",
     "WO-012": "done",
     "WO-013": "done",
-    "WO-014": "todo"
+    "WO-014": "done"
   },
-  "last_updated_by": "Codex WO-013 implementation",
-  "last_updated_at": "2026-05-26T19:33:56Z",
-  "notes": "WO-013 production hardening, observability, retention, audit export, feature-flag, support status, runbook, and browser route scaffolding is implemented locally with full local gate and browser route verification passing. Next implementation scope is WO-014 end-to-end acceptance and readiness report."
+  "last_updated_by": "Codex WO-014 acceptance readiness",
+  "last_updated_at": "2026-05-26T19:43:32Z",
+  "notes": "All defined work orders WO-000 through WO-014 are marked done for the synthetic local-first AURA Note v1 package. CP-4 readiness evidence, route sweep, full local gate, and acceptance readiness validator are complete locally; GitHub Actions must pass on the WO-014 PR before merge."
 }
