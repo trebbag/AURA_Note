@@ -69,6 +69,8 @@ export const FINALIZATION_WIZARD_STEPS: readonly WizardStep[] = [
 export type TaskAdjudicationStatus = 'open' | 'answered' | 'closed' | 'assigned' | 'deferred';
 export type TimerState = 'not_started' | 'running' | 'paused' | 'stopped';
 export type RecordingState = 'not_started' | 'recording' | 'paused' | 'stopped' | 'exception_approved';
+export type AppointmentSource = 'standalone' | 'ehr_import' | 'clinicos';
+export type AppointmentModality = 'in_person' | 'telehealth' | 'phone';
 
 export interface AppointmentRef {
   appointmentId: string;
@@ -84,6 +86,27 @@ export interface AppointmentNoteInvariant {
   appointmentId: string;
   noteId: string;
   relationship: 'one_to_one';
+}
+
+export interface AppointmentDraft {
+  tenantId: string;
+  siteId: string;
+  safePatientId: string;
+  clinicianId: string;
+  visitType: string;
+  startsAt: string;
+  durationMinutes: number;
+  modality: AppointmentModality;
+  source: AppointmentSource;
+  reasonForVisit?: string;
+}
+
+export interface AppointmentLifecycle {
+  appointmentId: string;
+  noteId: string;
+  appointmentState: AppointmentState;
+  noteState: NoteState;
+  noteVisibleInDrafts: boolean;
 }
 
 export interface VisitSessionGate {
@@ -122,6 +145,60 @@ export interface SignDispatchReadiness {
 }
 
 export const LOW_CONFIDENCE_DIAGNOSIS_THRESHOLD = 0.75;
+
+export function validateAppointmentDraft(draft: AppointmentDraft): string[] {
+  const errors: string[] = [];
+  if (!draft.tenantId.trim()) errors.push('tenantId is required');
+  if (!draft.siteId.trim()) errors.push('siteId is required');
+  if (!draft.safePatientId.trim()) errors.push('safePatientId is required');
+  if (!draft.clinicianId.trim()) errors.push('clinicianId is required');
+  if (!draft.visitType.trim()) errors.push('visitType is required');
+  if (!Number.isInteger(draft.durationMinutes) || draft.durationMinutes < 5 || draft.durationMinutes > 480) {
+    errors.push('durationMinutes must be an integer between 5 and 480');
+  }
+  if (Number.isNaN(Date.parse(draft.startsAt))) {
+    errors.push('startsAt must be a valid ISO date-time');
+  }
+  return errors;
+}
+
+export function createAppointmentLifecycle(
+  appointmentId: string,
+  noteId: string,
+  draft: AppointmentDraft
+): AppointmentLifecycle {
+  const errors = validateAppointmentDraft(draft);
+  if (errors.length > 0) {
+    throw new Error(`invalid appointment draft: ${errors.join('; ')}`);
+  }
+
+  createAppointmentNoteInvariant({ appointmentId, noteId }, { appointmentId, noteId });
+
+  return {
+    appointmentId,
+    noteId,
+    appointmentState: 'scheduled',
+    noteState: 'shell_created',
+    noteVisibleInDrafts: false
+  };
+}
+
+export function canStartVisit(appointmentState: AppointmentState, noteState: NoteState): boolean {
+  return appointmentState !== 'cancelled' && appointmentState !== 'no_show' && noteState === 'shell_created';
+}
+
+export function startVisitLifecycle(lifecycle: AppointmentLifecycle): AppointmentLifecycle {
+  if (!canStartVisit(lifecycle.appointmentState, lifecycle.noteState)) {
+    throw new Error('visit cannot be started from the current appointment/note state');
+  }
+
+  return {
+    ...lifecycle,
+    appointmentState: 'visit_started',
+    noteState: 'visit_active',
+    noteVisibleInDrafts: true
+  };
+}
 
 export function createAppointmentNoteInvariant(
   appointment: AppointmentRef,

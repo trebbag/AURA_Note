@@ -21,3 +21,17 @@ Codex must append a dated entry after each work order or meaningful implementati
 - **Accepted risks:** CP-0 includes scaffold checks for packages whose implementation belongs to later work orders; those checks are explicit and do not claim runtime workflow completion. GitHub Actions emitted a non-failing Node 20 action-runtime deprecation annotation; the project runtime remains pinned to Node 20 for CP-0 and the workflow should be revisited before GitHub removes Node 20 runner support.
 - **Open SPEC_GAPs:** None discovered for CP-0.
 - **Next step:** Open draft PR for CP-0, confirm GitHub Actions, then begin `WO-002` after review.
+
+## 2026-05-26T14:16:40Z — WO-002 Schedule Builder appointment-note lifecycle
+
+- **Work order:** `WO-002` Schedule Builder Appointment Note Lifecycle.
+- **Summary of changes:** Implemented standalone synthetic appointment creation, one-to-one note shell creation, schedule listing with note status, Start Visit activation, permission checks, idempotent create replay, audit events, and domain events.
+- **Backend behavior:** Added Nest schedule endpoints for `GET /api/v1/schedule/appointments`, `POST /api/v1/schedule/appointments`, and `POST /api/v1/schedule/appointments/{appointmentId}/start-visit` using an in-memory standalone repository. EHR and ClinicOS scheduling are disabled but do not block standalone mode.
+- **UX behavior:** Added `/aura-note/schedule` with synthetic appointment creation, note shell status, disabled external scheduling indicators, and Start Visit state feedback. Full timer, recording, transcription, and editor-depth behavior remain scoped to `WO-004`.
+- **Files changed:** `apps/api/src/schedule/*`, `apps/web/app/aura-note/schedule/page.tsx`, shared domain/contracts/security/testing packages, OpenAPI contract, `docs/API_EVENT_CONTRACTS.md`, `docs/DATA_MODEL.md`, `docs/UX_BUILD_SPEC.md`, `repo_status.json`, and lockfile/package metadata.
+- **Tests run:** `pnpm --filter @aura-note/domain test`; `pnpm --filter @aura-note/security test`; `pnpm --filter @aura-note/contracts test`; `pnpm --filter @aura-note/testing test`; `pnpm --filter @aura-note/api test`; `pnpm --filter @aura-note/api test:e2e`; `pnpm --filter @aura-note/api typecheck`; `pnpm --filter @aura-note/web typecheck`; `pnpm install --frozen-lockfile`; `pnpm lint`; `pnpm lint:phi`; `pnpm typecheck`; `pnpm test`; `pnpm test:e2e`; `pnpm build`; `node scripts/status.js`; `git diff --check`.
+- **Browser verification:** Opened `http://localhost:3001/aura-note/schedule`, created a synthetic appointment, and started a visit. The page showed note shell creation, `visit_started`, `visit_active`, and Draft Notes visibility.
+- **Tests not run:** External EHR/ClinicOS schedule ingestion is disabled and scoped to later adapter work orders. Persistent database tests are deferred until repository/migration work is introduced.
+- **Accepted risks:** The Schedule Builder repository is process-local and synthetic for `WO-002`; it is not production persistence. Start Visit creates a visit-session scaffold only; detailed timer/recording/transcription behavior remains deferred to `WO-004`.
+- **Open SPEC_GAPs:** None discovered for `WO-002`.
+- **Next step:** Open PR for `WO-002`, confirm GitHub Actions, then begin `WO-003`.

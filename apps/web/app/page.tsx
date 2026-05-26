@@ -4,7 +4,9 @@ export default function HomePage() {
       <h1>AURA Note v1</h1>
       <p>Initial Codex scaffold. Implement work orders sequentially.</p>
       <ul>
-        <li>Schedule Builder</li>
+        <li>
+          <a href="/aura-note/schedule">Schedule Builder</a>
+        </li>
         <li>Draft Notes</li>
         <li>Finalized Notes</li>
         <li>Documentation Workspace</li>

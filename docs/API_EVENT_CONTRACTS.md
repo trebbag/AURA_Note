@@ -93,9 +93,15 @@ type AuraNoteEvent<TPayload> = {
 
 Every state-changing API must emit an audit event. Domain-significant state changes must emit a domain event as well.
 
-## CP-0 implementation status
+## Implementation status
 
-The CP-0 tranche implements typed contract seeds, not live clinical workflows. `/health` is the only backend route treated as implemented at this checkpoint. The remaining OpenAPI operation IDs are retained as contract seeds for later work orders and must not be described as runtime-complete until their owning work order adds handlers, permission checks, audit emission, and tests.
+The CP-0 tranche implemented typed contract seeds. `WO-002` adds the first implemented Schedule Builder lifecycle endpoints:
+
+- `GET /api/v1/schedule/appointments`
+- `POST /api/v1/schedule/appointments`
+- `POST /api/v1/schedule/appointments/{appointmentId}/start-visit`
+
+The remaining OpenAPI operation IDs are retained as contract seeds for later work orders and must not be described as runtime-complete until their owning work order adds handlers, permission checks, audit emission, and tests.
 
 CP-0 adds TypeScript DTOs and tests for:
 
@@ -108,3 +114,5 @@ CP-0 adds TypeScript DTOs and tests for:
 - `AuraNoteEvent<TPayload>`
 
 The CP-0 event scaffold covers the first state-transition families needed by `WO-001`: appointment creation, note shell creation, visit start/pause/resume/stop, recording start/stop/exception, task blocker changes, low-confidence override recording, finalization start/step completion, and audit recording.
+
+`WO-002` emits `appointment.created.v1`, `note.shell_created.v1`, and `visit.started.v1` from the in-memory standalone API implementation. The deeper timer, recording, and transcription lifecycle remains scoped to `WO-004`.

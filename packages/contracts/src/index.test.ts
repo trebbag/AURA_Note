@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
-import { createApiEnvelope, createEventEnvelope, isStateChangingEvent } from './index';
+import { createApiEnvelope, createEventEnvelope, isStateChangingEvent, type ScheduleAppointmentDto } from './index';
 
 describe('API envelope', () => {
   it('wraps data with request metadata', () => {
@@ -45,5 +45,35 @@ describe('event envelope', () => {
   it('treats domain events as state-changing and audit recording as non-domain state change', () => {
     assert.equal(isStateChangingEvent('task.blocker_changed.v1'), true);
     assert.equal(isStateChangingEvent('audit.event_recorded.v1'), false);
+  });
+});
+
+describe('schedule contracts', () => {
+  it('represents note shell status on schedule appointment cards', () => {
+    const card: ScheduleAppointmentDto = {
+      appointmentId: 'appt-001',
+      tenantId: 'tenant-001',
+      siteId: 'site-001',
+      safePatientId: 'safe-patient-001',
+      clinicianId: 'clinician-001',
+      noteId: 'note-001',
+      state: 'scheduled',
+      startsAt: '2026-05-26T14:00:00.000Z',
+      durationMinutes: 30,
+      visitType: 'Chronic follow-up',
+      modality: 'in_person',
+      source: 'standalone',
+      mode: 'standalone',
+      noteStatus: 'shell_created',
+      noteVisibleInDrafts: false,
+      startVisitEnabled: true,
+      ehrSchedulingEnabled: false,
+      clinicOsSchedulingEnabled: false
+    };
+
+    assert.equal(card.noteStatus, 'shell_created');
+    assert.equal(card.startVisitEnabled, true);
+    assert.equal(card.ehrSchedulingEnabled, false);
+    assert.equal(card.clinicOsSchedulingEnabled, false);
   });
 });

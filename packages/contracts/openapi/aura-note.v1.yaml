@@ -15,23 +15,44 @@ paths:
     get:
       operationId: listAppointments
       responses:
-        '200': { description: Appointment list }
+        '200':
+          description: Appointment list with note shell status.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ScheduleViewResponse'
     post:
       operationId: createAppointment
       description: Create standalone appointment and one-to-one note shell.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateAppointmentRequest'
       responses:
-        '201': { description: Created }
+        '201':
+          description: Created appointment and one-to-one note shell.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CreateAppointmentResponse'
   /schedule/appointments/{appointmentId}/start-visit:
     post:
       operationId: startVisit
-      description: Starts timer, recording, transcription scaffold, and unlocks editor.
+      description: Starts visit session scaffold and activates note shell. Full timer, recording, and transcription depth is implemented in later work orders.
       parameters:
         - name: appointmentId
           in: path
           required: true
           schema: { type: string }
       responses:
-        '200': { description: Visit started }
+        '201':
+          description: Visit started.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StartVisitResponse'
   /notes/drafts:
     get:
       operationId: listDraftNotes
@@ -197,7 +218,7 @@ components:
         severity: { type: string, enum: [info, warning, error] }
     Appointment:
       type: object
-      required: [appointmentId, tenantId, siteId, safePatientId, clinicianId, noteId, state, startsAt, mode]
+      required: [appointmentId, tenantId, siteId, safePatientId, clinicianId, noteId, state, startsAt, durationMinutes, visitType, modality, source, mode]
       properties:
         appointmentId: { type: string }
         tenantId: { type: string }
@@ -209,7 +230,96 @@ components:
           type: string
           enum: [scheduled, checked_in, in_room, visit_started, visit_paused, visit_completed, finalization_in_progress, finalized, cancelled, no_show]
         startsAt: { type: string, format: date-time }
+        durationMinutes: { type: integer, minimum: 5, maximum: 480 }
+        visitType: { type: string }
+        modality: { type: string, enum: [in_person, telehealth, phone] }
+        source: { type: string, enum: [standalone, ehr_import, clinicos] }
+        reasonForVisit: { type: string }
         mode: { type: string, enum: [standalone, clinicos_integrated] }
+    CreateAppointmentRequest:
+      type: object
+      required: [safePatientId, clinicianId, visitType, startsAt, durationMinutes, modality]
+      properties:
+        safePatientId: { type: string }
+        clinicianId: { type: string }
+        visitType: { type: string }
+        startsAt: { type: string, format: date-time }
+        durationMinutes: { type: integer, minimum: 5, maximum: 480 }
+        modality: { type: string, enum: [in_person, telehealth, phone] }
+        reasonForVisit: { type: string }
+    ScheduleAppointment:
+      allOf:
+        - $ref: '#/components/schemas/Appointment'
+        - type: object
+          required: [noteStatus, noteVisibleInDrafts, startVisitEnabled, ehrSchedulingEnabled, clinicOsSchedulingEnabled]
+          properties:
+            noteStatus:
+              type: string
+              enum: [shell_created, draft_not_started, visit_active, visit_paused, documentation_in_progress, ready_to_finalize, finalization_code_review, finalization_suggestion_review, finalization_compose, finalization_compare_edit, finalization_billing_attest, finalization_sign_dispatch, blocked_compliance, blocked_history_gap, blocked_billing_review, finalized, exported, writeback_pending, writeback_complete, writeback_failed]
+            noteVisibleInDrafts: { type: boolean }
+            startVisitEnabled: { type: boolean }
+            ehrSchedulingEnabled: { type: boolean }
+            clinicOsSchedulingEnabled: { type: boolean }
+    ScheduleView:
+      type: object
+      required: [appointments, ehrSchedulingEnabled, clinicOsSchedulingEnabled]
+      properties:
+        appointments:
+          type: array
+          items:
+            $ref: '#/components/schemas/ScheduleAppointment'
+        ehrSchedulingEnabled: { type: boolean }
+        clinicOsSchedulingEnabled: { type: boolean }
+    ScheduleViewResponse:
+      type: object
+      required: [data, meta]
+      properties:
+        data:
+          $ref: '#/components/schemas/ScheduleView'
+        meta:
+          $ref: '#/components/schemas/ApiMeta'
+    CreateAppointmentResponse:
+      type: object
+      required: [data, meta]
+      properties:
+        data:
+          type: object
+          required: [appointment, note, auditEvent, domainEvents]
+          properties:
+            appointment:
+              $ref: '#/components/schemas/Appointment'
+            note:
+              $ref: '#/components/schemas/Note'
+            auditEvent:
+              $ref: '#/components/schemas/AuditEvent'
+            domainEvents:
+              type: array
+              items:
+                $ref: '#/components/schemas/AuraNoteEvent'
+        meta:
+          $ref: '#/components/schemas/ApiMeta'
+    StartVisitResponse:
+      type: object
+      required: [data, meta]
+      properties:
+        data:
+          type: object
+          required: [appointment, note, visitSession, auditEvent, domainEvents]
+          properties:
+            appointment:
+              $ref: '#/components/schemas/Appointment'
+            note:
+              $ref: '#/components/schemas/Note'
+            visitSession:
+              $ref: '#/components/schemas/VisitSession'
+            auditEvent:
+              $ref: '#/components/schemas/AuditEvent'
+            domainEvents:
+              type: array
+              items:
+                $ref: '#/components/schemas/AuraNoteEvent'
+        meta:
+          $ref: '#/components/schemas/ApiMeta'
     Note:
       type: object
       required: [noteId, appointmentId, tenantId, siteId, safePatientId, clinicianId, state, mode]
@@ -267,3 +377,16 @@ components:
         sensitivity: { type: string, enum: [non_phi, phi_reference, restricted] }
         retentionClass: { type: string, enum: [standard, audit, transcript, audio_ephemeral] }
         payload: { type: object }
+    AuditEvent:
+      type: object
+      required: [auditEventId, tenantId, action, entityType, entityId, traceId, createdAt]
+      properties:
+        auditEventId: { type: string }
+        tenantId: { type: string }
+        siteId: { type: string }
+        actorUserId: { type: string }
+        action: { type: string }
+        entityType: { type: string }
+        entityId: { type: string }
+        traceId: { type: string }
+        createdAt: { type: string, format: date-time }
