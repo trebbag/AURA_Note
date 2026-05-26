@@ -162,3 +162,54 @@ None discovered during CP-3.
 ## Next recommended batch
 
 Begin CP-4 with `WO-012` through `WO-014`: coaching and analytics scaffolding, production hardening/observability/retention/audit, and end-to-end acceptance/readiness reporting. Keep coaching role-limited, non-punitive, and separated from patient-facing outputs unless the governing spec authorizes a specific view.
+
+## CP-4 — Commercial readiness candidate
+
+**Status:** Complete for the defined synthetic/local-first work-order package. The CP-4 branch must pass GitHub Actions before merge.
+
+## Completed work orders
+
+- `WO-012` — Coaching and analytics scaffolding.
+- `WO-013` — Production hardening, observability, retention, audit.
+- `WO-014` — End-to-end acceptance and readiness report.
+
+## Acceptance evidence
+
+- Coaching own-report and premium dashboard scaffolds are deterministic, role-limited, and non-punitive.
+- Billing staff are denied coaching output; patient-facing outputs exclude coaching and internal revenue/coding details.
+- Recording-exception visits mark transcript-dependent coaching unavailable instead of inferring normal recording.
+- Structured logging helpers redact forbidden PHI keys and obvious PHI-like text.
+- External AI, EHR writeback, ClinicOS sync, production analytics, and audit export download feature flags default to disabled.
+- Support status exposes operational metadata only to support, service-account, clinic-manager, compliance/privacy, and authorized-admin contexts.
+- Audit export requests are compliance/privacy/admin-only, require `includePhi = false`, emit `audit.export_requested.v1`, and remain metadata-only.
+- Retention job scaffolding records one-week raw-audio purge eligibility and indefinite transcript retention without destructive purge.
+- Standalone and ClinicOS mock modes are covered by integration tests while preserving AURA Note permission checks.
+- The CP-4 readiness validator checks repo status, active `SPEC_GAPS.md`, browser route files, e2e test files, package tests, OpenAPI paths/events, run log evidence, and checkpoint evidence.
+
+## Validation commands
+
+- `pnpm install --frozen-lockfile`
+- `pnpm lint`
+- `pnpm lint:phi`
+- `pnpm typecheck`
+- `pnpm test`
+- `pnpm test:e2e`
+- `pnpm build`
+- `pnpm acceptance:readiness`
+- `node scripts/status.js`
+- `git diff --check`
+
+## Open risks
+
+- CP-4 remains synthetic and local-first. Production database persistence, vendor integrations, external AI providers, production analytics, production audit file delivery, and live storage deletion remain out of scope.
+- PHI detection/log redaction is CP-4 scaffold coverage, not certified production de-identification.
+- Browser verification is route-level and manual automation evidence; a committed Playwright suite is recommended for the next production-readiness batch.
+- Final commercial launch still requires founder/product review, clinical review, compliance/privacy review, security review, deployment architecture, and design-system work.
+
+## Unresolved SPEC_GAPs
+
+None discovered during CP-4.
+
+## Next recommended batch
+
+Define the post-CP-4 productionization backlog: durable persistence and migrations, authenticated tenant/identity integration, design-system/Figma implementation, committed browser E2E suite, production observability sinks, deployment runbooks, and formal compliance/security review. Keep all live AI, EHR, writeback, analytics, and audit-file delivery disabled until production credentials, privacy controls, governance, and human approval gates are specified and tested.

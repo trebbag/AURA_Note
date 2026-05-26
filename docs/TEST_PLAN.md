@@ -55,6 +55,8 @@ Codex should add tests as implementation proceeds.
 9. Admin template and dot phrase creation.
 10. Coaching own-scorecard visibility.
 11. ClinicOS mode mock context loads without changing core UX.
+12. Support hardening status route shows feature flags, retention posture, audit export posture, and failure states.
+13. CP-4 route sweep renders Schedule, Draft Notes, Workspace, Finalization, Finalized Notes, Coaching, and Support hardening routes with synthetic data.
 
 ## Security tests
 
@@ -65,3 +67,15 @@ Codex should add tests as implementation proceeds.
 - Logs redact forbidden keys.
 - Support status does not grant audit export.
 - External integration feature flags default to disabled.
+
+## CP-4 acceptance readiness
+
+`WO-014` adds `pnpm acceptance:readiness`, backed by `scripts/acceptance-readiness.js`. The validator checks:
+
+- all defined work orders are marked `done` in `repo_status.json`;
+- there are no active `SPEC_GAP` entries;
+- browser route files exist for the implemented clinical, finalization, coaching, and support shells;
+- API e2e files cover standalone, ClinicOS mock, AI PHI boundary, EHR scaffold, coaching, support, and finalization/export journeys;
+- package-level unit tests exist for domain, contracts, security, AI gateway, EHR adapter, ClinicOS adapter, worker, and fixtures;
+- OpenAPI paths and audit/event names exist for CP-1 through CP-4 behaviors;
+- `CHECKPOINT_REPORT.md`, `RUN_LOG.md`, and `docs/CP4_ACCEPTANCE_READINESS.md` contain the CP-4 evidence needed for review.
