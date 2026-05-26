@@ -48,3 +48,17 @@ Codex must append a dated entry after each work order or meaningful implementati
 - **Accepted risks:** The notes/workspace UI uses synthetic browser fixtures and the API uses the existing process-local standalone repository. No production persistence or clinical content generation is claimed.
 - **Open SPEC_GAPs:** None discovered for `WO-003`.
 - **Next step:** Run the WO-003 gate, open its draft PR, then begin `WO-004`.
+
+## 2026-05-26T15:35:00Z — WO-004 Timer recording gate transcription scaffold
+
+- **Work order:** `WO-004` Timer Recording Gate Transcription Scaffold.
+- **Summary of changes:** Added synthetic timer controls, normal recording scaffold, approved recording exception path, mock transcript segment append/read behavior, and raw-audio retention metadata.
+- **Backend behavior:** Extended the CP-1 API with pause/resume/stop visit-session controls, recording exception approval, transcript retrieval, and mock transcript segment append endpoints. Start Visit now creates raw-audio retention metadata and an empty indefinitely retained transcript shell.
+- **Worker behavior:** Added a raw-audio retention candidate scan scaffold that marks one-week audio metadata purge-eligible without connecting to production storage.
+- **UX behavior:** Updated the Documentation Workspace to show browser-testable Start Visit, Pause, Resume, Stop, recording exception, editor gate, and mock transcript append states.
+- **Files changed:** `apps/api/src/notes/*`, `apps/api/src/schedule/*`, `apps/web/app/aura-note/workspace/*`, `apps/web/app/globals.css`, `apps/worker`, shared domain/contracts packages, OpenAPI contract, `docs/API_EVENT_CONTRACTS.md`, `docs/DATA_MODEL.md`, `docs/UX_BUILD_SPEC.md`, `repo_status.json`, and package metadata.
+- **Tests run:** `pnpm install`; `pnpm install --frozen-lockfile`; `pnpm --filter @aura-note/domain test`; `pnpm --filter @aura-note/contracts test`; `pnpm --filter @aura-note/api test`; `pnpm --filter @aura-note/api typecheck`; `pnpm --filter @aura-note/api test:e2e`; `pnpm --filter @aura-note/worker test`; `pnpm --filter @aura-note/web typecheck`; `pnpm lint`; `pnpm lint:phi`; `pnpm typecheck`; `pnpm test`; `pnpm test:e2e`; `pnpm build`; `node scripts/status.js`; `git diff --check`.
+- **Tests not run:** Suggestions, Visit Selections, Compliance hard-blocks, and History Gap MA follow-up routing remain scoped to `WO-005`. Live recording, microphone capture, external transcription, external AI, and production storage are out of scope.
+- **Accepted risks:** Timer and transcript behavior remains synthetic and process-local. The retention worker identifies purge candidates but does not delete production objects.
+- **Open SPEC_GAPs:** None discovered for `WO-004`.
+- **Next step:** Run the WO-004 gate, open its draft PR, then begin `WO-005`.

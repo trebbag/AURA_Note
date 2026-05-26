@@ -160,3 +160,16 @@ Implemented runtime invariants:
 - `DocumentationWorkspace` is an appointment-linked view over the note, visit-session gate, and required workspace panels.
 
 The shell preserves the appointment-to-note one-to-one relationship and adds explicit panel states for empty, loading, ready, saving, warning, blocked, failed, permission-denied, finalized read-only, and demo fixture states. It does not introduce durable persistence beyond the existing synthetic process-local repository.
+
+## WO-004 timer, recording, transcript, and retention scaffold status
+
+`WO-004` extends the synthetic visit-session record with timer controls and recording state:
+
+- Start Visit creates a running timer, normal recording scaffold, raw-audio retention metadata, and an empty mock transcript record;
+- Pause locks the editor and pauses normal recording;
+- Resume unlocks the editor and resumes normal recording;
+- Stop ends the normal recording scaffold and locks the editor unless a documented exception gate is active;
+- approved recording exceptions are separate from normal recording and do not create raw-audio metadata;
+- mock transcript segments are synthetic, source-marked as `mock_transcription`, and retained indefinitely.
+
+Raw audio metadata is classified as `audio_ephemeral` with a one-week purge window. The worker has a retention candidate scan scaffold that marks records purge-eligible when `purgeAfter` is reached; it does not connect to production storage.

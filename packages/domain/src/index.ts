@@ -117,6 +117,22 @@ export interface VisitSessionGate {
   exceptionReason?: string;
 }
 
+export interface RawAudioRetentionMetadata {
+  recordingId: string;
+  noteId: string;
+  retentionClass: 'audio_ephemeral';
+  capturedAt: string;
+  purgeAfter: string;
+  purgeEligible: boolean;
+}
+
+export interface TranscriptRetentionMetadata {
+  transcriptId: string;
+  noteId: string;
+  retentionClass: 'transcript';
+  retentionPolicy: 'indefinite';
+}
+
 export interface BlockingTaskState {
   blocksSigning: boolean;
   adjudicationStatus: TaskAdjudicationStatus;
@@ -225,6 +241,98 @@ export function canEditNote(gate: VisitSessionGate): boolean {
 
 export function recordingExceptionIsActive(gate: VisitSessionGate): boolean {
   return gate.recordingState === 'exception_approved' && Boolean(gate.exceptionReason?.trim());
+}
+
+export function pauseVisitGate(gate: VisitSessionGate): VisitSessionGate {
+  if (gate.timerState !== 'running') {
+    throw new Error('visit timer can only be paused while running');
+  }
+
+  return {
+    ...gate,
+    timerState: 'paused',
+    recordingState: gate.recordingState === 'recording' ? 'paused' : gate.recordingState,
+    editorUnlocked: false
+  };
+}
+
+export function resumeVisitGate(gate: VisitSessionGate): VisitSessionGate {
+  if (gate.timerState !== 'paused') {
+    throw new Error('visit timer can only be resumed from paused state');
+  }
+
+  return {
+    ...gate,
+    timerState: 'running',
+    recordingState: gate.recordingState === 'paused' ? 'recording' : gate.recordingState,
+    editorUnlocked: true
+  };
+}
+
+export function stopVisitGate(gate: VisitSessionGate): VisitSessionGate {
+  if (gate.timerState !== 'running' && gate.timerState !== 'paused') {
+    throw new Error('visit timer can only be stopped after the visit starts');
+  }
+
+  return {
+    ...gate,
+    timerState: 'stopped',
+    recordingState: gate.recordingState === 'exception_approved' ? 'exception_approved' : 'stopped',
+    editorUnlocked: gate.recordingState === 'exception_approved'
+  };
+}
+
+export function approveRecordingException(gate: VisitSessionGate, exceptionReason: string): VisitSessionGate {
+  if (!exceptionReason.trim()) {
+    throw new Error('recording exception requires an approved reason');
+  }
+
+  return {
+    ...gate,
+    timerState: gate.timerState === 'not_started' ? 'running' : gate.timerState,
+    recordingState: 'exception_approved',
+    exceptionReason,
+    editorUnlocked: true
+  };
+}
+
+export function createRawAudioRetentionMetadata(
+  recordingId: string,
+  noteId: string,
+  capturedAt: string
+): RawAudioRetentionMetadata {
+  const capturedDate = new Date(capturedAt);
+  if (!recordingId.trim() || !noteId.trim() || Number.isNaN(capturedDate.valueOf())) {
+    throw new Error('raw audio retention metadata requires recording, note, and capture timestamp');
+  }
+
+  const purgeAfter = new Date(capturedDate);
+  purgeAfter.setUTCDate(purgeAfter.getUTCDate() + 7);
+
+  return {
+    recordingId,
+    noteId,
+    retentionClass: 'audio_ephemeral',
+    capturedAt: capturedDate.toISOString(),
+    purgeAfter: purgeAfter.toISOString(),
+    purgeEligible: false
+  };
+}
+
+export function createTranscriptRetentionMetadata(
+  transcriptId: string,
+  noteId: string
+): TranscriptRetentionMetadata {
+  if (!transcriptId.trim() || !noteId.trim()) {
+    throw new Error('transcript retention metadata requires transcript and note identifiers');
+  }
+
+  return {
+    transcriptId,
+    noteId,
+    retentionClass: 'transcript',
+    retentionPolicy: 'indefinite'
+  };
 }
 
 export function isLowConfidenceDiagnosis(confidence: number): boolean {

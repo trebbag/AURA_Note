@@ -24,6 +24,8 @@ export type CoreEventType =
   | 'recording.started.v1'
   | 'recording.exception_approved.v1'
   | 'recording.stopped.v1'
+  | 'raw_audio.retention_scheduled.v1'
+  | 'transcript.segment_appended.v1'
   | 'task.blocker_changed.v1'
   | 'low_confidence_diagnosis.override_recorded.v1'
   | 'finalization.started.v1'
@@ -84,6 +86,55 @@ export interface VisitSessionDto {
   recordingState: RecordingState;
   editorUnlocked: boolean;
   exceptionReason?: string;
+  startedAt?: string;
+  pausedAt?: string;
+  stoppedAt?: string;
+  elapsedSeconds?: number;
+}
+
+export interface RecordingExceptionRequestDto {
+  exceptionReason: string;
+}
+
+export interface RawAudioRetentionMetadataDto {
+  recordingId: string;
+  noteId: string;
+  retentionClass: 'audio_ephemeral';
+  capturedAt: string;
+  purgeAfter: string;
+  purgeEligible: boolean;
+}
+
+export interface TranscriptSegmentDto {
+  transcriptSegmentId: string;
+  noteId: string;
+  sequence: number;
+  speakerRole: 'clinician' | 'patient' | 'ma' | 'system';
+  text: string;
+  source: 'mock_transcription';
+  createdAt: string;
+}
+
+export interface AppendTranscriptSegmentRequestDto {
+  speakerRole: TranscriptSegmentDto['speakerRole'];
+  text: string;
+}
+
+export interface TranscriptViewDto {
+  noteId: string;
+  transcriptId: string;
+  retentionPolicy: 'indefinite';
+  segments: TranscriptSegmentDto[];
+}
+
+export interface VisitSessionControlResponseDto {
+  appointment: AppointmentDto;
+  note: NoteDto;
+  visitSession: VisitSessionDto;
+  rawAudioRetention?: RawAudioRetentionMetadataDto;
+  transcript?: TranscriptViewDto;
+  auditEvent: AuditEventDto;
+  domainEvents: Array<AuraNoteEvent<Record<string, unknown>>>;
 }
 
 export interface VisitSelectionDto {
@@ -154,6 +205,7 @@ export interface StartVisitResponseDto {
   appointment: AppointmentDto;
   note: NoteDto;
   visitSession: VisitSessionDto;
+  rawAudioRetention?: RawAudioRetentionMetadataDto;
   auditEvent: AuditEventDto;
   domainEvents: Array<AuraNoteEvent<Record<string, unknown>>>;
 }
@@ -222,6 +274,8 @@ export interface DocumentationWorkspaceDto {
   appointment: AppointmentDto;
   note: NoteDto;
   visitSession?: VisitSessionDto;
+  rawAudioRetention?: RawAudioRetentionMetadataDto;
+  transcript?: TranscriptViewDto;
   editorLocked: boolean;
   editorLockedReason?: string;
   finalizedReadOnly: boolean;

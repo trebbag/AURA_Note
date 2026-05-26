@@ -5,6 +5,7 @@ import {
   type ApiEnvelope,
   type AppointmentDto,
   type AuditEventDto,
+  type CoreEventType,
   type CreateAppointmentRequestDto,
   type CreateAppointmentResponseDto,
   type DocumentationWorkspaceDto,
@@ -12,17 +13,29 @@ import {
   type FinalizedNoteSummaryDto,
   type FinalizedNotesViewDto,
   type NoteDto,
+  type AppendTranscriptSegmentRequestDto,
+  type RawAudioRetentionMetadataDto,
+  type RecordingExceptionRequestDto,
   type ScheduleAppointmentDto,
   type ScheduleViewDto,
   type StartVisitResponseDto,
+  type TranscriptSegmentDto,
+  type TranscriptViewDto,
+  type VisitSessionControlResponseDto,
   type VisitSessionDto
 } from '@aura-note/contracts';
 import {
+  approveRecordingException,
   canEditNote,
   canStartVisit,
   createAppointmentLifecycle,
   createAppointmentNoteInvariant,
+  createRawAudioRetentionMetadata,
+  createTranscriptRetentionMetadata,
+  pauseVisitGate,
+  resumeVisitGate,
   startVisitLifecycle,
+  stopVisitGate,
   validateAppointmentDraft,
   type AppointmentLifecycle
 } from '@aura-note/domain';
@@ -37,6 +50,8 @@ interface StoredAppointment {
   note: NoteDto;
   lifecycle: AppointmentLifecycle;
   visitSession?: VisitSessionDto;
+  rawAudioRetention?: RawAudioRetentionMetadataDto;
+  transcript?: TranscriptViewDto;
 }
 
 interface RequestContext {
@@ -169,24 +184,38 @@ export class ScheduleService {
     }
 
     const lifecycle = startVisitLifecycle(stored.lifecycle);
+    const startedAt = new Date().toISOString();
     const visitSession: VisitSessionDto = {
       visitSessionId: this.nextId('visit-session'),
       noteId: stored.note.noteId,
       timerState: 'running',
       recordingState: 'recording',
-      editorUnlocked: true
+      editorUnlocked: true,
+      startedAt,
+      elapsedSeconds: 0
+    };
+    const rawAudioRetention = createRawAudioRetentionMetadata(this.nextId('recording'), stored.note.noteId, startedAt);
+    const transcriptRetention = createTranscriptRetentionMetadata(this.nextId('transcript'), stored.note.noteId);
+    const transcript: TranscriptViewDto = {
+      noteId: stored.note.noteId,
+      transcriptId: transcriptRetention.transcriptId,
+      retentionPolicy: transcriptRetention.retentionPolicy,
+      segments: []
     };
 
     stored.lifecycle = lifecycle;
     stored.appointment = { ...stored.appointment, state: lifecycle.appointmentState };
     stored.note = { ...stored.note, state: lifecycle.noteState };
     stored.visitSession = visitSession;
+    stored.rawAudioRetention = rawAudioRetention;
+    stored.transcript = transcript;
 
     return createApiEnvelope(
       {
         appointment: stored.appointment,
         note: stored.note,
         visitSession,
+        rawAudioRetention,
         auditEvent: this.createAuditEvent('visit.start', 'Appointment', stored.appointment.appointmentId, context),
         domainEvents: [
           createEventEnvelope({
@@ -208,6 +237,38 @@ export class ScheduleService {
               timerState: visitSession.timerState,
               recordingState: visitSession.recordingState
             }
+          }),
+          createEventEnvelope({
+            eventId: this.nextId('evt'),
+            eventType: 'recording.started.v1',
+            tenantId: TENANT_ID,
+            siteId: SITE_ID,
+            appointmentId: stored.appointment.appointmentId,
+            noteId: stored.note.noteId,
+            visitSessionId: visitSession.visitSessionId,
+            producer: 'aura-note-api',
+            traceId: context.traceId,
+            idempotencyKey: context.idempotencyKey ?? this.nextId('idem'),
+            sensitivity: 'phi_reference',
+            retentionClass: 'audit',
+            payload: {
+              recordingState: visitSession.recordingState
+            }
+          }),
+          createEventEnvelope({
+            eventId: this.nextId('evt'),
+            eventType: 'raw_audio.retention_scheduled.v1',
+            tenantId: TENANT_ID,
+            siteId: SITE_ID,
+            appointmentId: stored.appointment.appointmentId,
+            noteId: stored.note.noteId,
+            visitSessionId: visitSession.visitSessionId,
+            producer: 'aura-note-api',
+            traceId: context.traceId,
+            idempotencyKey: context.idempotencyKey ?? this.nextId('idem'),
+            sensitivity: 'phi_reference',
+            retentionClass: 'audit',
+              payload: { ...rawAudioRetention }
           })
         ]
       },
@@ -315,6 +376,152 @@ export class ScheduleService {
     return createApiEnvelope(this.toDocumentationWorkspace(stored, context), this.createMeta(context));
   }
 
+  pauseVisit(appointmentId: string, context: RequestContext): ApiEnvelope<VisitSessionControlResponseDto> {
+    const stored = this.getStartedAppointmentForControl(appointmentId, context);
+    const updated = pauseVisitGate(stored.visitSession);
+    stored.visitSession = { ...stored.visitSession, ...updated, pausedAt: new Date().toISOString() };
+    stored.appointment = { ...stored.appointment, state: 'visit_paused' };
+    stored.note = { ...stored.note, state: 'visit_paused' };
+    stored.lifecycle = {
+      ...stored.lifecycle,
+      appointmentState: 'visit_paused',
+      noteState: 'visit_paused',
+      noteVisibleInDrafts: true
+    };
+
+    return this.createVisitControlEnvelope(stored, context, 'visit.pause', ['visit.paused.v1']);
+  }
+
+  resumeVisit(appointmentId: string, context: RequestContext): ApiEnvelope<VisitSessionControlResponseDto> {
+    const stored = this.getStartedAppointmentForControl(appointmentId, context);
+    const updated = resumeVisitGate(stored.visitSession);
+    const { pausedAt: _pausedAt, ...previousSession } = stored.visitSession;
+    stored.visitSession = { ...previousSession, ...updated };
+    stored.appointment = { ...stored.appointment, state: 'visit_started' };
+    stored.note = { ...stored.note, state: 'visit_active' };
+    stored.lifecycle = {
+      ...stored.lifecycle,
+      appointmentState: 'visit_started',
+      noteState: 'visit_active',
+      noteVisibleInDrafts: true
+    };
+
+    return this.createVisitControlEnvelope(stored, context, 'visit.resume', ['visit.resumed.v1']);
+  }
+
+  stopVisit(appointmentId: string, context: RequestContext): ApiEnvelope<VisitSessionControlResponseDto> {
+    const stored = this.getStartedAppointmentForControl(appointmentId, context);
+    const updated = stopVisitGate(stored.visitSession);
+    stored.visitSession = { ...stored.visitSession, ...updated, stoppedAt: new Date().toISOString() };
+    stored.appointment = { ...stored.appointment, state: 'visit_completed' };
+    stored.note = { ...stored.note, state: 'documentation_in_progress' };
+    stored.lifecycle = {
+      ...stored.lifecycle,
+      appointmentState: 'visit_completed',
+      noteState: 'documentation_in_progress',
+      noteVisibleInDrafts: true
+    };
+
+    return this.createVisitControlEnvelope(stored, context, 'visit.stop', ['visit.stopped.v1', 'recording.stopped.v1']);
+  }
+
+  approveRecordingException(
+    appointmentId: string,
+    request: RecordingExceptionRequestDto,
+    context: RequestContext
+  ): ApiEnvelope<VisitSessionControlResponseDto> {
+    const stored = this.getStoredAppointment(appointmentId);
+    this.assertVisitControlAllowed(context);
+
+    const existingGate = stored.visitSession ?? {
+      visitSessionId: this.nextId('visit-session'),
+      noteId: stored.note.noteId,
+      timerState: 'not_started' as const,
+      recordingState: 'not_started' as const,
+      editorUnlocked: false,
+      startedAt: new Date().toISOString(),
+      elapsedSeconds: 0
+    };
+    const updated = approveRecordingException(existingGate, request.exceptionReason);
+    stored.visitSession = { ...existingGate, ...updated };
+    stored.appointment = { ...stored.appointment, state: 'visit_started' };
+    stored.note = { ...stored.note, state: 'visit_active' };
+    stored.lifecycle = {
+      ...stored.lifecycle,
+      appointmentState: 'visit_started',
+      noteState: 'visit_active',
+      noteVisibleInDrafts: true
+    };
+    if (!stored.transcript) {
+      const transcriptRetention = createTranscriptRetentionMetadata(this.nextId('transcript'), stored.note.noteId);
+      stored.transcript = {
+        noteId: stored.note.noteId,
+        transcriptId: transcriptRetention.transcriptId,
+        retentionPolicy: transcriptRetention.retentionPolicy,
+        segments: []
+      };
+    }
+
+    return this.createVisitControlEnvelope(stored, context, 'recording.exception_approve', [
+      'recording.exception_approved.v1'
+    ]);
+  }
+
+  appendTranscriptSegment(
+    appointmentId: string,
+    request: AppendTranscriptSegmentRequestDto,
+    context: RequestContext
+  ): ApiEnvelope<VisitSessionControlResponseDto> {
+    const stored = this.getStartedAppointmentForControl(appointmentId, context);
+    if (!request.text.trim()) {
+      throw new BadRequestException('transcript segment text is required');
+    }
+    if (!canEditNote(stored.visitSession)) {
+      throw new BadRequestException('transcript segments require a running timer or approved exception');
+    }
+
+    const transcript = stored.transcript ?? {
+      noteId: stored.note.noteId,
+      transcriptId: this.nextId('transcript'),
+      retentionPolicy: 'indefinite' as const,
+      segments: []
+    };
+    const segment: TranscriptSegmentDto = {
+      transcriptSegmentId: this.nextId('transcript-segment'),
+      noteId: stored.note.noteId,
+      sequence: transcript.segments.length + 1,
+      speakerRole: request.speakerRole,
+      text: request.text,
+      source: 'mock_transcription',
+      createdAt: new Date().toISOString()
+    };
+    stored.transcript = {
+      ...transcript,
+      segments: [...transcript.segments, segment]
+    };
+
+    return this.createVisitControlEnvelope(stored, context, 'transcript.segment_append', [
+      'transcript.segment_appended.v1'
+    ]);
+  }
+
+  getTranscriptByAppointment(appointmentId: string, context: RequestContext): ApiEnvelope<TranscriptViewDto> {
+    const stored = this.getStoredAppointment(appointmentId);
+    if (!canPerform('transcript:view', this.createLinkedVisitContext(context.access))) {
+      throw new ForbiddenException('role cannot view transcript');
+    }
+
+    return createApiEnvelope(
+      stored.transcript ?? {
+        noteId: stored.note.noteId,
+        transcriptId: 'transcript-not-started',
+        retentionPolicy: 'indefinite',
+        segments: []
+      },
+      this.createMeta(context)
+    );
+  }
+
   createRequestContext(headers: Record<string, string | string[] | undefined>): RequestContext {
     const roleHeader = this.headerValue(headers['x-aura-role']);
     const role = this.parseRole(roleHeader);
@@ -354,6 +561,70 @@ export class ScheduleService {
     };
   }
 
+  private createVisitControlEnvelope(
+    entry: StoredAppointment,
+    context: RequestContext,
+    auditAction: string,
+    eventTypes: CoreEventType[]
+  ): ApiEnvelope<VisitSessionControlResponseDto> {
+    if (!entry.visitSession) {
+      throw new BadRequestException('visit session is not active');
+    }
+    const visitSession = entry.visitSession;
+
+    return createApiEnvelope(
+      {
+        appointment: entry.appointment,
+        note: entry.note,
+        visitSession,
+        ...(entry.rawAudioRetention ? { rawAudioRetention: entry.rawAudioRetention } : {}),
+        ...(entry.transcript ? { transcript: entry.transcript } : {}),
+        auditEvent: this.createAuditEvent(auditAction, 'Appointment', entry.appointment.appointmentId, context),
+        domainEvents: eventTypes.map((eventType) =>
+          createEventEnvelope({
+            eventId: this.nextId('evt'),
+            eventType,
+            tenantId: TENANT_ID,
+            siteId: SITE_ID,
+            appointmentId: entry.appointment.appointmentId,
+            noteId: entry.note.noteId,
+            visitSessionId: visitSession.visitSessionId,
+            producer: 'aura-note-api',
+            traceId: context.traceId,
+            idempotencyKey: context.idempotencyKey ?? this.nextId('idem'),
+            sensitivity: 'phi_reference',
+            retentionClass: eventType === 'transcript.segment_appended.v1' ? 'transcript' : 'audit',
+            payload: {
+              appointmentState: entry.appointment.state,
+              noteState: entry.note.state,
+              timerState: visitSession.timerState,
+              recordingState: visitSession.recordingState,
+              transcriptSegments: entry.transcript?.segments.length ?? 0
+            }
+          })
+        )
+      },
+      this.createMeta(context)
+    );
+  }
+
+  private getStartedAppointmentForControl(appointmentId: string, context: RequestContext): StoredAppointment & {
+    visitSession: VisitSessionDto;
+  } {
+    const stored = this.getStoredAppointment(appointmentId);
+    this.assertVisitControlAllowed(context);
+    if (!stored.visitSession) {
+      throw new BadRequestException('visit session has not started');
+    }
+    return stored as StoredAppointment & { visitSession: VisitSessionDto };
+  }
+
+  private assertVisitControlAllowed(context: RequestContext): void {
+    if (!canPerform('visit:start', this.createLinkedVisitContext(context.access))) {
+      throw new ForbiddenException('role cannot control visit session');
+    }
+  }
+
   private toDocumentationWorkspace(entry: StoredAppointment, context: RequestContext): DocumentationWorkspaceDto {
     const linkedContext = this.createLinkedVisitContext(context.access);
     if (!canPerform('draft_note:view', linkedContext)) {
@@ -375,6 +646,8 @@ export class ScheduleService {
       appointment: entry.appointment,
       note: entry.note,
       ...(entry.visitSession ? { visitSession: entry.visitSession } : {}),
+      ...(entry.rawAudioRetention ? { rawAudioRetention: entry.rawAudioRetention } : {}),
+      ...(entry.transcript ? { transcript: entry.transcript } : {}),
       editorLocked: !editorUnlocked || finalizedReadOnly,
       ...(editorLockedReason ? { editorLockedReason } : {}),
       finalizedReadOnly,
@@ -408,7 +681,12 @@ export class ScheduleService {
         },
         { panelId: 'visit_selections', label: 'Visit Selections', state: 'empty', itemCount: 0 },
         { panelId: 'suggestions', label: 'Suggestions', state: 'empty', itemCount: 0 },
-        { panelId: 'transcript', label: 'Transcript', state: 'empty', itemCount: 0 },
+        {
+          panelId: 'transcript',
+          label: 'Transcript',
+          state: entry.transcript && entry.transcript.segments.length > 0 ? 'ready' : 'empty',
+          itemCount: entry.transcript?.segments.length ?? 0
+        },
         { panelId: 'compliance', label: 'Compliance & Quality Review', state: 'empty', itemCount: 0 },
         { panelId: 'history_gap', label: 'History Gap Review', state: 'empty', itemCount: 0 }
       ]

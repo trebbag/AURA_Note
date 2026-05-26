@@ -107,6 +107,114 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/DocumentationWorkspaceResponse'
+  /documentation-workspace/appointments/{appointmentId}/visit-session/pause:
+    post:
+      operationId: pauseVisitSession
+      description: Pause the CP-1 synthetic visit timer and lock the editor.
+      parameters:
+        - name: appointmentId
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        '201':
+          description: Visit paused.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VisitSessionControlResponse'
+  /documentation-workspace/appointments/{appointmentId}/visit-session/resume:
+    post:
+      operationId: resumeVisitSession
+      description: Resume the CP-1 synthetic visit timer and unlock the editor.
+      parameters:
+        - name: appointmentId
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        '201':
+          description: Visit resumed.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VisitSessionControlResponse'
+  /documentation-workspace/appointments/{appointmentId}/visit-session/stop:
+    post:
+      operationId: stopVisitSession
+      description: Stop the CP-1 synthetic visit timer and normal recording scaffold.
+      parameters:
+        - name: appointmentId
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        '201':
+          description: Visit stopped.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VisitSessionControlResponse'
+  /documentation-workspace/appointments/{appointmentId}/recording-exception:
+    post:
+      operationId: approveRecordingException
+      description: Approve a no-audio documentation exception without marking normal recording active.
+      parameters:
+        - name: appointmentId
+          in: path
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RecordingExceptionRequest'
+      responses:
+        '201':
+          description: Recording exception approved.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VisitSessionControlResponse'
+  /documentation-workspace/appointments/{appointmentId}/transcript:
+    get:
+      operationId: getMockTranscript
+      description: Read CP-1 mock transcript segments. Transcript retention is indefinite.
+      parameters:
+        - name: appointmentId
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: Mock transcript.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TranscriptResponse'
+  /documentation-workspace/appointments/{appointmentId}/transcript/segments:
+    post:
+      operationId: appendMockTranscriptSegment
+      description: Append a synthetic mock transcript segment while the timer or exception gate allows documentation.
+      parameters:
+        - name: appointmentId
+          in: path
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AppendTranscriptSegmentRequest'
+      responses:
+        '201':
+          description: Mock transcript segment appended.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VisitSessionControlResponse'
   /notes/{noteId}:
     get:
       operationId: getNote
@@ -356,6 +464,8 @@ components:
               $ref: '#/components/schemas/Note'
             visitSession:
               $ref: '#/components/schemas/VisitSession'
+            rawAudioRetention:
+              $ref: '#/components/schemas/RawAudioRetentionMetadata'
             auditEvent:
               $ref: '#/components/schemas/AuditEvent'
             domainEvents:
@@ -419,6 +529,10 @@ components:
           $ref: '#/components/schemas/Note'
         visitSession:
           $ref: '#/components/schemas/VisitSession'
+        rawAudioRetention:
+          $ref: '#/components/schemas/RawAudioRetentionMetadata'
+        transcript:
+          $ref: '#/components/schemas/TranscriptView'
         editorLocked: { type: boolean }
         editorLockedReason: { type: string }
         finalizedReadOnly: { type: boolean }
@@ -482,6 +596,40 @@ components:
           $ref: '#/components/schemas/DocumentationWorkspace'
         meta:
           $ref: '#/components/schemas/ApiMeta'
+    VisitSessionControlResponse:
+      type: object
+      required: [data, meta]
+      properties:
+        data:
+          type: object
+          required: [appointment, note, visitSession, auditEvent, domainEvents]
+          properties:
+            appointment:
+              $ref: '#/components/schemas/Appointment'
+            note:
+              $ref: '#/components/schemas/Note'
+            visitSession:
+              $ref: '#/components/schemas/VisitSession'
+            rawAudioRetention:
+              $ref: '#/components/schemas/RawAudioRetentionMetadata'
+            transcript:
+              $ref: '#/components/schemas/TranscriptView'
+            auditEvent:
+              $ref: '#/components/schemas/AuditEvent'
+            domainEvents:
+              type: array
+              items:
+                $ref: '#/components/schemas/AuraNoteEvent'
+        meta:
+          $ref: '#/components/schemas/ApiMeta'
+    TranscriptResponse:
+      type: object
+      required: [data, meta]
+      properties:
+        data:
+          $ref: '#/components/schemas/TranscriptView'
+        meta:
+          $ref: '#/components/schemas/ApiMeta'
     Note:
       type: object
       required: [noteId, appointmentId, tenantId, siteId, safePatientId, clinicianId, state, mode]
@@ -506,6 +654,53 @@ components:
         recordingState: { type: string, enum: [not_started, recording, paused, stopped, exception_approved] }
         editorUnlocked: { type: boolean }
         exceptionReason: { type: string }
+        startedAt: { type: string, format: date-time }
+        pausedAt: { type: string, format: date-time }
+        stoppedAt: { type: string, format: date-time }
+        elapsedSeconds: { type: integer, minimum: 0 }
+    RecordingExceptionRequest:
+      type: object
+      required: [exceptionReason]
+      properties:
+        exceptionReason: { type: string }
+    RawAudioRetentionMetadata:
+      type: object
+      required: [recordingId, noteId, retentionClass, capturedAt, purgeAfter, purgeEligible]
+      properties:
+        recordingId: { type: string }
+        noteId: { type: string }
+        retentionClass: { type: string, enum: [audio_ephemeral] }
+        capturedAt: { type: string, format: date-time }
+        purgeAfter: { type: string, format: date-time }
+        purgeEligible: { type: boolean }
+    TranscriptSegment:
+      type: object
+      required: [transcriptSegmentId, noteId, sequence, speakerRole, text, source, createdAt]
+      properties:
+        transcriptSegmentId: { type: string }
+        noteId: { type: string }
+        sequence: { type: integer, minimum: 1 }
+        speakerRole: { type: string, enum: [clinician, patient, ma, system] }
+        text: { type: string }
+        source: { type: string, enum: [mock_transcription] }
+        createdAt: { type: string, format: date-time }
+    AppendTranscriptSegmentRequest:
+      type: object
+      required: [speakerRole, text]
+      properties:
+        speakerRole: { type: string, enum: [clinician, patient, ma, system] }
+        text: { type: string }
+    TranscriptView:
+      type: object
+      required: [noteId, transcriptId, retentionPolicy, segments]
+      properties:
+        noteId: { type: string }
+        transcriptId: { type: string }
+        retentionPolicy: { type: string, enum: [indefinite] }
+        segments:
+          type: array
+          items:
+            $ref: '#/components/schemas/TranscriptSegment'
     Task:
       type: object
       required: [taskId, title, blocksSigning, adjudicationStatus]
@@ -524,7 +719,7 @@ components:
         eventId: { type: string }
         eventType:
           type: string
-          enum: [appointment.created.v1, note.shell_created.v1, visit.started.v1, visit.paused.v1, visit.resumed.v1, visit.stopped.v1, recording.started.v1, recording.exception_approved.v1, recording.stopped.v1, task.blocker_changed.v1, low_confidence_diagnosis.override_recorded.v1, finalization.started.v1, finalization.step_completed.v1, audit.event_recorded.v1]
+          enum: [appointment.created.v1, note.shell_created.v1, visit.started.v1, visit.paused.v1, visit.resumed.v1, visit.stopped.v1, recording.started.v1, recording.exception_approved.v1, recording.stopped.v1, raw_audio.retention_scheduled.v1, transcript.segment_appended.v1, task.blocker_changed.v1, low_confidence_diagnosis.override_recorded.v1, finalization.started.v1, finalization.step_completed.v1, audit.event_recorded.v1]
         schemaVersion: { type: string, enum: [v1] }
         tenantId: { type: string }
         siteId: { type: string }

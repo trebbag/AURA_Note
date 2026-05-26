@@ -6,6 +6,8 @@ import {
   isStateChangingEvent,
   type DocumentationWorkspaceDto,
   type DraftNoteSummaryDto,
+  type TranscriptViewDto,
+  type VisitSessionControlResponseDto,
   type ScheduleAppointmentDto
 } from './index';
 
@@ -51,6 +53,7 @@ describe('event envelope', () => {
 
   it('treats domain events as state-changing and audit recording as non-domain state change', () => {
     assert.equal(isStateChangingEvent('task.blocker_changed.v1'), true);
+    assert.equal(isStateChangingEvent('transcript.segment_appended.v1'), true);
     assert.equal(isStateChangingEvent('audit.event_recorded.v1'), false);
   });
 });
@@ -152,5 +155,88 @@ describe('documentation workspace contracts', () => {
       ['visit_context', 'controls', 'editor', 'visit_selections', 'suggestions', 'transcript', 'compliance', 'history_gap']
     );
     assert.equal(workspace.availableStates.includes('permission_denied'), true);
+  });
+});
+
+describe('timer and transcript contracts', () => {
+  it('represents session control responses with raw audio retention metadata', () => {
+    const response: VisitSessionControlResponseDto = {
+      appointment: {
+        appointmentId: 'appt-001',
+        tenantId: 'tenant-001',
+        siteId: 'site-001',
+        safePatientId: 'safe-patient-001',
+        clinicianId: 'clinician-001',
+        noteId: 'note-001',
+        state: 'visit_started',
+        startsAt: '2026-05-26T14:00:00.000Z',
+        durationMinutes: 30,
+        visitType: 'Chronic follow-up',
+        modality: 'in_person',
+        source: 'standalone',
+        mode: 'standalone'
+      },
+      note: {
+        noteId: 'note-001',
+        appointmentId: 'appt-001',
+        tenantId: 'tenant-001',
+        siteId: 'site-001',
+        safePatientId: 'safe-patient-001',
+        clinicianId: 'clinician-001',
+        state: 'visit_active',
+        mode: 'standalone'
+      },
+      visitSession: {
+        visitSessionId: 'visit-session-001',
+        noteId: 'note-001',
+        timerState: 'running',
+        recordingState: 'recording',
+        editorUnlocked: true,
+        elapsedSeconds: 0
+      },
+      rawAudioRetention: {
+        recordingId: 'recording-001',
+        noteId: 'note-001',
+        retentionClass: 'audio_ephemeral',
+        capturedAt: '2026-05-26T14:00:00.000Z',
+        purgeAfter: '2026-06-02T14:00:00.000Z',
+        purgeEligible: false
+      },
+      auditEvent: {
+        auditEventId: 'audit-001',
+        tenantId: 'tenant-001',
+        action: 'visit.start',
+        entityType: 'Appointment',
+        entityId: 'appt-001',
+        traceId: 'trace-001',
+        createdAt: '2026-05-26T14:00:00.000Z'
+      },
+      domainEvents: []
+    };
+
+    assert.equal(response.visitSession.editorUnlocked, true);
+    assert.equal(response.rawAudioRetention?.retentionClass, 'audio_ephemeral');
+  });
+
+  it('represents mock transcript segments with indefinite retention', () => {
+    const transcript: TranscriptViewDto = {
+      noteId: 'note-001',
+      transcriptId: 'transcript-001',
+      retentionPolicy: 'indefinite',
+      segments: [
+        {
+          transcriptSegmentId: 'segment-001',
+          noteId: 'note-001',
+          sequence: 1,
+          speakerRole: 'clinician',
+          text: 'Synthetic mock transcript segment',
+          source: 'mock_transcription',
+          createdAt: '2026-05-26T14:00:00.000Z'
+        }
+      ]
+    };
+
+    assert.equal(transcript.retentionPolicy, 'indefinite');
+    assert.equal(transcript.segments[0]?.source, 'mock_transcription');
   });
 });

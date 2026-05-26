@@ -44,6 +44,10 @@ Start Visit in `WO-002` activates the note shell and demonstrates Draft Notes vi
 
 The first CP-1 notes shell adds browser-testable routes for `/aura-note/drafts`, `/aura-note/finalized`, `/aura-note/finalized/[noteId]`, and `/aura-note/workspace/[appointmentId]`. These routes are workflow scaffolds: Draft Notes shows active demo documentation work, Finalized Notes is read-only, and the Documentation Workspace exposes all required regions with explicit empty/blocked/ready states. Timer, recording, transcript depth, Suggestions, Visit Selections behavior, Compliance logic, and History Gap task routing remain scoped to `WO-004` and `WO-005`.
 
+### WO-004 implementation status
+
+The Documentation Workspace now includes browser-testable Start Visit, Pause, Resume, Stop, approved recording exception, and mock transcript append controls. These controls are synthetic CP-1 scaffolds and do not connect to microphones, audio storage, external transcription, or external AI. The backend mirrors the same lifecycle with visit-session control endpoints, raw-audio retention metadata, and indefinitely retained mock transcript segments.
+
 ## Draft Notes
 
 Draft Notes should show notes that are active or have entered the note workflow. Draft statuses should reflect note workflow state, such as:

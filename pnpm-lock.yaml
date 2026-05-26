@@ -87,6 +87,10 @@ importers:
         version: 5.9.3
 
   apps/worker:
+    dependencies:
+      '@aura-note/contracts':
+        specifier: workspace:^
+        version: link:../../packages/contracts
     devDependencies:
       tsx:
         specifier: ^4.19.0
