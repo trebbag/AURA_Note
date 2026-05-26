@@ -4,6 +4,8 @@ import {
   canCompleteWizardStep,
   canEditNote,
   canSignAndDispatch,
+  canStartVisit,
+  createAppointmentLifecycle,
   createAppointmentNoteInvariant,
   evaluateLowConfidenceOverride,
   getNextWizardStep,
@@ -32,6 +34,44 @@ describe('appointment-note invariant', () => {
         ),
       /one-to-one/
     );
+  });
+});
+
+describe('appointment lifecycle', () => {
+  const appointmentDraft = {
+    tenantId: 'tenant-001',
+    siteId: 'site-001',
+    safePatientId: 'safe-patient-001',
+    clinicianId: 'clinician-001',
+    visitType: 'Chronic follow-up',
+    startsAt: '2026-05-26T14:00:00.000Z',
+    durationMinutes: 30,
+    modality: 'in_person' as const,
+    source: 'standalone' as const,
+    reasonForVisit: 'Synthetic follow-up'
+  };
+
+  it('creates an inactive note shell when a valid standalone appointment is created', () => {
+    assert.deepEqual(createAppointmentLifecycle('appt-001', 'note-001', appointmentDraft), {
+      appointmentId: 'appt-001',
+      noteId: 'note-001',
+      appointmentState: 'scheduled',
+      noteState: 'shell_created',
+      noteVisibleInDrafts: false
+    });
+  });
+
+  it('rejects invalid appointment creation input before a note shell is created', () => {
+    assert.throws(
+      () => createAppointmentLifecycle('appt-001', 'note-001', { ...appointmentDraft, visitType: '', durationMinutes: 0 }),
+      /visitType is required/
+    );
+  });
+
+  it('allows Start Visit only for scheduled active note shells', () => {
+    assert.equal(canStartVisit('scheduled', 'shell_created'), true);
+    assert.equal(canStartVisit('cancelled', 'shell_created'), false);
+    assert.equal(canStartVisit('scheduled', 'visit_active'), false);
   });
 });
 

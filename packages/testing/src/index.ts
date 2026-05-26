@@ -23,6 +23,10 @@ export function createSyntheticAppointment(overrides: Partial<AppointmentDto> = 
     noteId: syntheticIds.noteId,
     state: 'scheduled',
     startsAt: '2026-05-26T14:00:00.000Z',
+    durationMinutes: 30,
+    visitType: 'Chronic follow-up',
+    modality: 'in_person',
+    source: 'standalone',
     mode: 'standalone',
     ...overrides
   };

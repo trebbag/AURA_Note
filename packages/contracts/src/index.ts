@@ -1,5 +1,7 @@
 import type {
   AppMode,
+  AppointmentModality,
+  AppointmentSource,
   AppointmentState,
   NoteState,
   RecordingState,
@@ -56,6 +58,11 @@ export interface AppointmentDto {
   noteId: string;
   state: AppointmentState;
   startsAt: string;
+  durationMinutes: number;
+  visitType: string;
+  modality: AppointmentModality;
+  source: AppointmentSource;
+  reasonForVisit?: string;
   mode: AppMode;
 }
 
@@ -116,6 +123,45 @@ export interface AuditEventDto {
   entityId: string;
   traceId: string;
   createdAt: string;
+}
+
+export interface CreateAppointmentRequestDto {
+  safePatientId: string;
+  clinicianId: string;
+  visitType: string;
+  startsAt: string;
+  durationMinutes: number;
+  modality: AppointmentModality;
+  reasonForVisit?: string;
+}
+
+export interface ScheduleAppointmentDto extends AppointmentDto {
+  noteStatus: NoteState;
+  noteVisibleInDrafts: boolean;
+  startVisitEnabled: boolean;
+  ehrSchedulingEnabled: boolean;
+  clinicOsSchedulingEnabled: boolean;
+}
+
+export interface CreateAppointmentResponseDto {
+  appointment: AppointmentDto;
+  note: NoteDto;
+  auditEvent: AuditEventDto;
+  domainEvents: Array<AuraNoteEvent<Record<string, unknown>>>;
+}
+
+export interface StartVisitResponseDto {
+  appointment: AppointmentDto;
+  note: NoteDto;
+  visitSession: VisitSessionDto;
+  auditEvent: AuditEventDto;
+  domainEvents: Array<AuraNoteEvent<Record<string, unknown>>>;
+}
+
+export interface ScheduleViewDto {
+  appointments: ScheduleAppointmentDto[];
+  ehrSchedulingEnabled: boolean;
+  clinicOsSchedulingEnabled: boolean;
 }
 
 export interface AuraNoteEvent<TPayload> {

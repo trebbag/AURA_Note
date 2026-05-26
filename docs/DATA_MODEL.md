@@ -137,3 +137,16 @@ The CP-0 tranche implements the core invariant logic in `packages/domain` withou
 - finalization wizard steps are ordered as Code Review, Suggestion Review, Compose, Compare & Edit, Billing & Attest, and Sign & Dispatch.
 
 Persistence remains schema-level scaffolding at CP-0. Repository methods, migrations, and runtime data access belong to later work orders unless explicitly required by the active work order.
+
+## WO-002 runtime scaffold status
+
+`WO-002` adds an in-memory standalone repository for the Schedule Builder and appointment-note lifecycle. It is intentionally synthetic and process-local until database migrations/repositories are introduced in a later backend persistence tranche.
+
+Implemented runtime invariants:
+
+- creating a standalone appointment creates exactly one inactive note shell;
+- idempotent appointment creation replays the existing appointment/note pair instead of creating a duplicate shell;
+- schedule rows expose appointment status, note status, note shell ID, and whether the note is visible in Draft Notes;
+- billing-only users cannot create appointments;
+- only linked clinicians or authorized admins can start visits;
+- Start Visit activates the note shell into Draft Notes and creates a visit-session scaffold, while timer/recording/transcription depth remains deferred to `WO-004`.

@@ -94,6 +94,48 @@ describe('final note and coaching access', () => {
   });
 });
 
+describe('schedule lifecycle permissions', () => {
+  it('allows MA and clinician schedule creation but denies billing-only users', () => {
+    const base = {
+      linkedToPatient: true,
+      linkedToVisit: true,
+      treatingClinician: false,
+      billingReviewTriggered: false,
+      authorizedAdmin: false
+    };
+
+    assert.equal(canPerform('appointment:create', { ...base, role: 'ma' }), true);
+    assert.equal(canPerform('appointment:create', { ...base, role: 'clinician' }), true);
+    assert.equal(canPerform('appointment:create', { ...base, role: 'billing_staff' }), false);
+  });
+
+  it('allows Start Visit only for linked clinicians or authorized admins', () => {
+    assert.equal(
+      canPerform('visit:start', {
+        role: 'clinician',
+        linkedToPatient: true,
+        linkedToVisit: true,
+        treatingClinician: true,
+        billingReviewTriggered: false,
+        authorizedAdmin: false
+      }),
+      true
+    );
+
+    assert.equal(
+      canPerform('visit:start', {
+        role: 'ma',
+        linkedToPatient: true,
+        linkedToVisit: true,
+        treatingClinician: false,
+        billingReviewTriggered: false,
+        authorizedAdmin: false
+      }),
+      false
+    );
+  });
+});
+
 describe('PHI key guard', () => {
   it('detects forbidden keys recursively', () => {
     const result = scanForForbiddenPhiKeys({

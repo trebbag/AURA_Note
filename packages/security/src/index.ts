@@ -11,6 +11,8 @@ export type Role =
 
 export type Permission =
   | 'schedule:view'
+  | 'appointment:create'
+  | 'visit:start'
   | 'draft_note:view'
   | 'final_note:view'
   | 'patient_summary:view'
@@ -85,6 +87,10 @@ export function canPerform(permission: Permission, ctx: AccessContext): boolean 
   switch (permission) {
     case 'schedule:view':
       return ctx.authorizedAdmin || ['clinician', 'ma', 'admin', 'clinic_manager'].includes(ctx.role);
+    case 'appointment:create':
+      return ctx.authorizedAdmin || ['clinician', 'ma', 'admin', 'clinic_manager'].includes(ctx.role);
+    case 'visit:start':
+      return ctx.authorizedAdmin || (ctx.role === 'clinician' && ctx.linkedToVisit);
     case 'draft_note:view':
       return ctx.authorizedAdmin || (ctx.treatingClinician && ctx.linkedToVisit);
     case 'final_note:view':
