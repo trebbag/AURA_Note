@@ -196,3 +196,14 @@ Codex must append a dated entry after each work order or meaningful implementati
 - **Accepted risks:** CP-4 is a synthetic, local-first commercial-readiness candidate rather than a production launch artifact. Browser coverage is route-sweep evidence, not a committed Playwright regression suite. Production persistence, identity/tenanting, deployed observability sinks, production de-identification, deployment runbooks, and formal product/security/compliance review remain post-CP-4 work.
 - **Open SPEC_GAPs:** None discovered for `WO-014`.
 - **Next step:** Open PR for `WO-014`, confirm GitHub Actions including the new readiness validator, merge when green, then define the post-CP-4 productionization backlog.
+
+## 2026-05-26T23:00:06Z — Post-CP4 productionization backlog planning
+
+- **Work order:** Post-CP4 planning artifact; no active numbered work order is implemented in this batch.
+- **Summary of changes:** Added a founder-reviewable productionization backlog that converts CP-4 risks into five candidate tranches: persistence/migrations, tenant identity/access, committed browser E2E/accessibility, observability/deployment/support runbooks, and design-system/compliance review package.
+- **Files changed:** `docs/POST_CP4_PRODUCTIONIZATION_BACKLOG.md`, `work_orders/README.md`, and `RUN_LOG.md`.
+- **Tests run:** `pnpm acceptance:readiness`; `node scripts/status.js`; `git diff --check`.
+- **Tests not run:** Full monorepo gate was not rerun because this batch adds planning documentation only and does not change application, package, API, contract, workflow, or runtime behavior.
+- **Accepted risks:** New post-CP4 tranches are planning candidates only. `repo_status.json` remains `cp4_complete` with `next_work_order` set to `null` until a tranche is deliberately promoted into a numbered work order.
+- **Open SPEC_GAPs:** None discovered.
+- **Next step:** Promote one post-CP4 tranche into `work_orders/WO-015_*.md` and update `repo_status.json` only when founder review is ready to start implementation.
