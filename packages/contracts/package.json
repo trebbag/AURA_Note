@@ -1,0 +1,16 @@
+{
+  "name": "@aura-note/contracts",
+  "private": true,
+  "version": "0.1.0",
+  "main": "src/index.ts",
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "lint": "echo contracts lint pending",
+    "lint:phi": "node ../../scripts/lint-phi.js packages/contracts",
+    "typecheck": "tsc --noEmit -p tsconfig.json",
+    "test": "echo contracts tests pending",
+    "test:unit": "echo contracts unit tests pending",
+    "test:e2e": "echo contracts e2e tests pending"
+  },
+  "devDependencies": { "typescript": "^5.6.0" }
+}

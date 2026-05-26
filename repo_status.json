@@ -1,0 +1,25 @@
+{
+  "project": "AURA Note v1",
+  "mode": "codex_initial_repo_package",
+  "current_checkpoint": "CP-0",
+  "next_work_order": "WO-000",
+  "work_orders": {
+    "WO-000": "todo",
+    "WO-001": "todo",
+    "WO-002": "todo",
+    "WO-003": "todo",
+    "WO-004": "todo",
+    "WO-005": "todo",
+    "WO-006": "todo",
+    "WO-007": "todo",
+    "WO-008": "todo",
+    "WO-009": "todo",
+    "WO-010": "todo",
+    "WO-011": "todo",
+    "WO-012": "todo",
+    "WO-013": "todo",
+    "WO-014": "todo"
+  },
+  "last_updated_by": "initial_package_generator",
+  "notes": "Codex should update this file after each completed work order."
+}

@@ -1,0 +1,177 @@
+Below is a comprehensive, incremental development plan for RevenuePilot that (1) matches your toolchain (VS Code + GitHub + Copilot/GPT‑5 Pro), (2) keeps every increment deployable and testable from a browser (no or minimal terminal), (3) enforces a server‑side PHI boundary that never sends PHI to AI, and (4) organizes the codebase like a professional application so you can drill down and isolate issues quickly.
+Where I reference original, user‑facing features (note editor, live guidance, Beautify, copy/export, admin analytics, privacy‑first), I’m aligning to the attached plan.
+0) Architecture & Repo Skeleton (built to isolate problems fast)
+Approach: Modular monolith in a monorepo → fast to build, easy to reason about, and ready to be split into services later if needed.
+repo/
+  apps/
+    web/            # Next.js 15 (App Router, RSC); no service worker/offline
+    api/            # NestJS (Node 20) modular API
+    worker/         # Background jobs (outbox processing, OCR, file indexing)
+  packages/
+    ui/             # Design system (Figma tokens → components); Storybook sources
+    contracts/      # OpenAPI + Zod schemas; typed clients for web
+    core-phi/       # PHI entities/services (Postgres+RLS, column encryption)
+    core-nonphi/    # Non-PHI domain & analytics views
+    ai-gateway/     # De-id pipeline + LLM client (rejects PHI at runtime)
+    uploads/        # Patient chart ingest (PDF/image), OCR, parsing, metadata
+    rcm-rules/      # Coding/NCCI/MUE/modifier rules engine
+    claims/         # 837p builder, 277/835 parsers, tracking
+    denials/        # Denial normalization & appeals helpers
+    worklists/      # Queues, SLAs, scheduling worklist, status transitions
+    analytics/      # KPI queries, “what-if” projections
+    security/       # RBAC/ABAC, audit, redaction, crypto helpers
+    feature-flags/  # Flag definitions & evaluation
+    config/         # Lint, tsconfig, test presets
+  infra/
+    terraform/      # Cloud infra (VPC, RDS, S3, Secrets, WAF) for HIPAA-ready envs
+    github/         # CI/CD workflows, CODEOWNERS, PR/Danger rules
+  docs/
+    ADRs/           # Decision records
+    SCOPE.md        # What Copilot is allowed to touch each milestone
+Dependency/PHI rules (enforced with lint rules):
+apps/web can import packages/ui and typed APIs from packages/contracts only.
+apps/api can import domain packages; only apps/api talks to core-phi.
+ai-gateway cannot import core-phi; it only accepts de‑identified DTOs.
+No package may log PHI (redaction middleware + “forbidden keys” ESLint rule).
+“Find the bug fast” affordances built into the skeleton:
+/status page (web & api): health, build SHA, feature flags, and dependency checks.
+“Developer Drawer” (web): toggles for Demo Mode/MSW, show request IDs, show API timings, surface last 10 errors (already redacted).
+Per‑feature routes (/notes, /finalize, /claims, /coaching) with sub‑routes for each step so you can isolate a broken slice by URL.
+Self‑contained Storybook stories for every component/state; visual regression and a11y checks run in CI.
+OpenAPI “try it” docs at /api/docs (staging), backed by contract tests; downstream clients won’t compile if contracts drift.
+1) Four Major Phases → Thin, Working Increments
+Your phases drive scope. Each phase is delivered in small vertical slices that demo in a browser (no terminal), with PR artifacts (Storybook, Playwright HTML, Lighthouse, API docs).
+Phase 1 — Core note workflow & patient summary (MVP)
+User goal: Complete a note with live guidance, finalize it (Beautify + patient summary + last suggestions), then copy/download/export; staff gets a summary item to act on scheduling.
+Slices (each slice deploys & works):
+App shell & Demo Mode (MSW mocks), auth stub UI.
+Note Editor + Guidance panel (mocked): render static guidance cards.
+Live Guidance v1 (server on): non‑PHI abstractions → ai-gateway → suggestions (codes, gaps, public‑health, differentials).
+Finalization flow v1: Beautify output preview + patient summary preview; accept/dismiss final suggestions → Sign‑off.
+Copy/Download/Export actions (post‑sign‑off).
+Summary → Staff Worklist: signed‑off summary logged as a work item to print & schedule follow‑ups.
+Upload Patient’s Chart: server‑side file intake (PDF/image), OCR & text extraction (on your servers), context used for guidance/finalization (still de‑identified before AI).
+Admin Analytics (non‑PHI): baseline tiles (revenue per visit, code distribution, documentation gaps, denials %, time‑to‑close, public‑health capture).
+Security/Baseline in this phase: Identity & tenanting (OIDC), RBAC/ABAC + audit, Postgres RLS, PHI boundary (core‑phi + ai‑gateway), redacted logs, feature flags, Storybook CI.
+Phase 2 — Voice transcription sub‑panel
+Always‑on transcription drawer with mic controls; snippets paste into the note; structured nuggets enrich server‑side guidance context (de‑identified before LLM).
+Add timestamps/section tags (HPI/ROS/Exam/Plan) to improve Beautify + summary fidelity.
+Phase 3 — Claims submission & monitoring + scheduling recommendations
+Charge capture & validation (rules engine: NCCI/MUE/modifiers) → Clean‑claim builder (837p) → Submission & status tracking (277/835 parsing if connected).
+Scheduling recommendations generated from the signed‑off Patient Summary + rules (follow‑ups, labs, referrals) → staff worklists & SLAs with filters/assignment.
+Optional clearinghouse/EHR integrations when ready.
+Phase 4 — Coaching module
+Mine Phases 1–3 signals to surface lagging performance by user/team (missed codes, frequent gaps, denial root causes), targeted micro‑coaching, and what‑if impact modeling.
+Expand analytics (provider/service line) and trend views.
+2) Work Breakdown Structure (WBS) with Acceptance Gates
+Each step yields something you can click in a browser preview and approve with objective checks. (Bold items are user‑visible; italics are platform support.)
+Milestone 0 — Foundations (1–2 weeks)
+Skeleton repo (Turborepo/Nx); ESLint/Prettier; Vitest/Jest; Playwright; Storybook.
+apps/web (Next.js 15) with Demo Mode (MSW), /status & Developer Drawer.
+apps/api (NestJS) with health checks; OpenAPI at /api/docs.
+CI/CD: build → unit/integration → Storybook → Playwright → Lighthouse; artifacts attached to PR.
+Guardrails: SCOPE.md, PR template, CODEOWNERS, dependency gate (Danger), “forbidden PHI keys” ESLint rule.
+Acceptance: PR shows preview links (web, Storybook), Playwright & Lighthouse HTML reports; /status green.
+Milestone 1 — Identity, Tenanting & PHI boundary (1–2 weeks)
+OIDC login, tenant model (Org/Site), session cookies hardened.
+Postgres with RLS; seed test tenants & users.
+core-phi + security packages; audit logging (no PHI); ai-gateway scaffold with de‑id schemas.
+Acceptance: Login works in preview with seeded test users; contract tests prove RLS; ai-gateway rejects any DTO containing PHI.
+Milestone 2 — Design System & App Shell (1–2 weeks)
+Figma tokens → packages/ui primitives; Storybook stories + a11y checks.
+Navigation shell with breadcrumbs, error boundaries, toasts, feature flags.
+Acceptance: Storybook passes a11y; web preview shows shell & nav; a route can be toggled by feature flag.
+Milestone 3 — Notes & Guidance (2–3 weeks)
+Note Editor with autosave (server action).
+Guidance Panel v1 with mocked cards → then live via ai-gateway (codes, documentation gaps, differentials, public‑health).
+Observability: request ID correlation (web ↔ api), redaction verified.
+Acceptance: In preview, typing shows guidance; Playwright test asserts at least one “gap” renders for seeded cases.
+Milestone 4 — Finalization & Staff Worklist (2–3 weeks)
+Finalization wizard:
+Beautify preview, Patient Summary preview, Last Suggestions panel, Sign‑off.
+Copy/Download/Export enabled only after sign‑off.
+Staff scheduling worklist: Summary saved to worklists package; printable view with statuses (Open/Printed/Scheduled).
+Acceptance: End‑to‑end browser flow from draft → finalize → export; a new scheduling item appears and can be printed.
+Milestone 5 — Upload Patient’s Chart (1–2 weeks)
+File upload (PDF/images) to S3‑compatible store with server‑side encryption; virus scan; OCR in uploads/worker; extracted text never leaves servers; de‑id if passed to ai-gateway.
+Acceptance: Upload sample chart; extracted data appears as context in guidance/finalization; logs prove PHI never reached AI.
+Milestone 6 — Transcription Drawer (2 weeks)
+Voice capture with VAD (browser) → segments → paste to note; structured hints (timestamps/sections) enrich context server‑side (still de‑identified).
+Acceptance: Playwright audio fixture drives a short transcription; snippet insert works; guidance quality check passes.
+Milestone 7 — Claims & Scheduling (3–5 weeks)
+Charge capture/validation (rcm-rules) → Clean‑claim builder (837p); submission/monitoring path (manual upload first; API later).
+Scheduling recommendations generated from signed summaries (follow‑up types/intervals); worklists & SLAs with filters, assignment, due dates.
+Acceptance: Seeded encounters produce a valid 837p file; staff can action recommendation items to “Scheduled.”
+Milestone 8 — Denials & Appeals (2–3 weeks)
+835/277 parsing (if connected), denial normalization, appeals templates.
+Acceptance: Seeded remit files generate denial buckets; Playwright verifies a simple appeal draft workflow.
+Milestone 9 — Coaching Module & Advanced Analytics (ongoing)
+Coaching dashboards: lagging areas by user/team; micro‑lessons; goals; what‑if modeling.
+Acceptance: Coaching page ranks opportunities; applying a recommendation changes a forecast metric.
+3) Testing & Review Without a Terminal
+Your review surfaces (all in the browser via PR artifacts):
+Storybook: component states; a11y & visual diffs.
+Playwright HTML: e2e results with screenshots/videos.
+Lighthouse: performance & a11y scores for key routes.
+OpenAPI docs: try endpoints in /api/docs.
+Preview deployments: web & api staging URLs.
+VS Code Tasks (so Copilot can run them by name):
+demo (start web with MSW Demo Mode)
+storybook (launch Storybook)
+test:unit, test:e2e (run tests and open reports)
+lint:phi (scan for forbidden PHI keys in code/fixtures)
+How you’ll ask Copilot:
+“Run Storybook and give me the URL.”
+“Run Playwright and open the HTML report.”
+“Start Demo Mode with seeded cases for diabetes visit + annual wellness.”
+4) Step‑by‑Step “Getting Started” (day 0 → day 5)
+Create the repo with the skeleton (structure above).
+Add SCOPE.md for Milestone 0 (files Copilot may modify; out‑of‑bounds blockers).
+Wire CI (GitHub Actions) to build web/api, Storybook, Playwright, Lighthouse; upload artifacts; deploy previews.
+Implement /status & Developer Drawer in web; basic NestJS health route.
+Seed Demo Mode (MSW) with two visit types (acute + chronic) and a canned set of guidance cards (no AI yet).
+Turn on guardrails: CODEOWNERS (you own /packages/core-phi, /packages/ai-gateway, /packages/security), Danger rules (block new deps, large diffs, scope drift), “forbidden PHI keys” linter.
+Connect OIDC (test provider ok for now) and Postgres (dev/staging) with RLS policies.
+Build first slice: Note Editor + mocked guidance; open preview and click through.
+Add ai-gateway with de‑id schema → flip a feature flag for Live Guidance v1; verify logs & audit.
+At this point you have a working, demonstrable app that satisfies the core concept in Demo Mode and can be safely switched to server logic behind flags.
+5) Concrete Acceptance Criteria (copy into PR template)
+Functional:
+Given a clinician drafts a note, when they open Finalization, then Beautify and Patient Summary render, last suggestions can be accepted/dismissed, and sign‑off unlocks Copy/Download/Export.
+Given a signed summary, then a staff worklist item is created and printable.
+Security:
+Contract tests prove RLS blocks cross‑tenant reads/writes.
+ai-gateway rejects any DTO containing PHI (unit + integration tests).
+No log entries containing forbidden keys (CI linter & runtime redaction tests).
+UX/a11y:
+Storybook a11y checks pass on editor, guidance cards, finalization wizard.
+Perf (light):
+First byte < X ms on /notes p95 (staging) with seeded data.
+Docs:
+ADR for any new module; README updated with flags and routes.
+6) Platform & Compliance Essentials (always on)
+Identity & Tenanting (OIDC + RLS), RBAC/ABAC + audit, PHI boundary (core‑phi + ai‑gateway), Design System & Storybook, Observability (redacted logs, OTel traces, Sentry), Feature Flags, Admin Console, Data Lifecycle (backups, retention, legal hold).
+RCM rails as we enter Phases 3–4: rcm-rules, claims, denials, worklists, analytics, guided flows.
+7) Things we can do now (and later) to increase the odds of success
+Do now
+Freeze Phase‑1 scope in SCOPE.md and GitHub Project (backlog → milestones) so Copilot stays inside the lines.
+Paste your Figma tokens (typography/spacing/colors) and component names so packages/ui matches your design.
+Decide de‑id fields (name, address, phone, email, MRN, DOB, etc.) and add them to the forbidden keys linter + ai-gateway schema.
+Seed demo cases that mirror typical visits; these power Storybook, Playwright, Demo Mode, and give consistent acceptance.
+Pick HIPAA path for early staging: either a HIPAA‑ready host (Aptible, AWS BAA) for real PHI later, or keep PHI out of staging entirely and use only seeded or de‑identified data.
+Do soon
+ADR 0001: Modular Monolith (why/when to split services).
+Threat model & DLP policy: verify PHI never logs; keep an “egress allow‑list” for ai-gateway.
+Adopt “small PR” rule (<400 LOC), block out‑of‑scope file changes via Danger.
+Add a “What changed?” checklist to the PR template (deps, infra, flags, contracts).
+Create Staff Worklist SOP (print, schedule, close loop); it makes Phase‑1 value obvious.
+Do later
+Clearinghouse integration behind a feature flag; turn on per tenant when ready.
+Role‑based coaching (manager vs clinician views); what‑if modeling for cost/benefit narratives.
+Observability maturity: Service level objectives (SLOs) and error budgets for /notes and /finalize.
+Security posture: Keys in Secrets Manager; regular backups & restore drills; access review exports.
+8) Why this aligns to your plan & constraints
+The workflow reflects the original product promise—type notes, get live AI guidance, Beautify, copy/export to any EHR, admin analytics—while ensuring no PHI is ever sent to AI and PHI is handled server‑side only.
+Every increment is clickable in a browser with artifacts attached to PRs—no terminal required.
+The skeleton’s navigation, status pages, and developer drawer make it easy to drill down to the failing module or route when something breaks.
+If you want, I can turn Sections 1–5 into a ready‑to‑use GitHub Project (milestones, issues, acceptance checklists) and generate the initial repo scaffolding (with SCOPE.md, CI, Demo Mode, Storybook, Playwright, Developer Drawer) so you can start approving slices immediately.

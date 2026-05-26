@@ -1,0 +1,51 @@
+# Test Plan
+
+Codex should add tests as implementation proceeds.
+
+## Unit tests
+
+- Domain invariants.
+- Note state machine.
+- Appointment-note one-to-one invariant.
+- Timer/editor gating.
+- Low-confidence diagnosis override.
+- Task blocker logic.
+- Finalization wizard step requirements.
+- RBAC/ABAC decisions.
+- PHI scrubber.
+- AI response validation.
+- Raw audio retention job.
+
+## Integration tests
+
+- Create appointment creates note shell.
+- Start Visit activates timer/editor/recording/transcription.
+- Suggestions evaluation updates Suggestions panel and Visit Selections.
+- History Gap question routes to MA task.
+- Open blocker task blocks signing.
+- Finalization steps complete in order.
+- Billing review triggers transcript access for billing staff.
+- Sign & Dispatch creates final note/patient summary/export artifacts.
+- EHR writeback queue behaves correctly in mock mode.
+
+## Browser / Playwright journeys
+
+1. Standalone appointment to final dispatch.
+2. Recording exception path.
+3. Low-confidence diagnosis override.
+4. MA follow-up blocker prevents signing until adjudicated.
+5. Billing review triggers transcript access for billing staff.
+6. Final note viewer is read-only after dispatch.
+7. Patient summary PDF download flow.
+8. Admin template and dot phrase creation.
+9. Coaching own-scorecard visibility.
+10. ClinicOS mode mock context loads without changing core UX.
+
+## Security tests
+
+- Cross-tenant access denied.
+- Unlinked staff final-note access denied.
+- Billing transcript access denied unless billing review triggered.
+- External AI rejects raw PHI fields.
+- Logs redact forbidden keys.
+- Support break-glass requires reason.

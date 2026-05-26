@@ -1,0 +1,16 @@
+{
+  "name": "@aura-note/domain",
+  "private": true,
+  "version": "0.1.0",
+  "main": "src/index.ts",
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "lint": "echo domain lint pending",
+    "lint:phi": "node ../../scripts/lint-phi.js packages/domain",
+    "typecheck": "tsc --noEmit -p tsconfig.json",
+    "test": "echo domain tests pending",
+    "test:unit": "echo domain unit tests pending",
+    "test:e2e": "echo domain e2e tests pending"
+  },
+  "devDependencies": { "typescript": "^5.6.0" }
+}

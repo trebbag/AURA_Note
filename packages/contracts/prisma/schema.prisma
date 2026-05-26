@@ -1,0 +1,102 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Tenant {
+  id        String   @id @default(uuid())
+  name      String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  sites     Site[]
+}
+
+model Site {
+  id        String   @id @default(uuid())
+  tenantId  String
+  name      String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  tenant    Tenant   @relation(fields: [tenantId], references: [id])
+}
+
+model Appointment {
+  id          String   @id @default(uuid())
+  tenantId    String
+  siteId      String
+  patientId   String
+  clinicianId String
+  visitType   String
+  state       String
+  startsAt    DateTime
+  endsAt      DateTime?
+  sourceSystem String @default("standalone")
+  sourceRef   String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  note        Note?
+}
+
+model Note {
+  id            String   @id @default(uuid())
+  tenantId      String
+  siteId        String
+  appointmentId String   @unique
+  patientId     String
+  clinicianId   String
+  state         String
+  draftText     String   @default("")
+  finalText     String?
+  patientSummaryText String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  appointment   Appointment @relation(fields: [appointmentId], references: [id])
+}
+
+model VisitSession {
+  id          String   @id @default(uuid())
+  tenantId    String
+  siteId      String
+  noteId      String
+  timerState  String
+  recordingState String
+  startedAt   DateTime?
+  pausedAt    DateTime?
+  stoppedAt   DateTime?
+  exceptionReason String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model Task {
+  id          String   @id @default(uuid())
+  tenantId    String
+  siteId      String
+  noteId      String?
+  patientId   String?
+  title       String
+  status      String
+  blocksSigning Boolean @default(false)
+  adjudicationStatus String @default("open")
+  ownerRole   String?
+  ownerUserId String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model AuditEvent {
+  id          String   @id @default(uuid())
+  tenantId    String
+  siteId      String?
+  actorUserId String?
+  action      String
+  entityType  String
+  entityId    String
+  traceId     String?
+  metadataJson Json?
+  createdAt   DateTime @default(now())
+}

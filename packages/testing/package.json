@@ -1,0 +1,16 @@
+{
+  "name": "@aura-note/testing",
+  "private": true,
+  "version": "0.1.0",
+  "main": "src/index.ts",
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "lint": "echo testing lint pending",
+    "lint:phi": "node ../../scripts/lint-phi.js packages/testing",
+    "typecheck": "tsc --noEmit -p tsconfig.json",
+    "test": "echo testing tests pending",
+    "test:unit": "echo testing unit tests pending",
+    "test:e2e": "echo testing e2e tests pending"
+  },
+  "devDependencies": { "typescript": "^5.6.0" }
+}

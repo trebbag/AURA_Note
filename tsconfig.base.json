@@ -1,0 +1,23 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "ESNext",
+    "moduleResolution": "Bundler",
+    "strict": true,
+    "noUncheckedIndexedAccess": true,
+    "exactOptionalPropertyTypes": true,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true,
+    "resolveJsonModule": true,
+    "baseUrl": ".",
+    "paths": {
+      "@aura-note/contracts": ["packages/contracts/src/index.ts"],
+      "@aura-note/domain": ["packages/domain/src/index.ts"],
+      "@aura-note/security": ["packages/security/src/index.ts"],
+      "@aura-note/ai-gateway": ["packages/ai-gateway/src/index.ts"],
+      "@aura-note/ehr-adapters": ["packages/ehr-adapters/src/index.ts"],
+      "@aura-note/clinicos-adapter": ["packages/clinicos-adapter/src/index.ts"],
+      "@aura-note/testing": ["packages/testing/src/index.ts"]
+    }
+  }
+}

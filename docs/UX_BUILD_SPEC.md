@@ -1,0 +1,287 @@
+# UX Build Specification
+
+Visual polish will come later through Figma. Codex should implement the workflow, states, gates, accessibility, and information architecture.
+
+## Navigation areas
+
+AURA Note v1 should include these core areas:
+
+1. Schedule Builder.
+2. Draft Notes.
+3. Finalized Notes.
+4. Documentation Workspace.
+5. Finalization Wizard.
+6. Tasks / Follow-up Questions.
+7. Coaching.
+8. Settings.
+9. Admin / Integrations / Configuration.
+10. Status / Developer Drawer in non-production.
+
+## Schedule Builder
+
+Users must be able to:
+
+- view a day/week schedule;
+- create a new appointment;
+- edit appointment metadata;
+- link or create a patient shell;
+- choose visit type;
+- assign clinician;
+- set start/end time;
+- see appointment status;
+- see whether a note shell exists;
+- open Start Visit when permissions allow.
+
+Creating an appointment must create a one-to-one note shell.
+
+## Draft Notes
+
+Draft Notes should show notes that are active or have entered the note workflow. Draft statuses should reflect note workflow state, such as:
+
+- note shell created;
+- visit opened;
+- timer running;
+- timer paused;
+- transcription in progress;
+- documentation in progress;
+- ready to finalize;
+- finalization in progress;
+- blocked by compliance;
+- blocked by MA follow-up;
+- blocked by billing review;
+- dispatch failed.
+
+## Finalized Notes
+
+Finalized Notes should live in the same general area as Draft Notes. Clicking a finalized note opens a read-only final note viewer, not the editor.
+
+Finalized note viewer must support:
+
+- final note tab;
+- patient summary tab;
+- transcript tab if role allows;
+- billing detail tab if role allows;
+- audit/history panel if role allows;
+- copy final note;
+- download final note PDF;
+- download patient summary PDF;
+- export/writeback status.
+
+## Documentation Workspace
+
+Documentation Workspace is fully active only after the clinician opens a visit from Schedule Builder or Draft Notes and the visit timer is active.
+
+### Required regions
+
+1. Top patient/visit panel.
+2. Visit controls bar.
+3. Note editor.
+4. Visit Selections panel.
+5. Suggestions panel.
+6. Transcript drawer.
+7. Compliance & Quality Review drawer.
+8. History Gap Review drawer.
+
+### Top patient/visit panel
+
+Must show:
+
+- patient name/display identifier;
+- DOB/age if role permits;
+- visit type;
+- appointment time;
+- clinician;
+- visit state;
+- risk flags;
+- EHR/ClinicOS connection state;
+- source freshness warnings.
+
+### Visit controls bar
+
+Must show:
+
+- Start Visit / Pause Visit / Resume Visit / Stop Visit behavior;
+- timer;
+- recording status;
+- transcription status;
+- exception path if recording is disabled;
+- autosave status;
+- Finalize Note button.
+
+Finalize Note is active only when required gates are clear.
+
+### Note editor
+
+The note editor is inactive until timer is running or an approved exception is active. It should support:
+
+- structured sections;
+- formatting;
+- templates;
+- dot phrases;
+- variables and smart phrases;
+- autosave;
+- undo/redo if practical;
+- clear locked/read-only state.
+
+### Visit Selections panel
+
+Visit Selections holds selected codes/items. It must support:
+
+- CPT;
+- HCPCS;
+- ICD-10;
+- HCC;
+- E/M;
+- quality measures;
+- differentials;
+- diagnoses;
+- services;
+- procedures;
+- appointments needing scheduled;
+- plan items;
+- staff tasks.
+
+Cards must be filterable by category and visually distinct by type. Manual additions must be allowed and re-evaluated by AI on the next meaningful analysis run.
+
+### Suggestions panel
+
+Suggestions should populate as meaningful changes occur in:
+
+- chart context;
+- transcript;
+- note text;
+- Visit Selections;
+- visit type;
+- compliance state.
+
+Suggestion cards must show:
+
+- category;
+- confidence;
+- rationale;
+- supporting evidence;
+- missing evidence;
+- source links where available;
+- action buttons.
+
+### Low-confidence diagnosis flow
+
+When adding a diagnosis under 75 percent confidence:
+
+- show warning modal;
+- explain why confidence is low;
+- show supporting evidence;
+- show non-supporting/missing evidence;
+- allow add as differential;
+- allow cancel;
+- allow override as diagnosis only with reason;
+- flag billing review and coaching.
+
+## Compliance & Quality Review
+
+The drawer shows issues that may block finalization or require review. Examples include:
+
+- selected code lacks documented support;
+- selected diagnosis lacks evidence;
+- low-confidence diagnosis override exists;
+- required attestation missing;
+- medical necessity evidence unclear;
+- quality measure closure lacks structured evidence;
+- required consent missing;
+- required recording exception not approved;
+- transcript unavailable without exception;
+- open MA follow-up blocker;
+- billing review required;
+- EHR writeback failure;
+- template required field missing;
+- note has unsupported copied-forward content;
+- patient summary not approved;
+- final note not approved.
+
+## History Gap Review
+
+History Gap Review shows questions that could improve documentation confidence. Each question must show:
+
+- question text;
+- what item it supports;
+- category;
+- confidence impact;
+- answer directly;
+- add answer to note;
+- send to MA follow-up;
+- close as not needed;
+- mark blocker/non-blocker if permitted.
+
+## Finalization Wizard
+
+All six steps are required.
+
+### Step 1 — Code Review
+
+- Original note visible and editable.
+- Selected items carousel/list visible.
+- Each item requires Keep or Remove.
+- Removed items go to audit/unused list.
+- Why suggested highlights related evidence.
+- History Gap drawer remains available.
+- Open blocker questions prevent progress.
+
+### Step 2 — Suggestion Review
+
+- User must review unselected suggestions and final-pass suggestions over 50 percent confidence.
+- Each item requires Keep or Remove.
+- Transcript is not shown directly in this step.
+- Kept items join selected items.
+- Removed items go to audit/unused list.
+- User cannot skip this step.
+
+### Step 3 — Compose
+
+- Show progress phases: Analyzing Content, Enhancing Structure, Beautifying Language, Final Review.
+- Compose creates enhanced note and patient summary.
+- Selected codes are written into a payer-readable justification section.
+- Services/tasks are written into the plan.
+- No facts may be invented.
+- Backend validates output before continuing.
+
+### Step 4 — Compare & Edit
+
+- Left side: original note, editable.
+- Right side: enhanced note, editable if approved workflow allows.
+- Header info panel includes overview, transcript if permitted, selected codes, unused items.
+- Re-beautify uses updated original-side content and replaces the enhanced version.
+- Patient summary tab must be reviewed.
+- Clinician must approve final note and patient summary.
+- AI Planning Assistant may add accepted plan items to the plan.
+- Patient Opportunity Analysis shows clinical opportunities first and hides revenue from patient-facing outputs by default.
+
+### Step 5 — Billing & Attest
+
+Must support:
+
+- final selected codes/items summary;
+- documentation support status;
+- claim-readiness score;
+- draft claim preview;
+- payer caveats;
+- missing evidence;
+- diagnosis/coding/quality/risk capture triggers;
+- patient estimate only when configured data exists;
+- unavailable/caveat state when data is missing;
+- billing review routing;
+- clinician attestation;
+- no autonomous billing finalization.
+
+### Step 6 — Sign & Dispatch
+
+- All blockers resolved.
+- Final note approved.
+- Patient summary approved.
+- Billing/attest requirements resolved or routed.
+- Dispatch creates finalized note and patient summary records.
+- Draft moves to finalized/read-only state.
+- Export/PDF/copy/writeback actions become available according to configuration.
+
+## Required accessibility and UX states
+
+Every screen must have empty, loading, ready, saving, blocked, failed, permission-denied, and read-only states.

@@ -1,0 +1,9 @@
+# Founder/lead review required for high-risk areas
+/AGENTS.md @founder
+/docs/specs/ @founder
+/docs/LOCKED_DECISIONS.md @founder
+/packages/security/ @founder
+/packages/ai-gateway/ @founder
+/packages/ehr-adapters/ @founder
+/packages/clinicos-adapter/ @founder
+/packages/contracts/openapi/ @founder

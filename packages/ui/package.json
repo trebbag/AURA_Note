@@ -1,0 +1,16 @@
+{
+  "name": "@aura-note/ui",
+  "private": true,
+  "version": "0.1.0",
+  "main": "src/index.ts",
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "lint": "echo ui lint pending",
+    "lint:phi": "node ../../scripts/lint-phi.js packages/ui",
+    "typecheck": "tsc --noEmit -p tsconfig.json",
+    "test": "echo ui tests pending",
+    "test:unit": "echo ui unit tests pending",
+    "test:e2e": "echo ui e2e tests pending"
+  },
+  "devDependencies": { "typescript": "^5.6.0" }
+}

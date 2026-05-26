@@ -1,0 +1,35 @@
+•	This app is being positioned to be a companion module to M17 in the included document and would be built into the larger data model for the entirety of the application
+•	The connection to the EHR should have been used to pull data and render it in distinct easy to follow ways. This parsing of the information also helps establish the package of information that will be sent to the AI (a format that best allows the AI to incorporate that info with the rest to best respond). Tabs might be helpful so that it is very easy to sort through the information. Minimal use of tabs though as I don’t like users having to click away from information and having to go back and forth
+•	Final notes should be in a new section for Finalized Notes which should be in the same general area as the draft notes. 
+•	Draft Notes should mostly have statuses that relate to what stage they are in the in note workflow
+•	Start visit should start recording automatically. They shouldn’t be documenting without recording. Give me suggestions on what compliance issues should stop finalization
+•	All of the transcript should be available after finalization
+•	Templates can be any one of those four: specialty specific, appt type specific, provider specific, and clinic approved. Dot phrases should be able to be created in the settings section for the whole clinic to be able to use
+•	The panel for Selected codes/items should be called Visit Selections. Services/tasks can live in this panel but are differently colored cards. And filters on that panel can be selected to only view certain categories. Selected items should not persist visibly through the entire wizard. During the beautify step, the codes should be put into the note in a format that makes payers easily see the justification for the codes. Services and tasks are put into the plan
+•	Override should require a reason if still diagnosed with less than a 75% confidence in it. These overrides should appear/flag for coaching and billing review
+•	MA follow up questions can happen anytime after the visit with the clinician is over. Unadjudicated questions should block signing of the note. Users need to either answer the questions, close them, or assign them. Any open questions should block signing. 
+•	Step 1 of wizard should require a decision on every card. Removed selected items should remain in an audit/unused list. Cards shouldn’t be staff tasks. Just things like services/procedures/appointments needing scheduled
+•	Final pass suggestions should be limited to items with greater than 50% confidence. Clinicians should not be able to skip Suggestion review. 
+•	Step 3 of the wizard should show all the phases as a progress indicator. The compose should create a standardized note format that best shows all information written without making up anything and to be maximally helpful for both the clinician’s records of care as well as for revenue. All selected codes are added to the note in a clean section that is written especially for payers to be able to see the justification for the codes
+•	The final note should be the accepted enhanced version. Re-beautify should replace the old enhanced version but use anything new from the left side (original). 
+•	Risk rating can be shown to all clinicians. All recommendations for the plan are acceptable for MVP. Accepted plan items should create staff tasks and get put in the plan in the note. 
+•	For the Neural Patient Analysis, rename it to Patient Opportunity Analysis. Provide robust, cutting edge suggestions for this section. Revenue opportunities should be hidden from patient-facing summary flow
+•	For step 5, create the best set of features for this section for both billing and patient care. 
+•	Coaching should be premium. ROI story of time saved, revenue captured, training improvement (medical care), and denials reduced 
+
+FOUNDER REVIEW CHECKLIST
+•	New name: AURA Note
+•	Primary first user is clinician
+•	Schedule Builder is core but modular so that it can be replaced with other external schedules instead 
+•	All appointments have a clinician note. It just depends on the status of the note and appointment as to whether is populates anywhere
+•	Start Visit must be clicked before editing is allowed
+•	Recording/Transcription is MVP critical
+•	All of the suggestion categories should belong in first version
+•	You create a list of compliance issues that would populate the alert panel
+•	Any History Gap question can be sent to MA for follow-up
+•	All 6 steps in the Finalization Wizard are needed for MVP
+•	Primary care and all visit types
+•	Clinician should see the maximum amount of coding support that is justified by the data provided to the AI such that the clinician is providing care that results in the best health outcomes and highest revenue
+•	Only treating clinician and admin can see coaching outputs. Those same individuals and billing staff can see billing detail and transcripts. All staff can see patient summaries and final notes. 
+•	Claims/denials can be a later expansion. However, there should be some feature where the finalized note can be seen as a draft claim
+

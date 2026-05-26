@@ -1,0 +1,16 @@
+{
+  "name": "@aura-note/ehr-adapters",
+  "private": true,
+  "version": "0.1.0",
+  "main": "src/index.ts",
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "lint": "echo ehr-adapters lint pending",
+    "lint:phi": "node ../../scripts/lint-phi.js packages/ehr-adapters",
+    "typecheck": "tsc --noEmit -p tsconfig.json",
+    "test": "echo ehr-adapters tests pending",
+    "test:unit": "echo ehr-adapters unit tests pending",
+    "test:e2e": "echo ehr-adapters e2e tests pending"
+  },
+  "devDependencies": { "typescript": "^5.6.0" }
+}

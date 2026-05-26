@@ -1,0 +1,27 @@
+{
+  "package_name": "AURA Note v1 Codex Initial Repository Package",
+  "created_for": "Codex initial repo pickup",
+  "primary_instruction": "Read AGENTS.md first, then implement work_orders sequentially.",
+  "canonical_spec": "docs/specs/AURA_NOTE_V1_CANONICAL_BUILD_SPEC.md",
+  "clinicos_reference": "docs/specs/AURA_CLINICOS_REFERENCE.md",
+  "first_work_order": "work_orders/WO-000_repository_foundation.md",
+  "important_files": [
+    "AGENTS.md",
+    "README.md",
+    "PROMPT_FOR_CODEX.md",
+    "docs/LOCKED_DECISIONS.md",
+    "docs/STANDALONE_AND_CLINICOS_MODES.md",
+    "docs/UX_BUILD_SPEC.md",
+    "docs/BACKEND_BUILD_SPEC.md",
+    "docs/API_EVENT_CONTRACTS.md",
+    "docs/DATA_MODEL.md",
+    "docs/RBAC_ABAC_MATRIX.md",
+    "docs/AI_PHI_GOVERNANCE.md",
+    "docs/EHR_ADAPTERS.md",
+    "docs/TEST_PLAN.md",
+    "work_orders/README.md",
+    "repo_status.json",
+    "SPEC_GAPS.md",
+    "RUN_LOG.md"
+  ]
+}

@@ -1,0 +1,23 @@
+{
+  "name": "aura-note-v1",
+  "private": true,
+  "version": "0.1.0",
+  "packageManager": "pnpm@9.12.0",
+  "scripts": {
+    "dev": "turbo dev",
+    "build": "turbo build",
+    "test": "turbo test",
+    "test:unit": "turbo test:unit",
+    "test:e2e": "turbo test:e2e",
+    "lint": "turbo lint",
+    "lint:phi": "turbo lint:phi",
+    "typecheck": "turbo typecheck",
+    "storybook": "pnpm --filter @aura-note/web storybook",
+    "status": "node scripts/status.js"
+  },
+  "devDependencies": {
+    "@types/node": "^20.14.0",
+    "typescript": "^5.6.0",
+    "turbo": "^2.1.0"
+  }
+}

@@ -1,0 +1,197 @@
+openapi: 3.1.0
+info:
+  title: AURA Note v1 API
+  version: 0.1.0
+  description: Initial API contract seed for AURA Note standalone and ClinicOS-integrated modes.
+servers:
+  - url: /api/v1
+paths:
+  /health:
+    get:
+      operationId: getHealth
+      responses:
+        '200': { description: OK }
+  /schedule/appointments:
+    get:
+      operationId: listAppointments
+      responses:
+        '200': { description: Appointment list }
+    post:
+      operationId: createAppointment
+      description: Create standalone appointment and one-to-one note shell.
+      responses:
+        '201': { description: Created }
+  /schedule/appointments/{appointmentId}/start-visit:
+    post:
+      operationId: startVisit
+      description: Starts timer, recording, transcription scaffold, and unlocks editor.
+      parameters:
+        - name: appointmentId
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        '200': { description: Visit started }
+  /notes/drafts:
+    get:
+      operationId: listDraftNotes
+      responses:
+        '200': { description: Draft notes }
+  /notes/finalized:
+    get:
+      operationId: listFinalizedNotes
+      responses:
+        '200': { description: Finalized notes }
+  /notes/{noteId}:
+    get:
+      operationId: getNote
+      parameters:
+        - name: noteId
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        '200': { description: Note }
+    patch:
+      operationId: updateNoteDraft
+      description: Update note draft only when timer gate permits editing.
+      parameters:
+        - name: noteId
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        '200': { description: Updated }
+  /notes/{noteId}/suggestions/evaluate:
+    post:
+      operationId: evaluateSuggestions
+      responses:
+        '200': { description: Suggestions evaluated }
+  /notes/{noteId}/visit-selections:
+    post:
+      operationId: addVisitSelection
+      responses:
+        '201': { description: Visit selection added }
+  /notes/{noteId}/compliance/evaluate:
+    post:
+      operationId: evaluateCompliance
+      responses:
+        '200': { description: Compliance evaluated }
+  /notes/{noteId}/history-gaps:
+    get:
+      operationId: listHistoryGaps
+      responses:
+        '200': { description: History gap questions }
+  /notes/{noteId}/tasks:
+    post:
+      operationId: createNoteTask
+      responses:
+        '201': { description: Task created }
+  /tasks/{taskId}:
+    patch:
+      operationId: updateTask
+      responses:
+        '200': { description: Task updated }
+  /notes/{noteId}/finalization/start:
+    post:
+      operationId: startFinalization
+      responses:
+        '200': { description: Finalization started }
+  /notes/{noteId}/finalization/code-review:
+    post:
+      operationId: completeCodeReview
+      responses:
+        '200': { description: Code review completed }
+  /notes/{noteId}/finalization/suggestion-review:
+    post:
+      operationId: completeSuggestionReview
+      responses:
+        '200': { description: Suggestion review completed }
+  /notes/{noteId}/finalization/compose:
+    post:
+      operationId: composeFinalizationDrafts
+      responses:
+        '200': { description: Compose completed }
+  /notes/{noteId}/finalization/compare-edit:
+    post:
+      operationId: approveCompareEdit
+      responses:
+        '200': { description: Compare/Edit approved }
+  /notes/{noteId}/finalization/billing-attest:
+    post:
+      operationId: completeBillingAttest
+      responses:
+        '200': { description: Billing & Attest completed }
+  /notes/{noteId}/finalization/sign-dispatch:
+    post:
+      operationId: signAndDispatch
+      responses:
+        '200': { description: Signed and dispatched }
+  /notes/{noteId}/exports/final-note-pdf:
+    post:
+      operationId: generateFinalNotePdf
+      responses:
+        '200': { description: PDF generated }
+  /notes/{noteId}/exports/patient-summary-pdf:
+    post:
+      operationId: generatePatientSummaryPdf
+      responses:
+        '200': { description: PDF generated }
+  /notes/{noteId}/billing/draft-claim-preview:
+    get:
+      operationId: getDraftClaimPreview
+      responses:
+        '200': { description: Draft claim preview }
+  /settings/templates:
+    get:
+      operationId: listTemplates
+      responses:
+        '200': { description: Templates }
+    post:
+      operationId: createTemplate
+      responses:
+        '201': { description: Template created }
+  /settings/dot-phrases:
+    get:
+      operationId: listDotPhrases
+      responses:
+        '200': { description: Dot phrases }
+    post:
+      operationId: createDotPhrase
+      responses:
+        '201': { description: Dot phrase created }
+  /coaching/own:
+    get:
+      operationId: getOwnCoaching
+      responses:
+        '200': { description: Own coaching }
+  /coaching/dashboard:
+    get:
+      operationId: getCoachingDashboard
+      responses:
+        '200': { description: Premium coaching dashboard }
+  /integrations/ehr/status:
+    get:
+      operationId: getEhrStatus
+      responses:
+        '200': { description: EHR status }
+  /integrations/clinicos/status:
+    get:
+      operationId: getClinicOsStatus
+      responses:
+        '200': { description: ClinicOS status }
+components:
+  schemas:
+    ApiMeta:
+      type: object
+      properties:
+        requestId: { type: string }
+        traceId: { type: string }
+        mode: { type: string, enum: [standalone, clinicos_integrated] }
+        generatedAt: { type: string, format: date-time }
+    ApiWarning:
+      type: object
+      properties:
+        code: { type: string }
+        message: { type: string }
+        severity: { type: string, enum: [info, warning, error] }
