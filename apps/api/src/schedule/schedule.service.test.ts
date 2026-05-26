@@ -78,7 +78,9 @@ describe('ScheduleService', () => {
     assert.equal(started.data.note.state, 'visit_active');
     assert.equal(started.data.visitSession.timerState, 'running');
     assert.equal(started.data.visitSession.recordingState, 'recording');
+    assert.equal(started.data.rawAudioRetention?.retentionClass, 'audio_ephemeral');
     assert.equal(started.data.domainEvents[0]?.eventType, 'visit.started.v1');
+    assert.equal(started.data.domainEvents.map((event) => event.eventType).includes('recording.started.v1'), true);
     assert.equal(service.listAppointments(startContext).data.appointments[0]?.noteVisibleInDrafts, true);
   });
 
@@ -141,5 +143,65 @@ describe('ScheduleService', () => {
     assert.equal(finalized.data.readOnly, true);
     assert.equal(finalized.data.finalNoteAvailable, false);
     assert.equal(finalized.warnings?.[0]?.code, 'FINAL_NOTE_NOT_AVAILABLE');
+  });
+
+  it('pauses, resumes, and stops visits while locking and unlocking the editor', () => {
+    const service = new ScheduleService();
+    const appointment = service
+      .createAppointment(createRequest, service.createRequestContext({ 'x-aura-role': 'ma' }))
+      .data.appointment;
+    const clinician = service.createRequestContext({ 'x-aura-role': 'clinician' });
+
+    service.startVisit(appointment.appointmentId, clinician);
+    const paused = service.pauseVisit(appointment.appointmentId, clinician);
+    assert.equal(paused.data.visitSession.timerState, 'paused');
+    assert.equal(paused.data.visitSession.editorUnlocked, false);
+    assert.equal(paused.data.domainEvents[0]?.eventType, 'visit.paused.v1');
+
+    const resumed = service.resumeVisit(appointment.appointmentId, clinician);
+    assert.equal(resumed.data.visitSession.timerState, 'running');
+    assert.equal(resumed.data.visitSession.editorUnlocked, true);
+
+    const stopped = service.stopVisit(appointment.appointmentId, clinician);
+    assert.equal(stopped.data.visitSession.timerState, 'stopped');
+    assert.equal(stopped.data.visitSession.editorUnlocked, false);
+    assert.equal(stopped.data.domainEvents.map((event) => event.eventType).includes('recording.stopped.v1'), true);
+  });
+
+  it('approves a recording exception without treating recording as normal recording', () => {
+    const service = new ScheduleService();
+    const appointment = service
+      .createAppointment(createRequest, service.createRequestContext({ 'x-aura-role': 'ma' }))
+      .data.appointment;
+
+    const exception = service.approveRecordingException(
+      appointment.appointmentId,
+      { exceptionReason: 'Synthetic approved no-audio exception' },
+      service.createRequestContext({ 'x-aura-role': 'clinician' })
+    );
+
+    assert.equal(exception.data.visitSession.recordingState, 'exception_approved');
+    assert.equal(exception.data.visitSession.editorUnlocked, true);
+    assert.equal(exception.data.rawAudioRetention, undefined);
+    assert.equal(exception.data.domainEvents[0]?.eventType, 'recording.exception_approved.v1');
+  });
+
+  it('appends mock transcript segments only while editor gate permits documentation', () => {
+    const service = new ScheduleService();
+    const appointment = service
+      .createAppointment(createRequest, service.createRequestContext({ 'x-aura-role': 'ma' }))
+      .data.appointment;
+    const clinician = service.createRequestContext({ 'x-aura-role': 'clinician' });
+
+    service.startVisit(appointment.appointmentId, clinician);
+    const appended = service.appendTranscriptSegment(
+      appointment.appointmentId,
+      { speakerRole: 'clinician', text: 'Synthetic mock transcript segment' },
+      clinician
+    );
+
+    assert.equal(appended.data.transcript?.retentionPolicy, 'indefinite');
+    assert.equal(appended.data.transcript?.segments[0]?.source, 'mock_transcription');
+    assert.equal(appended.data.domainEvents[0]?.eventType, 'transcript.segment_appended.v1');
   });
 });

@@ -5,12 +5,18 @@ import {
   canEditNote,
   canSignAndDispatch,
   canStartVisit,
+  approveRecordingException,
   createAppointmentLifecycle,
   createAppointmentNoteInvariant,
+  createRawAudioRetentionMetadata,
+  createTranscriptRetentionMetadata,
   evaluateLowConfidenceOverride,
   getNextWizardStep,
   isLowConfidenceDiagnosis,
-  recordingExceptionIsActive
+  pauseVisitGate,
+  recordingExceptionIsActive,
+  resumeVisitGate,
+  stopVisitGate
 } from './index';
 
 describe('appointment-note invariant', () => {
@@ -112,6 +118,64 @@ describe('timer and recording gate', () => {
     assert.equal(canEditNote(gate), true);
     assert.equal(recordingExceptionIsActive(gate), true);
     assert.notEqual(gate.recordingState, 'recording');
+  });
+
+  it('moves running visits through pause, resume, and stop while enforcing editor access', () => {
+    const runningGate = {
+      noteId: 'note-001',
+      timerState: 'running' as const,
+      recordingState: 'recording' as const,
+      editorUnlocked: true
+    };
+
+    const paused = pauseVisitGate(runningGate);
+    assert.equal(paused.timerState, 'paused');
+    assert.equal(paused.recordingState, 'paused');
+    assert.equal(paused.editorUnlocked, false);
+
+    const resumed = resumeVisitGate(paused);
+    assert.equal(resumed.timerState, 'running');
+    assert.equal(resumed.recordingState, 'recording');
+    assert.equal(resumed.editorUnlocked, true);
+
+    const stopped = stopVisitGate(resumed);
+    assert.equal(stopped.timerState, 'stopped');
+    assert.equal(stopped.recordingState, 'stopped');
+    assert.equal(stopped.editorUnlocked, false);
+  });
+
+  it('creates a recording exception gate without implying normal recording', () => {
+    const exceptionGate = approveRecordingException(
+      {
+        noteId: 'note-001',
+        timerState: 'paused',
+        recordingState: 'paused',
+        editorUnlocked: false
+      },
+      'Synthetic clinician-approved no-audio exception'
+    );
+
+    assert.equal(exceptionGate.timerState, 'paused');
+    assert.equal(exceptionGate.recordingState, 'exception_approved');
+    assert.equal(exceptionGate.editorUnlocked, true);
+    assert.equal(recordingExceptionIsActive(exceptionGate), true);
+  });
+});
+
+describe('retention metadata', () => {
+  it('sets raw audio purge eligibility one week after capture', () => {
+    const metadata = createRawAudioRetentionMetadata('recording-001', 'note-001', '2026-05-26T15:00:00.000Z');
+
+    assert.equal(metadata.retentionClass, 'audio_ephemeral');
+    assert.equal(metadata.purgeAfter, '2026-06-02T15:00:00.000Z');
+    assert.equal(metadata.purgeEligible, false);
+  });
+
+  it('marks transcript retention as indefinite', () => {
+    const metadata = createTranscriptRetentionMetadata('transcript-001', 'note-001');
+
+    assert.equal(metadata.retentionClass, 'transcript');
+    assert.equal(metadata.retentionPolicy, 'indefinite');
   });
 });
 

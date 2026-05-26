@@ -57,6 +57,7 @@ describe('schedule appointment lifecycle API', () => {
     assert.equal(started.body.data.appointment.state, 'visit_started');
     assert.equal(started.body.data.note.state, 'visit_active');
     assert.equal(started.body.data.visitSession.editorUnlocked, true);
+    assert.equal(started.body.data.rawAudioRetention.retentionClass, 'audio_ephemeral');
 
     const drafts = await request(app.getHttpServer()).get('/api/v1/notes/drafts').set('x-aura-role', 'clinician').expect(200);
 
@@ -70,6 +71,31 @@ describe('schedule appointment lifecycle API', () => {
 
     assert.equal(workspace.body.data.appointment.appointmentId, created.body.data.appointment.appointmentId);
     assert.equal(workspace.body.data.panels.some((panel: { panelId: string }) => panel.panelId === 'visit_selections'), true);
+
+    const paused = await request(app.getHttpServer())
+      .post(`/api/v1/documentation-workspace/appointments/${created.body.data.appointment.appointmentId}/visit-session/pause`)
+      .set('x-aura-role', 'clinician')
+      .expect(201);
+
+    assert.equal(paused.body.data.visitSession.timerState, 'paused');
+    assert.equal(paused.body.data.visitSession.editorUnlocked, false);
+
+    const resumed = await request(app.getHttpServer())
+      .post(`/api/v1/documentation-workspace/appointments/${created.body.data.appointment.appointmentId}/visit-session/resume`)
+      .set('x-aura-role', 'clinician')
+      .expect(201);
+
+    assert.equal(resumed.body.data.visitSession.timerState, 'running');
+    assert.equal(resumed.body.data.visitSession.editorUnlocked, true);
+
+    const transcript = await request(app.getHttpServer())
+      .post(`/api/v1/documentation-workspace/appointments/${created.body.data.appointment.appointmentId}/transcript/segments`)
+      .set('x-aura-role', 'clinician')
+      .send({ speakerRole: 'clinician', text: 'Synthetic mock transcript segment' })
+      .expect(201);
+
+    assert.equal(transcript.body.data.transcript.retentionPolicy, 'indefinite');
+    assert.equal(transcript.body.data.transcript.segments.length, 1);
 
     const finalized = await request(app.getHttpServer())
       .get(`/api/v1/notes/finalized/${created.body.data.note.noteId}`)

@@ -273,6 +273,15 @@ textarea {
   margin-top: 16px;
 }
 
+.secondary-controls {
+  grid-template-columns: repeat(2, minmax(160px, 220px)) minmax(240px, 1fr);
+  align-items: center;
+}
+
+.secondary-controls span {
+  color: #596579;
+}
+
 .workspace-grid {
   grid-template-columns: minmax(0, 1fr) minmax(280px, 380px);
   align-items: start;

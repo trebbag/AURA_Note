@@ -11,6 +11,9 @@
     "test:unit": "pnpm test",
     "test:e2e": "node -e \"console.log('worker e2e deferred until retention/transcription jobs are introduced')\""
   },
+  "dependencies": {
+    "@aura-note/contracts": "workspace:^"
+  },
   "devDependencies": {
     "tsx": "^4.19.0",
     "typescript": "^5.6.0"
