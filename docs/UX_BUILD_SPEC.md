@@ -48,6 +48,10 @@ The first CP-1 notes shell adds browser-testable routes for `/aura-note/drafts`,
 
 The Documentation Workspace now includes browser-testable Start Visit, Pause, Resume, Stop, approved recording exception, and mock transcript append controls. These controls are synthetic CP-1 scaffolds and do not connect to microphones, audio storage, external transcription, or external AI. The backend mirrors the same lifecycle with visit-session control endpoints, raw-audio retention metadata, and indefinitely retained mock transcript segments.
 
+### WO-005 implementation status
+
+The Documentation Workspace now includes deterministic mock Suggestions, Visit Selections, Compliance & Quality Review, and History Gap Review controls. Suggestion cards are draft-only and human-review-required. Diagnosis candidates below 75 percent require override metadata before acceptance. History Gap questions can create MA follow-up blocker tasks, and those blockers disable Finalize-facing controls in the CP-1 shell.
+
 ## Draft Notes
 
 Draft Notes should show notes that are active or have entered the note workflow. Draft statuses should reflect note workflow state, such as:

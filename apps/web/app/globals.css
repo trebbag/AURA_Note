@@ -311,6 +311,44 @@ textarea {
   font-size: 0.78rem;
 }
 
+.review-board,
+.suggestion-list,
+.selection-list,
+.suggestion-row {
+  display: grid;
+  gap: 12px;
+}
+
+.review-board {
+  grid-template-columns: minmax(0, 1.4fr) minmax(220px, 0.8fr) minmax(220px, 0.8fr);
+  margin-top: 16px;
+}
+
+.review-board article {
+  border: 1px solid #d5dae3;
+  background: #fff;
+  padding: 16px;
+}
+
+.suggestion-row {
+  grid-template-columns: minmax(0, 1fr) 92px 92px;
+  align-items: center;
+  border-top: 1px solid #d5dae3;
+  padding-top: 10px;
+}
+
+.suggestion-row div,
+.selection-list {
+  display: grid;
+  gap: 4px;
+}
+
+.selection-list span {
+  border: 1px solid #b9c0cc;
+  border-radius: 999px;
+  padding: 6px 10px;
+}
+
 .state-blocked {
   border-left-color: #aa3d00;
 }
@@ -331,7 +369,9 @@ textarea {
   .note-row,
   .workspace-topline,
   .workspace-grid,
-  .controls-bar {
+  .controls-bar,
+  .review-board,
+  .suggestion-row {
     grid-template-columns: 1fr;
   }
 

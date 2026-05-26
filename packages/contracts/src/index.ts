@@ -26,6 +26,12 @@ export type CoreEventType =
   | 'recording.stopped.v1'
   | 'raw_audio.retention_scheduled.v1'
   | 'transcript.segment_appended.v1'
+  | 'suggestions.evaluated.v1'
+  | 'suggestion.accepted.v1'
+  | 'suggestion.removed.v1'
+  | 'visit_selection.added.v1'
+  | 'compliance.evaluated.v1'
+  | 'history_gap.task_created.v1'
   | 'task.blocker_changed.v1'
   | 'low_confidence_diagnosis.override_recorded.v1'
   | 'finalization.started.v1'
@@ -144,6 +150,89 @@ export interface VisitSelectionDto {
   label: string;
   confidence?: number;
   humanApproved: boolean;
+  sourceSuggestionId?: string;
+  overrideReason?: string;
+}
+
+export interface SuggestionDto {
+  suggestionId: string;
+  noteId: string;
+  category: VisitSelectionCategory;
+  label: string;
+  confidence: number;
+  rationale: string;
+  supportingEvidence: string[];
+  missingEvidence: string[];
+  status: 'candidate' | 'accepted' | 'removed';
+  lowConfidenceOverrideRequired: boolean;
+  draftOnly: true;
+}
+
+export interface SuggestionDecisionRequestDto {
+  overrideReason?: string;
+  supportingEvidence?: string;
+  nonSupportingEvidence?: string;
+  uncertaintyExplanation?: string;
+  confidenceImprovementPlan?: string;
+}
+
+export interface SuggestionsViewDto {
+  noteId: string;
+  suggestions: SuggestionDto[];
+}
+
+export interface VisitSelectionsViewDto {
+  noteId: string;
+  selections: VisitSelectionDto[];
+  availableFilters: VisitSelectionCategory[];
+}
+
+export interface AddVisitSelectionRequestDto {
+  category: VisitSelectionCategory;
+  label: string;
+  confidence?: number;
+}
+
+export interface ComplianceIssueDto {
+  complianceIssueId: string;
+  noteId: string;
+  severity: 'info' | 'warning' | 'soft_block' | 'hard_block';
+  title: string;
+  detail: string;
+  blocksFinalize: boolean;
+  source: 'deterministic_mock';
+}
+
+export interface ComplianceReviewDto {
+  noteId: string;
+  issues: ComplianceIssueDto[];
+  finalizeDisabled: boolean;
+}
+
+export interface HistoryGapQuestionDto {
+  historyGapQuestionId: string;
+  noteId: string;
+  question: string;
+  supportsItem: string;
+  category: 'diagnosis_confidence' | 'coding_support' | 'care_gap' | 'plan_clarity';
+  confidenceImpact: 'low' | 'medium' | 'high';
+  status: 'open' | 'sent_to_ma' | 'answered' | 'closed';
+  blockerEligible: boolean;
+}
+
+export interface CreateHistoryGapTaskRequestDto {
+  blocksSigning: boolean;
+  ownerRole: 'ma';
+}
+
+export interface ReviewActionResponseDto {
+  suggestions: SuggestionDto[];
+  visitSelections: VisitSelectionDto[];
+  complianceReview: ComplianceReviewDto;
+  historyGaps: HistoryGapQuestionDto[];
+  tasks: TaskDto[];
+  auditEvent: AuditEventDto;
+  domainEvents: Array<AuraNoteEvent<Record<string, unknown>>>;
 }
 
 export interface TaskDto {

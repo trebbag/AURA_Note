@@ -1,57 +1,57 @@
 # CHECKPOINT_REPORT
 
-Codex should overwrite this file at each checkpoint gate with a concise status report.
+## CP-1 — Standalone clinical workflow shell ready
 
-## CP-0 — Repository foundation ready
-
-**Status:** Complete on branch `tranche/cp0-foundation-domain`.
+**Status:** Complete on branch `tranche/wo-005-suggestions-selections-review` pending GitHub Actions confirmation for the final CP-1 PR.
 
 ## Completed work orders
 
-- `WO-000` — Repository foundation.
-- `WO-001` — Domain model, contracts, events, security skeleton.
+- `WO-002` — Schedule Builder appointment-note lifecycle.
+- `WO-003` — Draft/Finalized Notes and Documentation Workspace shell.
+- `WO-004` — Timer, recording gate, transcription scaffold.
+- `WO-005` — Suggestions, Visit Selections, Compliance, History Gap Review.
 
 ## Acceptance evidence
 
-- Private GitHub repository established: `trebbag/AURA_Note`.
-- Initial scaffold committed and pushed to `main`.
-- CP-0 implementation isolated on `tranche/cp0-foundation-domain`.
-- Monorepo lockfile and Node 20 pins are present.
-- Web shell builds with `/` and `/status` routes.
-- API health controller remains the only implemented backend route.
-- Worker has an explicit CP-0 status scaffold.
-- Domain tests cover appointment-note one-to-one, timer/editor gate, recording exception, blocker signing gate, low-confidence override, and wizard ordering.
-- Security tests cover transcript visibility, final-note visibility, coaching visibility, and forbidden PHI key detection/redaction.
-- Contracts tests cover API envelopes and CP-0 event envelopes.
-- Synthetic fixture tests cover safe appointment, note, visit-session, blocker-task, and access-context fixtures.
-- GitHub Actions `AURA Note CI / build-test` passed on PR #1.
+- Schedule Builder creates synthetic standalone appointments and one-to-one inactive note shells.
+- Start Visit activates the note into Draft Notes and creates a visit-session scaffold.
+- Draft Notes, Finalized Notes, read-only finalized note viewer, and Documentation Workspace routes build in Next.js.
+- Documentation Workspace exposes the required top panel, controls, editor, Visit Selections, Suggestions, Transcript, Compliance, and History Gap regions.
+- Timer controls lock/unlock the editor through Start, Pause, Resume, and Stop behavior.
+- Recording exception approval unlocks documentation without marking normal recording active.
+- Mock transcript segments are source-marked and retained indefinitely.
+- Raw audio metadata is classified as one-week `audio_ephemeral`; the worker can identify purge-eligible metadata.
+- Deterministic mock Suggestions are draft-only and human-review-required.
+- Low-confidence diagnosis/ICD candidates below 75 percent require override metadata.
+- Accepted suggestions and manual additions move into Visit Selections.
+- History Gap questions can create MA-owned blocker tasks.
+- Compliance hard blocks disable Finalize-facing controls when unresolved blocker tasks exist.
 
 ## Validation commands
 
 - `pnpm install --frozen-lockfile`
-- `pnpm --filter @aura-note/domain test`
-- `pnpm --filter @aura-note/security test`
-- `pnpm --filter @aura-note/contracts test`
-- `pnpm --filter @aura-note/testing test`
-- `pnpm --filter @aura-note/worker test`
-- `pnpm typecheck`
 - `pnpm lint`
 - `pnpm lint:phi`
+- `pnpm typecheck`
 - `pnpm test`
+- `pnpm test:e2e`
 - `pnpm build`
 - `node scripts/status.js`
-- GitHub Actions PR check: `AURA Note CI / build-test`
+- `git diff --check`
+- GitHub Actions `AURA Note CI / build-test` passed on PR #2, PR #3, and PR #4.
+- Final `WO-005` local gate passed; GitHub Actions evidence is expected on the CP-1 PR after branch publication.
 
 ## Open risks
 
-- Browser E2E and API integration tests are deferred until `WO-002`, when the first workflow route and state transitions are implemented.
-- Later AI, EHR, export, writeback, coaching, and retention packages remain scaffolded only. Their package checks intentionally verify type/build readiness, not runtime behavior.
-- GitHub Actions emitted a non-failing Node 20 action-runtime deprecation annotation. The project runtime is intentionally pinned to Node 20 for CP-0; revisit the CI action runtime before GitHub removes Node 20 runner support.
+- CP-1 remains synthetic and process-local. Production persistence, migrations, live transcription, live EHR integration, and external AI remain out of scope.
+- UI fidelity is functional workflow scaffolding, not final Figma design.
+- Some package-level e2e scripts remain explicit deferrals until their later work orders introduce real browser/API harnesses.
+- GitHub Actions emits a non-failing Node 20 action-runtime deprecation annotation; the project runtime remains pinned for now.
 
 ## Unresolved SPEC_GAPs
 
-None discovered during CP-0.
+None discovered during CP-1.
 
 ## Next recommended batch
 
-Begin `WO-002` Schedule Builder and appointment-note lifecycle after CP-0 PR review. Keep the scope limited to standalone synthetic appointment creation, one-to-one note shell creation, initial backend state transition stubs, permission guards, audit/event emission, and browser-testable states.
+Begin CP-2 with `WO-006` through `WO-008`: Finalization Wizard steps, MA follow-up blocker resolution, patient summary/final note approval, Billing & Attest draft claim preview, and export/PDF/copy/final note viewer behavior. Keep the same synthetic-data and human-review boundaries.

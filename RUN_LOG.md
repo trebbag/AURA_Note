@@ -62,3 +62,16 @@ Codex must append a dated entry after each work order or meaningful implementati
 - **Accepted risks:** Timer and transcript behavior remains synthetic and process-local. The retention worker identifies purge candidates but does not delete production objects.
 - **Open SPEC_GAPs:** None discovered for `WO-004`.
 - **Next step:** Run the WO-004 gate, open its draft PR, then begin `WO-005`.
+
+## 2026-05-26T15:55:00Z — WO-005 Suggestions Visit Selections Compliance History Gap
+
+- **Work order:** `WO-005` Suggestions Visit Selections Compliance History Gap.
+- **Summary of changes:** Added deterministic mock Suggestions, Visit Selections, Compliance & Quality Review, History Gap Review, MA blocker task routing, and the CP-1 checkpoint report.
+- **Backend behavior:** Added draft-only suggestion evaluation/list/accept/remove behavior, low-confidence diagnosis override enforcement below 75 percent, Visit Selections list/add behavior, Compliance review with hard-block finalization gates, and History Gap question to MA task routing.
+- **UX behavior:** Updated the Documentation Workspace with browser-testable Suggestions, Visit Selections, override reason, Compliance hard-block, and History Gap blocker controls.
+- **Files changed:** `apps/api/src/notes/*`, `apps/api/src/schedule/*`, `apps/web/app/aura-note/workspace/*`, `apps/web/app/globals.css`, shared domain/contracts packages, OpenAPI contract, `docs/API_EVENT_CONTRACTS.md`, `docs/DATA_MODEL.md`, `docs/UX_BUILD_SPEC.md`, `CHECKPOINT_REPORT.md`, and `repo_status.json`.
+- **Tests run:** `pnpm --filter @aura-note/domain test`; `pnpm --filter @aura-note/contracts test`; `pnpm --filter @aura-note/api typecheck`; `pnpm --filter @aura-note/web typecheck`; `pnpm --filter @aura-note/api test`; `pnpm --filter @aura-note/api test:e2e`; `pnpm install --frozen-lockfile`; `pnpm lint`; `pnpm lint:phi`; `pnpm typecheck`; `pnpm test`; `pnpm test:e2e`; `pnpm build`; `node scripts/status.js`; `git diff --check`.
+- **Tests not run:** CP-2 finalization wizard, patient summary/final note approval, billing attest, draft claim preview, PDF/export/copy/writeback behavior remain scoped to `WO-006` through `WO-008`. External AI, EHR, claim submission, and production PHI paths remain out of scope.
+- **Accepted risks:** Suggestions are deterministic mock candidates only and do not diagnose, code, bill, determine medical necessity, or submit claims. Compliance hard blocks are scaffolded for finalization preparation and do not implement the final wizard.
+- **Open SPEC_GAPs:** None discovered for `WO-005`.
+- **Next step:** Run the WO-005 gate, open its draft PR, confirm GitHub Actions, then begin `WO-006`.

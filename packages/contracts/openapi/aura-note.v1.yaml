@@ -239,22 +239,113 @@ paths:
     post:
       operationId: evaluateSuggestions
       responses:
-        '200': { description: Suggestions evaluated }
+        '201':
+          description: Deterministic CP-1 suggestions evaluated.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReviewActionResponse'
+  /notes/{noteId}/suggestions:
+    get:
+      operationId: listSuggestions
+      responses:
+        '200':
+          description: Deterministic CP-1 suggestions.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuggestionsViewResponse'
+  /notes/{noteId}/suggestions/{suggestionId}/accept:
+    post:
+      operationId: acceptSuggestion
+      description: Accept a draft-only suggestion into Visit Selections. Low-confidence diagnosis candidates require override metadata.
+      parameters:
+        - name: noteId
+          in: path
+          required: true
+          schema: { type: string }
+        - name: suggestionId
+          in: path
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SuggestionDecisionRequest'
+      responses:
+        '201':
+          description: Suggestion accepted into Visit Selections.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReviewActionResponse'
+  /notes/{noteId}/suggestions/{suggestionId}/remove:
+    post:
+      operationId: removeSuggestion
+      responses:
+        '201':
+          description: Suggestion removed from candidate review.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReviewActionResponse'
   /notes/{noteId}/visit-selections:
+    get:
+      operationId: listVisitSelections
+      responses:
+        '200':
+          description: Visit Selections for the note.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VisitSelectionsViewResponse'
     post:
       operationId: addVisitSelection
       responses:
-        '201': { description: Visit selection added }
+        '201':
+          description: Visit selection added.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReviewActionResponse'
   /notes/{noteId}/compliance/evaluate:
     post:
       operationId: evaluateCompliance
       responses:
         '200': { description: Compliance evaluated }
+  /notes/{noteId}/compliance:
+    get:
+      operationId: getComplianceReview
+      responses:
+        '200':
+          description: Compliance and quality review state.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ComplianceReviewResponse'
   /notes/{noteId}/history-gaps:
     get:
       operationId: listHistoryGaps
       responses:
-        '200': { description: History gap questions }
+        '200':
+          description: History gap questions.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HistoryGapQuestionsResponse'
+  /notes/{noteId}/history-gaps/{questionId}/tasks:
+    post:
+      operationId: createHistoryGapTask
+      description: Create an MA follow-up task from a History Gap question. Blocking tasks prevent finalize preparation.
+      responses:
+        '201':
+          description: History Gap task created.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReviewActionResponse'
   /notes/{noteId}/tasks:
     post:
       operationId: createNoteTask
@@ -630,6 +721,98 @@ components:
           $ref: '#/components/schemas/TranscriptView'
         meta:
           $ref: '#/components/schemas/ApiMeta'
+    SuggestionsViewResponse:
+      type: object
+      required: [data, meta]
+      properties:
+        data:
+          type: object
+          required: [noteId, suggestions]
+          properties:
+            noteId: { type: string }
+            suggestions:
+              type: array
+              items:
+                $ref: '#/components/schemas/Suggestion'
+        meta:
+          $ref: '#/components/schemas/ApiMeta'
+    VisitSelectionsViewResponse:
+      type: object
+      required: [data, meta]
+      properties:
+        data:
+          type: object
+          required: [noteId, selections, availableFilters]
+          properties:
+            noteId: { type: string }
+            selections:
+              type: array
+              items:
+                $ref: '#/components/schemas/VisitSelection'
+            availableFilters:
+              type: array
+              items:
+                type: string
+                enum: [cpt, hcpcs, icd10, hcc, em, quality_measure, diagnosis, differential, service, procedure, appointment_to_schedule, plan_item, staff_task]
+        meta:
+          $ref: '#/components/schemas/ApiMeta'
+    ComplianceReviewResponse:
+      type: object
+      required: [data, meta]
+      properties:
+        data:
+          $ref: '#/components/schemas/ComplianceReview'
+        meta:
+          $ref: '#/components/schemas/ApiMeta'
+    HistoryGapQuestionsResponse:
+      type: object
+      required: [data, meta]
+      properties:
+        data:
+          type: object
+          required: [noteId, questions]
+          properties:
+            noteId: { type: string }
+            questions:
+              type: array
+              items:
+                $ref: '#/components/schemas/HistoryGapQuestion'
+        meta:
+          $ref: '#/components/schemas/ApiMeta'
+    ReviewActionResponse:
+      type: object
+      required: [data, meta]
+      properties:
+        data:
+          type: object
+          required: [suggestions, visitSelections, complianceReview, historyGaps, tasks, auditEvent, domainEvents]
+          properties:
+            suggestions:
+              type: array
+              items:
+                $ref: '#/components/schemas/Suggestion'
+            visitSelections:
+              type: array
+              items:
+                $ref: '#/components/schemas/VisitSelection'
+            complianceReview:
+              $ref: '#/components/schemas/ComplianceReview'
+            historyGaps:
+              type: array
+              items:
+                $ref: '#/components/schemas/HistoryGapQuestion'
+            tasks:
+              type: array
+              items:
+                $ref: '#/components/schemas/Task'
+            auditEvent:
+              $ref: '#/components/schemas/AuditEvent'
+            domainEvents:
+              type: array
+              items:
+                $ref: '#/components/schemas/AuraNoteEvent'
+        meta:
+          $ref: '#/components/schemas/ApiMeta'
     Note:
       type: object
       required: [noteId, appointmentId, tenantId, siteId, safePatientId, clinicianId, state, mode]
@@ -701,6 +884,88 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/TranscriptSegment'
+    VisitSelection:
+      type: object
+      required: [visitSelectionId, noteId, category, label, humanApproved]
+      properties:
+        visitSelectionId: { type: string }
+        noteId: { type: string }
+        category:
+          type: string
+          enum: [cpt, hcpcs, icd10, hcc, em, quality_measure, diagnosis, differential, service, procedure, appointment_to_schedule, plan_item, staff_task]
+        label: { type: string }
+        confidence: { type: number, minimum: 0, maximum: 1 }
+        humanApproved: { type: boolean }
+        sourceSuggestionId: { type: string }
+        overrideReason: { type: string }
+    Suggestion:
+      type: object
+      required: [suggestionId, noteId, category, label, confidence, rationale, supportingEvidence, missingEvidence, status, lowConfidenceOverrideRequired, draftOnly]
+      properties:
+        suggestionId: { type: string }
+        noteId: { type: string }
+        category:
+          type: string
+          enum: [cpt, hcpcs, icd10, hcc, em, quality_measure, diagnosis, differential, service, procedure, appointment_to_schedule, plan_item, staff_task]
+        label: { type: string }
+        confidence: { type: number, minimum: 0, maximum: 1 }
+        rationale: { type: string }
+        supportingEvidence:
+          type: array
+          items: { type: string }
+        missingEvidence:
+          type: array
+          items: { type: string }
+        status: { type: string, enum: [candidate, accepted, removed] }
+        lowConfidenceOverrideRequired: { type: boolean }
+        draftOnly: { type: boolean, const: true }
+    SuggestionDecisionRequest:
+      type: object
+      properties:
+        overrideReason: { type: string }
+        supportingEvidence: { type: string }
+        nonSupportingEvidence: { type: string }
+        uncertaintyExplanation: { type: string }
+        confidenceImprovementPlan: { type: string }
+    ComplianceIssue:
+      type: object
+      required: [complianceIssueId, noteId, severity, title, detail, blocksFinalize, source]
+      properties:
+        complianceIssueId: { type: string }
+        noteId: { type: string }
+        severity: { type: string, enum: [info, warning, soft_block, hard_block] }
+        title: { type: string }
+        detail: { type: string }
+        blocksFinalize: { type: boolean }
+        source: { type: string, enum: [deterministic_mock] }
+    ComplianceReview:
+      type: object
+      required: [noteId, issues, finalizeDisabled]
+      properties:
+        noteId: { type: string }
+        issues:
+          type: array
+          items:
+            $ref: '#/components/schemas/ComplianceIssue'
+        finalizeDisabled: { type: boolean }
+    HistoryGapQuestion:
+      type: object
+      required: [historyGapQuestionId, noteId, question, supportsItem, category, confidenceImpact, status, blockerEligible]
+      properties:
+        historyGapQuestionId: { type: string }
+        noteId: { type: string }
+        question: { type: string }
+        supportsItem: { type: string }
+        category: { type: string, enum: [diagnosis_confidence, coding_support, care_gap, plan_clarity] }
+        confidenceImpact: { type: string, enum: [low, medium, high] }
+        status: { type: string, enum: [open, sent_to_ma, answered, closed] }
+        blockerEligible: { type: boolean }
+    CreateHistoryGapTaskRequest:
+      type: object
+      required: [blocksSigning, ownerRole]
+      properties:
+        blocksSigning: { type: boolean }
+        ownerRole: { type: string, enum: [ma] }
     Task:
       type: object
       required: [taskId, title, blocksSigning, adjudicationStatus]
@@ -719,7 +984,7 @@ components:
         eventId: { type: string }
         eventType:
           type: string
-          enum: [appointment.created.v1, note.shell_created.v1, visit.started.v1, visit.paused.v1, visit.resumed.v1, visit.stopped.v1, recording.started.v1, recording.exception_approved.v1, recording.stopped.v1, raw_audio.retention_scheduled.v1, transcript.segment_appended.v1, task.blocker_changed.v1, low_confidence_diagnosis.override_recorded.v1, finalization.started.v1, finalization.step_completed.v1, audit.event_recorded.v1]
+          enum: [appointment.created.v1, note.shell_created.v1, visit.started.v1, visit.paused.v1, visit.resumed.v1, visit.stopped.v1, recording.started.v1, recording.exception_approved.v1, recording.stopped.v1, raw_audio.retention_scheduled.v1, transcript.segment_appended.v1, suggestions.evaluated.v1, suggestion.accepted.v1, suggestion.removed.v1, visit_selection.added.v1, compliance.evaluated.v1, history_gap.task_created.v1, task.blocker_changed.v1, low_confidence_diagnosis.override_recorded.v1, finalization.started.v1, finalization.step_completed.v1, audit.event_recorded.v1]
         schemaVersion: { type: string, enum: [v1] }
         tenantId: { type: string }
         siteId: { type: string }

@@ -3,8 +3,10 @@ import { describe, it } from 'node:test';
 import {
   canCompleteWizardStep,
   canEditNote,
+  canAcceptSuggestion,
   canSignAndDispatch,
   canStartVisit,
+  complianceBlocksFinalize,
   approveRecordingException,
   createAppointmentLifecycle,
   createAppointmentNoteInvariant,
@@ -208,6 +210,28 @@ describe('low-confidence diagnosis override', () => {
       }
     );
   });
+
+  it('requires complete override metadata before accepting low-confidence diagnosis suggestions', () => {
+    assert.deepEqual(canAcceptSuggestion({ category: 'icd10', confidence: 0.7 }), {
+      overrideRequired: true,
+      accepted: false,
+      flagsBillingReview: false,
+      flagsCoachingReview: false
+    });
+
+    assert.equal(
+      canAcceptSuggestion({
+        category: 'diagnosis',
+        confidence: 0.7,
+        overrideReason: 'Synthetic clinician override',
+        supportingEvidence: 'Synthetic supporting evidence',
+        nonSupportingEvidence: 'Synthetic missing evidence',
+        uncertaintyExplanation: 'Synthetic uncertainty',
+        confidenceImprovementPlan: 'Synthetic follow-up plan'
+      }).accepted,
+      true
+    );
+  });
 });
 
 describe('finalization gates', () => {
@@ -237,5 +261,11 @@ describe('finalization gates', () => {
     assert.equal(getNextWizardStep([]), 'code_review');
     assert.equal(canCompleteWizardStep([], 'suggestion_review'), false);
     assert.equal(canCompleteWizardStep(['code_review'], 'suggestion_review'), true);
+  });
+
+  it('blocks finalize preparation for compliance hard blocks and unresolved blocker tasks', () => {
+    assert.equal(complianceBlocksFinalize({ hardBlockCount: 1, unresolvedBlockerTaskCount: 0 }), true);
+    assert.equal(complianceBlocksFinalize({ hardBlockCount: 0, unresolvedBlockerTaskCount: 1 }), true);
+    assert.equal(complianceBlocksFinalize({ hardBlockCount: 0, unresolvedBlockerTaskCount: 0 }), false);
   });
 });

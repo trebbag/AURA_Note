@@ -97,6 +97,36 @@ describe('schedule appointment lifecycle API', () => {
     assert.equal(transcript.body.data.transcript.retentionPolicy, 'indefinite');
     assert.equal(transcript.body.data.transcript.segments.length, 1);
 
+    const suggestions = await request(app.getHttpServer())
+      .post(`/api/v1/notes/${created.body.data.note.noteId}/suggestions/evaluate`)
+      .set('x-aura-role', 'clinician')
+      .expect(201);
+
+    assert.equal(suggestions.body.data.suggestions.length, 3);
+
+    const accepted = await request(app.getHttpServer())
+      .post(`/api/v1/notes/${created.body.data.note.noteId}/suggestions/suggestion-demo-cpt-99214/accept`)
+      .set('x-aura-role', 'clinician')
+      .send({})
+      .expect(201);
+
+    assert.equal(accepted.body.data.visitSelections.length, 1);
+
+    await request(app.getHttpServer())
+      .post(`/api/v1/notes/${created.body.data.note.noteId}/suggestions/suggestion-demo-icd10-e119/accept`)
+      .set('x-aura-role', 'clinician')
+      .send({})
+      .expect(400);
+
+    const historyGapTask = await request(app.getHttpServer())
+      .post(`/api/v1/notes/${created.body.data.note.noteId}/history-gaps/history-gap-demo-001/tasks`)
+      .set('x-aura-role', 'clinician')
+      .send({ blocksSigning: true, ownerRole: 'ma' })
+      .expect(201);
+
+    assert.equal(historyGapTask.body.data.tasks[0].blocksSigning, true);
+    assert.equal(historyGapTask.body.data.complianceReview.finalizeDisabled, true);
+
     const finalized = await request(app.getHttpServer())
       .get(`/api/v1/notes/finalized/${created.body.data.note.noteId}`)
       .set('x-aura-role', 'clinician')
