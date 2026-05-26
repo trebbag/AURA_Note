@@ -129,3 +129,15 @@ Codex must append a dated entry after each work order or meaningful implementati
 - **Accepted risks:** AI context and invocation state remain synthetic/process-local. Free-text PHI detection is an obvious-pattern scaffold, not a production de-identification engine. Private/BAA model configuration remains disabled until later governance/configuration work.
 - **Open SPEC_GAPs:** None discovered for `WO-009`.
 - **Next step:** Run the `WO-009` full gate, open its draft PR, confirm CI, merge when green, then begin `WO-010`.
+
+## 2026-05-26T17:40:21Z — WO-010 EHR adapters athenahealth-first
+
+- **Work order:** `WO-010` EHR Adapters Athenahealth First.
+- **Summary of changes:** Added vendor-neutral EHR adapter interfaces, disabled-safe standalone adapter behavior, mock adapter, isolated athenahealth sandbox scaffold, chart-context package normalization, adapter status API, chart-context API, synthetic fixtures, worker health normalization, and contract/OpenAPI updates.
+- **Backend behavior:** Added `/api/v1/integrations/ehr/status` and `/api/v1/integrations/ehr/chart-context/{safePatientId}/{externalEncounterId}`. Status defaults to athenahealth disabled mode with `standaloneSafe = true`. Chart context can be loaded through the sandbox/mock adapter boundary with source-linked synthetic slices for problems, medications, allergies, labs, and documents.
+- **Files changed:** `packages/ehr-adapters`, `packages/contracts`, `packages/contracts/openapi/aura-note.v1.yaml`, `packages/security`, `packages/testing`, `apps/api/src/integrations/*`, `apps/api/src/app.module.ts`, `apps/api/package.json`, `apps/worker`, `docs/API_EVENT_CONTRACTS.md`, `docs/DATA_MODEL.md`, `RUN_LOG.md`, and `repo_status.json`.
+- **Tests run:** `pnpm install --lockfile-only`; `pnpm --filter @aura-note/ehr-adapters test`; `pnpm --filter @aura-note/contracts test`; `pnpm --filter @aura-note/security test`; `pnpm --filter @aura-note/api test`; `pnpm --filter @aura-note/api typecheck`; `pnpm --filter @aura-note/api test:e2e`; `pnpm --filter @aura-note/worker test`; `pnpm --filter @aura-note/testing test`.
+- **Tests not run:** Full monorepo gate and GitHub Actions remain to be run before/after opening the `WO-010` PR. Live athenahealth calls, live writeback, production credentials, and production EHR payload parsing are intentionally not run.
+- **Accepted risks:** Chart context is synthetic and process-local. The athenahealth adapter is an isolated sandbox scaffold and does not use SDKs or live credentials. Attachment and task writeback remain unsupported in the scaffold.
+- **Open SPEC_GAPs:** None discovered for `WO-010`.
+- **Next step:** Run the `WO-010` full gate, open its draft PR, confirm CI, merge when green, then begin `WO-011`.

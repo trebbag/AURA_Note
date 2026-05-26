@@ -21,6 +21,8 @@ export type Permission =
   | 'billing_detail:view'
   | 'final_note:export'
   | 'patient_summary:export'
+  | 'ehr_adapter:view'
+  | 'ehr_chart_context:view'
   | 'ehr_writeback:queue'
   | 'ai_gateway:invoke'
   | 'ai_governance:view'
@@ -138,6 +140,10 @@ export function canPerform(permission: Permission, ctx: AccessContext): boolean 
       return (ctx.authorizedAdmin || ctx.role === 'clinician' || ctx.role === 'ma') && canViewFinalNote(ctx);
     case 'patient_summary:export':
       return (ctx.authorizedAdmin || ['clinician', 'ma'].includes(ctx.role)) && canViewPatientSummary(ctx);
+    case 'ehr_adapter:view':
+      return ctx.authorizedAdmin || ['clinician', 'admin', 'clinic_manager', 'compliance_privacy_lead'].includes(ctx.role);
+    case 'ehr_chart_context:view':
+      return ctx.authorizedAdmin || (ctx.role === 'clinician' && ctx.treatingClinician && ctx.linkedToPatient);
     case 'ehr_writeback:queue':
       return ctx.authorizedAdmin || (ctx.role === 'clinician' && ctx.treatingClinician && ctx.linkedToVisit);
     case 'ai_gateway:invoke':

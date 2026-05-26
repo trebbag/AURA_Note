@@ -1,4 +1,12 @@
-import type { AiEvidenceNodeDto, AiGatewayInvocationRequestDto, AppointmentDto, NoteDto, TaskDto, VisitSessionDto } from '@aura-note/contracts';
+import type {
+  AiEvidenceNodeDto,
+  AiGatewayInvocationRequestDto,
+  AppointmentDto,
+  EhrChartContextPackageDto,
+  NoteDto,
+  TaskDto,
+  VisitSessionDto
+} from '@aura-note/contracts';
 import type { AccessContext } from '@aura-note/security';
 
 export const syntheticIds = {
@@ -99,6 +107,39 @@ export function createSyntheticAiInvocationRequest(
       activeProblems: ['Synthetic diabetes follow-up']
     },
     evidence: [createSyntheticAiEvidenceNode()],
+    ...overrides
+  };
+}
+
+export function createSyntheticEhrChartContext(
+  overrides: Partial<EhrChartContextPackageDto> = {}
+): EhrChartContextPackageDto {
+  return {
+    chartContextPackageId: 'chart-context-athena-synthetic-001',
+    tenantId: syntheticIds.tenantId,
+    siteId: syntheticIds.siteId,
+    safePatientId: syntheticIds.safePatientId,
+    externalPatientRef: 'athena-patient-ref-synthetic-001',
+    externalEncounterId: 'athena-encounter-synthetic-001',
+    sourceSystem: 'athenahealth',
+    requestedSlices: ['problems', 'medications', 'allergies'],
+    slices: [
+      {
+        sliceType: 'problems',
+        sourceSystem: 'athenahealth',
+        sourceRecordRef: 'athena-problem-synthetic-001',
+        value: { items: ['Synthetic chronic condition item'] },
+        effectiveAt: '2026-05-26T14:00:00.000Z',
+        freshness: 'recent',
+        sourceQuality: 'high',
+        phiClassification: 'phi_reference',
+        allowedPurposes: ['care', 'documentation', 'billing_review', 'ai_context_packaging'],
+        evidenceIds: ['evidence-problems-synthetic-001']
+      }
+    ],
+    staleSliceCount: 0,
+    createdAt: '2026-05-26T18:00:00.000Z',
+    warnings: [],
     ...overrides
   };
 }

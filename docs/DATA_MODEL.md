@@ -234,3 +234,14 @@ Finalized-note detail views include the read-only final note, patient summary, d
 - `AiSafetyPolicy` and prompt registry records identify policy mode, prompt ID/version, output type, private/BAA requirement, source-link requirement, and human-review requirement.
 
 The current implementation rejects raw forbidden PHI keys and obvious PHI-like free-text patterns by default. Explicit redaction mode is available for mock invocation and records the redacted paths. All AI outputs remain draft/candidate/suggestion-only and human-review-required. No browser, API, worker, or package code calls an external AI provider in `WO-009`.
+
+## WO-010 EHR adapter athenahealth-first scaffold status
+
+`WO-010` adds vendor-neutral EHR adapter records and DTOs:
+
+- `EhrAdapterStatus` records vendor, mode, connectivity, tenant/site scope, health, and warning metadata. Default API behavior is athenahealth disabled mode so standalone operation remains safe without credentials.
+- `EhrWritebackCapabilityMatrix` records whether final-note, patient-summary, task, and attachment writeback are supported/configured. Unconfigured and unsupported paths remain explicit and never mark writeback complete.
+- `EhrChartContextPackage` records source-linked synthetic chart context by safe patient ID, external encounter reference, source system, requested slices, normalized slices, stale-slice count, and warnings.
+- `EhrChartContextSlice` stores normalized slice metadata for problems, medications, allergies, labs, documents, and future chart-context families. Each slice carries source system, source record reference, freshness, source quality, PHI classification, allowed purposes, and evidence IDs for AI grounding.
+
+The package includes `DisabledEhrAdapter`, `MockEhrAdapter`, and isolated `AthenahealthAdapter` sandbox scaffolding. No live athenahealth API calls, production credentials, raw EHR payload storage, or production writeback are introduced.

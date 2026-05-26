@@ -10,6 +10,8 @@ import {
   type ComplianceReviewDto,
   type DocumentationWorkspaceDto,
   type DraftNoteSummaryDto,
+  type EhrChartContextPackageDto,
+  type EhrIntegrationStatusDto,
   type ExportActionResponseDto,
   type FinalizationSessionDto,
   type FinalizedNoteDetailDto,
@@ -184,6 +186,80 @@ describe('AI gateway contracts', () => {
     assert.equal(invocation.contextPackage.deidentified, true);
     assert.equal(invocation.response.humanReviewRequired, true);
     assert.equal(invocation.domainEvents[0]?.eventType, 'ai.request_prepared.v1');
+  });
+});
+
+describe('EHR adapter contracts', () => {
+  it('represents disabled-safe standalone EHR status', () => {
+    const status: EhrIntegrationStatusDto = {
+      status: {
+        vendor: 'athenahealth',
+        connected: false,
+        mode: 'disabled',
+        tenantId: 'tenant-001',
+        siteId: 'site-001',
+        health: 'disabled',
+        warnings: ['Athenahealth adapter disabled']
+      },
+      capabilities: {
+        vendor: 'athenahealth',
+        finalNote: false,
+        patientSummary: false,
+        tasks: false,
+        attachments: false,
+        configured: false,
+        unsupportedReasons: ['Credentials are not configured']
+      },
+      checkedAt: '2026-05-26T18:00:00.000Z',
+      standaloneSafe: true,
+      auditEvent: {
+        auditEventId: 'audit-ehr-001',
+        tenantId: 'tenant-001',
+        action: 'ehr.status_check',
+        entityType: 'EhrAdapter',
+        entityId: 'athenahealth',
+        traceId: 'trace-ehr-001',
+        createdAt: '2026-05-26T18:00:00.000Z'
+      },
+      domainEvents: []
+    };
+
+    assert.equal(status.standaloneSafe, true);
+    assert.equal(status.capabilities.configured, false);
+  });
+
+  it('represents source-linked chart context slices for AI packaging', () => {
+    const chartContext: EhrChartContextPackageDto = {
+      chartContextPackageId: 'chart-context-athena-001',
+      tenantId: 'tenant-001',
+      siteId: 'site-001',
+      safePatientId: 'safe-patient-001',
+      externalPatientRef: 'athena-patient-ref-synthetic-001',
+      externalEncounterId: 'athena-encounter-synthetic-001',
+      sourceSystem: 'athenahealth',
+      requestedSlices: ['problems', 'medications', 'allergies'],
+      slices: [
+        {
+          sliceType: 'problems',
+          sourceSystem: 'athenahealth',
+          sourceRecordRef: 'athena-problem-synthetic-001',
+          value: { items: ['Synthetic chronic condition item'] },
+          effectiveAt: '2026-05-26T14:00:00.000Z',
+          freshness: 'recent',
+          sourceQuality: 'high',
+          phiClassification: 'phi_reference',
+          allowedPurposes: ['care', 'documentation', 'billing_review', 'ai_context_packaging'],
+          evidenceIds: ['evidence-problems-synthetic-001']
+        }
+      ],
+      staleSliceCount: 0,
+      createdAt: '2026-05-26T18:00:00.000Z',
+      warnings: []
+    };
+
+    assert.equal(chartContext.sourceSystem, 'athenahealth');
+    assert.equal(chartContext.slices[0]?.allowedPurposes.includes('ai_context_packaging'), true);
+    assert.equal(chartContext.slices[0]?.evidenceIds.length, 1);
   });
 });
 

@@ -59,6 +59,9 @@ export type CoreEventType =
   | 'export.generated.v1'
   | 'ehr_writeback.queued.v1'
   | 'ehr_writeback.failed.v1'
+  | 'ehr.adapter_status_checked.v1'
+  | 'ehr.patient_matched.v1'
+  | 'ehr.chart_context_loaded.v1'
   | 'ai.request_prepared.v1'
   | 'ai.context_scrubbed.v1'
   | 'ai.phi_rejected.v1'
@@ -520,6 +523,101 @@ export interface ExportActionResponseDto {
 export interface EhrWritebackActionResponseDto {
   writeback: EhrWritebackQueueDto;
   finalizedNote: FinalizedNoteDetailDto;
+  auditEvent: AuditEventDto;
+  domainEvents: Array<AuraNoteEvent<Record<string, unknown>>>;
+}
+
+export type EhrAdapterModeDto = 'disabled' | 'mock' | 'sandbox' | 'production';
+export type EhrAdapterHealthDto = 'ok' | 'degraded' | 'disabled' | 'failed';
+export type EhrChartContextSliceTypeDto =
+  | 'demographics'
+  | 'encounter'
+  | 'appointment'
+  | 'problems'
+  | 'diagnoses_history'
+  | 'medications'
+  | 'allergies'
+  | 'immunizations'
+  | 'vitals'
+  | 'labs'
+  | 'documents'
+  | 'prior_notes'
+  | 'procedures'
+  | 'social_history'
+  | 'quality'
+  | 'payer'
+  | 'tasks'
+  | 'billing_context';
+export type EhrVendorDto = 'athenahealth' | 'epic' | 'eclinicalworks' | 'generic_mock';
+
+export interface EhrAdapterStatusDto {
+  vendor: EhrVendorDto;
+  connected: boolean;
+  mode: EhrAdapterModeDto;
+  tenantId: string;
+  siteId: string;
+  health: EhrAdapterHealthDto;
+  warnings: string[];
+}
+
+export interface EhrWritebackCapabilityMatrixDto {
+  vendor: EhrVendorDto;
+  finalNote: boolean;
+  patientSummary: boolean;
+  tasks: boolean;
+  attachments: boolean;
+  configured: boolean;
+  unsupportedReasons: string[];
+}
+
+export interface EhrPatientSearchResultDto {
+  safePatientId: string;
+  externalPatientRef: string;
+  sourceSystem: EhrVendorDto;
+  displayLabel: string;
+  matchConfidence: number;
+  source: 'mock' | 'athenahealth_sandbox';
+}
+
+export interface EhrChartContextSliceDto {
+  sliceType: EhrChartContextSliceTypeDto;
+  sourceSystem: EhrVendorDto;
+  sourceRecordRef: string;
+  value: Record<string, unknown>;
+  effectiveAt: string;
+  freshness: 'current_visit' | 'recent' | 'historical' | 'unknown';
+  sourceQuality: 'high' | 'medium' | 'low';
+  phiClassification: 'phi_reference' | 'restricted';
+  allowedPurposes: Array<'care' | 'documentation' | 'billing_review' | 'ai_context_packaging'>;
+  evidenceIds: string[];
+}
+
+export interface EhrChartContextPackageDto {
+  chartContextPackageId: string;
+  tenantId: string;
+  siteId: string;
+  safePatientId: string;
+  externalPatientRef: string;
+  externalEncounterId: string;
+  sourceSystem: EhrVendorDto;
+  requestedSlices: EhrChartContextSliceTypeDto[];
+  slices: EhrChartContextSliceDto[];
+  staleSliceCount: number;
+  createdAt: string;
+  warnings: string[];
+}
+
+export interface EhrIntegrationStatusDto {
+  status: EhrAdapterStatusDto;
+  capabilities: EhrWritebackCapabilityMatrixDto;
+  checkedAt: string;
+  standaloneSafe: true;
+  auditEvent: AuditEventDto;
+  domainEvents: Array<AuraNoteEvent<Record<string, unknown>>>;
+}
+
+export interface EhrChartContextResponseDto {
+  chartContext: EhrChartContextPackageDto;
   auditEvent: AuditEventDto;
   domainEvents: Array<AuraNoteEvent<Record<string, unknown>>>;
 }

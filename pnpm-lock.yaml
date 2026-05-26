@@ -32,6 +32,9 @@ importers:
       '@aura-note/domain':
         specifier: workspace:^
         version: link:../../packages/domain
+      '@aura-note/ehr-adapters':
+        specifier: workspace:^
+        version: link:../../packages/ehr-adapters
       '@aura-note/security':
         specifier: workspace:^
         version: link:../../packages/security
@@ -131,6 +134,10 @@ importers:
         version: 5.9.3
 
   packages/ehr-adapters:
+    dependencies:
+      '@aura-note/contracts':
+        specifier: workspace:*
+        version: link:../contracts
     devDependencies:
       typescript:
         specifier: ^5.6.0

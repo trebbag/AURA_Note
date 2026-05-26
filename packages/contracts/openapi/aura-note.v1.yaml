@@ -675,7 +675,36 @@ paths:
     get:
       operationId: getEhrStatus
       responses:
-        '200': { description: EHR status }
+        '200':
+          description: WO-010 implemented EHR adapter status with standalone-safe disabled mode.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EhrIntegrationStatusResponse'
+  /integrations/ehr/chart-context/{safePatientId}/{externalEncounterId}:
+    get:
+      operationId: getEhrChartContext
+      description: WO-010 implemented synthetic chart-context retrieval through the EHR adapter boundary.
+      parameters:
+        - name: safePatientId
+          in: path
+          required: true
+          schema: { type: string }
+        - name: externalEncounterId
+          in: path
+          required: true
+          schema: { type: string }
+        - name: slices
+          in: query
+          required: false
+          schema: { type: string }
+      responses:
+        '200':
+          description: Source-linked synthetic chart context.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EhrChartContextResponse'
   /integrations/clinicos/status:
     get:
       operationId: getClinicOsStatus
@@ -1646,6 +1675,115 @@ components:
         blocksSigning: { type: boolean }
         adjudicationStatus: { type: string, enum: [open, answered, closed, assigned, deferred] }
         ownerRole: { type: string }
+    EhrAdapterStatus:
+      type: object
+      required: [vendor, connected, mode, tenantId, siteId, health, warnings]
+      properties:
+        vendor: { type: string, enum: [athenahealth, epic, eclinicalworks, generic_mock] }
+        connected: { type: boolean }
+        mode: { type: string, enum: [disabled, mock, sandbox, production] }
+        tenantId: { type: string }
+        siteId: { type: string }
+        health: { type: string, enum: [ok, degraded, disabled, failed] }
+        warnings:
+          type: array
+          items: { type: string }
+    EhrWritebackCapabilityMatrix:
+      type: object
+      required: [vendor, finalNote, patientSummary, tasks, attachments, configured, unsupportedReasons]
+      properties:
+        vendor: { type: string, enum: [athenahealth, epic, eclinicalworks, generic_mock] }
+        finalNote: { type: boolean }
+        patientSummary: { type: boolean }
+        tasks: { type: boolean }
+        attachments: { type: boolean }
+        configured: { type: boolean }
+        unsupportedReasons:
+          type: array
+          items: { type: string }
+    EhrChartContextSlice:
+      type: object
+      required: [sliceType, sourceSystem, sourceRecordRef, value, effectiveAt, freshness, sourceQuality, phiClassification, allowedPurposes, evidenceIds]
+      properties:
+        sliceType:
+          type: string
+          enum: [demographics, encounter, appointment, problems, diagnoses_history, medications, allergies, immunizations, vitals, labs, documents, prior_notes, procedures, social_history, quality, payer, tasks, billing_context]
+        sourceSystem: { type: string, enum: [athenahealth, epic, eclinicalworks, generic_mock] }
+        sourceRecordRef: { type: string }
+        value: { type: object }
+        effectiveAt: { type: string, format: date-time }
+        freshness: { type: string, enum: [current_visit, recent, historical, unknown] }
+        sourceQuality: { type: string, enum: [high, medium, low] }
+        phiClassification: { type: string, enum: [phi_reference, restricted] }
+        allowedPurposes:
+          type: array
+          items: { type: string, enum: [care, documentation, billing_review, ai_context_packaging] }
+        evidenceIds:
+          type: array
+          items: { type: string }
+    EhrChartContextPackage:
+      type: object
+      required: [chartContextPackageId, tenantId, siteId, safePatientId, externalPatientRef, externalEncounterId, sourceSystem, requestedSlices, slices, staleSliceCount, createdAt, warnings]
+      properties:
+        chartContextPackageId: { type: string }
+        tenantId: { type: string }
+        siteId: { type: string }
+        safePatientId: { type: string }
+        externalPatientRef: { type: string }
+        externalEncounterId: { type: string }
+        sourceSystem: { type: string, enum: [athenahealth, epic, eclinicalworks, generic_mock] }
+        requestedSlices:
+          type: array
+          items: { type: string }
+        slices:
+          type: array
+          items:
+            $ref: '#/components/schemas/EhrChartContextSlice'
+        staleSliceCount: { type: integer, minimum: 0 }
+        createdAt: { type: string, format: date-time }
+        warnings:
+          type: array
+          items: { type: string }
+    EhrIntegrationStatusResponse:
+      allOf:
+        - type: object
+          properties:
+            data:
+              type: object
+              required: [status, capabilities, checkedAt, standaloneSafe, auditEvent, domainEvents]
+              properties:
+                status:
+                  $ref: '#/components/schemas/EhrAdapterStatus'
+                capabilities:
+                  $ref: '#/components/schemas/EhrWritebackCapabilityMatrix'
+                checkedAt: { type: string, format: date-time }
+                standaloneSafe: { type: boolean, const: true }
+                auditEvent:
+                  $ref: '#/components/schemas/AuditEvent'
+                domainEvents:
+                  type: array
+                  items:
+                    $ref: '#/components/schemas/AuraNoteEvent'
+            meta:
+              $ref: '#/components/schemas/ApiMeta'
+    EhrChartContextResponse:
+      allOf:
+        - type: object
+          properties:
+            data:
+              type: object
+              required: [chartContext, auditEvent, domainEvents]
+              properties:
+                chartContext:
+                  $ref: '#/components/schemas/EhrChartContextPackage'
+                auditEvent:
+                  $ref: '#/components/schemas/AuditEvent'
+                domainEvents:
+                  type: array
+                  items:
+                    $ref: '#/components/schemas/AuraNoteEvent'
+            meta:
+              $ref: '#/components/schemas/ApiMeta'
     AiEvidenceNode:
       type: object
       required: [evidenceId, evidenceType, sourceSystem, sourceRef, displayLabel, excerptOrValue, freshness, sourceQuality, phiClassification, allowedRoles]
@@ -1792,7 +1930,7 @@ components:
         eventId: { type: string }
         eventType:
           type: string
-          enum: [appointment.created.v1, note.shell_created.v1, visit.started.v1, visit.paused.v1, visit.resumed.v1, visit.stopped.v1, recording.started.v1, recording.exception_approved.v1, recording.stopped.v1, raw_audio.retention_scheduled.v1, transcript.segment_appended.v1, suggestions.evaluated.v1, suggestion.accepted.v1, suggestion.removed.v1, visit_selection.added.v1, compliance.evaluated.v1, history_gap.task_created.v1, task.blocker_changed.v1, low_confidence_diagnosis.override_recorded.v1, finalization.started.v1, finalization.selection_decided.v1, finalization.suggestion_decided.v1, finalization.compose_requested.v1, finalization.compose_completed.v1, finalization.compare_edit_updated.v1, finalization.compose_rebeautified.v1, finalization.step_completed.v1, final_note.approved.v1, patient_summary.approved.v1, billing_review.triggered.v1, draft_claim_preview.generated.v1, billing_attestation.completed.v1, final_note.created.v1, patient_summary.finalized.v1, note.signed.v1, note.dispatched.v1, export.generated.v1, ehr_writeback.queued.v1, ehr_writeback.failed.v1, ai.request_prepared.v1, ai.context_scrubbed.v1, ai.phi_rejected.v1, ai.response_recorded.v1, ai.output_rejected.v1, audit.event_recorded.v1]
+          enum: [appointment.created.v1, note.shell_created.v1, visit.started.v1, visit.paused.v1, visit.resumed.v1, visit.stopped.v1, recording.started.v1, recording.exception_approved.v1, recording.stopped.v1, raw_audio.retention_scheduled.v1, transcript.segment_appended.v1, suggestions.evaluated.v1, suggestion.accepted.v1, suggestion.removed.v1, visit_selection.added.v1, compliance.evaluated.v1, history_gap.task_created.v1, task.blocker_changed.v1, low_confidence_diagnosis.override_recorded.v1, finalization.started.v1, finalization.selection_decided.v1, finalization.suggestion_decided.v1, finalization.compose_requested.v1, finalization.compose_completed.v1, finalization.compare_edit_updated.v1, finalization.compose_rebeautified.v1, finalization.step_completed.v1, final_note.approved.v1, patient_summary.approved.v1, billing_review.triggered.v1, draft_claim_preview.generated.v1, billing_attestation.completed.v1, final_note.created.v1, patient_summary.finalized.v1, note.signed.v1, note.dispatched.v1, export.generated.v1, ehr_writeback.queued.v1, ehr_writeback.failed.v1, ehr.adapter_status_checked.v1, ehr.patient_matched.v1, ehr.chart_context_loaded.v1, ai.request_prepared.v1, ai.context_scrubbed.v1, ai.phi_rejected.v1, ai.response_recorded.v1, ai.output_rejected.v1, audit.event_recorded.v1]
         schemaVersion: { type: string, enum: [v1] }
         tenantId: { type: string }
         siteId: { type: string }
