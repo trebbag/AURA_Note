@@ -245,3 +245,13 @@ The current implementation rejects raw forbidden PHI keys and obvious PHI-like f
 - `EhrChartContextSlice` stores normalized slice metadata for problems, medications, allergies, labs, documents, and future chart-context families. Each slice carries source system, source record reference, freshness, source quality, PHI classification, allowed purposes, and evidence IDs for AI grounding.
 
 The package includes `DisabledEhrAdapter`, `MockEhrAdapter`, and isolated `AthenahealthAdapter` sandbox scaffolding. No live athenahealth API calls, production credentials, raw EHR payload storage, or production writeback are introduced.
+
+## WO-011 ClinicOS integration adapter scaffold status
+
+`WO-011` adds typed ClinicOS integration records:
+
+- `ClinicOsModeContext` records host mode, availability, tenant/site scope, module context IDs for M03 VisitGraph, M04 WorkOS, M17 NP Cockpit, M21 Charge Integrity, M23 Copilot Runtime, M24 AI Governance, M25 Integration Hub, and M26 Data Cloud, plus warnings.
+- `ClinicOsMappingRecord` records local AURA Note object IDs mapped to ClinicOS module object IDs, source-of-truth mode, status, and timestamp.
+- `ClinicOsPublishedEvent` records adapter outbox status for AURA Note events targeted to ClinicOS module families.
+
+Standalone mode remains the default and does not require ClinicOS tables or services. ClinicOS mock mode stores synthetic mappings and outbox records only. Unavailable ClinicOS mode degrades safely by skipping mappings and marking event publication failed/unavailable. AURA Note permission checks remain authoritative before ClinicOS context is returned or mappings are written.

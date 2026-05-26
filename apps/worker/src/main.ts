@@ -1,5 +1,6 @@
 import type {
   AiGatewayInvocationResponseDto,
+  ClinicOsIntegrationStatusDto,
   EhrAdapterStatusDto,
   EhrWritebackQueueDto,
   RawAudioRetentionMetadataDto
@@ -15,6 +16,7 @@ export function getWorkerStatus() {
       'export_artifact_status_scan',
       'ehr_writeback_queue_status_scan',
       'ehr_adapter_health_check_scan',
+      'clinicos_mapping_outbox_scan',
       'ai_gateway_mock_invocation_status_scan'
     ],
     jobsDeferredToWorkOrders: ['live_ai_provider_queue', 'live_ehr_writeback', 'analytics']
@@ -71,6 +73,16 @@ export function evaluateEhrAdapterHealth(records: EhrAdapterStatusDto[]): EhrAda
     }
     return record;
   });
+}
+
+export function evaluateClinicOsOutbox(records: ClinicOsIntegrationStatusDto[]): ClinicOsIntegrationStatusDto[] {
+  return records.map((record) => ({
+    ...record,
+    permissionsStillEnforcedByAuraNote: true,
+    publishedEvents: record.publishedEvents.map((event) =>
+      record.modeContext.availability === 'unavailable' ? { ...event, status: 'failed_unavailable' as const } : event
+    )
+  }));
 }
 
 if (require.main === module) {

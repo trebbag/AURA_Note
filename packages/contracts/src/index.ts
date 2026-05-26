@@ -62,6 +62,10 @@ export type CoreEventType =
   | 'ehr.adapter_status_checked.v1'
   | 'ehr.patient_matched.v1'
   | 'ehr.chart_context_loaded.v1'
+  | 'clinicos.mode_resolved.v1'
+  | 'clinicos.mapping_recorded.v1'
+  | 'clinicos.event_published.v1'
+  | 'clinicos.unavailable.v1'
   | 'ai.request_prepared.v1'
   | 'ai.context_scrubbed.v1'
   | 'ai.phi_rejected.v1'
@@ -618,6 +622,76 @@ export interface EhrIntegrationStatusDto {
 
 export interface EhrChartContextResponseDto {
   chartContext: EhrChartContextPackageDto;
+  auditEvent: AuditEventDto;
+  domainEvents: Array<AuraNoteEvent<Record<string, unknown>>>;
+}
+
+export type AuraNoteHostModeDto = 'standalone' | 'clinicos_integrated' | 'ehr_embedded' | 'hybrid_transition';
+export type ClinicOsModuleIdDto = 'M03' | 'M04' | 'M17' | 'M21' | 'M23' | 'M24' | 'M25' | 'M26';
+export type ClinicOsAvailabilityDto = 'available' | 'disabled' | 'unavailable' | 'degraded';
+export type ClinicOsSourceOfTruthDto = 'aura_note' | 'clinicos' | 'ehr' | 'hybrid';
+export type ClinicOsMappingStatusDto = 'active' | 'pending' | 'unavailable' | 'failed';
+
+export interface ClinicOsModeContextDto {
+  enabled: boolean;
+  hostMode: AuraNoteHostModeDto;
+  tenantId: string;
+  siteId: string;
+  availability: ClinicOsAvailabilityDto;
+  visitGraphId?: string;
+  workOsQueueId?: string;
+  npCockpitContextId?: string;
+  chargeIntegrityContextId?: string;
+  copilotRuntimeContextId?: string;
+  governanceContextId?: string;
+  integrationHubContextId?: string;
+  dataCloudContextId?: string;
+  warnings: string[];
+}
+
+export interface ClinicOsMappingRecordDto {
+  mappingId: string;
+  tenantId: string;
+  siteId: string;
+  localObjectType: 'appointment' | 'note' | 'task' | 'ai_request' | 'charge_preview' | 'event' | 'analytics_signal';
+  localObjectId: string;
+  clinicosModuleId: ClinicOsModuleIdDto;
+  clinicosObjectId: string;
+  sourceOfTruth: ClinicOsSourceOfTruthDto;
+  status: ClinicOsMappingStatusDto;
+  createdAt: string;
+}
+
+export interface ClinicOsPublishedEventDto {
+  outboxId: string;
+  tenantId: string;
+  siteId: string;
+  eventType: string;
+  targetModules: ClinicOsModuleIdDto[];
+  status: 'queued' | 'skipped_disabled' | 'failed_unavailable';
+  createdAt: string;
+}
+
+export interface ClinicOsIntegrationStatusDto {
+  modeContext: ClinicOsModeContextDto;
+  mappings: ClinicOsMappingRecordDto[];
+  publishedEvents: ClinicOsPublishedEventDto[];
+  permissionsStillEnforcedByAuraNote: true;
+  auditEvent: AuditEventDto;
+  domainEvents: Array<AuraNoteEvent<Record<string, unknown>>>;
+}
+
+export interface ClinicOsMapVisitRequestDto {
+  localAppointmentId: string;
+  localNoteId: string;
+}
+
+export interface ClinicOsMapVisitResponseDto {
+  modeContext: ClinicOsModeContextDto;
+  visitGraphId?: string;
+  m17ContextId?: string;
+  mappings: ClinicOsMappingRecordDto[];
+  publishedEvent: ClinicOsPublishedEventDto;
   auditEvent: AuditEventDto;
   domainEvents: Array<AuraNoteEvent<Record<string, unknown>>>;
 }

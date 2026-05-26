@@ -10,7 +10,7 @@
     "typecheck": "tsc --noEmit -p tsconfig.json",
     "test": "node -e \"console.log('ui scaffold verified by typecheck; component tests begin with UI work orders')\"",
     "test:unit": "pnpm test",
-    "test:e2e": "node -e \"console.log('ui e2e deferred until browser flows are implemented')\""
+    "test:e2e": "node -e \"console.log('ui package e2e scaffold: no shared interactive components exist yet; verified by typecheck and build')\""
   },
   "devDependencies": { "typescript": "^5.6.0" }
 }

@@ -2,6 +2,7 @@ import type {
   AiEvidenceNodeDto,
   AiGatewayInvocationRequestDto,
   AppointmentDto,
+  ClinicOsIntegrationStatusDto,
   EhrChartContextPackageDto,
   NoteDto,
   TaskDto,
@@ -140,6 +141,51 @@ export function createSyntheticEhrChartContext(
     staleSliceCount: 0,
     createdAt: '2026-05-26T18:00:00.000Z',
     warnings: [],
+    ...overrides
+  };
+}
+
+export function createSyntheticClinicOsStatus(
+  overrides: Partial<ClinicOsIntegrationStatusDto> = {}
+): ClinicOsIntegrationStatusDto {
+  return {
+    modeContext: {
+      enabled: true,
+      hostMode: 'clinicos_integrated',
+      tenantId: syntheticIds.tenantId,
+      siteId: syntheticIds.siteId,
+      availability: 'available',
+      visitGraphId: 'clinicos-m03-visitgraph-synthetic-001',
+      npCockpitContextId: 'clinicos-m17-np-cockpit-synthetic-001',
+      warnings: ['Synthetic ClinicOS mock mode']
+    },
+    mappings: [
+      {
+        mappingId: 'clinicos-map-synthetic-001',
+        tenantId: syntheticIds.tenantId,
+        siteId: syntheticIds.siteId,
+        localObjectType: 'appointment',
+        localObjectId: syntheticIds.appointmentId,
+        clinicosModuleId: 'M03',
+        clinicosObjectId: 'clinicos-m03-visitgraph-synthetic-001',
+        sourceOfTruth: 'clinicos',
+        status: 'active',
+        createdAt: '2026-05-26T18:30:00.000Z'
+      }
+    ],
+    publishedEvents: [],
+    permissionsStillEnforcedByAuraNote: true,
+    auditEvent: {
+      auditEventId: 'audit-clinicos-synthetic-001',
+      tenantId: syntheticIds.tenantId,
+      siteId: syntheticIds.siteId,
+      action: 'clinicos.status',
+      entityType: 'ClinicOsAdapter',
+      entityId: 'clinicos_integrated',
+      traceId: 'trace-clinicos-synthetic-001',
+      createdAt: '2026-05-26T18:30:00.000Z'
+    },
+    domainEvents: [],
     ...overrides
   };
 }

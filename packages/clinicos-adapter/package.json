@@ -8,9 +8,9 @@
     "lint": "tsc --noEmit -p tsconfig.json",
     "lint:phi": "node ../../scripts/lint-phi.js packages/clinicos-adapter",
     "typecheck": "tsc --noEmit -p tsconfig.json",
-    "test": "node -e \"console.log('clinicos-adapter scaffold verified by typecheck; implementation begins in WO-011')\"",
+    "test": "node --import tsx --test src/index.test.ts",
     "test:unit": "pnpm test",
-    "test:e2e": "node -e \"console.log('clinicos-adapter e2e deferred until WO-011')\""
+    "test:e2e": "node --import tsx --test src/index.test.ts"
   },
   "devDependencies": { "typescript": "^5.6.0" }
 }

@@ -141,3 +141,15 @@ Codex must append a dated entry after each work order or meaningful implementati
 - **Accepted risks:** Chart context is synthetic and process-local. The athenahealth adapter is an isolated sandbox scaffold and does not use SDKs or live credentials. Attachment and task writeback remain unsupported in the scaffold.
 - **Open SPEC_GAPs:** None discovered for `WO-010`.
 - **Next step:** Run the `WO-010` full gate, open its draft PR, confirm CI, merge when green, then begin `WO-011`.
+
+## 2026-05-26T17:50:00Z — WO-011 ClinicOS integration adapter
+
+- **Work order:** `WO-011` ClinicOS Integration Adapter.
+- **Summary of changes:** Added ClinicOS host-mode resolver, standalone/ClinicOS mock mode contexts, ClinicOS mapping records, event outbox records, module-target routing, ClinicOS status API, VisitGraph/M17 mapping API, synthetic fixtures, worker outbox normalization, contract/OpenAPI updates, package-level e2e script hardening for completed scaffold areas, and the CP-3 checkpoint report.
+- **Backend behavior:** Added `/api/v1/integrations/clinicos/status` and `/api/v1/integrations/clinicos/map-visit`. Status defaults to standalone/disabled mode and can report ClinicOS mock mode. Mapping requires authorized admin or service account permission, records synthetic M03 VisitGraph and M17 NP Cockpit mappings when available, and safely reports no mappings when ClinicOS is disabled or unavailable.
+- **Files changed:** `packages/clinicos-adapter`, `packages/contracts`, `packages/contracts/openapi/aura-note.v1.yaml`, `packages/security`, `packages/testing`, package `package.json` scripts for completed scaffold checks, `apps/api/src/integrations/*`, `apps/api/package.json`, `apps/worker`, `docs/API_EVENT_CONTRACTS.md`, `docs/DATA_MODEL.md`, `CHECKPOINT_REPORT.md`, `RUN_LOG.md`, and `repo_status.json`.
+- **Tests run:** `pnpm install --lockfile-only`; `pnpm --filter @aura-note/clinicos-adapter test`; `pnpm --filter @aura-note/contracts test`; `pnpm --filter @aura-note/api test`; `pnpm --filter @aura-note/api typecheck`; `pnpm --filter @aura-note/api test:e2e`; `pnpm --filter @aura-note/clinicos-adapter typecheck`; `pnpm --filter @aura-note/worker test`; `pnpm --filter @aura-note/testing test`; `pnpm install --frozen-lockfile`; `pnpm lint`; `pnpm lint:phi`; `pnpm typecheck`; `pnpm test`; `pnpm test:e2e`; `pnpm build`; `node scripts/status.js`; `git diff --check`.
+- **Tests not run:** GitHub Actions remains to be run after opening the `WO-011` PR. Live ClinicOS services, production identity delegation, production VisitGraph, production WorkOS, and production data-cloud writes are intentionally not run.
+- **Accepted risks:** ClinicOS integration is mock/scaffold only. Mapping records are process-local synthetic records. ClinicOS context does not replace AURA Note permission checks or source-of-truth controls.
+- **Open SPEC_GAPs:** None discovered for `WO-011`.
+- **Next step:** Run the CP-3 full gate, open the `WO-011` draft PR with checkpoint evidence, confirm CI, merge when green, then begin CP-4/`WO-012`.

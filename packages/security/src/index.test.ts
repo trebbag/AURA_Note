@@ -128,6 +128,8 @@ describe('final note and coaching access', () => {
     assert.equal(canPerform('ehr_adapter:view', linkedClinician), true);
     assert.equal(canPerform('ehr_chart_context:view', linkedClinician), true);
     assert.equal(canPerform('ehr_writeback:queue', linkedClinician), true);
+    assert.equal(canPerform('clinicos_adapter:view', linkedClinician), true);
+    assert.equal(canPerform('clinicos_mapping:write', linkedClinician), false);
     assert.equal(canPerform('ai_gateway:invoke', linkedClinician), true);
     assert.equal(canPerform('final_note:export', linkedBilling), false);
     assert.equal(canPerform('patient_summary:export', linkedBilling), false);

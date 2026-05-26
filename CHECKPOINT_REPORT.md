@@ -107,3 +107,58 @@ None discovered during CP-2.
 ## Next recommended batch
 
 Begin CP-3 with `WO-009` through `WO-011`: AI Gateway and PHI boundary, athenahealth-first EHR adapter scaffolding, and ClinicOS integration adapter. Keep raw PHI out of external AI, keep all EHR behavior behind adapters, and preserve human review for clinical, billing, and writeback actions.
+
+## CP-3 — AI, PHI, and EHR integration shell ready
+
+**Status:** Complete locally in the `WO-011` review branch. PR #9 and PR #10 passed GitHub Actions and were merged; the `WO-011` PR must pass GitHub Actions before CP-4 begins.
+
+## Completed work orders
+
+- `WO-009` — AI Gateway and PHI boundary.
+- `WO-010` — EHR adapters with athenahealth-first path.
+- `WO-011` — ClinicOS integration adapter.
+
+## Acceptance evidence
+
+- AI Gateway status and mock invocation endpoints exist with external AI disabled by default.
+- AI context packaging is source-linked, purpose-limited, draft/candidate-only, and human-review-required.
+- Obvious forbidden PHI keys are rejected by default; explicit redaction mode produces scrubbed context before mock invocation.
+- Model-governance/audit events are represented for AI request preparation, context scrubbing, PHI rejection, response recording, and unsafe output rejection.
+- Vendor-neutral EHR adapter interfaces exist with disabled, mock, and athenahealth sandbox-safe scaffold implementations.
+- EHR status and synthetic chart-context endpoints are tenant-scoped through the adapter boundary and do not require live credentials.
+- EHR writeback remains configuration-gated scaffold state; the CP-2 writeback queue is not converted into live writeback.
+- ClinicOS host-mode resolution supports standalone and ClinicOS mock contexts without replacing AURA Note permission checks.
+- ClinicOS mapping records connect AURA Note visit context to M03 VisitGraph, M04 tasks, M17 NP Cockpit, M21 Charge Integrity, M23 AI, M24 governance, M25 integration, and M26 data concepts where relevant.
+- ClinicOS unavailable or disabled mode degrades safely by returning no external mappings and recording an unavailable event instead of blocking standalone workflows.
+- Worker scaffolds can normalize AI invocation status, EHR adapter health, and ClinicOS outbox events without external services.
+
+## Validation commands
+
+- `pnpm --filter @aura-note/ai-gateway test`
+- `pnpm --filter @aura-note/ehr-adapters test`
+- `pnpm --filter @aura-note/clinicos-adapter test`
+- `pnpm --filter @aura-note/contracts test`
+- `pnpm --filter @aura-note/security test`
+- `pnpm --filter @aura-note/api test`
+- `pnpm --filter @aura-note/api test:e2e`
+- `pnpm --filter @aura-note/worker test`
+- `pnpm --filter @aura-note/testing test`
+- `pnpm --filter @aura-note/api typecheck`
+- `pnpm --filter @aura-note/clinicos-adapter typecheck`
+- Full repository gate passed before opening the `WO-011` PR: `pnpm install --frozen-lockfile`, `pnpm lint`, `pnpm lint:phi`, `pnpm typecheck`, `pnpm test`, `pnpm test:e2e`, `pnpm build`, `node scripts/status.js`, and `git diff --check`.
+- GitHub Actions `AURA Note CI / build-test` passed on PR #9 and PR #10. The `WO-011` PR must pass before merge.
+
+## Open risks
+
+- CP-3 remains synthetic and process-local. Production persistence, production de-identification, live AI providers, live athenahealth connectivity, live ClinicOS services, production identity delegation, and production data-cloud writes remain out of scope.
+- PHI detection is an obvious-pattern scaffold for CP-3 and is not a production de-identification engine.
+- EHR chart context and ClinicOS mappings are synthetic fixtures; they are not evidence of live vendor integration.
+- External writeback, claim submission, diagnosis finalization, coding finalization, medical-necessity determination, and autonomous billing remain prohibited and unimplemented.
+
+## Unresolved SPEC_GAPs
+
+None discovered during CP-3.
+
+## Next recommended batch
+
+Begin CP-4 with `WO-012` through `WO-014`: coaching and analytics scaffolding, production hardening/observability/retention/audit, and end-to-end acceptance/readiness reporting. Keep coaching role-limited, non-punitive, and separated from patient-facing outputs unless the governing spec authorizes a specific view.
