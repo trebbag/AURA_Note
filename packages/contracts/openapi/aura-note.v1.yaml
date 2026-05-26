@@ -660,6 +660,34 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/CoachingDashboardResponse'
+  /support/status:
+    get:
+      operationId: getSupportStatus
+      description: WO-013 implemented support hardening status with feature flags, retention policies, redacted logging posture, and safe degraded modes.
+      responses:
+        '200':
+          description: Support hardening status.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SupportStatusResponse'
+  /support/audit-exports:
+    post:
+      operationId: requestAuditExport
+      description: WO-013 implemented redacted metadata-only audit export scaffold. Does not deliver files or include PHI.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AuditExportRequest'
+      responses:
+        '201':
+          description: Redacted synthetic audit export metadata.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuditExportResponse'
   /ai-gateway/status:
     get:
       operationId: getAiGatewayStatus
@@ -2168,6 +2196,174 @@ components:
               $ref: '#/components/schemas/CoachingDashboard'
             meta:
               $ref: '#/components/schemas/ApiMeta'
+    FeatureFlagDecision:
+      type: object
+      required: [key, enabled, governs, defaultValue]
+      properties:
+        key: { type: string }
+        enabled: { type: boolean }
+        governs:
+          type: string
+          enum: [external_ai, ehr_writeback, clinicos_sync, production_analytics, audit_export_download]
+        defaultValue: { type: boolean, const: false }
+        disabledReason: { type: string }
+    StructuredLogEntry:
+      type: object
+      required: [service, level, message, requestId, traceId, eventName, timestamp, redactedPaths, phiSafe]
+      properties:
+        service: { type: string }
+        level: { type: string, enum: [debug, info, warn, error] }
+        message: { type: string }
+        requestId: { type: string }
+        traceId: { type: string }
+        eventName: { type: string }
+        timestamp: { type: string, format: date-time }
+        payload: {}
+        redactedPaths:
+          type: array
+          items: { type: string }
+        phiSafe: { type: boolean, const: true }
+    RetentionPolicyStatus:
+      type: object
+      required: [policyId, recordClass, retentionRule, enforcedByJob, lastEvaluatedAt, candidateCount, purgeEligibleCount, destructivePurgeEnabled]
+      properties:
+        policyId: { type: string }
+        recordClass: { type: string, enum: [standard, audit, transcript, audio_ephemeral] }
+        retentionRule: { type: string, enum: [one_week, indefinite, tenant_policy] }
+        enforcedByJob: { type: string }
+        lastEvaluatedAt: { type: string, format: date-time }
+        candidateCount: { type: integer, minimum: 0 }
+        purgeEligibleCount: { type: integer, minimum: 0 }
+        destructivePurgeEnabled: { type: boolean, const: false }
+    SupportFailureState:
+      type: object
+      required: [component, status, operatorMessage, safeDegradedMode]
+      properties:
+        component:
+          type: string
+          enum: [external_ai, ehr_writeback, clinicos_sync, audit_export, raw_audio_retention, transcript_retention, structured_logging]
+        status: { type: string, enum: [ok, disabled, degraded, failed, metadata_only] }
+        operatorMessage: { type: string }
+        safeDegradedMode: { type: string }
+    SupportStatus:
+      type: object
+      required: [service, checkpoint, mode, generatedAt, overallHealth, featureFlags, logging, retention, auditExport, failureStates, ciRuntime]
+      properties:
+        service: { type: string, enum: [aura-note] }
+        checkpoint: { type: string, enum: [CP-4] }
+        mode: { type: string, enum: [standalone, clinicos_integrated] }
+        generatedAt: { type: string, format: date-time }
+        overallHealth: { type: string, enum: [ok, degraded] }
+        featureFlags:
+          type: array
+          items:
+            $ref: '#/components/schemas/FeatureFlagDecision'
+        logging:
+          type: object
+          required: [structured, requestCorrelated, phiRedaction, sample]
+          properties:
+            structured: { type: boolean, const: true }
+            requestCorrelated: { type: boolean, const: true }
+            phiRedaction: { type: string, enum: [forbidden_keys_and_obvious_text] }
+            sample:
+              $ref: '#/components/schemas/StructuredLogEntry'
+        retention:
+          type: array
+          items:
+            $ref: '#/components/schemas/RetentionPolicyStatus'
+        auditExport:
+          type: object
+          required: [enabled, downloadEnabled, format, redactedByDefault]
+          properties:
+            enabled: { type: boolean }
+            downloadEnabled: { type: boolean, const: false }
+            format: { type: string, enum: [jsonl] }
+            redactedByDefault: { type: boolean, const: true }
+        failureStates:
+          type: array
+          items:
+            $ref: '#/components/schemas/SupportFailureState'
+        ciRuntime:
+          type: object
+          required: [nodeVersion, pnpmVersion, node20ActionWarningAcceptedUntil]
+          properties:
+            nodeVersion: { type: string, enum: ['20'] }
+            pnpmVersion: { type: string, enum: ['9.12.0'] }
+            node20ActionWarningAcceptedUntil: { type: string, enum: [WO-013] }
+    AuditExportRequest:
+      type: object
+      required: [startAt, endAt, format, includePhi]
+      properties:
+        startAt: { type: string, format: date-time }
+        endAt: { type: string, format: date-time }
+        format: { type: string, enum: [jsonl] }
+        includePhi: { type: boolean, const: false }
+        entityTypes:
+          type: array
+          items: { type: string }
+    AuditExportRecord:
+      type: object
+      required: [auditEvent, requestId, redactedPayload, redactedPaths]
+      properties:
+        auditEvent:
+          $ref: '#/components/schemas/AuditEvent'
+        domainEventType: { type: string }
+        requestId: { type: string }
+        redactedPayload: { type: object }
+        redactedPaths:
+          type: array
+          items: { type: string }
+    AuditExport:
+      type: object
+      required: [auditExportId, status, requestedByUserId, requestedAt, traceId, format, includePhi, redacted, downloadEnabled, retentionClass, recordCount, records]
+      properties:
+        auditExportId: { type: string }
+        status: { type: string, enum: [ready_synthetic] }
+        requestedByUserId: { type: string }
+        requestedAt: { type: string, format: date-time }
+        traceId: { type: string }
+        format: { type: string, enum: [jsonl] }
+        includePhi: { type: boolean, const: false }
+        redacted: { type: boolean, const: true }
+        downloadEnabled: { type: boolean, const: false }
+        retentionClass: { type: string, enum: [audit] }
+        recordCount: { type: integer, minimum: 0 }
+        records:
+          type: array
+          items:
+            $ref: '#/components/schemas/AuditExportRecord'
+    SupportStatusResponse:
+      allOf:
+        - type: object
+          properties:
+            data:
+              type: object
+              required: [status, auditEvent]
+              properties:
+                status:
+                  $ref: '#/components/schemas/SupportStatus'
+                auditEvent:
+                  $ref: '#/components/schemas/AuditEvent'
+            meta:
+              $ref: '#/components/schemas/ApiMeta'
+    AuditExportResponse:
+      allOf:
+        - type: object
+          properties:
+            data:
+              type: object
+              required: [auditExport, auditEvent, domainEvents]
+              properties:
+                auditExport:
+                  $ref: '#/components/schemas/AuditExport'
+                auditEvent:
+                  $ref: '#/components/schemas/AuditEvent'
+                domainEvents:
+                  type: array
+                  items:
+                    $ref: '#/components/schemas/AuraNoteEvent'
+            meta:
+              $ref: '#/components/schemas/ApiMeta'
     AuraNoteEvent:
       type: object
       required: [eventId, eventType, schemaVersion, tenantId, siteId, producer, eventTime, traceId, idempotencyKey, sensitivity, retentionClass, payload]
@@ -2175,7 +2371,7 @@ components:
         eventId: { type: string }
         eventType:
           type: string
-          enum: [appointment.created.v1, note.shell_created.v1, visit.started.v1, visit.paused.v1, visit.resumed.v1, visit.stopped.v1, recording.started.v1, recording.exception_approved.v1, recording.stopped.v1, raw_audio.retention_scheduled.v1, transcript.segment_appended.v1, suggestions.evaluated.v1, suggestion.accepted.v1, suggestion.removed.v1, visit_selection.added.v1, compliance.evaluated.v1, history_gap.task_created.v1, task.blocker_changed.v1, low_confidence_diagnosis.override_recorded.v1, finalization.started.v1, finalization.selection_decided.v1, finalization.suggestion_decided.v1, finalization.compose_requested.v1, finalization.compose_completed.v1, finalization.compare_edit_updated.v1, finalization.compose_rebeautified.v1, finalization.step_completed.v1, final_note.approved.v1, patient_summary.approved.v1, billing_review.triggered.v1, draft_claim_preview.generated.v1, billing_attestation.completed.v1, final_note.created.v1, patient_summary.finalized.v1, note.signed.v1, note.dispatched.v1, export.generated.v1, ehr_writeback.queued.v1, ehr_writeback.failed.v1, ehr.adapter_status_checked.v1, ehr.patient_matched.v1, ehr.chart_context_loaded.v1, clinicos.mode_resolved.v1, clinicos.mapping_recorded.v1, clinicos.event_published.v1, clinicos.unavailable.v1, ai.request_prepared.v1, ai.context_scrubbed.v1, ai.phi_rejected.v1, ai.response_recorded.v1, ai.output_rejected.v1, coaching.signal_created.v1, coaching.report_generated.v1, coaching.dashboard_viewed.v1, audit.event_recorded.v1]
+          enum: [appointment.created.v1, note.shell_created.v1, visit.started.v1, visit.paused.v1, visit.resumed.v1, visit.stopped.v1, recording.started.v1, recording.exception_approved.v1, recording.stopped.v1, raw_audio.retention_scheduled.v1, transcript.segment_appended.v1, suggestions.evaluated.v1, suggestion.accepted.v1, suggestion.removed.v1, visit_selection.added.v1, compliance.evaluated.v1, history_gap.task_created.v1, task.blocker_changed.v1, low_confidence_diagnosis.override_recorded.v1, finalization.started.v1, finalization.selection_decided.v1, finalization.suggestion_decided.v1, finalization.compose_requested.v1, finalization.compose_completed.v1, finalization.compare_edit_updated.v1, finalization.compose_rebeautified.v1, finalization.step_completed.v1, final_note.approved.v1, patient_summary.approved.v1, billing_review.triggered.v1, draft_claim_preview.generated.v1, billing_attestation.completed.v1, final_note.created.v1, patient_summary.finalized.v1, note.signed.v1, note.dispatched.v1, export.generated.v1, ehr_writeback.queued.v1, ehr_writeback.failed.v1, ehr.adapter_status_checked.v1, ehr.patient_matched.v1, ehr.chart_context_loaded.v1, clinicos.mode_resolved.v1, clinicos.mapping_recorded.v1, clinicos.event_published.v1, clinicos.unavailable.v1, ai.request_prepared.v1, ai.context_scrubbed.v1, ai.phi_rejected.v1, ai.response_recorded.v1, ai.output_rejected.v1, coaching.signal_created.v1, coaching.report_generated.v1, coaching.dashboard_viewed.v1, retention.scan_completed.v1, audit.export_requested.v1, audit.event_recorded.v1]
         schemaVersion: { type: string, enum: [v1] }
         tenantId: { type: string }
         siteId: { type: string }

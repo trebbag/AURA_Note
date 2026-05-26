@@ -65,3 +65,7 @@ AI responses must be rejected if they:
 ## Governance events
 
 AI invocation, output generation, review, approval, rejection, prompt version changes, and model configuration changes must emit audit-safe governance events.
+
+## WO-013 hardening posture
+
+`WO-013` adds explicit default-off feature flags for external AI and production analytics. Structured logs use request ID and trace ID correlation and redact forbidden PHI keys plus obvious PHI-like text before log payloads are considered safe. Audit exports are redacted metadata-only bundles with `includePhi = false`; they do not deliver downloadable files or expose raw clinical payloads in CP-4.

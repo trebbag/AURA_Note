@@ -2,11 +2,13 @@ import type {
   AiEvidenceNodeDto,
   AiGatewayInvocationRequestDto,
   AppointmentDto,
+  AuditExportResponseDto,
   ClinicOsIntegrationStatusDto,
   CoachingDashboardDto,
   CoachingReportDto,
   EhrChartContextPackageDto,
   NoteDto,
+  SupportStatusResponseDto,
   TaskDto,
   VisitSessionDto
 } from '@aura-note/contracts';
@@ -276,6 +278,137 @@ export function createSyntheticCoachingDashboard(
       entityId: 'coach-dashboard-synthetic-001',
       traceId: 'trace-coaching-dashboard-synthetic-001',
       createdAt: '2026-05-26T18:50:00.000Z'
+    },
+    domainEvents: [],
+    ...overrides
+  };
+}
+
+export function createSyntheticSupportStatus(overrides: Partial<SupportStatusResponseDto> = {}): SupportStatusResponseDto {
+  return {
+    status: {
+      service: 'aura-note',
+      checkpoint: 'CP-4',
+      mode: 'standalone',
+      generatedAt: '2026-05-26T19:30:00.000Z',
+      overallHealth: 'ok',
+      featureFlags: [
+        {
+          key: 'AURA_ENABLE_EXTERNAL_AI',
+          enabled: false,
+          governs: 'external_ai',
+          defaultValue: false,
+          disabledReason: 'External AI is disabled for synthetic CP-4 fixtures.'
+        }
+      ],
+      logging: {
+        structured: true,
+        requestCorrelated: true,
+        phiRedaction: 'forbidden_keys_and_obvious_text',
+        sample: {
+          service: 'aura-note-api',
+          level: 'info',
+          message: 'Synthetic support status checked',
+          requestId: 'req-support-synthetic-001',
+          traceId: 'trace-support-synthetic-001',
+          eventName: 'support.status_checked',
+          timestamp: '2026-05-26T19:30:00.000Z',
+          payload: { status: 'ok' },
+          redactedPaths: [],
+          phiSafe: true
+        }
+      },
+      retention: [
+        {
+          policyId: 'raw-audio-one-week',
+          recordClass: 'audio_ephemeral',
+          retentionRule: 'one_week',
+          enforcedByJob: 'raw_audio_retention_candidate_scan',
+          lastEvaluatedAt: '2026-05-26T19:30:00.000Z',
+          candidateCount: 1,
+          purgeEligibleCount: 0,
+          destructivePurgeEnabled: false
+        }
+      ],
+      auditExport: {
+        enabled: true,
+        downloadEnabled: false,
+        format: 'jsonl',
+        redactedByDefault: true
+      },
+      failureStates: [
+        {
+          component: 'external_ai',
+          status: 'disabled',
+          operatorMessage: 'External AI disabled.',
+          safeDegradedMode: 'Use deterministic mock suggestions.'
+        }
+      ],
+      ciRuntime: {
+        nodeVersion: '20',
+        pnpmVersion: '9.12.0',
+        node20ActionWarningAcceptedUntil: 'WO-013'
+      }
+    },
+    auditEvent: {
+      auditEventId: 'audit-support-synthetic-001',
+      tenantId: syntheticIds.tenantId,
+      siteId: syntheticIds.siteId,
+      actorUserId: 'user-support-synthetic-001',
+      action: 'support.status_check',
+      entityType: 'SupportStatus',
+      entityId: 'cp4-hardening',
+      traceId: 'trace-support-synthetic-001',
+      createdAt: '2026-05-26T19:30:00.000Z'
+    },
+    ...overrides
+  };
+}
+
+export function createSyntheticAuditExport(overrides: Partial<AuditExportResponseDto> = {}): AuditExportResponseDto {
+  return {
+    auditExport: {
+      auditExportId: 'audit-export-synthetic-001',
+      status: 'ready_synthetic',
+      requestedByUserId: 'user-compliance-synthetic-001',
+      requestedAt: '2026-05-26T19:35:00.000Z',
+      traceId: 'trace-audit-export-synthetic-001',
+      format: 'jsonl',
+      includePhi: false,
+      redacted: true,
+      downloadEnabled: false,
+      retentionClass: 'audit',
+      recordCount: 1,
+      records: [
+        {
+          auditEvent: {
+            auditEventId: 'audit-export-record-synthetic-001',
+            tenantId: syntheticIds.tenantId,
+            siteId: syntheticIds.siteId,
+            actorUserId: syntheticIds.clinicianId,
+            action: 'export.generated',
+            entityType: 'ExportArtifact',
+            entityId: 'export-synthetic-001',
+            traceId: 'trace-audit-export-synthetic-001',
+            createdAt: '2026-05-26T19:35:00.000Z'
+          },
+          domainEventType: 'export.generated.v1',
+          requestId: 'req-audit-export-synthetic-001',
+          redactedPayload: { artifactType: 'final_note_pdf' },
+          redactedPaths: []
+        }
+      ]
+    },
+    auditEvent: {
+      auditEventId: 'audit-export-request-synthetic-001',
+      tenantId: syntheticIds.tenantId,
+      siteId: syntheticIds.siteId,
+      actorUserId: 'user-compliance-synthetic-001',
+      action: 'audit.export_request',
+      entityType: 'AuditExport',
+      entityId: 'audit-export-synthetic-001',
+      traceId: 'trace-audit-export-synthetic-001',
+      createdAt: '2026-05-26T19:35:00.000Z'
     },
     domainEvents: [],
     ...overrides

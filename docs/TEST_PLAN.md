@@ -14,10 +14,15 @@ Codex should add tests as implementation proceeds.
 - Signed-output artifact readiness.
 - EHR writeback queue readiness states.
 - Coaching own-report and aggregate dashboard privacy.
+- Support status and audit export permission boundaries.
 - RBAC/ABAC decisions.
 - PHI scrubber.
+- Structured log redaction.
+- Feature flag defaults for external integrations.
 - AI response validation.
 - Raw audio retention job.
+- Transcript indefinite retention job.
+- Audit export metadata generation.
 
 ## Integration tests
 
@@ -34,6 +39,8 @@ Codex should add tests as implementation proceeds.
 - Patient summary exports reject internal billing/revenue details.
 - Coaching own report denies billing staff and keeps patient-facing exclusions.
 - Coaching aggregate dashboard hides clinician identifiers unless full-admin mode is explicitly authorized.
+- Support status denies ordinary clinicians and exposes feature flags/retention posture to support users.
+- Audit export request is compliance/admin-only, redacted, metadata-only, and excludes PHI.
 
 ## Browser / Playwright journeys
 
@@ -56,4 +63,5 @@ Codex should add tests as implementation proceeds.
 - Billing transcript access denied unless billing review triggered.
 - External AI rejects raw PHI fields.
 - Logs redact forbidden keys.
-- Support break-glass requires reason.
+- Support status does not grant audit export.
+- External integration feature flags default to disabled.

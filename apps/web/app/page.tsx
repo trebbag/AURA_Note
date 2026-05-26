@@ -16,6 +16,12 @@ export default function HomePage() {
         <li>
           <a href="/aura-note/workspace/appt-demo-001">Documentation Workspace</a>
         </li>
+        <li>
+          <a href="/aura-note/coaching">Coaching and Analytics</a>
+        </li>
+        <li>
+          <a href="/aura-note/support/status">Support Hardening Status</a>
+        </li>
         <li>Finalization Wizard</li>
       </ul>
     </main>

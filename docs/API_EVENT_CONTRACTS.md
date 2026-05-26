@@ -87,6 +87,8 @@ type AuraNoteEvent<TPayload> = {
 - `ehr_writeback.completed.v1`
 - `ehr_writeback.failed.v1`
 - `coaching.report_generated.v1`
+- `retention.scan_completed.v1`
+- `audit.export_requested.v1`
 - `audit.event_recorded.v1`
 
 ## API implementation rule
@@ -136,3 +138,5 @@ The CP-0 event scaffold covers the first state-transition families needed by `WO
 `WO-011` implements the ClinicOS integration adapter scaffold. The API emits `clinicos.mode_resolved.v1` for standalone/ClinicOS mode checks, `clinicos.mapping_recorded.v1` when mock VisitGraph/M17 mappings are recorded, `clinicos.event_published.v1` when AURA Note events are queued or safely skipped for ClinicOS module targets, and `clinicos.unavailable.v1` when ClinicOS mock mode is configured but unavailable. These events preserve AURA Note as the owner of the note lifecycle and explicitly record that AURA Note permissions remain enforced; they do not grant ClinicOS context a permission bypass.
 
 `WO-012` implements coaching and premium analytics scaffolding. The API emits `coaching.report_generated.v1` when a treating clinician views their own synthetic coaching report and `coaching.dashboard_viewed.v1` when an authorized admin views the premium dashboard scaffold. `coaching.signal_created.v1` is added as the event contract seed for future asynchronous signal generation. Coaching events are restricted audit metadata only; they are not patient-facing, do not expose revenue details to patients, and do not grant billing staff access to coaching outputs.
+
+`WO-013` implements production-hardening scaffolding for support status, structured logging posture, feature flags, retention scans, and redacted audit export metadata. The worker emits `retention.scan_completed.v1` when the synthetic retention job evaluates raw-audio and transcript policies. The API emits `audit.export_requested.v1` when an authorized compliance/privacy lead or authorized admin requests a redacted JSONL metadata export. These events are audit-safe metadata only; they do not perform destructive storage purge, deliver downloadable audit files, expose PHI, enable external AI, connect to live EHRs, or sync production analytics.

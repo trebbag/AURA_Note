@@ -7,6 +7,7 @@ import {
   type AiContextPackageDto,
   type AiGatewayInvocationResponseDto,
   type AiGatewayStatusDto,
+  type AuditExportResponseDto,
   type ClinicOsIntegrationStatusDto,
   type ClinicOsMapVisitResponseDto,
   type CoachingDashboardDto,
@@ -21,6 +22,7 @@ import {
   type FinalizedNoteDetailDto,
   type EhrWritebackActionResponseDto,
   type ReviewActionResponseDto,
+  type SupportStatusDto,
   type SuggestionDto,
   type TranscriptViewDto,
   type VisitSessionControlResponseDto,
@@ -74,7 +76,146 @@ describe('event envelope', () => {
     assert.equal(isStateChangingEvent('finalization.compose_completed.v1'), true);
     assert.equal(isStateChangingEvent('ai.request_prepared.v1'), true);
     assert.equal(isStateChangingEvent('ai.response_recorded.v1'), true);
+    assert.equal(isStateChangingEvent('audit.export_requested.v1'), true);
+    assert.equal(isStateChangingEvent('retention.scan_completed.v1'), true);
     assert.equal(isStateChangingEvent('audit.event_recorded.v1'), false);
+  });
+});
+
+describe('support hardening contracts', () => {
+  it('represents feature-flagged support status with PHI-safe structured logging', () => {
+    const status: SupportStatusDto = {
+      service: 'aura-note',
+      checkpoint: 'CP-4',
+      mode: 'standalone',
+      generatedAt: '2026-05-26T19:30:00.000Z',
+      overallHealth: 'ok',
+      featureFlags: [
+        {
+          key: 'AURA_ENABLE_EXTERNAL_AI',
+          enabled: false,
+          governs: 'external_ai',
+          defaultValue: false,
+          disabledReason: 'External AI disabled'
+        }
+      ],
+      logging: {
+        structured: true,
+        requestCorrelated: true,
+        phiRedaction: 'forbidden_keys_and_obvious_text',
+        sample: {
+          service: 'aura-note-api',
+          level: 'info',
+          message: 'Synthetic support status checked',
+          requestId: 'req-support-001',
+          traceId: 'trace-support-001',
+          eventName: 'support.status_checked',
+          timestamp: '2026-05-26T19:30:00.000Z',
+          payload: { status: 'ok' },
+          redactedPaths: [],
+          phiSafe: true
+        }
+      },
+      retention: [
+        {
+          policyId: 'raw-audio-one-week',
+          recordClass: 'audio_ephemeral',
+          retentionRule: 'one_week',
+          enforcedByJob: 'raw_audio_retention_candidate_scan',
+          lastEvaluatedAt: '2026-05-26T19:30:00.000Z',
+          candidateCount: 1,
+          purgeEligibleCount: 0,
+          destructivePurgeEnabled: false
+        }
+      ],
+      auditExport: {
+        enabled: true,
+        downloadEnabled: false,
+        format: 'jsonl',
+        redactedByDefault: true
+      },
+      failureStates: [
+        {
+          component: 'external_ai',
+          status: 'disabled',
+          operatorMessage: 'Mock-only mode',
+          safeDegradedMode: 'Draft suggestions remain deterministic mock candidates.'
+        }
+      ],
+      ciRuntime: {
+        nodeVersion: '20',
+        pnpmVersion: '9.12.0',
+        node20ActionWarningAcceptedUntil: 'WO-013'
+      }
+    };
+
+    assert.equal(status.featureFlags[0]?.enabled, false);
+    assert.equal(status.logging.sample.phiSafe, true);
+    assert.equal(status.retention[0]?.destructivePurgeEnabled, false);
+    assert.equal(status.auditExport.downloadEnabled, false);
+  });
+
+  it('represents redacted metadata-only audit export requests', () => {
+    const response: AuditExportResponseDto = {
+      auditExport: {
+        auditExportId: 'audit-export-001',
+        status: 'ready_synthetic',
+        requestedByUserId: 'user-compliance-001',
+        requestedAt: '2026-05-26T19:30:00.000Z',
+        traceId: 'trace-audit-001',
+        format: 'jsonl',
+        includePhi: false,
+        redacted: true,
+        downloadEnabled: false,
+        retentionClass: 'audit',
+        recordCount: 1,
+        records: [
+          {
+            auditEvent: {
+              auditEventId: 'audit-001',
+              tenantId: 'tenant-001',
+              action: 'final_note.export',
+              entityType: 'ExportArtifact',
+              entityId: 'export-001',
+              traceId: 'trace-audit-001',
+              createdAt: '2026-05-26T19:30:00.000Z'
+            },
+            domainEventType: 'export.generated.v1',
+            requestId: 'req-audit-001',
+            redactedPayload: { artifactType: 'final_note_pdf' },
+            redactedPaths: []
+          }
+        ]
+      },
+      auditEvent: {
+        auditEventId: 'audit-export-request-001',
+        tenantId: 'tenant-001',
+        action: 'audit.export_request',
+        entityType: 'AuditExport',
+        entityId: 'audit-export-001',
+        traceId: 'trace-audit-001',
+        createdAt: '2026-05-26T19:30:00.000Z'
+      },
+      domainEvents: [
+        createEventEnvelope({
+          eventId: 'evt-audit-export-001',
+          eventType: 'audit.export_requested.v1',
+          tenantId: 'tenant-001',
+          siteId: 'site-001',
+          producer: 'aura-note-api',
+          traceId: 'trace-audit-001',
+          idempotencyKey: 'idem-audit-001',
+          sensitivity: 'restricted',
+          retentionClass: 'audit',
+          payload: { auditExportId: 'audit-export-001', recordCount: 1 }
+        })
+      ]
+    };
+
+    assert.equal(response.auditExport.includePhi, false);
+    assert.equal(response.auditExport.redacted, true);
+    assert.equal(response.auditExport.downloadEnabled, false);
+    assert.equal(response.domainEvents[0]?.eventType, 'audit.export_requested.v1');
   });
 });
 

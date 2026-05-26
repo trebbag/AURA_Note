@@ -40,7 +40,8 @@ button:disabled {
 .notes-shell,
 .workspace-shell,
 .wizard-shell,
-.coaching-shell {
+.coaching-shell,
+.support-shell {
   width: min(1180px, calc(100vw - 32px));
   margin: 0 auto;
   padding: 24px 0 40px;
@@ -483,7 +484,9 @@ textarea {
 }
 
 .coaching-grid,
+.support-grid,
 .coaching-panel,
+.support-panel,
 .coaching-signal-list,
 .coaching-signal,
 .analytics-list {
@@ -491,17 +494,32 @@ textarea {
   gap: 14px;
 }
 
-.coaching-grid {
+.coaching-grid,
+.support-grid {
   grid-template-columns: repeat(2, minmax(0, 1fr));
   align-items: start;
   margin-top: 20px;
 }
 
 .coaching-panel,
+.support-panel,
 .coaching-signal {
   border: 1px solid #d5dae3;
   background: #fff;
   padding: 16px;
+}
+
+.support-panel p,
+.analytics-list small {
+  color: #596579;
+}
+
+.analytics-list div {
+  flex-wrap: wrap;
+}
+
+.analytics-list small {
+  flex-basis: 100%;
 }
 
 .coaching-signal {
@@ -607,6 +625,7 @@ textarea {
   .final-viewer-grid,
   .artifact-status-grid,
   .coaching-grid,
+  .support-grid,
   .coaching-signal {
     grid-template-columns: 1fr;
   }
