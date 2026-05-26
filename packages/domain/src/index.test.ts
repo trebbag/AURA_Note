@@ -2,9 +2,14 @@ import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
 import {
   canCompleteWizardStep,
+  canCompleteCodeReview,
+  canCompleteCompareEdit,
+  canCompleteCompose,
+  canCompleteSuggestionReview,
   canEditNote,
   canAcceptSuggestion,
   canSignAndDispatch,
+  canStartFinalization,
   canStartVisit,
   complianceBlocksFinalize,
   approveRecordingException,
@@ -15,6 +20,7 @@ import {
   evaluateLowConfidenceOverride,
   getNextWizardStep,
   isLowConfidenceDiagnosis,
+  patientSummaryContainsInternalDetails,
   pauseVisitGate,
   recordingExceptionIsActive,
   resumeVisitGate,
@@ -235,6 +241,89 @@ describe('low-confidence diagnosis override', () => {
 });
 
 describe('finalization gates', () => {
+  it('allows finalization start only when the draft is ready and hard blockers are clear', () => {
+    assert.equal(
+      canStartFinalization({
+        noteState: 'documentation_in_progress',
+        hardBlockCount: 0,
+        unresolvedBlockerTaskCount: 0
+      }),
+      true
+    );
+    assert.equal(
+      canStartFinalization({
+        noteState: 'documentation_in_progress',
+        hardBlockCount: 1,
+        unresolvedBlockerTaskCount: 0
+      }),
+      false
+    );
+  });
+
+  it('requires all Step 1 selected-item decisions before completing Code Review', () => {
+    assert.equal(
+      canCompleteCodeReview({
+        requiredDecisionCount: 2,
+        completedDecisionCount: 1,
+        unresolvedBlockerTaskCount: 0
+      }),
+      false
+    );
+    assert.equal(
+      canCompleteCodeReview({
+        requiredDecisionCount: 2,
+        completedDecisionCount: 2,
+        unresolvedBlockerTaskCount: 0
+      }),
+      true
+    );
+  });
+
+  it('requires all included final-pass suggestions before completing Suggestion Review', () => {
+    assert.equal(canCompleteSuggestionReview({ includedSuggestionCount: 3, completedDecisionCount: 2 }), false);
+    assert.equal(canCompleteSuggestionReview({ includedSuggestionCount: 3, completedDecisionCount: 3 }), true);
+  });
+
+  it('blocks Compose completion when patient summary contains internal billing details', () => {
+    assert.equal(patientSummaryContainsInternalDetails('Bring your medication list to your next visit.'), false);
+    assert.equal(patientSummaryContainsInternalDetails('This claim has CPT confidence details.'), true);
+    assert.equal(
+      canCompleteCompose({
+        enhancedNoteGenerated: true,
+        patientSummaryGenerated: true,
+        patientSummaryContainsInternalDetails: true
+      }),
+      false
+    );
+  });
+
+  it('requires separate final-note and patient-summary approvals after re-beautify is current', () => {
+    assert.equal(
+      canCompleteCompareEdit({
+        finalNoteApproved: true,
+        patientSummaryApproved: false,
+        enhancedOutputStale: false
+      }),
+      false
+    );
+    assert.equal(
+      canCompleteCompareEdit({
+        finalNoteApproved: true,
+        patientSummaryApproved: true,
+        enhancedOutputStale: true
+      }),
+      false
+    );
+    assert.equal(
+      canCompleteCompareEdit({
+        finalNoteApproved: true,
+        patientSummaryApproved: true,
+        enhancedOutputStale: false
+      }),
+      true
+    );
+  });
+
   it('blocks signing for unresolved blocker tasks', () => {
     assert.equal(
       canSignAndDispatch({

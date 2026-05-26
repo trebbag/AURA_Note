@@ -7,6 +7,7 @@ import {
   type ComplianceReviewDto,
   type DocumentationWorkspaceDto,
   type DraftNoteSummaryDto,
+  type FinalizationSessionDto,
   type ReviewActionResponseDto,
   type SuggestionDto,
   type TranscriptViewDto,
@@ -58,6 +59,7 @@ describe('event envelope', () => {
     assert.equal(isStateChangingEvent('task.blocker_changed.v1'), true);
     assert.equal(isStateChangingEvent('transcript.segment_appended.v1'), true);
     assert.equal(isStateChangingEvent('suggestion.accepted.v1'), true);
+    assert.equal(isStateChangingEvent('finalization.compose_completed.v1'), true);
     assert.equal(isStateChangingEvent('audit.event_recorded.v1'), false);
   });
 });
@@ -219,6 +221,70 @@ describe('documentation workspace contracts', () => {
       ['visit_context', 'controls', 'editor', 'visit_selections', 'suggestions', 'transcript', 'compliance', 'history_gap']
     );
     assert.equal(workspace.availableStates.includes('permission_denied'), true);
+  });
+});
+
+describe('finalization contracts', () => {
+  it('represents a WO-006 finalization session with frozen Step 1 and Step 2 review inputs', () => {
+    const session: FinalizationSessionDto = {
+      finalizationSessionId: 'finalization-001',
+      noteId: 'note-001',
+      appointmentId: 'appt-001',
+      currentStep: 'code_review',
+      completedSteps: [],
+      stepStatuses: {
+        code_review: 'in_progress',
+        suggestion_review: 'not_started',
+        compose: 'not_started',
+        compare_edit: 'not_started',
+        billing_attest: 'not_started',
+        sign_dispatch: 'not_started'
+      },
+      frozenSnapshot: {
+        originalNoteText: 'Synthetic source note.',
+        visitSelections: [
+          {
+            visitSelectionId: 'selection-001',
+            noteId: 'note-001',
+            category: 'cpt',
+            label: 'CPT 99214 candidate',
+            confidence: 0.82,
+            humanApproved: true
+          }
+        ],
+        finalPassSuggestions: [
+          {
+            suggestionId: 'suggestion-001',
+            noteId: 'note-001',
+            category: 'quality_measure',
+            label: 'Quality follow-up',
+            confidence: 0.88,
+            rationale: 'Synthetic final-pass signal',
+            supportingEvidence: ['Synthetic source'],
+            missingEvidence: [],
+            status: 'candidate',
+            lowConfidenceOverrideRequired: false,
+            draftOnly: true
+          }
+        ],
+        transcriptSegmentCount: 1,
+        historyGapQuestionCount: 0
+      },
+      selectionDecisions: [],
+      suggestionDecisions: [],
+      unusedAuditItems: [],
+      composePhases: [],
+      patientOpportunities: [],
+      finalNoteApproved: false,
+      patientSummaryApproved: false,
+      readyForBillingAttest: false,
+      createdAt: '2026-05-26T16:00:00.000Z',
+      updatedAt: '2026-05-26T16:00:00.000Z'
+    };
+
+    assert.equal(session.frozenSnapshot.visitSelections.length, 1);
+    assert.equal(session.frozenSnapshot.finalPassSuggestions[0]?.confidence, 0.88);
+    assert.equal(session.stepStatuses.billing_attest, 'not_started');
   });
 });
 

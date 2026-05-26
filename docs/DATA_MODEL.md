@@ -185,3 +185,17 @@ Raw audio metadata is classified as `audio_ephemeral` with a one-week purge wind
 - `Task` records linked to the note with signing blocker state.
 
 Diagnosis/ICD suggestions below 75 percent require override metadata before they can move into Visit Selections. No suggestion is treated as a final diagnosis, final code, final bill, medical-necessity determination, or claim submission.
+
+## WO-006 finalization steps 1-4 scaffold status
+
+`WO-006` adds a synthetic in-memory `FinalizationRun`/`FinalizationSession` shape over the active note:
+
+- finalization starts from a frozen snapshot of original note text, Visit Selections, final-pass suggestions, transcript segment count, and History Gap count;
+- Step 1 Code Review records a keep/remove/convert/follow-up decision for each selected item before the wizard can advance;
+- removed selected items and removed final-pass suggestions are preserved in an unused audit list;
+- Step 2 Suggestion Review includes deterministic final-pass suggestions above 50 percent confidence and does not expose raw transcript text;
+- Step 3 Compose records progress phases and creates deterministic draft enhanced-note and patient-summary outputs;
+- Compose output is rejected if the patient summary contains internal billing, coding, confidence, revenue, payer, or coaching details;
+- Step 4 Compare & Edit can mark the enhanced output stale when the original-side note changes, requires Re-beautify before approval, and requires separate final-note and patient-summary approvals.
+
+Completing Step 4 moves the note to `finalization_billing_attest` and sets `readyForBillingAttest = true`; Billing & Attest, Sign & Dispatch, final records, exports, PDFs, and writeback remain scoped to `WO-007` and `WO-008`.

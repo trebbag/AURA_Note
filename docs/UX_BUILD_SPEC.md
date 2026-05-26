@@ -273,6 +273,8 @@ All six steps are required.
 - AI Planning Assistant may add accepted plan items to the plan.
 - Patient Opportunity Analysis shows clinical opportunities first and hides revenue from patient-facing outputs by default.
 
+`WO-006` implements a browser-testable `/aura-note/finalization/[noteId]` shell for Steps 1-4. It enforces visible progression: Code Review decisions must be made for every selected item, Suggestion Review cannot be skipped and only shows final-pass candidates above 50 percent confidence, Compose shows deterministic mock phases, and Compare & Edit requires Re-beautify after source edits plus separate final note and patient summary approvals. Billing & Attest and Sign & Dispatch remain disabled/downstream until `WO-007`.
+
 ### Step 5 — Billing & Attest
 
 Must support:

@@ -1,8 +1,8 @@
 {
   "project": "AURA Note v1",
-  "mode": "cp1_complete",
+  "mode": "cp2_in_progress",
   "current_checkpoint": "CP-2",
-  "next_work_order": "WO-006",
+  "next_work_order": "WO-007",
   "work_orders": {
     "WO-000": "done",
     "WO-001": "done",
@@ -10,7 +10,7 @@
     "WO-003": "done",
     "WO-004": "done",
     "WO-005": "done",
-    "WO-006": "todo",
+    "WO-006": "done",
     "WO-007": "todo",
     "WO-008": "todo",
     "WO-009": "todo",
@@ -20,7 +20,7 @@
     "WO-013": "todo",
     "WO-014": "todo"
   },
-  "last_updated_by": "Codex WO-005 tranche",
-  "last_updated_at": "2026-05-26T15:55:00Z",
-  "notes": "CP-1 completed through WO-005 on tranche/wo-005-suggestions-selections-review. Next implementation scope is WO-006 Finalization Wizard steps 1 through 4."
+  "last_updated_by": "Codex WO-006 tranche",
+  "last_updated_at": "2026-05-26T17:10:00Z",
+  "notes": "WO-006 implemented on tranche/wo-006-finalization-wizard-steps-1-4. Next implementation scope is WO-007 Billing & Attest, draft claim preview, and Sign & Dispatch."
 }

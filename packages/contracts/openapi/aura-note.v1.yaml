@@ -359,28 +359,152 @@ paths:
   /notes/{noteId}/finalization/start:
     post:
       operationId: startFinalization
+      description: Start the WO-006 finalization wizard from a frozen synthetic note snapshot.
       responses:
-        '200': { description: Finalization started }
-  /notes/{noteId}/finalization/code-review:
+        '201':
+          description: Finalization started.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FinalizationActionResponse'
+  /notes/{noteId}/finalization:
+    get:
+      operationId: getFinalizationSession
+      responses:
+        '200':
+          description: Current finalization session.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FinalizationSessionResponse'
+  /notes/{noteId}/finalization/code-review/selections/{visitSelectionId}:
+    post:
+      operationId: decideFinalizationSelection
+      description: Record a Step 1 keep/remove/convert/follow-up decision for a selected item.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/FinalizationSelectionDecisionRequest'
+      responses:
+        '201':
+          description: Selection decision recorded.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FinalizationActionResponse'
+  /notes/{noteId}/finalization/code-review/complete:
     post:
       operationId: completeCodeReview
       responses:
-        '200': { description: Code review completed }
-  /notes/{noteId}/finalization/suggestion-review:
+        '201':
+          description: Code Review completed when every selected item has a decision.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FinalizationActionResponse'
+  /notes/{noteId}/finalization/suggestion-review/suggestions/{suggestionId}:
+    post:
+      operationId: decideFinalizationSuggestion
+      description: Record a Step 2 keep/remove decision for a final-pass suggestion over 50 percent confidence.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/FinalizationSuggestionDecisionRequest'
+      responses:
+        '201':
+          description: Suggestion decision recorded.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FinalizationActionResponse'
+  /notes/{noteId}/finalization/suggestion-review/complete:
     post:
       operationId: completeSuggestionReview
       responses:
-        '200': { description: Suggestion review completed }
+        '201':
+          description: Suggestion Review completed when every final-pass suggestion has a decision.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FinalizationActionResponse'
   /notes/{noteId}/finalization/compose:
     post:
       operationId: composeFinalizationDrafts
       responses:
-        '200': { description: Compose completed }
-  /notes/{noteId}/finalization/compare-edit:
+        '201':
+          description: Deterministic mock compose completed.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FinalizationActionResponse'
+  /notes/{noteId}/finalization/compare-edit/original:
     post:
-      operationId: approveCompareEdit
+      operationId: updateCompareEditOriginal
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CompareEditUpdateRequest'
       responses:
-        '200': { description: Compare/Edit approved }
+        '201':
+          description: Original-side compare/edit text updated and enhanced output marked stale.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FinalizationActionResponse'
+  /notes/{noteId}/finalization/compare-edit/rebeautify:
+    post:
+      operationId: rebeautifyFinalization
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RebeautifyRequest'
+      responses:
+        '201':
+          description: Enhanced note and patient summary regenerated from updated source text.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FinalizationActionResponse'
+  /notes/{noteId}/finalization/compare-edit/approve-note:
+    post:
+      operationId: approveFinalNote
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ApprovalRequest'
+      responses:
+        '201':
+          description: Final note approved for Step 4.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FinalizationActionResponse'
+  /notes/{noteId}/finalization/compare-edit/approve-summary:
+    post:
+      operationId: approvePatientSummary
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ApprovalRequest'
+      responses:
+        '201':
+          description: Patient summary approved for Step 4.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FinalizationActionResponse'
   /notes/{noteId}/finalization/billing-attest:
     post:
       operationId: completeBillingAttest
@@ -813,6 +937,178 @@ components:
                 $ref: '#/components/schemas/AuraNoteEvent'
         meta:
           $ref: '#/components/schemas/ApiMeta'
+    FinalizationSessionResponse:
+      type: object
+      required: [data, meta]
+      properties:
+        data:
+          $ref: '#/components/schemas/FinalizationSession'
+        meta:
+          $ref: '#/components/schemas/ApiMeta'
+    FinalizationActionResponse:
+      type: object
+      required: [data, meta]
+      properties:
+        data:
+          type: object
+          required: [finalizationSession, auditEvent, domainEvents]
+          properties:
+            finalizationSession:
+              $ref: '#/components/schemas/FinalizationSession'
+            auditEvent:
+              $ref: '#/components/schemas/AuditEvent'
+            domainEvents:
+              type: array
+              items:
+                $ref: '#/components/schemas/AuraNoteEvent'
+        meta:
+          $ref: '#/components/schemas/ApiMeta'
+    FinalizationSelectionDecisionRequest:
+      type: object
+      required: [decision]
+      properties:
+        decision:
+          type: string
+          enum: [keep, remove, convert_to_task, send_follow_up]
+        reason: { type: string }
+    FinalizationSuggestionDecisionRequest:
+      type: object
+      required: [decision]
+      properties:
+        decision:
+          type: string
+          enum: [keep, remove]
+        reason: { type: string }
+    CompareEditUpdateRequest:
+      type: object
+      required: [originalNoteText]
+      properties:
+        originalNoteText: { type: string }
+    RebeautifyRequest:
+      type: object
+      properties:
+        reason: { type: string }
+    ApprovalRequest:
+      type: object
+      required: [approved, attestation]
+      properties:
+        approved: { type: boolean }
+        attestation: { type: string }
+    FinalizationSession:
+      type: object
+      required: [finalizationSessionId, noteId, appointmentId, currentStep, completedSteps, stepStatuses, frozenSnapshot, selectionDecisions, suggestionDecisions, unusedAuditItems, composePhases, patientOpportunities, finalNoteApproved, patientSummaryApproved, readyForBillingAttest, createdAt, updatedAt]
+      properties:
+        finalizationSessionId: { type: string }
+        noteId: { type: string }
+        appointmentId: { type: string }
+        currentStep:
+          type: string
+          enum: [code_review, suggestion_review, compose, compare_edit, billing_attest, sign_dispatch]
+        completedSteps:
+          type: array
+          items:
+            type: string
+            enum: [code_review, suggestion_review, compose, compare_edit, billing_attest, sign_dispatch]
+        stepStatuses:
+          type: object
+          additionalProperties:
+            type: string
+            enum: [not_started, in_progress, completed, blocked]
+        frozenSnapshot:
+          type: object
+          required: [originalNoteText, visitSelections, finalPassSuggestions, transcriptSegmentCount, historyGapQuestionCount]
+          properties:
+            originalNoteText: { type: string }
+            visitSelections:
+              type: array
+              items:
+                $ref: '#/components/schemas/VisitSelection'
+            finalPassSuggestions:
+              type: array
+              items:
+                $ref: '#/components/schemas/Suggestion'
+            transcriptSegmentCount: { type: integer, minimum: 0 }
+            historyGapQuestionCount: { type: integer, minimum: 0 }
+        selectionDecisions:
+          type: array
+          items:
+            type: object
+            required: [visitSelectionId, decision, decidedByUserId, decidedAt]
+            properties:
+              visitSelectionId: { type: string }
+              decision: { type: string, enum: [keep, remove, convert_to_task, send_follow_up] }
+              reason: { type: string }
+              decidedByUserId: { type: string }
+              decidedAt: { type: string, format: date-time }
+        suggestionDecisions:
+          type: array
+          items:
+            type: object
+            required: [suggestionId, decision, decidedByUserId, decidedAt]
+            properties:
+              suggestionId: { type: string }
+              decision: { type: string, enum: [keep, remove] }
+              reason: { type: string }
+              decidedByUserId: { type: string }
+              decidedAt: { type: string, format: date-time }
+        unusedAuditItems:
+          type: array
+          items:
+            type: object
+            required: [unusedAuditItemId, noteId, sourceType, sourceId, label, recordedAt]
+            properties:
+              unusedAuditItemId: { type: string }
+              noteId: { type: string }
+              sourceType: { type: string, enum: [visit_selection, suggestion] }
+              sourceId: { type: string }
+              label: { type: string }
+              reason: { type: string }
+              recordedAt: { type: string, format: date-time }
+        composePhases:
+          type: array
+          items:
+            type: object
+            required: [phase, status]
+            properties:
+              phase: { type: string, enum: [analyzing_content, enhancing_structure, beautifying_language, final_review] }
+              status: { type: string, enum: [pending, running, completed, failed] }
+        composeOutput:
+          type: object
+          properties:
+            composeOutputId: { type: string }
+            noteId: { type: string }
+            version: { type: integer, minimum: 1 }
+            enhancedNoteText: { type: string }
+            patientSummaryText: { type: string }
+            payerReadableSupportSection: { type: string }
+            planTaskMapping:
+              type: array
+              items: { type: string }
+            sourceIntegrityWarnings:
+              type: array
+              items: { type: string }
+            patientSummaryInternalDetailsDetected: { type: boolean }
+            staleDueToEdit: { type: boolean }
+            generatedAt: { type: string, format: date-time }
+            draftOnly: { type: boolean, const: true }
+        patientOpportunities:
+          type: array
+          items:
+            type: object
+            required: [patientOpportunityId, noteId, category, title, detail, patientFacingAllowed, revenueHiddenFromPatient]
+            properties:
+              patientOpportunityId: { type: string }
+              noteId: { type: string }
+              category: { type: string, enum: [clinical, quality, risk, care_gap, internal_revenue] }
+              title: { type: string }
+              detail: { type: string }
+              patientFacingAllowed: { type: boolean }
+              revenueHiddenFromPatient: { type: boolean, const: true }
+        finalNoteApproved: { type: boolean }
+        patientSummaryApproved: { type: boolean }
+        readyForBillingAttest: { type: boolean }
+        createdAt: { type: string, format: date-time }
+        updatedAt: { type: string, format: date-time }
     Note:
       type: object
       required: [noteId, appointmentId, tenantId, siteId, safePatientId, clinicianId, state, mode]

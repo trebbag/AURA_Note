@@ -60,9 +60,14 @@ export default function DraftNotesPage() {
               </div>
             </dl>
             <p>{note.editorState}</p>
-            <a className="button-link" href={`/aura-note/workspace/${note.appointmentId}`}>
-              Open Workspace
-            </a>
+            <div className="row-actions">
+              <a className="button-link" href={`/aura-note/workspace/${note.appointmentId}`}>
+                Workspace
+              </a>
+              <a className="button-link secondary" href={`/aura-note/finalization/${note.noteId}`}>
+                Finalize
+              </a>
+            </div>
           </article>
         ))}
       </section>

@@ -134,6 +134,32 @@ describe('schedule lifecycle permissions', () => {
       false
     );
   });
+
+  it('limits finalization management to linked treating clinicians or authorized admins', () => {
+    assert.equal(
+      canPerform('finalization:manage', {
+        role: 'clinician',
+        linkedToPatient: true,
+        linkedToVisit: true,
+        treatingClinician: true,
+        billingReviewTriggered: false,
+        authorizedAdmin: false
+      }),
+      true
+    );
+
+    assert.equal(
+      canPerform('finalization:manage', {
+        role: 'billing_staff',
+        linkedToPatient: true,
+        linkedToVisit: true,
+        treatingClinician: false,
+        billingReviewTriggered: true,
+        authorizedAdmin: false
+      }),
+      false
+    );
+  });
 });
 
 describe('PHI key guard', () => {

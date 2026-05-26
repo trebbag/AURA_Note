@@ -3,12 +3,15 @@ import type {
   AppointmentModality,
   AppointmentSource,
   AppointmentState,
+  FinalizationSelectionDecision,
+  FinalizationSuggestionDecision,
   NoteState,
   RecordingState,
   TaskAdjudicationStatus,
   TimerState,
   VisitSelectionCategory,
-  WizardStep
+  WizardStep,
+  WizardStepStatus
 } from '@aura-note/domain';
 
 export type Sensitivity = 'non_phi' | 'phi_reference' | 'restricted';
@@ -35,7 +38,15 @@ export type CoreEventType =
   | 'task.blocker_changed.v1'
   | 'low_confidence_diagnosis.override_recorded.v1'
   | 'finalization.started.v1'
+  | 'finalization.selection_decided.v1'
+  | 'finalization.suggestion_decided.v1'
+  | 'finalization.compose_requested.v1'
+  | 'finalization.compose_completed.v1'
+  | 'finalization.compare_edit_updated.v1'
+  | 'finalization.compose_rebeautified.v1'
   | 'finalization.step_completed.v1'
+  | 'final_note.approved.v1'
+  | 'patient_summary.approved.v1'
   | 'audit.event_recorded.v1';
 
 export interface ApiMeta {
@@ -243,6 +254,118 @@ export interface TaskDto {
   blocksSigning: boolean;
   adjudicationStatus: TaskAdjudicationStatus;
   ownerRole?: string;
+}
+
+export interface FinalizationSelectionDecisionDto {
+  visitSelectionId: string;
+  decision: FinalizationSelectionDecision;
+  reason?: string;
+  decidedByUserId: string;
+  decidedAt: string;
+}
+
+export interface FinalizationSuggestionDecisionDto {
+  suggestionId: string;
+  decision: FinalizationSuggestionDecision;
+  reason?: string;
+  decidedByUserId: string;
+  decidedAt: string;
+}
+
+export interface UnusedAuditItemDto {
+  unusedAuditItemId: string;
+  noteId: string;
+  sourceType: 'visit_selection' | 'suggestion';
+  sourceId: string;
+  label: string;
+  reason?: string;
+  recordedAt: string;
+}
+
+export interface ComposeProgressPhaseDto {
+  phase: 'analyzing_content' | 'enhancing_structure' | 'beautifying_language' | 'final_review';
+  status: 'pending' | 'running' | 'completed' | 'failed';
+}
+
+export interface FinalizationComposeOutputDto {
+  composeOutputId: string;
+  noteId: string;
+  version: number;
+  enhancedNoteText: string;
+  patientSummaryText: string;
+  payerReadableSupportSection: string;
+  planTaskMapping: string[];
+  sourceIntegrityWarnings: string[];
+  patientSummaryInternalDetailsDetected: boolean;
+  staleDueToEdit: boolean;
+  generatedAt: string;
+  draftOnly: true;
+}
+
+export interface PatientOpportunityDto {
+  patientOpportunityId: string;
+  noteId: string;
+  category: 'clinical' | 'quality' | 'risk' | 'care_gap' | 'internal_revenue';
+  title: string;
+  detail: string;
+  patientFacingAllowed: boolean;
+  revenueHiddenFromPatient: true;
+}
+
+export interface FinalizationSessionDto {
+  finalizationSessionId: string;
+  noteId: string;
+  appointmentId: string;
+  currentStep: WizardStep;
+  completedSteps: WizardStep[];
+  stepStatuses: Record<WizardStep, WizardStepStatus>;
+  frozenSnapshot: {
+    originalNoteText: string;
+    visitSelections: VisitSelectionDto[];
+    finalPassSuggestions: SuggestionDto[];
+    transcriptSegmentCount: number;
+    historyGapQuestionCount: number;
+  };
+  selectionDecisions: FinalizationSelectionDecisionDto[];
+  suggestionDecisions: FinalizationSuggestionDecisionDto[];
+  unusedAuditItems: UnusedAuditItemDto[];
+  composePhases: ComposeProgressPhaseDto[];
+  composeOutput?: FinalizationComposeOutputDto;
+  patientOpportunities: PatientOpportunityDto[];
+  finalNoteApproved: boolean;
+  patientSummaryApproved: boolean;
+  readyForBillingAttest: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface FinalizationSelectionDecisionRequestDto {
+  decision: FinalizationSelectionDecision;
+  reason?: string;
+}
+
+export interface FinalizationSuggestionDecisionRequestDto {
+  decision: FinalizationSuggestionDecision;
+  reason?: string;
+}
+
+export interface CompareEditUpdateRequestDto {
+  originalNoteText: string;
+}
+
+export interface RebeautifyRequestDto {
+  reason?: string;
+}
+
+export interface ApprovalRequestDto {
+  approved: boolean;
+  attestation: string;
+}
+
+export interface FinalizationActionResponseDto {
+  finalizationSession: FinalizationSessionDto;
+  auditEvent: AuditEventDto;
+  domainEvents: Array<AuraNoteEvent<Record<string, unknown>>>;
 }
 
 export interface WizardStepDecisionDto {
