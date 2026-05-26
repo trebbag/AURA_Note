@@ -46,4 +46,6 @@ AURA Note must enforce role permissions and relationship-to-patient constraints.
 - Billing staff transcript access requires `billingReviewTriggered = true`.
 - MA final-note access requires `linkedToVisit = true` or assigned follow-up task with minimum necessary view.
 - Coaching dashboard access requires `role = authorized_admin` and tenant configuration permits identifiable analytics; otherwise aggregate-only.
+- Billing staff can see billing detail and transcript only through billing-purpose rules, but cannot see coaching outputs unless they also hold an authorized-admin role.
+- Aggregate-only coaching mode hides individual clinician identifiers even from admin dashboard views.
 - Support users require break-glass reason and time-boxed access.

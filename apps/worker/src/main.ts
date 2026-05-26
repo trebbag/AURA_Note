@@ -1,6 +1,8 @@
 import type {
   AiGatewayInvocationResponseDto,
   ClinicOsIntegrationStatusDto,
+  CoachingDashboardDto,
+  CoachingReportDto,
   EhrAdapterStatusDto,
   EhrWritebackQueueDto,
   RawAudioRetentionMetadataDto
@@ -9,17 +11,18 @@ import type {
 export function getWorkerStatus() {
   return {
     service: 'aura-note-worker',
-    status: 'cp3_ai_gateway_scaffold_ready',
-    checkpoint: 'CP-3-in-progress',
+    status: 'cp4_coaching_scaffold_ready',
+    checkpoint: 'CP-4-in-progress',
     implementedJobs: [
       'raw_audio_retention_candidate_scan',
       'export_artifact_status_scan',
       'ehr_writeback_queue_status_scan',
       'ehr_adapter_health_check_scan',
       'clinicos_mapping_outbox_scan',
-      'ai_gateway_mock_invocation_status_scan'
+      'ai_gateway_mock_invocation_status_scan',
+      'coaching_signal_projection_refresh'
     ],
-    jobsDeferredToWorkOrders: ['live_ai_provider_queue', 'live_ehr_writeback', 'analytics']
+    jobsDeferredToWorkOrders: ['live_ai_provider_queue', 'live_ehr_writeback', 'production_analytics_warehouse']
   };
 }
 
@@ -83,6 +86,16 @@ export function evaluateClinicOsOutbox(records: ClinicOsIntegrationStatusDto[]):
       record.modeContext.availability === 'unavailable' ? { ...event, status: 'failed_unavailable' as const } : event
     )
   }));
+}
+
+export function evaluateCoachingSignalsForDashboard(records: CoachingReportDto[]): Pick<CoachingDashboardDto, 'aggregateOnly' | 'providerCount' | 'overallAverage'> {
+  const signalScores = records.flatMap((record) => record.signals.map((signal) => signal.score));
+  const providerIds = new Set(records.map((record) => record.clinicianId));
+  return {
+    aggregateOnly: true,
+    providerCount: providerIds.size,
+    overallAverage: signalScores.length === 0 ? 0 : Math.round(signalScores.reduce((sum, score) => sum + score, 0) / signalScores.length)
+  };
 }
 
 if (require.main === module) {

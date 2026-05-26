@@ -9,6 +9,8 @@ import {
   createSyntheticAppointment,
   createSyntheticBlockingTask,
   createSyntheticClinicOsStatus,
+  createSyntheticCoachingDashboard,
+  createSyntheticCoachingReport,
   createSyntheticEhrChartContext,
   createSyntheticNote,
   createSyntheticVisitSession
@@ -65,6 +67,16 @@ describe('synthetic CP-0 fixtures', () => {
     assert.equal(status.modeContext.hostMode, 'clinicos_integrated');
     assert.equal(status.mappings[0]?.clinicosModuleId, 'M03');
     assert.equal(status.permissionsStillEnforcedByAuraNote, true);
+  });
+
+  it('creates synthetic coaching fixtures with patient-facing exclusions', () => {
+    const report = createSyntheticCoachingReport();
+    const dashboard = createSyntheticCoachingDashboard();
+
+    assert.equal(report.patientFacingExcluded, true);
+    assert.equal(report.privacyLabel, 'own_clinician_only');
+    assert.equal(dashboard.aggregateOnly, true);
+    assert.equal(dashboard.clinicianSummaries[0]?.clinicianId, undefined);
   });
 
   it('creates role contexts that exercise transcript visibility rules', () => {

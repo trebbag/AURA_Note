@@ -3,6 +3,8 @@ import type {
   AppointmentModality,
   AppointmentSource,
   AppointmentState,
+  CoachingSignalCategory,
+  CoachingVisibilityMode,
   EhrWritebackStatus,
   ExportArtifactType,
   FinalizationSelectionDecision,
@@ -71,6 +73,9 @@ export type CoreEventType =
   | 'ai.phi_rejected.v1'
   | 'ai.response_recorded.v1'
   | 'ai.output_rejected.v1'
+  | 'coaching.signal_created.v1'
+  | 'coaching.report_generated.v1'
+  | 'coaching.dashboard_viewed.v1'
   | 'audit.event_recorded.v1';
 
 export interface ApiMeta {
@@ -962,6 +967,63 @@ export interface FinalizedNotesViewDto {
   notes: FinalizedNoteSummaryDto[];
   emptyState: WorkspacePanelState;
   readOnly: true;
+}
+
+export interface CoachingSignalDto {
+  coachingSignalId: string;
+  noteId: string;
+  clinicianId?: string;
+  category: CoachingSignalCategory;
+  score: number;
+  title: string;
+  detail: string;
+  evidenceIds: string[];
+  improvementPrompt: string;
+  billingRelated: boolean;
+  patientFacingExcluded: true;
+  generatedAt: string;
+}
+
+export interface CoachingReportDto {
+  reportId: string;
+  clinicianId: string;
+  noteId: string;
+  generatedAt: string;
+  overallScore: number;
+  signals: CoachingSignalDto[];
+  unavailableReasons: string[];
+  privacyLabel: 'own_clinician_only';
+  patientFacingExcluded: true;
+  auditEvent: AuditEventDto;
+  domainEvents: Array<AuraNoteEvent<Record<string, unknown>>>;
+}
+
+export interface CoachingDashboardDto {
+  dashboardId: string;
+  visibilityMode: CoachingVisibilityMode;
+  generatedAt: string;
+  aggregateOnly: boolean;
+  providerCount: number;
+  overallAverage: number;
+  categoryAverages: Record<CoachingSignalCategory, number>;
+  clinicianSummaries: Array<{
+    clinicianId?: string;
+    signalCount: number;
+    averageScore: number;
+  }>;
+  roiSignals: {
+    timeSavedMinutes: number;
+    revenueCapturedLabel: 'internal_only_not_patient_facing';
+    denialsReducedCount: number;
+    trainingImprovementItems: number;
+  };
+  privacyLabel: 'admin_dashboard' | 'aggregate_only';
+  auditEvent: AuditEventDto;
+  domainEvents: Array<AuraNoteEvent<Record<string, unknown>>>;
+}
+
+export interface CoachingDashboardRequestDto {
+  visibilityMode?: CoachingVisibilityMode;
 }
 
 export interface AuraNoteEvent<TPayload> {

@@ -634,13 +634,32 @@ paths:
   /coaching/own:
     get:
       operationId: getOwnCoaching
+      description: WO-012 implemented synthetic own-clinician coaching report. Coaching is clinician-only and excluded from patient-facing outputs.
       responses:
-        '200': { description: Own coaching }
+        '200':
+          description: Own clinician coaching report.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CoachingReportResponse'
   /coaching/dashboard:
     get:
       operationId: getCoachingDashboard
+      description: WO-012 implemented premium coaching dashboard scaffold. Aggregate-only mode hides individual provider identifiers.
+      parameters:
+        - in: query
+          name: visibilityMode
+          required: false
+          schema:
+            type: string
+            enum: [aggregate_only, full_admin]
       responses:
-        '200': { description: Premium coaching dashboard }
+        '200':
+          description: Premium coaching dashboard.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CoachingDashboardResponse'
   /ai-gateway/status:
     get:
       operationId: getAiGatewayStatus
@@ -2051,6 +2070,104 @@ components:
                     $ref: '#/components/schemas/AuraNoteEvent'
             meta:
               $ref: '#/components/schemas/ApiMeta'
+    CoachingSignal:
+      type: object
+      required: [coachingSignalId, noteId, category, score, title, detail, evidenceIds, improvementPrompt, billingRelated, patientFacingExcluded, generatedAt]
+      properties:
+        coachingSignalId: { type: string }
+        noteId: { type: string }
+        clinicianId: { type: string }
+        category:
+          type: string
+          enum: [documentation_completeness, billing_optimization, patient_voice_fidelity, communication_clarity, clinical_reasoning, history_taking_depth, em_justification]
+        score: { type: number, minimum: 0, maximum: 100 }
+        title: { type: string }
+        detail: { type: string }
+        evidenceIds:
+          type: array
+          items: { type: string }
+        improvementPrompt: { type: string }
+        billingRelated: { type: boolean }
+        patientFacingExcluded: { type: boolean, const: true }
+        generatedAt: { type: string, format: date-time }
+    CoachingReport:
+      type: object
+      required: [reportId, clinicianId, noteId, generatedAt, overallScore, signals, unavailableReasons, privacyLabel, patientFacingExcluded, auditEvent, domainEvents]
+      properties:
+        reportId: { type: string }
+        clinicianId: { type: string }
+        noteId: { type: string }
+        generatedAt: { type: string, format: date-time }
+        overallScore: { type: number, minimum: 0, maximum: 100 }
+        signals:
+          type: array
+          items:
+            $ref: '#/components/schemas/CoachingSignal'
+        unavailableReasons:
+          type: array
+          items: { type: string }
+        privacyLabel: { type: string, enum: [own_clinician_only] }
+        patientFacingExcluded: { type: boolean, const: true }
+        auditEvent:
+          $ref: '#/components/schemas/AuditEvent'
+        domainEvents:
+          type: array
+          items:
+            $ref: '#/components/schemas/AuraNoteEvent'
+    CoachingDashboard:
+      type: object
+      required: [dashboardId, visibilityMode, generatedAt, aggregateOnly, providerCount, overallAverage, categoryAverages, clinicianSummaries, roiSignals, privacyLabel, auditEvent, domainEvents]
+      properties:
+        dashboardId: { type: string }
+        visibilityMode: { type: string, enum: [disabled, own_only, aggregate_only, full_admin] }
+        generatedAt: { type: string, format: date-time }
+        aggregateOnly: { type: boolean }
+        providerCount: { type: integer, minimum: 0 }
+        overallAverage: { type: number, minimum: 0, maximum: 100 }
+        categoryAverages:
+          type: object
+          additionalProperties:
+            type: number
+        clinicianSummaries:
+          type: array
+          items:
+            type: object
+            required: [signalCount, averageScore]
+            properties:
+              clinicianId: { type: string }
+              signalCount: { type: integer, minimum: 0 }
+              averageScore: { type: number, minimum: 0, maximum: 100 }
+        roiSignals:
+          type: object
+          required: [timeSavedMinutes, revenueCapturedLabel, denialsReducedCount, trainingImprovementItems]
+          properties:
+            timeSavedMinutes: { type: integer, minimum: 0 }
+            revenueCapturedLabel: { type: string, enum: [internal_only_not_patient_facing] }
+            denialsReducedCount: { type: integer, minimum: 0 }
+            trainingImprovementItems: { type: integer, minimum: 0 }
+        privacyLabel: { type: string, enum: [admin_dashboard, aggregate_only] }
+        auditEvent:
+          $ref: '#/components/schemas/AuditEvent'
+        domainEvents:
+          type: array
+          items:
+            $ref: '#/components/schemas/AuraNoteEvent'
+    CoachingReportResponse:
+      allOf:
+        - type: object
+          properties:
+            data:
+              $ref: '#/components/schemas/CoachingReport'
+            meta:
+              $ref: '#/components/schemas/ApiMeta'
+    CoachingDashboardResponse:
+      allOf:
+        - type: object
+          properties:
+            data:
+              $ref: '#/components/schemas/CoachingDashboard'
+            meta:
+              $ref: '#/components/schemas/ApiMeta'
     AuraNoteEvent:
       type: object
       required: [eventId, eventType, schemaVersion, tenantId, siteId, producer, eventTime, traceId, idempotencyKey, sensitivity, retentionClass, payload]
@@ -2058,7 +2175,7 @@ components:
         eventId: { type: string }
         eventType:
           type: string
-          enum: [appointment.created.v1, note.shell_created.v1, visit.started.v1, visit.paused.v1, visit.resumed.v1, visit.stopped.v1, recording.started.v1, recording.exception_approved.v1, recording.stopped.v1, raw_audio.retention_scheduled.v1, transcript.segment_appended.v1, suggestions.evaluated.v1, suggestion.accepted.v1, suggestion.removed.v1, visit_selection.added.v1, compliance.evaluated.v1, history_gap.task_created.v1, task.blocker_changed.v1, low_confidence_diagnosis.override_recorded.v1, finalization.started.v1, finalization.selection_decided.v1, finalization.suggestion_decided.v1, finalization.compose_requested.v1, finalization.compose_completed.v1, finalization.compare_edit_updated.v1, finalization.compose_rebeautified.v1, finalization.step_completed.v1, final_note.approved.v1, patient_summary.approved.v1, billing_review.triggered.v1, draft_claim_preview.generated.v1, billing_attestation.completed.v1, final_note.created.v1, patient_summary.finalized.v1, note.signed.v1, note.dispatched.v1, export.generated.v1, ehr_writeback.queued.v1, ehr_writeback.failed.v1, ehr.adapter_status_checked.v1, ehr.patient_matched.v1, ehr.chart_context_loaded.v1, clinicos.mode_resolved.v1, clinicos.mapping_recorded.v1, clinicos.event_published.v1, clinicos.unavailable.v1, ai.request_prepared.v1, ai.context_scrubbed.v1, ai.phi_rejected.v1, ai.response_recorded.v1, ai.output_rejected.v1, audit.event_recorded.v1]
+          enum: [appointment.created.v1, note.shell_created.v1, visit.started.v1, visit.paused.v1, visit.resumed.v1, visit.stopped.v1, recording.started.v1, recording.exception_approved.v1, recording.stopped.v1, raw_audio.retention_scheduled.v1, transcript.segment_appended.v1, suggestions.evaluated.v1, suggestion.accepted.v1, suggestion.removed.v1, visit_selection.added.v1, compliance.evaluated.v1, history_gap.task_created.v1, task.blocker_changed.v1, low_confidence_diagnosis.override_recorded.v1, finalization.started.v1, finalization.selection_decided.v1, finalization.suggestion_decided.v1, finalization.compose_requested.v1, finalization.compose_completed.v1, finalization.compare_edit_updated.v1, finalization.compose_rebeautified.v1, finalization.step_completed.v1, final_note.approved.v1, patient_summary.approved.v1, billing_review.triggered.v1, draft_claim_preview.generated.v1, billing_attestation.completed.v1, final_note.created.v1, patient_summary.finalized.v1, note.signed.v1, note.dispatched.v1, export.generated.v1, ehr_writeback.queued.v1, ehr_writeback.failed.v1, ehr.adapter_status_checked.v1, ehr.patient_matched.v1, ehr.chart_context_loaded.v1, clinicos.mode_resolved.v1, clinicos.mapping_recorded.v1, clinicos.event_published.v1, clinicos.unavailable.v1, ai.request_prepared.v1, ai.context_scrubbed.v1, ai.phi_rejected.v1, ai.response_recorded.v1, ai.output_rejected.v1, coaching.signal_created.v1, coaching.report_generated.v1, coaching.dashboard_viewed.v1, audit.event_recorded.v1]
         schemaVersion: { type: string, enum: [v1] }
         tenantId: { type: string }
         siteId: { type: string }

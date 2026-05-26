@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
 import {
   evaluateAiGatewayInvocationQueue,
+  evaluateCoachingSignalsForDashboard,
   evaluateClinicOsOutbox,
   evaluateEhrAdapterHealth,
   evaluateEhrWritebackQueue,
@@ -10,16 +11,17 @@ import {
 } from './main';
 
 describe('worker scaffold', () => {
-  it('reports the CP-3 AI gateway scaffold', () => {
+  it('reports the CP-4 coaching scaffold', () => {
     const status = getWorkerStatus();
 
-    assert.equal(status.status, 'cp3_ai_gateway_scaffold_ready');
-    assert.equal(status.checkpoint, 'CP-3-in-progress');
+    assert.equal(status.status, 'cp4_coaching_scaffold_ready');
+    assert.equal(status.checkpoint, 'CP-4-in-progress');
     assert.equal(status.implementedJobs.includes('raw_audio_retention_candidate_scan'), true);
     assert.equal(status.implementedJobs.includes('ehr_writeback_queue_status_scan'), true);
     assert.equal(status.implementedJobs.includes('ehr_adapter_health_check_scan'), true);
     assert.equal(status.implementedJobs.includes('clinicos_mapping_outbox_scan'), true);
     assert.equal(status.implementedJobs.includes('ai_gateway_mock_invocation_status_scan'), true);
+    assert.equal(status.implementedJobs.includes('coaching_signal_projection_refresh'), true);
   });
 
   it('marks raw audio records purge-eligible after the one-week retention window', () => {
@@ -205,5 +207,50 @@ describe('worker scaffold', () => {
 
     assert.equal(status?.permissionsStillEnforcedByAuraNote, true);
     assert.equal(status?.publishedEvents[0]?.status, 'failed_unavailable');
+  });
+
+  it('projects coaching reports to aggregate-only dashboard metrics', () => {
+    const projection = evaluateCoachingSignalsForDashboard([
+      {
+        reportId: 'coach-report-001',
+        clinicianId: 'clinician-001',
+        noteId: 'note-001',
+        generatedAt: '2026-05-26T18:45:00.000Z',
+        overallScore: 80,
+        unavailableReasons: [],
+        privacyLabel: 'own_clinician_only',
+        patientFacingExcluded: true,
+        signals: [
+          {
+            coachingSignalId: 'coach-signal-001',
+            noteId: 'note-001',
+            clinicianId: 'clinician-001',
+            category: 'documentation_completeness',
+            score: 80,
+            title: 'Synthetic coaching',
+            detail: 'Synthetic detail',
+            evidenceIds: ['evidence-001'],
+            improvementPrompt: 'Synthetic prompt',
+            billingRelated: false,
+            patientFacingExcluded: true,
+            generatedAt: '2026-05-26T18:45:00.000Z'
+          }
+        ],
+        auditEvent: {
+          auditEventId: 'audit-coach-001',
+          tenantId: 'tenant-synthetic-primary',
+          action: 'coaching.view_own',
+          entityType: 'CoachingReport',
+          entityId: 'coach-report-001',
+          traceId: 'trace-coach-worker-001',
+          createdAt: '2026-05-26T18:45:00.000Z'
+        },
+        domainEvents: []
+      }
+    ]);
+
+    assert.equal(projection.aggregateOnly, true);
+    assert.equal(projection.providerCount, 1);
+    assert.equal(projection.overallAverage, 80);
   });
 });

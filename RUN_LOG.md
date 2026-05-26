@@ -154,3 +154,17 @@ Codex must append a dated entry after each work order or meaningful implementati
 - **Accepted risks:** ClinicOS integration is mock/scaffold only. Mapping records are process-local synthetic records. ClinicOS context does not replace AURA Note permission checks or source-of-truth controls.
 - **Open SPEC_GAPs:** None discovered for `WO-011`.
 - **Next step:** CP-3 is merged to `main`. Begin CP-4 with `WO-012` coaching and analytics scaffolding.
+
+## 2026-05-26T19:12:12Z — WO-012 Coaching analytics scaffolding
+
+- **Work order:** `WO-012` Coaching and Analytics Scaffolding.
+- **Summary of changes:** Added deterministic synthetic coaching signals, own-clinician report generation, premium dashboard projection, aggregate-only visibility mode, coaching API endpoints, browser-testable coaching page, worker projection scaffold, contract/OpenAPI updates, synthetic fixtures, and privacy/RBAC tests.
+- **Backend behavior:** Added `/api/v1/coaching/own` and `/api/v1/coaching/dashboard`. Treating clinicians can view only their own coaching report; billing staff are denied coaching output even when billing review is triggered; authorized admins can view the dashboard; aggregate-only dashboard mode hides clinician identifiers by default. Recording-exception visits mark transcript-dependent coaching unavailable.
+- **UX behavior:** Added `/aura-note/coaching` with own-report, premium dashboard, aggregate-only, billing-denied, patient-excluded, and recording-exception unavailable states.
+- **Files changed:** `packages/domain`, `packages/contracts`, `packages/contracts/openapi/aura-note.v1.yaml`, `packages/security`, `packages/testing`, `apps/api/src/coaching/*`, `apps/api/src/app.module.ts`, `apps/api/package.json`, `apps/web/app/aura-note/coaching/page.tsx`, `apps/web/app/globals.css`, `apps/worker`, `docs/API_EVENT_CONTRACTS.md`, `docs/DATA_MODEL.md`, `docs/RBAC_ABAC_MATRIX.md`, `docs/TEST_PLAN.md`, `docs/UX_BUILD_SPEC.md`, `RUN_LOG.md`, and `repo_status.json`.
+- **Tests run:** `pnpm --filter @aura-note/domain test`; `pnpm --filter @aura-note/contracts test`; `pnpm --filter @aura-note/security test`; `pnpm --filter @aura-note/testing test`; `pnpm --filter @aura-note/api test`; `pnpm --filter @aura-note/api test:e2e`; `pnpm --filter @aura-note/api typecheck`; `pnpm --filter @aura-note/web typecheck`; `pnpm --filter @aura-note/worker test`; `pnpm --filter @aura-note/worker typecheck`; `pnpm install --frozen-lockfile`; `pnpm lint`; `pnpm lint:phi`; `pnpm typecheck`; `pnpm test`; `pnpm test:e2e`; `pnpm build`; `node scripts/status.js`; `git diff --check`.
+- **Browser verification:** Ran the Next app on `http://localhost:3100`, opened `/aura-note/coaching`, and confirmed Own Coaching Report, Premium Longitudinal Dashboard, billing-denied, patient-excluded, and recording-exception-unavailable states were visible.
+- **Tests not run:** GitHub Actions remains to be run after opening the `WO-012` PR. Live AI coaching analysis, production analytics warehouse, production coaching configuration, and real clinician productivity analytics are intentionally not run.
+- **Accepted risks:** Coaching analytics remain deterministic and synthetic. ROI signals are internal labels and are not patient-facing. Browser automation verified the route and visible states; deeper visual regression remains deferred until a Playwright suite is introduced.
+- **Open SPEC_GAPs:** None discovered for `WO-012`.
+- **Next step:** Run the `WO-012` full gate, open its draft PR, confirm CI, merge when green, then begin `WO-013`.

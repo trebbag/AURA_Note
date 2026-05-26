@@ -105,6 +105,31 @@ describe('final note and coaching access', () => {
       }),
       false
     );
+
+    assert.equal(
+      canPerform('coaching_own:view', {
+        role: 'billing_staff',
+        linkedToPatient: true,
+        linkedToVisit: true,
+        treatingClinician: false,
+        billingReviewTriggered: true,
+        authorizedAdmin: false,
+        ownCoachingReport: true
+      }),
+      false
+    );
+
+    assert.equal(
+      canPerform('coaching_dashboard:view', {
+        role: 'authorized_admin',
+        linkedToPatient: false,
+        linkedToVisit: false,
+        treatingClinician: false,
+        billingReviewTriggered: false,
+        authorizedAdmin: true
+      }),
+      true
+    );
   });
 
   it('allows export/copy actions only for linked permitted roles', () => {

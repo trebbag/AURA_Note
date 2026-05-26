@@ -13,6 +13,7 @@ Codex should add tests as implementation proceeds.
 - Finalization wizard step requirements.
 - Signed-output artifact readiness.
 - EHR writeback queue readiness states.
+- Coaching own-report and aggregate dashboard privacy.
 - RBAC/ABAC decisions.
 - PHI scrubber.
 - AI response validation.
@@ -31,6 +32,8 @@ Codex should add tests as implementation proceeds.
 - EHR writeback queue behaves correctly in mock mode.
 - Export/copy/PDF actions are blocked before signing.
 - Patient summary exports reject internal billing/revenue details.
+- Coaching own report denies billing staff and keeps patient-facing exclusions.
+- Coaching aggregate dashboard hides clinician identifiers unless full-admin mode is explicitly authorized.
 
 ## Browser / Playwright journeys
 

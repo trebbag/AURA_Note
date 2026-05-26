@@ -9,6 +9,8 @@ import {
   type AiGatewayStatusDto,
   type ClinicOsIntegrationStatusDto,
   type ClinicOsMapVisitResponseDto,
+  type CoachingDashboardDto,
+  type CoachingReportDto,
   type ComplianceReviewDto,
   type DocumentationWorkspaceDto,
   type DraftNoteSummaryDto,
@@ -725,6 +727,54 @@ describe('finalization contracts', () => {
     assert.equal(exportResponse.artifact.signedVersionLocked, true);
     assert.equal(finalizedNote.patientSummary?.internalBillingDetailsExcluded, true);
     assert.equal(writebackResponse.writeback.status, 'not_configured');
+  });
+});
+
+describe('coaching contracts', () => {
+  it('represents an own-clinician coaching report as patient-excluded and private', () => {
+    const report: Pick<CoachingReportDto, 'privacyLabel' | 'patientFacingExcluded' | 'signals' | 'overallScore'> = {
+      privacyLabel: 'own_clinician_only',
+      patientFacingExcluded: true,
+      overallScore: 82,
+      signals: [
+        {
+          coachingSignalId: 'coach-signal-001',
+          noteId: 'note-001',
+          clinicianId: 'clinician-001',
+          category: 'communication_clarity',
+          score: 82,
+          title: 'Synthetic clear plan',
+          detail: 'Synthetic coaching detail for clinician-only review.',
+          evidenceIds: ['evidence-001'],
+          improvementPrompt: 'Keep discharge instructions concise.',
+          billingRelated: false,
+          patientFacingExcluded: true,
+          generatedAt: '2026-05-26T18:40:00.000Z'
+        }
+      ]
+    };
+
+    assert.equal(report.privacyLabel, 'own_clinician_only');
+    assert.equal(report.patientFacingExcluded, true);
+    assert.equal(report.signals[0]?.patientFacingExcluded, true);
+  });
+
+  it('represents aggregate-only admin dashboards without clinician identifiers', () => {
+    const dashboard: Pick<CoachingDashboardDto, 'visibilityMode' | 'aggregateOnly' | 'clinicianSummaries' | 'roiSignals'> = {
+      visibilityMode: 'aggregate_only',
+      aggregateOnly: true,
+      clinicianSummaries: [{ signalCount: 4, averageScore: 83 }],
+      roiSignals: {
+        timeSavedMinutes: 42,
+        revenueCapturedLabel: 'internal_only_not_patient_facing',
+        denialsReducedCount: 1,
+        trainingImprovementItems: 3
+      }
+    };
+
+    assert.equal(dashboard.aggregateOnly, true);
+    assert.equal(dashboard.clinicianSummaries[0]?.clinicianId, undefined);
+    assert.equal(dashboard.roiSignals.revenueCapturedLabel, 'internal_only_not_patient_facing');
   });
 });
 

@@ -1,8 +1,8 @@
 {
   "project": "AURA Note v1",
-  "mode": "cp3_complete",
-  "current_checkpoint": "CP-3",
-  "next_work_order": "WO-012",
+  "mode": "cp4_in_progress",
+  "current_checkpoint": "CP-4",
+  "next_work_order": "WO-013",
   "work_orders": {
     "WO-000": "done",
     "WO-001": "done",
@@ -16,11 +16,11 @@
     "WO-009": "done",
     "WO-010": "done",
     "WO-011": "done",
-    "WO-012": "todo",
+    "WO-012": "done",
     "WO-013": "todo",
     "WO-014": "todo"
   },
-  "last_updated_by": "Codex CP-3 merge confirmation",
-  "last_updated_at": "2026-05-26T18:00:21Z",
-  "notes": "CP-3 WO-009 through WO-011 are implemented, PR #11 passed GitHub Actions, and the checkpoint is merged to main. Next implementation scope is CP-4 starting with WO-012 coaching and analytics scaffolding."
+  "last_updated_by": "Codex WO-012 implementation",
+  "last_updated_at": "2026-05-26T19:18:58Z",
+  "notes": "WO-012 coaching and analytics scaffolding is implemented locally with full local gate and browser route verification passing. Next implementation scope is WO-013 production hardening, observability, retention, and audit."
 }
