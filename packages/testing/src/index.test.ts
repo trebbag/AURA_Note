@@ -4,6 +4,8 @@ import { createAppointmentNoteInvariant } from '@aura-note/domain';
 import { canViewTranscript } from '@aura-note/security';
 import {
   createAccessContext,
+  createSyntheticAiEvidenceNode,
+  createSyntheticAiInvocationRequest,
   createSyntheticAppointment,
   createSyntheticBlockingTask,
   createSyntheticNote,
@@ -36,6 +38,15 @@ describe('synthetic CP-0 fixtures', () => {
 
     assert.equal(task.blocksSigning, true);
     assert.equal(task.adjudicationStatus, 'open');
+  });
+
+  it('creates synthetic AI gateway fixtures without raw PHI', () => {
+    const evidence = createSyntheticAiEvidenceNode();
+    const invocation = createSyntheticAiInvocationRequest({ evidence: [evidence] });
+
+    assert.equal(invocation.safePatientId.startsWith('safe-patient-'), true);
+    assert.equal(invocation.clinicalFacts.patientName, undefined);
+    assert.equal(invocation.evidence[0]?.phiClassification, 'deidentified');
   });
 
   it('creates role contexts that exercise transcript visibility rules', () => {

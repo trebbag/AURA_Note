@@ -6,8 +6,10 @@ import {
   canViewFinalNote,
   canViewTranscript,
   containsForbiddenPhiKeys,
+  redactForbiddenPhi,
   redactForbiddenPhiKeys,
-  scanForForbiddenPhiKeys
+  scanForForbiddenPhiKeys,
+  scanForForbiddenPhiText
 } from './index';
 
 describe('role-limited transcript access', () => {
@@ -124,8 +126,10 @@ describe('final note and coaching access', () => {
     assert.equal(canPerform('final_note:export', linkedClinician), true);
     assert.equal(canPerform('patient_summary:export', linkedClinician), true);
     assert.equal(canPerform('ehr_writeback:queue', linkedClinician), true);
+    assert.equal(canPerform('ai_gateway:invoke', linkedClinician), true);
     assert.equal(canPerform('final_note:export', linkedBilling), false);
     assert.equal(canPerform('patient_summary:export', linkedBilling), false);
+    assert.equal(canPerform('ai_gateway:invoke', linkedBilling), false);
   });
 });
 
@@ -223,6 +227,21 @@ describe('PHI key guard', () => {
         email: '[REDACTED]',
         nested: { phone: '[REDACTED]' }
       }
+    );
+  });
+
+  it('detects obvious forbidden PHI-like free text for AI-bound data', () => {
+    const scan = scanForForbiddenPhiText({
+      safePatientId: 'safe-patient-synthetic-001',
+      contact: 'synthetic@example.invalid',
+      nested: { note: 'MRN: SYNTHETIC-MRN' }
+    });
+
+    assert.equal(scan.containsForbiddenPhiText, true);
+    assert.deepEqual(scan.paths, ['contact', 'nested.note']);
+    assert.deepEqual(
+      redactForbiddenPhi({ contact: 'synthetic@example.invalid', nested: { patientName: 'Synthetic Person' } }),
+      { contact: '[REDACTED]', nested: { patientName: '[REDACTED]' } }
     );
   });
 });

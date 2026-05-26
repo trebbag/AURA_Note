@@ -23,6 +23,9 @@ importers:
 
   apps/api:
     dependencies:
+      '@aura-note/ai-gateway':
+        specifier: workspace:^
+        version: link:../../packages/ai-gateway
       '@aura-note/contracts':
         specifier: workspace:^
         version: link:../../packages/contracts

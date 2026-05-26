@@ -1,4 +1,4 @@
-import type { AppointmentDto, NoteDto, TaskDto, VisitSessionDto } from '@aura-note/contracts';
+import type { AiEvidenceNodeDto, AiGatewayInvocationRequestDto, AppointmentDto, NoteDto, TaskDto, VisitSessionDto } from '@aura-note/contracts';
 import type { AccessContext } from '@aura-note/security';
 
 export const syntheticIds = {
@@ -66,6 +66,39 @@ export function createSyntheticBlockingTask(overrides: Partial<TaskDto> = {}): T
     blocksSigning: true,
     adjudicationStatus: 'open',
     ownerRole: 'ma',
+    ...overrides
+  };
+}
+
+export function createSyntheticAiEvidenceNode(overrides: Partial<AiEvidenceNodeDto> = {}): AiEvidenceNodeDto {
+  return {
+    evidenceId: 'evidence-synthetic-001',
+    evidenceType: 'chart_slice',
+    sourceSystem: 'synthetic_fixture',
+    sourceRef: 'chart-context-synthetic-001',
+    displayLabel: 'Synthetic chart context',
+    excerptOrValue: 'Synthetic deidentified evidence value',
+    freshness: 'recent',
+    sourceQuality: 'high',
+    phiClassification: 'deidentified',
+    allowedRoles: ['clinician'],
+    ...overrides
+  };
+}
+
+export function createSyntheticAiInvocationRequest(
+  overrides: Partial<AiGatewayInvocationRequestDto> = {}
+): AiGatewayInvocationRequestDto {
+  return {
+    purpose: 'suggestions',
+    safePatientId: syntheticIds.safePatientId,
+    noteId: syntheticIds.noteId,
+    phiHandling: 'reject',
+    clinicalFacts: {
+      visitType: 'Synthetic chronic follow-up',
+      activeProblems: ['Synthetic diabetes follow-up']
+    },
+    evidence: [createSyntheticAiEvidenceNode()],
     ...overrides
   };
 }

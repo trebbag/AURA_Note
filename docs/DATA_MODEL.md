@@ -224,3 +224,13 @@ The `WO-007` scaffold does not create PDFs, exports, copy artifacts, claim submi
 - EHR writeback defaults to `not_configured` after signing and never marks writeback complete in the scaffold.
 
 Finalized-note detail views include the read-only final note, patient summary, draft claim preview reference, export artifact list, writeback status, and role-derived available actions. `WO-008` still uses process-local synthetic data and does not connect to object storage, EHR vendors, claim submission, external AI, or production PHI paths.
+
+## WO-009 AI Gateway PHI boundary scaffold status
+
+`WO-009` adds typed AI gateway records and DTOs for mock-only AI invocation:
+
+- `AiContextPackage` represents the deidentified, source-linked clinical package that may be sent to the mock provider. It stores safe tenant/site/patient/note references, structured clinical facts, evidence nodes, source IDs, redacted paths, rejected paths, PHI handling mode, and creation time.
+- `AiEvidenceNode` represents the source-link anchor used by suggestions, draft compose output, patient summary drafts, billing-preview candidates, and coaching feedback. Evidence nodes carry source system, source reference, display label, freshness, source quality, PHI classification, and allowed roles.
+- `AiSafetyPolicy` and prompt registry records identify policy mode, prompt ID/version, output type, private/BAA requirement, source-link requirement, and human-review requirement.
+
+The current implementation rejects raw forbidden PHI keys and obvious PHI-like free-text patterns by default. Explicit redaction mode is available for mock invocation and records the redacted paths. All AI outputs remain draft/candidate/suggestion-only and human-review-required. No browser, API, worker, or package code calls an external AI provider in `WO-009`.

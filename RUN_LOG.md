@@ -117,3 +117,15 @@ Codex must append a dated entry after each work order or meaningful implementati
 - **Accepted risks:** PDF/export artifacts are deterministic synthetic payloads, not production rendering/storage. EHR writeback remains configuration-gated scaffold state and does not connect to a live EHR or mark writeback complete.
 - **Open SPEC_GAPs:** None discovered for `WO-008`.
 - **Next step:** PR #8 passed GitHub Actions and was merged to `main`. Begin `WO-009` at the next implementation checkpoint.
+
+## 2026-05-26T17:29:54Z — WO-009 AI Gateway PHI boundary
+
+- **Work order:** `WO-009` AI Gateway PHI Boundary.
+- **Summary of changes:** Added typed AI gateway context packaging, PHI reject/redact handling, prompt registry, mock-only model-provider abstraction, safety policy enforcement, governance event metadata, API status/mock invocation endpoints, synthetic fixtures, and worker status scanning for AI gateway invocations.
+- **Backend behavior:** Added `/api/v1/ai-gateway/status` and `/api/v1/ai-gateway/mock-invocations`. Gateway status reports mock-only mode with external AI disabled. Mock invocation rejects raw forbidden PHI by default, supports explicit redaction mode, preserves source evidence IDs, emits governance events, and returns human-review-required draft/candidate/suggestion output only.
+- **Files changed:** `packages/ai-gateway`, `packages/security`, `packages/contracts`, `packages/testing`, `apps/api/src/ai/*`, `apps/api/src/app.module.ts`, `apps/api/package.json`, `apps/worker`, `packages/contracts/openapi/aura-note.v1.yaml`, `docs/API_EVENT_CONTRACTS.md`, `docs/DATA_MODEL.md`, `RUN_LOG.md`, and `repo_status.json`.
+- **Tests run:** `pnpm install --lockfile-only`; `pnpm --filter @aura-note/ai-gateway test`; `pnpm --filter @aura-note/security test`; `pnpm --filter @aura-note/contracts test`; `pnpm --filter @aura-note/api test`; `pnpm --filter @aura-note/api test:e2e`; `pnpm --filter @aura-note/testing test`; `pnpm --filter @aura-note/worker test`; `pnpm --filter @aura-note/api typecheck`.
+- **Tests not run:** Full monorepo gate and GitHub Actions remain to be run before/after opening the `WO-009` PR. Live AI provider calls are intentionally not run because external AI is disabled for this work order.
+- **Accepted risks:** AI context and invocation state remain synthetic/process-local. Free-text PHI detection is an obvious-pattern scaffold, not a production de-identification engine. Private/BAA model configuration remains disabled until later governance/configuration work.
+- **Open SPEC_GAPs:** None discovered for `WO-009`.
+- **Next step:** Run the `WO-009` full gate, open its draft PR, confirm CI, merge when green, then begin `WO-010`.

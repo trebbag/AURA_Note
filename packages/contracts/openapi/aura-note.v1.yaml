@@ -641,6 +641,36 @@ paths:
       operationId: getCoachingDashboard
       responses:
         '200': { description: Premium coaching dashboard }
+  /ai-gateway/status:
+    get:
+      operationId: getAiGatewayStatus
+      description: WO-009 implemented mock-only AI gateway status. External AI remains disabled.
+      responses:
+        '200':
+          description: AI gateway safety policy and prompt registry.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AiGatewayStatusResponse'
+  /ai-gateway/mock-invocations:
+    post:
+      operationId: invokeMockAiGateway
+      description: WO-009 implemented mock AI invocation through PHI boundary and governance metadata. Does not call external AI.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AiGatewayInvocationRequest'
+      responses:
+        '201':
+          description: Mock AI response with source-linked, human-review-required metadata.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AiGatewayInvocationResponse'
+        '400':
+          description: Raw PHI rejected before model invocation.
   /integrations/ehr/status:
     get:
       operationId: getEhrStatus
@@ -1616,6 +1646,145 @@ components:
         blocksSigning: { type: boolean }
         adjudicationStatus: { type: string, enum: [open, answered, closed, assigned, deferred] }
         ownerRole: { type: string }
+    AiEvidenceNode:
+      type: object
+      required: [evidenceId, evidenceType, sourceSystem, sourceRef, displayLabel, excerptOrValue, freshness, sourceQuality, phiClassification, allowedRoles]
+      properties:
+        evidenceId: { type: string }
+        evidenceType:
+          type: string
+          enum: [note_text, transcript_segment, chart_slice, lab, vital, medication, problem, diagnosis, quality_measure, payer_rule, staff_answer, patient_form, task, prior_note]
+        sourceSystem: { type: string, enum: [aura_note, ehr_adapter, clinicos, synthetic_fixture] }
+        sourceRef: { type: string }
+        displayLabel: { type: string }
+        excerptOrValue: { type: string }
+        freshness: { type: string, enum: [current_visit, recent, historical, unknown] }
+        sourceQuality: { type: string, enum: [high, medium, low] }
+        phiClassification: { type: string, enum: [deidentified, phi_reference, restricted] }
+        allowedRoles:
+          type: array
+          items: { type: string }
+    AiContextPackage:
+      type: object
+      required: [contextPackageId, tenantId, siteId, safePatientId, clinicalFacts, evidence, sourceIds, phiHandling, redactedPaths, rejectedPaths, deidentified, createdAt]
+      properties:
+        contextPackageId: { type: string }
+        tenantId: { type: string }
+        siteId: { type: string }
+        safePatientId: { type: string }
+        noteId: { type: string }
+        appointmentId: { type: string }
+        visitType: { type: string }
+        clinicalFacts: { type: object }
+        evidence:
+          type: array
+          items:
+            $ref: '#/components/schemas/AiEvidenceNode'
+        sourceIds:
+          type: array
+          items: { type: string }
+        phiHandling: { type: string, enum: [reject, redact] }
+        redactedPaths:
+          type: array
+          items: { type: string }
+        rejectedPaths:
+          type: array
+          items: { type: string }
+        deidentified: { type: boolean }
+        createdAt: { type: string, format: date-time }
+    AiGatewayInvocationRequest:
+      type: object
+      required: [purpose, safePatientId, clinicalFacts, evidence]
+      properties:
+        purpose: { type: string, enum: [suggestions, compose_note, patient_summary, billing_preview, coaching] }
+        outputType: { type: string, enum: [suggestion, draft, candidate, summary, coaching_feedback] }
+        phiHandling: { type: string, enum: [reject, redact] }
+        safePatientId: { type: string }
+        noteId: { type: string }
+        appointmentId: { type: string }
+        visitType: { type: string }
+        clinicalFacts: { type: object }
+        evidence:
+          type: array
+          items:
+            $ref: '#/components/schemas/AiEvidenceNode'
+    AiGatewayStatus:
+      type: object
+      required: [policy, promptRegistry, providerMode, externalAiEnabled]
+      properties:
+        providerMode: { type: string, enum: [mock, private_baa, external_disabled] }
+        externalAiEnabled: { type: boolean, const: false }
+        policy:
+          type: object
+          required: [policyId, mode, externalAiEnabled, privateBaaRequired, humanReviewRequired, allowedOutputTypes, prohibitedAutonomousActions]
+          properties:
+            policyId: { type: string }
+            mode: { type: string, enum: [mock_only, external_disabled, private_baa_governed] }
+            externalAiEnabled: { type: boolean }
+            privateBaaRequired: { type: boolean, const: true }
+            humanReviewRequired: { type: boolean, const: true }
+            allowedOutputTypes:
+              type: array
+              items: { type: string, enum: [suggestion, draft, candidate, summary, coaching_feedback] }
+            prohibitedAutonomousActions:
+              type: array
+              items: { type: string }
+        promptRegistry:
+          type: array
+          items:
+            type: object
+            required: [promptId, promptVersion, purpose, outputType, sourceLinkRequired, humanReviewRequired]
+            properties:
+              promptId: { type: string }
+              promptVersion: { type: string }
+              purpose: { type: string, enum: [suggestions, compose_note, patient_summary, billing_preview, coaching] }
+              outputType: { type: string, enum: [suggestion, draft, candidate, summary, coaching_feedback] }
+              sourceLinkRequired: { type: boolean }
+              humanReviewRequired: { type: boolean, const: true }
+    AiGatewayStatusResponse:
+      allOf:
+        - type: object
+          properties:
+            data:
+              $ref: '#/components/schemas/AiGatewayStatus'
+            meta:
+              $ref: '#/components/schemas/ApiMeta'
+    AiGatewayInvocationResponse:
+      allOf:
+        - type: object
+          properties:
+            data:
+              type: object
+              required: [request, response, contextPackage, auditEvent, domainEvents]
+              properties:
+                contextPackage:
+                  $ref: '#/components/schemas/AiContextPackage'
+                request:
+                  type: object
+                response:
+                  type: object
+                  required: [output, outputType, modelMode, warnings, humanReviewRequired, sourceEvidenceIds, rejected]
+                  properties:
+                    output: { type: object }
+                    outputType: { type: string, enum: [suggestion, draft, candidate, summary, coaching_feedback] }
+                    modelMode: { type: string, enum: [mock, private_baa, external_disabled] }
+                    confidence: { type: number, minimum: 0, maximum: 1 }
+                    warnings:
+                      type: array
+                      items: { type: string }
+                    humanReviewRequired: { type: boolean, const: true }
+                    sourceEvidenceIds:
+                      type: array
+                      items: { type: string }
+                    rejected: { type: boolean }
+                auditEvent:
+                  $ref: '#/components/schemas/AuditEvent'
+                domainEvents:
+                  type: array
+                  items:
+                    $ref: '#/components/schemas/AuraNoteEvent'
+            meta:
+              $ref: '#/components/schemas/ApiMeta'
     AuraNoteEvent:
       type: object
       required: [eventId, eventType, schemaVersion, tenantId, siteId, producer, eventTime, traceId, idempotencyKey, sensitivity, retentionClass, payload]
@@ -1623,7 +1792,7 @@ components:
         eventId: { type: string }
         eventType:
           type: string
-          enum: [appointment.created.v1, note.shell_created.v1, visit.started.v1, visit.paused.v1, visit.resumed.v1, visit.stopped.v1, recording.started.v1, recording.exception_approved.v1, recording.stopped.v1, raw_audio.retention_scheduled.v1, transcript.segment_appended.v1, suggestions.evaluated.v1, suggestion.accepted.v1, suggestion.removed.v1, visit_selection.added.v1, compliance.evaluated.v1, history_gap.task_created.v1, task.blocker_changed.v1, low_confidence_diagnosis.override_recorded.v1, finalization.started.v1, finalization.step_completed.v1, audit.event_recorded.v1]
+          enum: [appointment.created.v1, note.shell_created.v1, visit.started.v1, visit.paused.v1, visit.resumed.v1, visit.stopped.v1, recording.started.v1, recording.exception_approved.v1, recording.stopped.v1, raw_audio.retention_scheduled.v1, transcript.segment_appended.v1, suggestions.evaluated.v1, suggestion.accepted.v1, suggestion.removed.v1, visit_selection.added.v1, compliance.evaluated.v1, history_gap.task_created.v1, task.blocker_changed.v1, low_confidence_diagnosis.override_recorded.v1, finalization.started.v1, finalization.selection_decided.v1, finalization.suggestion_decided.v1, finalization.compose_requested.v1, finalization.compose_completed.v1, finalization.compare_edit_updated.v1, finalization.compose_rebeautified.v1, finalization.step_completed.v1, final_note.approved.v1, patient_summary.approved.v1, billing_review.triggered.v1, draft_claim_preview.generated.v1, billing_attestation.completed.v1, final_note.created.v1, patient_summary.finalized.v1, note.signed.v1, note.dispatched.v1, export.generated.v1, ehr_writeback.queued.v1, ehr_writeback.failed.v1, ai.request_prepared.v1, ai.context_scrubbed.v1, ai.phi_rejected.v1, ai.response_recorded.v1, ai.output_rejected.v1, audit.event_recorded.v1]
         schemaVersion: { type: string, enum: [v1] }
         tenantId: { type: string }
         siteId: { type: string }
