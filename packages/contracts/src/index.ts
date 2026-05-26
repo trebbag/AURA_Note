@@ -3,6 +3,8 @@ import type {
   AppointmentModality,
   AppointmentSource,
   AppointmentState,
+  EhrWritebackStatus,
+  ExportArtifactType,
   FinalizationSelectionDecision,
   FinalizationSuggestionDecision,
   NoteState,
@@ -54,6 +56,9 @@ export type CoreEventType =
   | 'patient_summary.finalized.v1'
   | 'note.signed.v1'
   | 'note.dispatched.v1'
+  | 'export.generated.v1'
+  | 'ehr_writeback.queued.v1'
+  | 'ehr_writeback.failed.v1'
   | 'audit.event_recorded.v1';
 
 export interface ApiMeta {
@@ -374,6 +379,62 @@ export interface PatientSummaryRecordDto {
   internalBillingDetailsExcluded: true;
 }
 
+export interface ExportArtifactDto {
+  exportArtifactId: string;
+  noteId: string;
+  artifactType: ExportArtifactType;
+  status: 'generated';
+  mimeType: 'application/pdf' | 'text/plain' | 'application/json';
+  fileName: string;
+  generatedAt: string;
+  generatedByUserId: string;
+  sourceFinalizedAt: string;
+  signedVersionLocked: true;
+  patientSummaryInternalDetailsExcluded?: true;
+  content: string;
+  checksum: string;
+}
+
+export type EhrWritebackTarget = 'final_note' | 'patient_summary' | 'both';
+export type EhrWritebackScaffoldMode = 'not_configured' | 'mock_queue' | 'simulate_failure' | 'unsupported_by_vendor';
+
+export interface EhrWritebackQueueDto {
+  writebackJobId: string;
+  noteId: string;
+  target: EhrWritebackTarget;
+  vendor: 'athenahealth' | 'generic_mock';
+  status: EhrWritebackStatus;
+  configured: boolean;
+  humanApproved: boolean;
+  retryable: boolean;
+  queuedAt?: string;
+  failedAt?: string;
+  failureReason?: string;
+  externalJobId?: string;
+}
+
+export interface EhrWritebackRequestDto {
+  target: EhrWritebackTarget;
+  humanApproved: boolean;
+  scaffoldMode?: EhrWritebackScaffoldMode;
+}
+
+export interface FinalizedNoteDetailDto extends FinalizedNoteSummaryDto {
+  finalNote?: FinalNoteRecordDto;
+  patientSummary?: PatientSummaryRecordDto;
+  draftClaimPreview?: DraftClaimPreviewDto;
+  exportArtifacts: ExportArtifactDto[];
+  writeback: EhrWritebackQueueDto;
+  availableActions: {
+    copyFinalNote: boolean;
+    copyPatientSummary: boolean;
+    downloadFinalNotePdf: boolean;
+    downloadPatientSummaryPdf: boolean;
+    exportStructured: boolean;
+    queueEhrWriteback: boolean;
+  };
+}
+
 export interface FinalizationSessionDto {
   finalizationSessionId: string;
   noteId: string;
@@ -398,6 +459,8 @@ export interface FinalizationSessionDto {
   billingAttestation?: BillingAttestationDto;
   finalNote?: FinalNoteRecordDto;
   patientSummary?: PatientSummaryRecordDto;
+  exportArtifacts: ExportArtifactDto[];
+  writeback: EhrWritebackQueueDto;
   finalNoteApproved: boolean;
   patientSummaryApproved: boolean;
   readyForBillingAttest: boolean;
@@ -438,6 +501,20 @@ export interface BillingAttestRequestDto {
 
 export interface FinalizationActionResponseDto {
   finalizationSession: FinalizationSessionDto;
+  auditEvent: AuditEventDto;
+  domainEvents: Array<AuraNoteEvent<Record<string, unknown>>>;
+}
+
+export interface ExportActionResponseDto {
+  artifact: ExportArtifactDto;
+  finalizedNote: FinalizedNoteDetailDto;
+  auditEvent: AuditEventDto;
+  domainEvents: Array<AuraNoteEvent<Record<string, unknown>>>;
+}
+
+export interface EhrWritebackActionResponseDto {
+  writeback: EhrWritebackQueueDto;
+  finalizedNote: FinalizedNoteDetailDto;
   auditEvent: AuditEventDto;
   domainEvents: Array<AuraNoteEvent<Record<string, unknown>>>;
 }
@@ -538,6 +615,10 @@ export interface FinalizedNoteSummaryDto {
   finalNoteAvailable: boolean;
   patientSummaryAvailable: boolean;
   transcriptAvailableForRole: boolean;
+  exportStatus?: 'not_generated' | 'generated' | 'failed';
+  patientSummaryStatus?: 'not_available' | 'final';
+  billingReviewStatus?: 'not_routed' | 'routed';
+  writebackStatus?: EhrWritebackStatus;
 }
 
 export interface WorkspacePanelDto {

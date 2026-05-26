@@ -8,6 +8,7 @@ import {
   canCompleteSuggestionReview,
   canCompleteBillingAttest,
   canEditNote,
+  canGenerateFinalArtifact,
   canAcceptSuggestion,
   canSignAndDispatch,
   canSignAndDispatchAfterBilling,
@@ -25,6 +26,7 @@ import {
   patientSummaryContainsInternalDetails,
   pauseVisitGate,
   recordingExceptionIsActive,
+  resolveEhrWritebackStatus,
   resumeVisitGate,
   stopVisitGate
 } from './index';
@@ -363,6 +365,69 @@ describe('finalization gates', () => {
 
     assert.equal(canSignAndDispatchAfterBilling(readiness), false);
     assert.equal(canSignAndDispatchAfterBilling({ ...readiness, billingAttested: true }), true);
+  });
+
+  it('allows final artifacts only after signed final records exist', () => {
+    assert.equal(
+      canGenerateFinalArtifact({
+        signedAndDispatched: false,
+        finalNoteAvailable: true,
+        patientSummaryAvailable: true,
+        artifactType: 'final_note_pdf'
+      }),
+      false
+    );
+    assert.equal(
+      canGenerateFinalArtifact({
+        signedAndDispatched: true,
+        finalNoteAvailable: true,
+        patientSummaryAvailable: false,
+        artifactType: 'structured_export'
+      }),
+      false
+    );
+    assert.equal(
+      canGenerateFinalArtifact({
+        signedAndDispatched: true,
+        finalNoteAvailable: true,
+        patientSummaryAvailable: true,
+        artifactType: 'patient_summary_pdf'
+      }),
+      true
+    );
+  });
+
+  it('resolves conservative EHR writeback queue states', () => {
+    assert.equal(
+      resolveEhrWritebackStatus({
+        signedAndDispatched: false,
+        finalNoteAvailable: false,
+        destinationConfigured: true,
+        humanApproved: true,
+        vendorSupportsWriteback: true
+      }),
+      'disabled'
+    );
+    assert.equal(
+      resolveEhrWritebackStatus({
+        signedAndDispatched: true,
+        finalNoteAvailable: true,
+        destinationConfigured: false,
+        humanApproved: true,
+        vendorSupportsWriteback: true
+      }),
+      'not_configured'
+    );
+    assert.equal(
+      resolveEhrWritebackStatus({
+        signedAndDispatched: true,
+        finalNoteAvailable: true,
+        destinationConfigured: true,
+        humanApproved: false,
+        vendorSupportsWriteback: true
+      }),
+      'pending_approval'
+    );
   });
 
   it('blocks signing for unresolved blocker tasks', () => {

@@ -19,6 +19,9 @@ export type Permission =
   | 'patient_summary:view'
   | 'transcript:view'
   | 'billing_detail:view'
+  | 'final_note:export'
+  | 'patient_summary:export'
+  | 'ehr_writeback:queue'
   | 'coaching_own:view'
   | 'coaching_dashboard:view'
   | 'audit:view';
@@ -65,12 +68,18 @@ export function canViewTranscript(ctx: AccessContext): boolean {
 
 export function canViewFinalNote(ctx: AccessContext): boolean {
   if (ctx.authorizedAdmin) return true;
-  return ctx.linkedToPatient || ctx.linkedToVisit;
+  return (
+    (ctx.linkedToPatient || ctx.linkedToVisit) &&
+    ['clinician', 'ma', 'billing_staff', 'admin', 'clinic_manager', 'compliance_privacy_lead'].includes(ctx.role)
+  );
 }
 
 export function canViewPatientSummary(ctx: AccessContext): boolean {
   if (ctx.authorizedAdmin) return true;
-  return ctx.linkedToPatient || ctx.linkedToVisit;
+  return (
+    (ctx.linkedToPatient || ctx.linkedToVisit) &&
+    ['clinician', 'ma', 'admin', 'clinic_manager'].includes(ctx.role)
+  );
 }
 
 export function canViewBillingDetail(ctx: AccessContext): boolean {
@@ -104,6 +113,12 @@ export function canPerform(permission: Permission, ctx: AccessContext): boolean 
       return canViewTranscript(ctx);
     case 'billing_detail:view':
       return canViewBillingDetail(ctx);
+    case 'final_note:export':
+      return (ctx.authorizedAdmin || ctx.role === 'clinician' || ctx.role === 'ma') && canViewFinalNote(ctx);
+    case 'patient_summary:export':
+      return (ctx.authorizedAdmin || ['clinician', 'ma'].includes(ctx.role)) && canViewPatientSummary(ctx);
+    case 'ehr_writeback:queue':
+      return ctx.authorizedAdmin || (ctx.role === 'clinician' && ctx.treatingClinician && ctx.linkedToVisit);
     case 'coaching_own:view':
       return canViewCoaching(ctx);
     case 'coaching_dashboard:view':

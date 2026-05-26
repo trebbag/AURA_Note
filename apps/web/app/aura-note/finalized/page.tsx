@@ -1,12 +1,15 @@
 const finalizedPlaceholders = [
   {
-    noteId: 'note-demo-finalized-placeholder',
-    appointmentId: 'appt-demo-finalized-placeholder',
-    safePatientId: 'safe-patient-finalized-placeholder',
+    noteId: 'note-demo-finalized-001',
+    appointmentId: 'appt-demo-finalized-001',
+    safePatientId: 'safe-patient-finalized-001',
     clinicianId: 'clinician-demo-001',
-    status: 'Read-only placeholder',
-    finalNoteAvailable: false,
-    patientSummaryAvailable: false
+    status: 'Signed and dispatched',
+    finalizedAt: '2026-05-26T16:00',
+    finalNoteAvailable: true,
+    patientSummaryAvailable: true,
+    exportStatus: 'not_generated',
+    writebackStatus: 'not_configured'
   }
 ];
 
@@ -16,7 +19,7 @@ export default function FinalizedNotesPage() {
       <header className="page-header">
         <div>
           <p className="eyebrow">AURA Note / Finalized Notes</p>
-          <h1>Read-Only Final Artifacts</h1>
+          <h1>Finalized Notes</h1>
         </div>
         <nav className="header-nav" aria-label="AURA Note sections">
           <a href="/aura-note/schedule">Schedule</a>
@@ -25,7 +28,7 @@ export default function FinalizedNotesPage() {
       </header>
 
       <section className="status-band">
-        <p>Finalized Notes is present as a read-only CP-1 shell. Final note approval and export workflows begin later.</p>
+        <p>Signed final note and patient summary artifacts stay read-only; export, PDF, copy, and writeback states are explicit.</p>
         <dl>
           <div>
             <dt>Writable</dt>
@@ -45,6 +48,7 @@ export default function FinalizedNotesPage() {
               <strong>{note.safePatientId}</strong>
               <span>{note.status}</span>
               <small>{note.clinicianId}</small>
+              <small>{note.finalizedAt}</small>
             </div>
             <dl className="state-grid">
               <div>
@@ -55,8 +59,16 @@ export default function FinalizedNotesPage() {
                 <dt>Summary</dt>
                 <dd>{note.patientSummaryAvailable ? 'available' : 'not yet available'}</dd>
               </div>
+              <div>
+                <dt>Export</dt>
+                <dd>{note.exportStatus}</dd>
+              </div>
+              <div>
+                <dt>Writeback</dt>
+                <dd>{note.writebackStatus}</dd>
+              </div>
             </dl>
-            <p>This route cannot reopen the active editor.</p>
+            <p>Copy/export/PDF actions are available from the read-only viewer after signing.</p>
             <a className="button-link secondary" href={`/aura-note/finalized/${note.noteId}`}>
               View Read-Only
             </a>

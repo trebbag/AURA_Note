@@ -55,3 +55,55 @@ None discovered during CP-1.
 ## Next recommended batch
 
 Begin CP-2 with `WO-006` through `WO-008`: Finalization Wizard steps, MA follow-up blocker resolution, patient summary/final note approval, Billing & Attest draft claim preview, and export/PDF/copy/final note viewer behavior. Keep the same synthetic-data and human-review boundaries.
+
+## CP-2 — Finalization and dispatch ready
+
+**Status:** Complete locally on `tranche/wo-008-exports-final-viewer`; pending PR review, GitHub Actions, and merge to `main`.
+
+## Completed work orders
+
+- `WO-006` — Finalization Wizard steps 1 through 4.
+- `WO-007` — Billing & Attest, draft claim preview, Sign & Dispatch.
+- `WO-008` — Export/PDF/copy/final note viewer.
+
+## Acceptance evidence
+
+- Finalization starts from a frozen synthetic snapshot and enforces ordered Code Review, Suggestion Review, Compose, Compare & Edit, Billing & Attest, and Sign & Dispatch steps.
+- Step 1 selected items and Step 2 final-pass suggestions require human keep/remove decisions.
+- Compose creates deterministic enhanced-note and patient-summary draft outputs and blocks patient summaries containing internal billing/revenue/coding/coaching details.
+- Compare & Edit requires separate final note and patient summary approvals.
+- Draft claim preview is internal, caveated, candidate-only, and has `submittedClaim = false`.
+- Billing & Attest requires required statements, estimate caveat acknowledgement, draft claim preview, and no unresolved blocker tasks.
+- Sign & Dispatch creates read-only final note and patient summary records, removes the note from Draft Notes, and makes it available in Finalized Notes.
+- Export/copy/PDF actions are blocked before signing and generate signed-version-locked artifacts after signing.
+- Patient summary export artifacts assert internal details are excluded.
+- EHR writeback queue status handles not-configured, queued mock, unsupported, and failed scaffold states without marking writeback complete.
+- Linked-staff final-note visibility and export permissions are tested.
+- Finalized Notes and the finalized-note viewer are browser-testable with read-only tabs, artifact status, and writeback status controls.
+
+## Validation commands
+
+- `pnpm --filter @aura-note/domain test`
+- `pnpm --filter @aura-note/contracts test`
+- `pnpm --filter @aura-note/security test`
+- `pnpm --filter @aura-note/worker test`
+- `pnpm --filter @aura-note/api typecheck`
+- `pnpm --filter @aura-note/web typecheck`
+- `pnpm --filter @aura-note/api test`
+- `pnpm --filter @aura-note/api test:e2e`
+
+Full repository gate and browser verification are recorded in `RUN_LOG.md` for the `WO-008` PR tranche after completion.
+
+## Open risks
+
+- CP-2 remains synthetic and process-local. Production persistence, PDF rendering/storage, live EHR writeback, live claim submission, external AI, and PHI-bearing integrations remain out of scope.
+- EHR writeback is configuration-gated and represented by queue/status scaffolding only.
+- UI fidelity remains functional workflow scaffolding until design work.
+
+## Unresolved SPEC_GAPs
+
+None discovered during CP-2.
+
+## Next recommended batch
+
+Begin CP-3 with `WO-009` through `WO-011`: AI Gateway and PHI boundary, athenahealth-first EHR adapter scaffolding, and ClinicOS integration adapter. Keep raw PHI out of external AI, keep all EHR behavior behind adapters, and preserve human review for clinical, billing, and writeback actions.

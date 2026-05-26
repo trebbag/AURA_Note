@@ -546,12 +546,68 @@ paths:
     post:
       operationId: generateFinalNotePdf
       responses:
-        '200': { description: PDF generated }
+        '201':
+          description: Signed final note PDF artifact generated.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ExportActionResponse'
   /notes/{noteId}/exports/patient-summary-pdf:
     post:
       operationId: generatePatientSummaryPdf
       responses:
-        '200': { description: PDF generated }
+        '201':
+          description: Signed patient summary PDF artifact generated.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ExportActionResponse'
+  /notes/{noteId}/exports/final-note-copy:
+    post:
+      operationId: copyFinalNote
+      responses:
+        '201':
+          description: Signed final note copy-safe artifact prepared.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ExportActionResponse'
+  /notes/{noteId}/exports/patient-summary-copy:
+    post:
+      operationId: copyPatientSummary
+      responses:
+        '201':
+          description: Signed patient summary copy-safe artifact prepared.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ExportActionResponse'
+  /notes/{noteId}/exports/structured:
+    post:
+      operationId: exportStructuredFinalNote
+      responses:
+        '201':
+          description: Signed final note structured export artifact generated.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ExportActionResponse'
+  /notes/{noteId}/ehr-writeback:
+    post:
+      operationId: requestEhrWriteback
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EhrWritebackRequest'
+      responses:
+        '201':
+          description: EHR writeback queue status recorded in scaffold mode.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EhrWritebackActionResponse'
   /notes/{noteId}/billing/draft-claim-preview:
     get:
       operationId: getDraftClaimPreview
@@ -748,6 +804,138 @@ components:
         finalNoteAvailable: { type: boolean }
         patientSummaryAvailable: { type: boolean }
         transcriptAvailableForRole: { type: boolean }
+        exportStatus: { type: string, enum: [not_generated, generated, failed] }
+        patientSummaryStatus: { type: string, enum: [not_available, final] }
+        billingReviewStatus: { type: string, enum: [not_routed, routed] }
+        writebackStatus: { type: string, enum: [disabled, not_configured, pending_approval, queued, failed, unsupported_by_vendor] }
+    FinalNoteRecord:
+      type: object
+      required: [finalNoteId, noteId, appointmentId, safePatientId, clinicianId, finalNoteText, finalizedAt, readOnly]
+      properties:
+        finalNoteId: { type: string }
+        noteId: { type: string }
+        appointmentId: { type: string }
+        safePatientId: { type: string }
+        clinicianId: { type: string }
+        finalNoteText: { type: string }
+        finalizedAt: { type: string, format: date-time }
+        readOnly: { type: boolean, const: true }
+    PatientSummaryRecord:
+      type: object
+      required: [patientSummaryId, noteId, patientSummaryText, finalizedAt, patientFacing, internalBillingDetailsExcluded]
+      properties:
+        patientSummaryId: { type: string }
+        noteId: { type: string }
+        patientSummaryText: { type: string }
+        finalizedAt: { type: string, format: date-time }
+        patientFacing: { type: boolean, const: true }
+        internalBillingDetailsExcluded: { type: boolean, const: true }
+    DraftClaimPreview:
+      type: object
+      properties:
+        draftClaimPreviewId: { type: string }
+        noteId: { type: string }
+        status: { type: string, enum: [draft_preview] }
+        claimReadiness: { type: string, enum: [ready, needs_billing_review, blocked] }
+        patientReference: { type: string }
+        encounterDate: { type: string }
+        renderingClinicianId: { type: string }
+        placeOfService: { type: string }
+        visitType: { type: string }
+        cptCandidates:
+          type: array
+          items: { type: string }
+        hcpcsCandidates:
+          type: array
+          items: { type: string }
+        icd10Candidates:
+          type: array
+          items: { type: string }
+        emCandidate: { type: string }
+        diagnosisToServiceLinks:
+          type: array
+          items: { type: string }
+        payerReadableJustification: { type: string }
+        missingEvidence:
+          type: array
+          items: { type: string }
+        denialRiskFlags:
+          type: array
+          items: { type: string }
+        estimateStatus: { type: string, enum: [unavailable_caveated, configured] }
+        estimateCaveat: { type: string }
+        billingReviewTriggered: { type: boolean }
+        submittedClaim: { type: boolean, const: false }
+    ExportArtifact:
+      type: object
+      required: [exportArtifactId, noteId, artifactType, status, mimeType, fileName, generatedAt, generatedByUserId, sourceFinalizedAt, signedVersionLocked, content, checksum]
+      properties:
+        exportArtifactId: { type: string }
+        noteId: { type: string }
+        artifactType:
+          type: string
+          enum: [final_note_pdf, patient_summary_pdf, final_note_copy, patient_summary_copy, structured_export]
+        status: { type: string, enum: [generated] }
+        mimeType: { type: string, enum: [application/pdf, text/plain, application/json] }
+        fileName: { type: string }
+        generatedAt: { type: string, format: date-time }
+        generatedByUserId: { type: string }
+        sourceFinalizedAt: { type: string, format: date-time }
+        signedVersionLocked: { type: boolean, const: true }
+        patientSummaryInternalDetailsExcluded: { type: boolean, const: true }
+        content: { type: string }
+        checksum: { type: string }
+    EhrWritebackQueue:
+      type: object
+      required: [writebackJobId, noteId, target, vendor, status, configured, humanApproved, retryable]
+      properties:
+        writebackJobId: { type: string }
+        noteId: { type: string }
+        target: { type: string, enum: [final_note, patient_summary, both] }
+        vendor: { type: string, enum: [athenahealth, generic_mock] }
+        status: { type: string, enum: [disabled, not_configured, pending_approval, queued, failed, unsupported_by_vendor] }
+        configured: { type: boolean }
+        humanApproved: { type: boolean }
+        retryable: { type: boolean }
+        queuedAt: { type: string, format: date-time }
+        failedAt: { type: string, format: date-time }
+        failureReason: { type: string }
+        externalJobId: { type: string }
+    EhrWritebackRequest:
+      type: object
+      required: [target, humanApproved]
+      properties:
+        target: { type: string, enum: [final_note, patient_summary, both] }
+        humanApproved: { type: boolean }
+        scaffoldMode: { type: string, enum: [not_configured, mock_queue, simulate_failure, unsupported_by_vendor] }
+    FinalizedNoteDetail:
+      allOf:
+        - $ref: '#/components/schemas/FinalizedNoteSummary'
+        - type: object
+          required: [exportArtifacts, writeback, availableActions]
+          properties:
+            finalNote:
+              $ref: '#/components/schemas/FinalNoteRecord'
+            patientSummary:
+              $ref: '#/components/schemas/PatientSummaryRecord'
+            draftClaimPreview:
+              $ref: '#/components/schemas/DraftClaimPreview'
+            exportArtifacts:
+              type: array
+              items:
+                $ref: '#/components/schemas/ExportArtifact'
+            writeback:
+              $ref: '#/components/schemas/EhrWritebackQueue'
+            availableActions:
+              type: object
+              required: [copyFinalNote, copyPatientSummary, downloadFinalNotePdf, downloadPatientSummaryPdf, exportStructured, queueEhrWriteback]
+              properties:
+                copyFinalNote: { type: boolean }
+                copyPatientSummary: { type: boolean }
+                downloadFinalNotePdf: { type: boolean }
+                downloadPatientSummaryPdf: { type: boolean }
+                exportStructured: { type: boolean }
+                queueEhrWriteback: { type: boolean }
     WorkspacePanel:
       type: object
       required: [panelId, label, state, itemCount]
@@ -827,7 +1015,7 @@ components:
       required: [data, meta]
       properties:
         data:
-          $ref: '#/components/schemas/FinalizedNoteSummary'
+          $ref: '#/components/schemas/FinalizedNoteDetail'
         meta:
           $ref: '#/components/schemas/ApiMeta'
     DocumentationWorkspaceResponse:
@@ -990,6 +1178,46 @@ components:
                 $ref: '#/components/schemas/AuraNoteEvent'
         meta:
           $ref: '#/components/schemas/ApiMeta'
+    ExportActionResponse:
+      type: object
+      required: [data, meta]
+      properties:
+        data:
+          type: object
+          required: [artifact, finalizedNote, auditEvent, domainEvents]
+          properties:
+            artifact:
+              $ref: '#/components/schemas/ExportArtifact'
+            finalizedNote:
+              $ref: '#/components/schemas/FinalizedNoteDetail'
+            auditEvent:
+              $ref: '#/components/schemas/AuditEvent'
+            domainEvents:
+              type: array
+              items:
+                $ref: '#/components/schemas/AuraNoteEvent'
+        meta:
+          $ref: '#/components/schemas/ApiMeta'
+    EhrWritebackActionResponse:
+      type: object
+      required: [data, meta]
+      properties:
+        data:
+          type: object
+          required: [writeback, finalizedNote, auditEvent, domainEvents]
+          properties:
+            writeback:
+              $ref: '#/components/schemas/EhrWritebackQueue'
+            finalizedNote:
+              $ref: '#/components/schemas/FinalizedNoteDetail'
+            auditEvent:
+              $ref: '#/components/schemas/AuditEvent'
+            domainEvents:
+              type: array
+              items:
+                $ref: '#/components/schemas/AuraNoteEvent'
+        meta:
+          $ref: '#/components/schemas/ApiMeta'
     FinalizationSelectionDecisionRequest:
       type: object
       required: [decision]
@@ -1032,7 +1260,7 @@ components:
         routeToBillingReview: { type: boolean }
     FinalizationSession:
       type: object
-      required: [finalizationSessionId, noteId, appointmentId, currentStep, completedSteps, stepStatuses, frozenSnapshot, selectionDecisions, suggestionDecisions, unusedAuditItems, composePhases, patientOpportunities, finalNoteApproved, patientSummaryApproved, readyForBillingAttest, billingAttested, signedAndDispatched, createdAt, updatedAt]
+      required: [finalizationSessionId, noteId, appointmentId, currentStep, completedSteps, stepStatuses, frozenSnapshot, selectionDecisions, suggestionDecisions, unusedAuditItems, composePhases, patientOpportunities, exportArtifacts, writeback, finalNoteApproved, patientSummaryApproved, readyForBillingAttest, billingAttested, signedAndDispatched, createdAt, updatedAt]
       properties:
         finalizationSessionId: { type: string }
         noteId: { type: string }
@@ -1211,6 +1439,12 @@ components:
             finalizedAt: { type: string, format: date-time }
             patientFacing: { type: boolean, const: true }
             internalBillingDetailsExcluded: { type: boolean, const: true }
+        exportArtifacts:
+          type: array
+          items:
+            $ref: '#/components/schemas/ExportArtifact'
+        writeback:
+          $ref: '#/components/schemas/EhrWritebackQueue'
         finalNoteApproved: { type: boolean }
         patientSummaryApproved: { type: boolean }
         readyForBillingAttest: { type: boolean }

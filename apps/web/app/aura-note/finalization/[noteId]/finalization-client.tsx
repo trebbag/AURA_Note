@@ -170,7 +170,7 @@ export function FinalizationClient({ noteId }: FinalizationClientProps) {
       return;
     }
     setSignedAndDispatched(true);
-    setMessage('Final note and patient summary records created. Export, PDF, copy, and writeback are scoped to WO-008.');
+    setMessage('Final note and patient summary records created. Export, PDF, copy, and writeback actions are now available from Finalized Notes.');
   }
 
   return (
@@ -178,7 +178,7 @@ export function FinalizationClient({ noteId }: FinalizationClientProps) {
       <header className="page-header">
         <div>
           <p className="eyebrow">AURA Note / Finalization Wizard</p>
-          <h1>Finalization Steps 1-4</h1>
+          <h1>Finalization Steps 1-6</h1>
         </div>
         <nav className="header-nav" aria-label="AURA Note sections">
           <a href="/aura-note/drafts">Draft Notes</a>
@@ -362,6 +362,19 @@ export function FinalizationClient({ noteId }: FinalizationClientProps) {
           <button type="button" disabled={currentStep !== 'sign_dispatch' || signedAndDispatched} onClick={signAndDispatch}>
             Sign & Dispatch
           </button>
+          <div className="export-readiness-panel">
+            <span>Copy/export/PDF: {signedAndDispatched ? 'available in Finalized Notes' : 'disabled until signed'}</span>
+            <span>EHR writeback: {signedAndDispatched ? 'configuration-gated' : 'disabled until signed'}</span>
+            {signedAndDispatched ? (
+              <a className="button-link" href={`/aura-note/finalized/${noteId}`}>
+                Open Finalized Viewer
+              </a>
+            ) : (
+              <button type="button" disabled>
+                Open Finalized Viewer
+              </button>
+            )}
+          </div>
         </article>
       </section>
     </main>

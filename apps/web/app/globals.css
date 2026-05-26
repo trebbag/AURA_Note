@@ -218,7 +218,12 @@ textarea {
 .workspace-topline,
 .controls-bar,
 .panel-row,
-.note-row {
+.note-row,
+.final-viewer-grid,
+.export-panel,
+.artifact-status-grid,
+.segmented-control,
+.export-readiness-panel {
   display: grid;
   gap: 14px;
 }
@@ -235,7 +240,9 @@ textarea {
 .wizard-status,
 .wizard-grid article,
 .editor-pane,
-.panel-row {
+.panel-row,
+.export-panel,
+.artifact-status-grid {
   border: 1px solid #d5dae3;
   background: #fff;
   padding: 16px;
@@ -468,6 +475,61 @@ textarea {
   grid-template-columns: repeat(2, minmax(140px, 1fr));
 }
 
+.export-readiness-panel {
+  margin-top: 12px;
+  border-top: 1px solid #d5dae3;
+  padding-top: 12px;
+}
+
+.final-viewer-grid {
+  grid-template-columns: minmax(0, 1fr) minmax(240px, 320px);
+  align-items: start;
+  margin-top: 20px;
+}
+
+.segmented-control {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.segmented-control button {
+  background: #fff;
+  color: #155eef;
+}
+
+.segmented-control button.active {
+  background: #155eef;
+  color: #fff;
+}
+
+.artifact-text {
+  min-height: 260px;
+  white-space: pre-wrap;
+  border: 1px solid #d5dae3;
+  padding: 14px;
+  background: #f7f8fa;
+  color: #17202a;
+  font: inherit;
+}
+
+.export-panel {
+  align-content: start;
+}
+
+.export-panel button {
+  width: 100%;
+}
+
+.secondary-action {
+  border-color: #596579;
+  background: #fff;
+  color: #17202a;
+}
+
+.artifact-status-grid {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  margin-top: 20px;
+}
+
 .check-row {
   display: flex;
   align-items: center;
@@ -494,7 +556,9 @@ textarea {
   .wizard-progress,
   .wizard-grid,
   .decision-row,
-  .compare-grid {
+  .compare-grid,
+  .final-viewer-grid,
+  .artifact-status-grid {
     grid-template-columns: 1fr;
   }
 
