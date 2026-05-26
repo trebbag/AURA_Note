@@ -20,7 +20,7 @@
     "WO-013": "todo",
     "WO-014": "todo"
   },
-  "last_updated_by": "Codex WO-008 tranche",
-  "last_updated_at": "2026-05-26T16:24:14Z",
-  "notes": "WO-008 implemented on tranche/wo-008-exports-final-viewer. CP-2 is complete pending PR CI/merge; next implementation scope is WO-009 AI Gateway and PHI boundary."
+  "last_updated_by": "Codex CP-2 merge confirmation",
+  "last_updated_at": "2026-05-26T16:33:20Z",
+  "notes": "CP-2 is complete and merged through PR #8. Next implementation scope is WO-009 AI Gateway and PHI boundary."
 }

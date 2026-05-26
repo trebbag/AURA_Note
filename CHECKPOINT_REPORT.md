@@ -58,7 +58,7 @@ Begin CP-2 with `WO-006` through `WO-008`: Finalization Wizard steps, MA follow-
 
 ## CP-2 — Finalization and dispatch ready
 
-**Status:** Complete locally on `tranche/wo-008-exports-final-viewer`; pending PR review, GitHub Actions, and merge to `main`.
+**Status:** Complete and merged to `main`. PR #8 passed GitHub Actions before merge.
 
 ## Completed work orders
 

@@ -116,4 +116,4 @@ Codex must append a dated entry after each work order or meaningful implementati
 - **Tests not run:** Production PDF rendering/storage, live EHR writeback, live claim submission, external AI, and PHI-bearing integrations remain out of scope for `WO-008`.
 - **Accepted risks:** PDF/export artifacts are deterministic synthetic payloads, not production rendering/storage. EHR writeback remains configuration-gated scaffold state and does not connect to a live EHR or mark writeback complete.
 - **Open SPEC_GAPs:** None discovered for `WO-008`.
-- **Next step:** Open PR for `WO-008`, confirm GitHub Actions, merge when green, then begin `WO-009`.
+- **Next step:** PR #8 passed GitHub Actions and was merged to `main`. Begin `WO-009` at the next implementation checkpoint.
