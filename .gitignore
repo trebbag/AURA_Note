@@ -11,6 +11,7 @@ coverage/
 .DS_Store
 *.log
 *.tmp
+*.tsbuildinfo
 *.sqlite
 uploads/
 storage/

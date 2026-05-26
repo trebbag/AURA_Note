@@ -9,6 +9,17 @@ export type Role =
   | 'support'
   | 'service_account';
 
+export type Permission =
+  | 'schedule:view'
+  | 'draft_note:view'
+  | 'final_note:view'
+  | 'patient_summary:view'
+  | 'transcript:view'
+  | 'billing_detail:view'
+  | 'coaching_own:view'
+  | 'coaching_dashboard:view'
+  | 'audit:view';
+
 export interface AccessContext {
   role: Role;
   linkedToPatient: boolean;
@@ -16,8 +27,31 @@ export interface AccessContext {
   treatingClinician: boolean;
   billingReviewTriggered: boolean;
   authorizedAdmin: boolean;
+  ownCoachingReport?: boolean;
   breakGlassActive?: boolean;
 }
+
+export interface PhiScanResult {
+  containsForbiddenPhi: boolean;
+  paths: string[];
+}
+
+export const FORBIDDEN_PHI_KEYS = [
+  'patientName',
+  'mrn',
+  'ssn',
+  'socialSecurity',
+  'dob',
+  'dateOfBirth',
+  'phone',
+  'phoneNumber',
+  'email',
+  'emailAddress',
+  'address',
+  'streetAddress'
+] as const;
+
+const forbiddenPhiKeySet = new Set<string>(FORBIDDEN_PHI_KEYS);
 
 export function canViewTranscript(ctx: AccessContext): boolean {
   if (ctx.authorizedAdmin) return true;
@@ -31,14 +65,89 @@ export function canViewFinalNote(ctx: AccessContext): boolean {
   return ctx.linkedToPatient || ctx.linkedToVisit;
 }
 
-export function canViewCoaching(ctx: AccessContext, ownReport: boolean): boolean {
+export function canViewPatientSummary(ctx: AccessContext): boolean {
   if (ctx.authorizedAdmin) return true;
-  return ctx.role === 'clinician' && ownReport;
+  return ctx.linkedToPatient || ctx.linkedToVisit;
 }
 
-const forbiddenPhiKeys = ['patientName', 'mrn', 'ssn', 'dob', 'phone', 'email', 'address'];
+export function canViewBillingDetail(ctx: AccessContext): boolean {
+  if (ctx.authorizedAdmin) return true;
+  if (ctx.role === 'billing_staff' && ctx.linkedToVisit) return true;
+  return ctx.treatingClinician && ctx.linkedToVisit;
+}
+
+export function canViewCoaching(ctx: AccessContext): boolean {
+  if (ctx.authorizedAdmin) return true;
+  return ctx.role === 'clinician' && Boolean(ctx.ownCoachingReport);
+}
+
+export function canPerform(permission: Permission, ctx: AccessContext): boolean {
+  switch (permission) {
+    case 'schedule:view':
+      return ctx.authorizedAdmin || ['clinician', 'ma', 'admin', 'clinic_manager'].includes(ctx.role);
+    case 'draft_note:view':
+      return ctx.authorizedAdmin || (ctx.treatingClinician && ctx.linkedToVisit);
+    case 'final_note:view':
+      return canViewFinalNote(ctx);
+    case 'patient_summary:view':
+      return canViewPatientSummary(ctx);
+    case 'transcript:view':
+      return canViewTranscript(ctx);
+    case 'billing_detail:view':
+      return canViewBillingDetail(ctx);
+    case 'coaching_own:view':
+      return canViewCoaching(ctx);
+    case 'coaching_dashboard:view':
+      return ctx.authorizedAdmin;
+    case 'audit:view':
+      return ctx.authorizedAdmin || ctx.role === 'compliance_privacy_lead';
+  }
+}
+
+export function scanForForbiddenPhiKeys(value: unknown): PhiScanResult {
+  const paths: string[] = [];
+
+  function visit(current: unknown, path: string): void {
+    if (Array.isArray(current)) {
+      current.forEach((item, index) => visit(item, `${path}[${index}]`));
+      return;
+    }
+
+    if (!current || typeof current !== 'object') return;
+
+    for (const [key, child] of Object.entries(current as Record<string, unknown>)) {
+      const childPath = path ? `${path}.${key}` : key;
+      if (forbiddenPhiKeySet.has(key)) {
+        paths.push(childPath);
+      }
+      visit(child, childPath);
+    }
+  }
+
+  visit(value, '');
+  return {
+    containsForbiddenPhi: paths.length > 0,
+    paths
+  };
+}
 
 export function containsForbiddenPhiKeys(value: unknown): boolean {
-  if (!value || typeof value !== 'object') return false;
-  return Object.keys(value as Record<string, unknown>).some((key) => forbiddenPhiKeys.includes(key));
+  return scanForForbiddenPhiKeys(value).containsForbiddenPhi;
+}
+
+export function redactForbiddenPhiKeys(value: unknown): unknown {
+  if (Array.isArray(value)) {
+    return value.map((item) => redactForbiddenPhiKeys(item));
+  }
+
+  if (!value || typeof value !== 'object') {
+    return value;
+  }
+
+  return Object.fromEntries(
+    Object.entries(value as Record<string, unknown>).map(([key, child]) => [
+      key,
+      forbiddenPhiKeySet.has(key) ? '[REDACTED]' : redactForbiddenPhiKeys(child)
+    ])
+  );
 }

@@ -124,3 +124,16 @@ A task/open question has:
 - `resolutionReason?`
 
 Signing is blocked if any task linked to the note has `blocksSigning = true` and is not adjudicated.
+
+## CP-0 domain skeleton status
+
+The CP-0 tranche implements the core invariant logic in `packages/domain` without creating live clinical workflows:
+
+- appointment and note references must be reciprocal for the one-to-one invariant;
+- editor access requires a running timer or an approved recording exception;
+- recording exceptions are represented separately from active recording;
+- low-confidence diagnosis candidates below 75 percent require override metadata before billing/coaching flags are created;
+- blocker tasks prevent Sign & Dispatch until adjudicated as answered, closed, or assigned;
+- finalization wizard steps are ordered as Code Review, Suggestion Review, Compose, Compare & Edit, Billing & Attest, and Sign & Dispatch.
+
+Persistence remains schema-level scaffolding at CP-0. Repository methods, migrations, and runtime data access belong to later work orders unless explicitly required by the active work order.

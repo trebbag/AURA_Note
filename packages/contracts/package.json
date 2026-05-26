@@ -5,12 +5,15 @@
   "main": "src/index.ts",
   "scripts": {
     "build": "tsc -p tsconfig.json",
-    "lint": "echo contracts lint pending",
+    "lint": "tsc --noEmit -p tsconfig.json",
     "lint:phi": "node ../../scripts/lint-phi.js packages/contracts",
     "typecheck": "tsc --noEmit -p tsconfig.json",
-    "test": "echo contracts tests pending",
-    "test:unit": "echo contracts unit tests pending",
-    "test:e2e": "echo contracts e2e tests pending"
+    "test": "node --import tsx --test src/index.test.ts",
+    "test:unit": "pnpm test",
+    "test:e2e": "node -e \"console.log('contracts e2e deferred until API flows are implemented')\""
+  },
+  "dependencies": {
+    "@aura-note/domain": "workspace:*"
   },
   "devDependencies": { "typescript": "^5.6.0" }
 }

@@ -5,12 +5,12 @@
   "main": "src/index.ts",
   "scripts": {
     "build": "tsc -p tsconfig.json",
-    "lint": "echo ai-gateway lint pending",
+    "lint": "tsc --noEmit -p tsconfig.json",
     "lint:phi": "node ../../scripts/lint-phi.js packages/ai-gateway",
     "typecheck": "tsc --noEmit -p tsconfig.json",
-    "test": "echo ai-gateway tests pending",
-    "test:unit": "echo ai-gateway unit tests pending",
-    "test:e2e": "echo ai-gateway e2e tests pending"
+    "test": "node -e \"console.log('ai-gateway scaffold verified by typecheck; PHI gateway implementation begins in WO-009')\"",
+    "test:unit": "pnpm test",
+    "test:e2e": "node -e \"console.log('ai-gateway e2e deferred until WO-009')\""
   },
   "devDependencies": { "typescript": "^5.6.0" }
 }

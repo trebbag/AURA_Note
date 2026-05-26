@@ -92,3 +92,19 @@ type AuraNoteEvent<TPayload> = {
 ## API implementation rule
 
 Every state-changing API must emit an audit event. Domain-significant state changes must emit a domain event as well.
+
+## CP-0 implementation status
+
+The CP-0 tranche implements typed contract seeds, not live clinical workflows. `/health` is the only backend route treated as implemented at this checkpoint. The remaining OpenAPI operation IDs are retained as contract seeds for later work orders and must not be described as runtime-complete until their owning work order adds handlers, permission checks, audit emission, and tests.
+
+CP-0 adds TypeScript DTOs and tests for:
+
+- `AppointmentDto`
+- `NoteDto`
+- `VisitSessionDto`
+- `TaskDto`
+- `WizardStepDecisionDto`
+- `AuditEventDto`
+- `AuraNoteEvent<TPayload>`
+
+The CP-0 event scaffold covers the first state-transition families needed by `WO-001`: appointment creation, note shell creation, visit start/pause/resume/stop, recording start/stop/exception, task blocker changes, low-confidence override recording, finalization start/step completion, and audit recording.

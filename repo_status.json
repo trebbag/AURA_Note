@@ -1,11 +1,11 @@
 {
   "project": "AURA Note v1",
-  "mode": "codex_initial_repo_package",
-  "current_checkpoint": "CP-0",
-  "next_work_order": "WO-000",
+  "mode": "cp0_foundation_complete",
+  "current_checkpoint": "CP-1",
+  "next_work_order": "WO-002",
   "work_orders": {
-    "WO-000": "todo",
-    "WO-001": "todo",
+    "WO-000": "done",
+    "WO-001": "done",
     "WO-002": "todo",
     "WO-003": "todo",
     "WO-004": "todo",
@@ -20,6 +20,7 @@
     "WO-013": "todo",
     "WO-014": "todo"
   },
-  "last_updated_by": "initial_package_generator",
-  "notes": "Codex should update this file after each completed work order."
+  "last_updated_by": "Codex CP-0 tranche",
+  "last_updated_at": "2026-05-26T13:44:23Z",
+  "notes": "CP-0 completed on tranche/cp0-foundation-domain. Next implementation scope is WO-002 Schedule Builder and appointment-note lifecycle."
 }

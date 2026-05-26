@@ -1,0 +1,125 @@
+import assert from 'node:assert/strict';
+import { describe, it } from 'node:test';
+import {
+  canPerform,
+  canViewCoaching,
+  canViewFinalNote,
+  canViewTranscript,
+  containsForbiddenPhiKeys,
+  redactForbiddenPhiKeys,
+  scanForForbiddenPhiKeys
+} from './index';
+
+describe('role-limited transcript access', () => {
+  it('allows treating clinicians linked to the visit', () => {
+    assert.equal(
+      canViewTranscript({
+        role: 'clinician',
+        linkedToPatient: true,
+        linkedToVisit: true,
+        treatingClinician: true,
+        billingReviewTriggered: false,
+        authorizedAdmin: false
+      }),
+      true
+    );
+  });
+
+  it('denies billing staff unless billing review is triggered', () => {
+    const base = {
+      role: 'billing_staff' as const,
+      linkedToPatient: true,
+      linkedToVisit: true,
+      treatingClinician: false,
+      authorizedAdmin: false
+    };
+
+    assert.equal(canViewTranscript({ ...base, billingReviewTriggered: false }), false);
+    assert.equal(canViewTranscript({ ...base, billingReviewTriggered: true }), true);
+  });
+});
+
+describe('final note and coaching access', () => {
+  it('requires patient or visit linkage for final note visibility unless authorized admin', () => {
+    assert.equal(
+      canViewFinalNote({
+        role: 'ma',
+        linkedToPatient: false,
+        linkedToVisit: false,
+        treatingClinician: false,
+        billingReviewTriggered: false,
+        authorizedAdmin: false
+      }),
+      false
+    );
+
+    assert.equal(
+      canViewFinalNote({
+        role: 'ma',
+        linkedToPatient: false,
+        linkedToVisit: true,
+        treatingClinician: false,
+        billingReviewTriggered: false,
+        authorizedAdmin: false
+      }),
+      true
+    );
+  });
+
+  it('limits coaching to own clinician report or authorized admin dashboard', () => {
+    assert.equal(
+      canViewCoaching({
+        role: 'clinician',
+        linkedToPatient: false,
+        linkedToVisit: false,
+        treatingClinician: false,
+        billingReviewTriggered: false,
+        authorizedAdmin: false,
+        ownCoachingReport: true
+      }),
+      true
+    );
+
+    assert.equal(
+      canPerform('coaching_dashboard:view', {
+        role: 'admin',
+        linkedToPatient: false,
+        linkedToVisit: false,
+        treatingClinician: false,
+        billingReviewTriggered: false,
+        authorizedAdmin: false
+      }),
+      false
+    );
+  });
+});
+
+describe('PHI key guard', () => {
+  it('detects forbidden keys recursively', () => {
+    const result = scanForForbiddenPhiKeys({
+      visit: {
+        patientName: 'Synthetic Person',
+        nested: [{ mrn: 'SYNTHETIC-MRN' }]
+      }
+    });
+
+    assert.equal(result.containsForbiddenPhi, true);
+    assert.deepEqual(result.paths, ['visit.patientName', 'visit.nested[0].mrn']);
+    assert.equal(containsForbiddenPhiKeys({ safePatientId: 'synthetic-patient-001' }), false);
+  });
+
+  it('redacts forbidden keys while preserving safe data', () => {
+    assert.deepEqual(
+      redactForbiddenPhiKeys({
+        safePatientId: 'synthetic-patient-001',
+        email: 'synthetic@example.invalid',
+        nested: { phone: '555-0100' }
+      }),
+      {
+        safePatientId: 'synthetic-patient-001',
+        email: '[REDACTED]',
+        nested: { phone: '[REDACTED]' }
+      }
+    );
+  });
+});
