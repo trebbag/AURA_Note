@@ -56,13 +56,57 @@ paths:
   /notes/drafts:
     get:
       operationId: listDraftNotes
+      description: CP-1 implemented Draft Notes shell for notes that have entered the visit workflow.
       responses:
-        '200': { description: Draft notes }
+        '200':
+          description: Draft notes.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DraftNotesViewResponse'
   /notes/finalized:
     get:
       operationId: listFinalizedNotes
+      description: CP-1 implemented read-only finalized note list shell.
       responses:
-        '200': { description: Finalized notes }
+        '200':
+          description: Finalized notes.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FinalizedNotesViewResponse'
+  /notes/finalized/{noteId}:
+    get:
+      operationId: getFinalizedNoteReadOnly
+      description: CP-1 read-only finalized note placeholder. Does not generate or edit final clinical content.
+      parameters:
+        - name: noteId
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: Read-only finalized note placeholder.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FinalizedNoteResponse'
+  /documentation-workspace/appointments/{appointmentId}:
+    get:
+      operationId: getDocumentationWorkspaceByAppointment
+      description: CP-1 implemented Documentation Workspace shell for an appointment-linked note.
+      parameters:
+        - name: appointmentId
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: Documentation Workspace shell.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DocumentationWorkspaceResponse'
   /notes/{noteId}:
     get:
       operationId: getNote
@@ -318,6 +362,124 @@ components:
               type: array
               items:
                 $ref: '#/components/schemas/AuraNoteEvent'
+        meta:
+          $ref: '#/components/schemas/ApiMeta'
+    DraftNoteSummary:
+      type: object
+      required: [noteId, appointmentId, safePatientId, clinicianId, visitType, startsAt, noteStatus, appointmentStatus, workflowStatusLabel, editorLocked]
+      properties:
+        noteId: { type: string }
+        appointmentId: { type: string }
+        safePatientId: { type: string }
+        clinicianId: { type: string }
+        visitType: { type: string }
+        startsAt: { type: string, format: date-time }
+        noteStatus:
+          type: string
+          enum: [shell_created, draft_not_started, visit_active, visit_paused, documentation_in_progress, ready_to_finalize, finalization_code_review, finalization_suggestion_review, finalization_compose, finalization_compare_edit, finalization_billing_attest, finalization_sign_dispatch, blocked_compliance, blocked_history_gap, blocked_billing_review, finalized, exported, writeback_pending, writeback_complete, writeback_failed]
+        appointmentStatus:
+          type: string
+          enum: [scheduled, checked_in, in_room, visit_started, visit_paused, visit_completed, finalization_in_progress, finalized, cancelled, no_show]
+        workflowStatusLabel: { type: string }
+        editorLocked: { type: boolean }
+        editorLockedReason: { type: string }
+    FinalizedNoteSummary:
+      type: object
+      required: [noteId, appointmentId, safePatientId, clinicianId, readOnly, finalNoteAvailable, patientSummaryAvailable, transcriptAvailableForRole]
+      properties:
+        noteId: { type: string }
+        appointmentId: { type: string }
+        safePatientId: { type: string }
+        clinicianId: { type: string }
+        finalizedAt: { type: string, format: date-time }
+        readOnly: { type: boolean, const: true }
+        finalNoteAvailable: { type: boolean }
+        patientSummaryAvailable: { type: boolean }
+        transcriptAvailableForRole: { type: boolean }
+    WorkspacePanel:
+      type: object
+      required: [panelId, label, state, itemCount]
+      properties:
+        panelId:
+          type: string
+          enum: [visit_context, controls, editor, visit_selections, suggestions, transcript, compliance, history_gap]
+        label: { type: string }
+        state:
+          type: string
+          enum: [empty, loading, ready, saving, warning, blocked, failed, permission_denied, finalized_read_only, demo_fixture]
+        blockedReason: { type: string }
+        itemCount: { type: integer, minimum: 0 }
+    DocumentationWorkspace:
+      type: object
+      required: [appointment, note, editorLocked, finalizedReadOnly, panels, availableStates]
+      properties:
+        appointment:
+          $ref: '#/components/schemas/Appointment'
+        note:
+          $ref: '#/components/schemas/Note'
+        visitSession:
+          $ref: '#/components/schemas/VisitSession'
+        editorLocked: { type: boolean }
+        editorLockedReason: { type: string }
+        finalizedReadOnly: { type: boolean }
+        panels:
+          type: array
+          items:
+            $ref: '#/components/schemas/WorkspacePanel'
+        availableStates:
+          type: array
+          items:
+            type: string
+            enum: [empty, loading, ready, saving, warning, blocked, failed, permission_denied, finalized_read_only, demo_fixture]
+    DraftNotesViewResponse:
+      type: object
+      required: [data, meta]
+      properties:
+        data:
+          type: object
+          required: [notes, emptyState]
+          properties:
+            notes:
+              type: array
+              items:
+                $ref: '#/components/schemas/DraftNoteSummary'
+            emptyState:
+              type: string
+              enum: [empty, loading, ready, saving, warning, blocked, failed, permission_denied, finalized_read_only, demo_fixture]
+        meta:
+          $ref: '#/components/schemas/ApiMeta'
+    FinalizedNotesViewResponse:
+      type: object
+      required: [data, meta]
+      properties:
+        data:
+          type: object
+          required: [notes, emptyState, readOnly]
+          properties:
+            notes:
+              type: array
+              items:
+                $ref: '#/components/schemas/FinalizedNoteSummary'
+            emptyState:
+              type: string
+              enum: [empty, loading, ready, saving, warning, blocked, failed, permission_denied, finalized_read_only, demo_fixture]
+            readOnly: { type: boolean, const: true }
+        meta:
+          $ref: '#/components/schemas/ApiMeta'
+    FinalizedNoteResponse:
+      type: object
+      required: [data, meta]
+      properties:
+        data:
+          $ref: '#/components/schemas/FinalizedNoteSummary'
+        meta:
+          $ref: '#/components/schemas/ApiMeta'
+    DocumentationWorkspaceResponse:
+      type: object
+      required: [data, meta]
+      properties:
+        data:
+          $ref: '#/components/schemas/DocumentationWorkspace'
         meta:
           $ref: '#/components/schemas/ApiMeta'
     Note:

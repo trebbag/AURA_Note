@@ -35,3 +35,16 @@ Codex must append a dated entry after each work order or meaningful implementati
 - **Accepted risks:** The Schedule Builder repository is process-local and synthetic for `WO-002`; it is not production persistence. Start Visit creates a visit-session scaffold only; detailed timer/recording/transcription behavior remains deferred to `WO-004`.
 - **Open SPEC_GAPs:** None discovered for `WO-002`.
 - **Next step:** Open PR for `WO-002`, confirm GitHub Actions, then begin `WO-003`.
+
+## 2026-05-26T15:20:00Z — WO-003 Draft/Finalized Notes and Documentation Workspace shell
+
+- **Work order:** `WO-003` Draft Finalized Notes Documentation Workspace Shell.
+- **Summary of changes:** Added CP-1 notes and workspace shells for Draft Notes, Finalized Notes, read-only finalized note viewing, and the Documentation Workspace.
+- **Backend behavior:** Added implemented read/query endpoints for Draft Notes, Finalized Notes, finalized note placeholders, and appointment-linked Documentation Workspace state. The editor gate remains enforced through the visit-session timer/recording state and returns a blocked reason before timer activation.
+- **UX behavior:** Added browser-testable routes for `/aura-note/drafts`, `/aura-note/finalized`, `/aura-note/finalized/[noteId]`, and `/aura-note/workspace/[appointmentId]`, and linked Schedule Builder rows into the workspace.
+- **Files changed:** `apps/api/src/notes/*`, `apps/api/src/schedule/*`, `apps/web/app/aura-note/*`, `apps/web/app/globals.css`, `packages/contracts`, `packages/contracts/openapi/aura-note.v1.yaml`, `docs/API_EVENT_CONTRACTS.md`, `docs/DATA_MODEL.md`, `docs/UX_BUILD_SPEC.md`, and `repo_status.json`.
+- **Tests run:** `pnpm --filter @aura-note/contracts test`; `pnpm --filter @aura-note/api test`; `pnpm --filter @aura-note/api typecheck`; `pnpm --filter @aura-note/web typecheck`; `pnpm --filter @aura-note/api test:e2e`; `pnpm install --frozen-lockfile`; `pnpm lint`; `pnpm lint:phi`; `pnpm typecheck`; `pnpm test`; `pnpm test:e2e`; `pnpm build`; `node scripts/status.js`; `git diff --check`.
+- **Tests not run:** Timer pause/resume/stop, recording exception, transcript append, Suggestions, Visit Selections, Compliance, and History Gap task routing remain scoped to `WO-004` and `WO-005`.
+- **Accepted risks:** The notes/workspace UI uses synthetic browser fixtures and the API uses the existing process-local standalone repository. No production persistence or clinical content generation is claimed.
+- **Open SPEC_GAPs:** None discovered for `WO-003`.
+- **Next step:** Run the WO-003 gate, open its draft PR, then begin `WO-004`.

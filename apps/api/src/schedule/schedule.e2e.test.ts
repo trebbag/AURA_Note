@@ -57,5 +57,26 @@ describe('schedule appointment lifecycle API', () => {
     assert.equal(started.body.data.appointment.state, 'visit_started');
     assert.equal(started.body.data.note.state, 'visit_active');
     assert.equal(started.body.data.visitSession.editorUnlocked, true);
+
+    const drafts = await request(app.getHttpServer()).get('/api/v1/notes/drafts').set('x-aura-role', 'clinician').expect(200);
+
+    assert.equal(drafts.body.data.notes.length, 1);
+    assert.equal(drafts.body.data.notes[0].noteStatus, 'visit_active');
+
+    const workspace = await request(app.getHttpServer())
+      .get(`/api/v1/documentation-workspace/appointments/${created.body.data.appointment.appointmentId}`)
+      .set('x-aura-role', 'clinician')
+      .expect(200);
+
+    assert.equal(workspace.body.data.appointment.appointmentId, created.body.data.appointment.appointmentId);
+    assert.equal(workspace.body.data.panels.some((panel: { panelId: string }) => panel.panelId === 'visit_selections'), true);
+
+    const finalized = await request(app.getHttpServer())
+      .get(`/api/v1/notes/finalized/${created.body.data.note.noteId}`)
+      .set('x-aura-role', 'clinician')
+      .expect(200);
+
+    assert.equal(finalized.body.data.readOnly, true);
+    assert.equal(finalized.body.data.finalNoteAvailable, false);
   });
 });

@@ -150,3 +150,13 @@ Implemented runtime invariants:
 - billing-only users cannot create appointments;
 - only linked clinicians or authorized admins can start visits;
 - Start Visit activates the note shell into Draft Notes and creates a visit-session scaffold, while timer/recording/transcription depth remains deferred to `WO-004`.
+
+## WO-003 notes and workspace shell status
+
+`WO-003` adds typed CP-1 shell views over the existing synthetic appointment-note repository:
+
+- `DraftNoteSummary` rows derive from active appointment-linked note shells;
+- `FinalizedNoteSummary` rows are read-only placeholders until finalization work orders create final artifacts;
+- `DocumentationWorkspace` is an appointment-linked view over the note, visit-session gate, and required workspace panels.
+
+The shell preserves the appointment-to-note one-to-one relationship and adds explicit panel states for empty, loading, ready, saving, warning, blocked, failed, permission-denied, finalized read-only, and demo fixture states. It does not introduce durable persistence beyond the existing synthetic process-local repository.

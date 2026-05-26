@@ -116,3 +116,5 @@ CP-0 adds TypeScript DTOs and tests for:
 The CP-0 event scaffold covers the first state-transition families needed by `WO-001`: appointment creation, note shell creation, visit start/pause/resume/stop, recording start/stop/exception, task blocker changes, low-confidence override recording, finalization start/step completion, and audit recording.
 
 `WO-002` emits `appointment.created.v1`, `note.shell_created.v1`, and `visit.started.v1` from the in-memory standalone API implementation. The deeper timer, recording, and transcription lifecycle remains scoped to `WO-004`.
+
+`WO-003` implements read-only/query CP-1 shells for Draft Notes, Finalized Notes, and Documentation Workspace. These endpoints do not introduce new state-changing operations, so no additional domain events are required for `WO-003`. Future state-changing editor updates remain contract seeds until timer/editing behavior is implemented in `WO-004`.

@@ -164,6 +164,82 @@ export interface ScheduleViewDto {
   clinicOsSchedulingEnabled: boolean;
 }
 
+export type WorkspacePanelState =
+  | 'empty'
+  | 'loading'
+  | 'ready'
+  | 'saving'
+  | 'warning'
+  | 'blocked'
+  | 'failed'
+  | 'permission_denied'
+  | 'finalized_read_only'
+  | 'demo_fixture';
+
+export interface DraftNoteSummaryDto {
+  noteId: string;
+  appointmentId: string;
+  safePatientId: string;
+  clinicianId: string;
+  visitType: string;
+  startsAt: string;
+  noteStatus: NoteState;
+  appointmentStatus: AppointmentState;
+  workflowStatusLabel: string;
+  editorLocked: boolean;
+  editorLockedReason?: string;
+}
+
+export interface FinalizedNoteSummaryDto {
+  noteId: string;
+  appointmentId: string;
+  safePatientId: string;
+  clinicianId: string;
+  finalizedAt?: string;
+  readOnly: true;
+  finalNoteAvailable: boolean;
+  patientSummaryAvailable: boolean;
+  transcriptAvailableForRole: boolean;
+}
+
+export interface WorkspacePanelDto {
+  panelId:
+    | 'visit_context'
+    | 'controls'
+    | 'editor'
+    | 'visit_selections'
+    | 'suggestions'
+    | 'transcript'
+    | 'compliance'
+    | 'history_gap';
+  label: string;
+  state: WorkspacePanelState;
+  blockedReason?: string;
+  itemCount: number;
+}
+
+export interface DocumentationWorkspaceDto {
+  appointment: AppointmentDto;
+  note: NoteDto;
+  visitSession?: VisitSessionDto;
+  editorLocked: boolean;
+  editorLockedReason?: string;
+  finalizedReadOnly: boolean;
+  panels: WorkspacePanelDto[];
+  availableStates: WorkspacePanelState[];
+}
+
+export interface DraftNotesViewDto {
+  notes: DraftNoteSummaryDto[];
+  emptyState: WorkspacePanelState;
+}
+
+export interface FinalizedNotesViewDto {
+  notes: FinalizedNoteSummaryDto[];
+  emptyState: WorkspacePanelState;
+  readOnly: true;
+}
+
 export interface AuraNoteEvent<TPayload> {
   eventId: string;
   eventType: CoreEventType;
