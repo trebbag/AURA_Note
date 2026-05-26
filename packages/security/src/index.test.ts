@@ -1,11 +1,14 @@
 import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
 import {
+  buildExternalIntegrationFeatureFlags,
   canPerform,
   canViewCoaching,
   canViewFinalNote,
   canViewTranscript,
   containsForbiddenPhiKeys,
+  createStructuredLogEntry,
+  redactForStructuredLog,
   redactForbiddenPhi,
   redactForbiddenPhiKeys,
   scanForForbiddenPhiKeys,
@@ -231,6 +234,29 @@ describe('schedule lifecycle permissions', () => {
   });
 });
 
+describe('support and audit permissions', () => {
+  it('allows support status without granting audit export', () => {
+    const supportContext = {
+      role: 'support' as const,
+      linkedToPatient: false,
+      linkedToVisit: false,
+      treatingClinician: false,
+      billingReviewTriggered: false,
+      authorizedAdmin: false
+    };
+    const complianceContext = {
+      ...supportContext,
+      role: 'compliance_privacy_lead' as const
+    };
+
+    assert.equal(canPerform('support_status:view', supportContext), true);
+    assert.equal(canPerform('audit:view', supportContext), false);
+    assert.equal(canPerform('audit:export', supportContext), false);
+    assert.equal(canPerform('audit:view', complianceContext), true);
+    assert.equal(canPerform('audit:export', complianceContext), true);
+  });
+});
+
 describe('PHI key guard', () => {
   it('detects forbidden keys recursively', () => {
     const result = scanForForbiddenPhiKeys({
@@ -273,5 +299,50 @@ describe('PHI key guard', () => {
       redactForbiddenPhi({ contact: 'synthetic@example.invalid', nested: { patientName: 'Synthetic Person' } }),
       { contact: '[REDACTED]', nested: { patientName: '[REDACTED]' } }
     );
+  });
+});
+
+describe('structured log redaction and feature flags', () => {
+  it('removes forbidden keys and text patterns from structured log payloads', () => {
+    const redacted = redactForStructuredLog({
+      safePatientId: 'safe-patient-synthetic-001',
+      patientName: 'Synthetic Person',
+      nested: {
+        contact: 'synthetic@example.invalid',
+        detail: 'safe operational detail'
+      }
+    });
+
+    assert.deepEqual(redacted.redactedPaths, ['patientName', 'nested.contact']);
+    assert.equal(scanForForbiddenPhiKeys(redacted.value).containsForbiddenPhi, false);
+    assert.equal(scanForForbiddenPhiText(redacted.value).containsForbiddenPhiText, false);
+  });
+
+  it('creates request-correlated PHI-safe structured log entries', () => {
+    const entry = createStructuredLogEntry({
+      service: 'aura-note-api',
+      level: 'info',
+      message: 'Synthetic support status checked',
+      requestId: 'req-001',
+      traceId: 'trace-001',
+      eventName: 'support.status_checked',
+      timestamp: '2026-05-26T19:30:00.000Z',
+      payload: { mrn: 'SYNTHETIC-MRN', status: 'ok' }
+    });
+
+    assert.equal(entry.requestId, 'req-001');
+    assert.equal(entry.traceId, 'trace-001');
+    assert.equal(entry.phiSafe, true);
+    assert.equal(scanForForbiddenPhiKeys(entry.payload).containsForbiddenPhi, false);
+    assert.deepEqual(entry.redactedPaths, ['mrn']);
+  });
+
+  it('defaults external integration feature flags to disabled', () => {
+    const flags = buildExternalIntegrationFeatureFlags();
+
+    assert.equal(flags.every((flag) => flag.defaultValue === false), true);
+    assert.equal(flags.every((flag) => flag.enabled === false), true);
+    assert.equal(flags.some((flag) => flag.governs === 'external_ai'), true);
+    assert.equal(flags.some((flag) => flag.governs === 'ehr_writeback'), true);
   });
 });

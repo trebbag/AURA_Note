@@ -40,6 +40,8 @@ AURA Note must enforce role permissions and relationship-to-patient constraints.
 | Templates | create/edit if clinician/admin | no or limited | no | yes | yes | Any clinician or admin can create. |
 | Dot phrases | use | use if permitted | no | manage | manage | Clinic-level settings. |
 | Audit logs | limited self | no | limited billing | admin | yes | Privacy-controlled. |
+| Support status | no | no | no | yes | yes | Support and service accounts can view operational metadata only. |
+| Audit export | no | no | no | no unless authorized | yes | Compliance/privacy lead and authorized admin only; redacted metadata only in CP-4. |
 
 ## ABAC enforcement examples
 
@@ -49,3 +51,5 @@ AURA Note must enforce role permissions and relationship-to-patient constraints.
 - Billing staff can see billing detail and transcript only through billing-purpose rules, but cannot see coaching outputs unless they also hold an authorized-admin role.
 - Aggregate-only coaching mode hides individual clinician identifiers even from admin dashboard views.
 - Support users require break-glass reason and time-boxed access.
+- `WO-013` adds `support_status:view` for support, service account, clinic manager, compliance/privacy lead, and authorized admin roles. It does not expose PHI payloads.
+- `WO-013` adds `audit:export` for compliance/privacy leads and authorized admins only. Support users can view status but cannot request audit exports.

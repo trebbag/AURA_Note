@@ -6,22 +6,27 @@ import {
   evaluateClinicOsOutbox,
   evaluateEhrAdapterHealth,
   evaluateEhrWritebackQueue,
+  evaluateRetentionJobRun,
   evaluateRawAudioRetention,
   getWorkerStatus
 } from './main';
 
 describe('worker scaffold', () => {
-  it('reports the CP-4 coaching scaffold', () => {
+  it('reports the CP-4 hardening scaffold', () => {
     const status = getWorkerStatus();
 
-    assert.equal(status.status, 'cp4_coaching_scaffold_ready');
+    assert.equal(status.status, 'cp4_hardening_scaffold_ready');
     assert.equal(status.checkpoint, 'CP-4-in-progress');
     assert.equal(status.implementedJobs.includes('raw_audio_retention_candidate_scan'), true);
+    assert.equal(status.implementedJobs.includes('transcript_retention_indefinite_scan'), true);
     assert.equal(status.implementedJobs.includes('ehr_writeback_queue_status_scan'), true);
     assert.equal(status.implementedJobs.includes('ehr_adapter_health_check_scan'), true);
     assert.equal(status.implementedJobs.includes('clinicos_mapping_outbox_scan'), true);
     assert.equal(status.implementedJobs.includes('ai_gateway_mock_invocation_status_scan'), true);
     assert.equal(status.implementedJobs.includes('coaching_signal_projection_refresh'), true);
+    assert.equal(status.implementedJobs.includes('audit_export_bundle_generation'), true);
+    assert.equal(status.implementedJobs.includes('structured_log_redaction_probe'), true);
+    assert.equal(status.jobsDeferredToWorkOrders.includes('destructive_storage_purge'), true);
   });
 
   it('marks raw audio records purge-eligible after the one-week retention window', () => {
@@ -40,6 +45,36 @@ describe('worker scaffold', () => {
     );
 
     assert.equal(record?.purgeEligible, true);
+  });
+
+  it('summarizes raw audio and indefinite transcript retention in one audited job run', () => {
+    const result = evaluateRetentionJobRun(
+      [
+        {
+          recordingId: 'recording-001',
+          noteId: 'note-001',
+          retentionClass: 'audio_ephemeral',
+          capturedAt: '2026-05-26T15:00:00.000Z',
+          purgeAfter: '2026-06-02T15:00:00.000Z',
+          purgeEligible: false
+        }
+      ],
+      [
+        {
+          noteId: 'note-001',
+          transcriptId: 'transcript-001',
+          retentionPolicy: 'indefinite',
+          segments: []
+        }
+      ],
+      '2026-06-02T15:00:00.000Z'
+    );
+
+    assert.equal(result.status, 'completed');
+    assert.equal(result.policies.find((policy) => policy.recordClass === 'audio_ephemeral')?.purgeEligibleCount, 1);
+    assert.equal(result.policies.find((policy) => policy.recordClass === 'transcript')?.retentionRule, 'indefinite');
+    assert.equal(result.policies.every((policy) => policy.destructivePurgeEnabled === false), true);
+    assert.equal(result.domainEvents[0]?.eventType, 'retention.scan_completed.v1');
   });
 
   it('preserves writeback failure and disabled queue states for UI/support review', () => {

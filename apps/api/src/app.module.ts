@@ -5,9 +5,10 @@ import { HealthController } from './health.controller';
 import { IntegrationsModule } from './integrations/integrations.module';
 import { NotesModule } from './notes/notes.module';
 import { ScheduleModule } from './schedule/schedule.module';
+import { SupportModule } from './support/support.module';
 
 @Module({
-  imports: [ScheduleModule, NotesModule, AiModule, IntegrationsModule, CoachingModule],
+  imports: [ScheduleModule, NotesModule, AiModule, IntegrationsModule, CoachingModule, SupportModule],
   controllers: [HealthController]
 })
 export class AppModule {}

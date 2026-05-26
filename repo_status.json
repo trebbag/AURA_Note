@@ -2,7 +2,7 @@
   "project": "AURA Note v1",
   "mode": "cp4_in_progress",
   "current_checkpoint": "CP-4",
-  "next_work_order": "WO-013",
+  "next_work_order": "WO-014",
   "work_orders": {
     "WO-000": "done",
     "WO-001": "done",
@@ -17,10 +17,10 @@
     "WO-010": "done",
     "WO-011": "done",
     "WO-012": "done",
-    "WO-013": "todo",
+    "WO-013": "done",
     "WO-014": "todo"
   },
-  "last_updated_by": "Codex WO-012 implementation",
-  "last_updated_at": "2026-05-26T19:18:58Z",
-  "notes": "WO-012 coaching and analytics scaffolding is implemented locally with full local gate and browser route verification passing. Next implementation scope is WO-013 production hardening, observability, retention, and audit."
+  "last_updated_by": "Codex WO-013 implementation",
+  "last_updated_at": "2026-05-26T19:33:56Z",
+  "notes": "WO-013 production hardening, observability, retention, audit export, feature-flag, support status, runbook, and browser route scaffolding is implemented locally with full local gate and browser route verification passing. Next implementation scope is WO-014 end-to-end acceptance and readiness report."
 }

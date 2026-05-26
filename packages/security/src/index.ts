@@ -30,7 +30,9 @@ export type Permission =
   | 'ai_governance:view'
   | 'coaching_own:view'
   | 'coaching_dashboard:view'
-  | 'audit:view';
+  | 'support_status:view'
+  | 'audit:view'
+  | 'audit:export';
 
 export interface AccessContext {
   role: Role;
@@ -51,6 +53,53 @@ export interface PhiScanResult {
 export interface PhiTextScanResult {
   containsForbiddenPhiText: boolean;
   paths: string[];
+}
+
+export type LogLevel = 'debug' | 'info' | 'warn' | 'error';
+
+export interface StructuredLogInput {
+  service: string;
+  level: LogLevel;
+  message: string;
+  requestId: string;
+  traceId: string;
+  eventName: string;
+  timestamp: string;
+  payload?: unknown;
+}
+
+export interface StructuredLogEntry {
+  service: string;
+  level: LogLevel;
+  message: string;
+  requestId: string;
+  traceId: string;
+  eventName: string;
+  timestamp: string;
+  payload?: unknown;
+  redactedPaths: string[];
+  phiSafe: true;
+}
+
+export interface FeatureFlagInput {
+  externalAiEnabled?: boolean;
+  ehrWritebackEnabled?: boolean;
+  clinicOsSyncEnabled?: boolean;
+  productionAnalyticsEnabled?: boolean;
+  auditExportDownloadEnabled?: boolean;
+}
+
+export interface FeatureFlagDecision {
+  key: string;
+  enabled: boolean;
+  governs:
+    | 'external_ai'
+    | 'ehr_writeback'
+    | 'clinicos_sync'
+    | 'production_analytics'
+    | 'audit_export_download';
+  defaultValue: false;
+  disabledReason?: string;
 }
 
 export const FORBIDDEN_PHI_KEYS = [
@@ -83,6 +132,10 @@ const forbiddenPhiTextPatterns = [
   /\b(?:\+?1[-.\s]?)?(?:\(?\d{3}\)?[-.\s]?)\d{3}[-.\s]?\d{4}\b/,
   /\bMRN[:\s-]*[A-Za-z0-9-]{3,}\b/i
 ] as const;
+
+export function isForbiddenPhiKey(key: string): boolean {
+  return forbiddenPhiKeySet.has(key);
+}
 
 export function canViewTranscript(ctx: AccessContext): boolean {
   if (ctx.authorizedAdmin) return true;
@@ -160,7 +213,14 @@ export function canPerform(permission: Permission, ctx: AccessContext): boolean 
       return canViewCoaching(ctx);
     case 'coaching_dashboard:view':
       return ctx.authorizedAdmin;
+    case 'support_status:view':
+      return (
+        ctx.authorizedAdmin ||
+        ['support', 'service_account', 'clinic_manager', 'compliance_privacy_lead'].includes(ctx.role)
+      );
     case 'audit:view':
+      return ctx.authorizedAdmin || ctx.role === 'compliance_privacy_lead';
+    case 'audit:export':
       return ctx.authorizedAdmin || ctx.role === 'compliance_privacy_lead';
   }
 }
@@ -264,4 +324,108 @@ export function redactForbiddenPhiText(value: unknown): unknown {
 
 export function redactForbiddenPhi(value: unknown): unknown {
   return redactForbiddenPhiText(redactForbiddenPhiKeys(value));
+}
+
+export function redactForStructuredLog(value: unknown): { value: unknown; redactedPaths: string[] } {
+  const redactedPaths: string[] = [];
+
+  function visit(current: unknown, path: string): unknown {
+    if (Array.isArray(current)) {
+      return current.map((item, index) => visit(item, `${path}[${index}]`));
+    }
+
+    if (typeof current === 'string') {
+      if (forbiddenPhiTextPatterns.some((pattern) => pattern.test(current))) {
+        redactedPaths.push(path);
+        return '[REDACTED]';
+      }
+      return current;
+    }
+
+    if (!current || typeof current !== 'object') {
+      return current;
+    }
+
+    const output: Record<string, unknown> = {};
+    let redactedFieldCount = 0;
+    for (const [key, child] of Object.entries(current as Record<string, unknown>)) {
+      const childPath = path ? `${path}.${key}` : key;
+      if (forbiddenPhiKeySet.has(key)) {
+        redactedPaths.push(childPath);
+        redactedFieldCount += 1;
+        output[`redactedField${redactedFieldCount}`] = '[REDACTED]';
+        continue;
+      }
+      output[key] = visit(child, childPath);
+    }
+    return output;
+  }
+
+  return { value: visit(value, ''), redactedPaths };
+}
+
+export function createStructuredLogEntry(input: StructuredLogInput): StructuredLogEntry {
+  const redacted = redactForStructuredLog(input.payload ?? {});
+  return {
+    service: input.service,
+    level: input.level,
+    message: input.message,
+    requestId: input.requestId,
+    traceId: input.traceId,
+    eventName: input.eventName,
+    timestamp: input.timestamp,
+    payload: redacted.value,
+    redactedPaths: redacted.redactedPaths,
+    phiSafe: true
+  };
+}
+
+export function buildExternalIntegrationFeatureFlags(input: FeatureFlagInput = {}): FeatureFlagDecision[] {
+  function flag(
+    key: string,
+    enabled: boolean,
+    governs: FeatureFlagDecision['governs'],
+    disabledReason: string
+  ): FeatureFlagDecision {
+    return {
+      key,
+      enabled,
+      governs,
+      defaultValue: false,
+      ...(enabled ? {} : { disabledReason })
+    };
+  }
+
+  return [
+    flag(
+      'AURA_ENABLE_EXTERNAL_AI',
+      input.externalAiEnabled === true,
+      'external_ai',
+      'External AI is disabled until private BAA governance is configured.'
+    ),
+    flag(
+      'AURA_ENABLE_EHR_WRITEBACK',
+      input.ehrWritebackEnabled === true,
+      'ehr_writeback',
+      'Live EHR writeback is disabled until tenant credentials and approval gates are configured.'
+    ),
+    flag(
+      'AURA_ENABLE_CLINICOS_SYNC',
+      input.clinicOsSyncEnabled === true,
+      'clinicos_sync',
+      'ClinicOS live sync is disabled outside mock adapter mode.'
+    ),
+    flag(
+      'AURA_ENABLE_PRODUCTION_ANALYTICS',
+      input.productionAnalyticsEnabled === true,
+      'production_analytics',
+      'Production analytics warehouse export is disabled for CP-4 scaffold.'
+    ),
+    flag(
+      'AURA_ENABLE_AUDIT_EXPORT_DOWNLOAD',
+      input.auditExportDownloadEnabled === true,
+      'audit_export_download',
+      'Audit export download is metadata-only until storage delivery is configured.'
+    )
+  ];
 }

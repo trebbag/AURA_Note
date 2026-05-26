@@ -268,3 +268,15 @@ Standalone mode remains the default and does not require ClinicOS tables or serv
 - full-admin mode can expose clinician identifiers only to authorized admins and remains internal/non-patient-facing.
 
 The scaffold does not perform live AI coaching analysis, punitive productivity scoring, patient-facing coaching display, billing surveillance, claim submission, or medical-necessity determination.
+
+## WO-013 production hardening, observability, retention, and audit scaffold status
+
+`WO-013` adds synthetic hardening records and DTOs without introducing production connectivity:
+
+- `FeatureFlagDecision` records default-off switches for external AI, live EHR writeback, ClinicOS live sync, production analytics warehouse export, and audit export download delivery;
+- `StructuredLogEntry` records service, level, request ID, trace ID, event name, timestamp, redacted payload, redacted paths, and `phiSafe = true`;
+- `RetentionPolicyStatus` records raw-audio one-week retention, transcript indefinite retention, audit tenant-policy retention, candidate counts, purge-eligible counts, and `destructivePurgeEnabled = false`;
+- `SupportStatus` aggregates feature flags, structured-log posture, retention policy status, safe degraded failure states, and CI runtime evidence;
+- `AuditExport` represents a redacted metadata-only JSONL bundle with `includePhi = false`, `redacted = true`, `downloadEnabled = false`, and audit-retained records.
+
+The worker now has a tested retention job summary for raw-audio purge eligibility and transcript indefinite retention. The support API and browser support status page expose current scaffold health and safe degraded states. `WO-013` does not enable live audit file delivery, destructive deletion from object storage, production logging sinks, production analytics warehousing, live AI, live EHR writeback, or PHI-bearing support payloads.

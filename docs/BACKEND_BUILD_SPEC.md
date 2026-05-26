@@ -164,3 +164,11 @@ Workers must support:
 - coaching analysis;
 - integration sync;
 - event projection refresh.
+
+`WO-013` implements the first hardening scaffold for these requirements:
+
+- structured log entries are request/trace correlated and redacted before persistence or export;
+- external AI, live EHR writeback, ClinicOS live sync, production analytics, and audit export download delivery are governed by default-off feature flags;
+- worker retention status covers raw-audio one-week purge eligibility and transcript indefinite retention while keeping destructive purge disabled;
+- audit export is compliance/admin-only, redacted, metadata-only, and retained as audit evidence;
+- support status exposes safe degraded states without requiring live vendor credentials.

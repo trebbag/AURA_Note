@@ -76,6 +76,8 @@ export type CoreEventType =
   | 'coaching.signal_created.v1'
   | 'coaching.report_generated.v1'
   | 'coaching.dashboard_viewed.v1'
+  | 'retention.scan_completed.v1'
+  | 'audit.export_requested.v1'
   | 'audit.event_recorded.v1';
 
 export interface ApiMeta {
@@ -845,6 +847,131 @@ export interface AuditEventDto {
   entityId: string;
   traceId: string;
   createdAt: string;
+}
+
+export interface FeatureFlagDecisionDto {
+  key: string;
+  enabled: boolean;
+  governs: 'external_ai' | 'ehr_writeback' | 'clinicos_sync' | 'production_analytics' | 'audit_export_download';
+  defaultValue: false;
+  disabledReason?: string;
+}
+
+export interface StructuredLogEntryDto {
+  service: string;
+  level: 'debug' | 'info' | 'warn' | 'error';
+  message: string;
+  requestId: string;
+  traceId: string;
+  eventName: string;
+  timestamp: string;
+  payload?: unknown;
+  redactedPaths: string[];
+  phiSafe: true;
+}
+
+export interface RetentionPolicyStatusDto {
+  policyId: string;
+  recordClass: RetentionClass;
+  retentionRule: 'one_week' | 'indefinite' | 'tenant_policy';
+  enforcedByJob: string;
+  lastEvaluatedAt: string;
+  candidateCount: number;
+  purgeEligibleCount: number;
+  destructivePurgeEnabled: false;
+}
+
+export interface RetentionJobResultDto {
+  jobRunId: string;
+  status: 'completed';
+  evaluatedAt: string;
+  policies: RetentionPolicyStatusDto[];
+  auditEvent: AuditEventDto;
+  domainEvents: Array<AuraNoteEvent<Record<string, unknown>>>;
+}
+
+export interface SupportFailureStateDto {
+  component:
+    | 'external_ai'
+    | 'ehr_writeback'
+    | 'clinicos_sync'
+    | 'audit_export'
+    | 'raw_audio_retention'
+    | 'transcript_retention'
+    | 'structured_logging';
+  status: 'ok' | 'disabled' | 'degraded' | 'failed' | 'metadata_only';
+  operatorMessage: string;
+  safeDegradedMode: string;
+}
+
+export interface SupportStatusDto {
+  service: 'aura-note';
+  checkpoint: 'CP-4';
+  mode: AppMode;
+  generatedAt: string;
+  overallHealth: 'ok' | 'degraded';
+  featureFlags: FeatureFlagDecisionDto[];
+  logging: {
+    structured: true;
+    requestCorrelated: true;
+    phiRedaction: 'forbidden_keys_and_obvious_text';
+    sample: StructuredLogEntryDto;
+  };
+  retention: RetentionPolicyStatusDto[];
+  auditExport: {
+    enabled: true;
+    downloadEnabled: false;
+    format: 'jsonl';
+    redactedByDefault: true;
+  };
+  failureStates: SupportFailureStateDto[];
+  ciRuntime: {
+    nodeVersion: '20';
+    pnpmVersion: '9.12.0';
+    node20ActionWarningAcceptedUntil: 'WO-013';
+  };
+}
+
+export interface AuditExportRequestDto {
+  startAt: string;
+  endAt: string;
+  format: 'jsonl';
+  includePhi: false;
+  entityTypes?: string[];
+}
+
+export interface AuditExportRecordDto {
+  auditEvent: AuditEventDto;
+  domainEventType?: CoreEventType;
+  requestId: string;
+  redactedPayload: Record<string, unknown>;
+  redactedPaths: string[];
+}
+
+export interface AuditExportDto {
+  auditExportId: string;
+  status: 'ready_synthetic';
+  requestedByUserId: string;
+  requestedAt: string;
+  traceId: string;
+  format: 'jsonl';
+  includePhi: false;
+  redacted: true;
+  downloadEnabled: false;
+  retentionClass: 'audit';
+  recordCount: number;
+  records: AuditExportRecordDto[];
+}
+
+export interface SupportStatusResponseDto {
+  status: SupportStatusDto;
+  auditEvent: AuditEventDto;
+}
+
+export interface AuditExportResponseDto {
+  auditExport: AuditExportDto;
+  auditEvent: AuditEventDto;
+  domainEvents: Array<AuraNoteEvent<Record<string, unknown>>>;
 }
 
 export interface CreateAppointmentRequestDto {

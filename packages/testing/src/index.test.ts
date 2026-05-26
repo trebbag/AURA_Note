@@ -7,12 +7,14 @@ import {
   createSyntheticAiEvidenceNode,
   createSyntheticAiInvocationRequest,
   createSyntheticAppointment,
+  createSyntheticAuditExport,
   createSyntheticBlockingTask,
   createSyntheticClinicOsStatus,
   createSyntheticCoachingDashboard,
   createSyntheticCoachingReport,
   createSyntheticEhrChartContext,
   createSyntheticNote,
+  createSyntheticSupportStatus,
   createSyntheticVisitSession
 } from './index';
 
@@ -77,6 +79,18 @@ describe('synthetic CP-0 fixtures', () => {
     assert.equal(report.privacyLabel, 'own_clinician_only');
     assert.equal(dashboard.aggregateOnly, true);
     assert.equal(dashboard.clinicianSummaries[0]?.clinicianId, undefined);
+  });
+
+  it('creates synthetic support hardening fixtures without PHI-bearing export payloads', () => {
+    const status = createSyntheticSupportStatus();
+    const auditExport = createSyntheticAuditExport();
+
+    assert.equal(status.status.featureFlags[0]?.enabled, false);
+    assert.equal(status.status.logging.sample.phiSafe, true);
+    assert.equal(status.status.auditExport.downloadEnabled, false);
+    assert.equal(auditExport.auditExport.includePhi, false);
+    assert.equal(auditExport.auditExport.redacted, true);
+    assert.equal(auditExport.auditExport.downloadEnabled, false);
   });
 
   it('creates role contexts that exercise transcript visibility rules', () => {

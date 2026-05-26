@@ -317,6 +317,18 @@ Must support:
 
 The page is functional scaffolding for review and does not implement live AI coaching, production analytics warehousing, punitive productivity monitoring, or patient-facing coaching output.
 
+## Support hardening status
+
+`WO-013` adds `/aura-note/support/status` as a browser-testable support and operations shell:
+
+- overall CP-4 hardening status;
+- default-off external integration feature flags;
+- raw-audio, transcript, and audit retention policy states;
+- redacted metadata-only audit export state;
+- safe degraded failure states for external AI, EHR writeback, structured logs, and audit export.
+
+The route is operational scaffold fidelity, not a production support console. It does not expose PHI, enable live integrations, deliver audit files, or perform destructive retention actions.
+
 ## Required accessibility and UX states
 
 Every screen must have empty, loading, ready, saving, blocked, failed, permission-denied, and read-only states.
