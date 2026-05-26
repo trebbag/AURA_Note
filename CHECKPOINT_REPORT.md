@@ -110,7 +110,7 @@ Begin CP-3 with `WO-009` through `WO-011`: AI Gateway and PHI boundary, athenahe
 
 ## CP-3 — AI, PHI, and EHR integration shell ready
 
-**Status:** Complete locally in the `WO-011` review branch. PR #9 and PR #10 passed GitHub Actions and were merged; the `WO-011` PR must pass GitHub Actions before CP-4 begins.
+**Status:** Complete and merged to `main`. PR #9, PR #10, and PR #11 passed GitHub Actions before merge.
 
 ## Completed work orders
 
@@ -146,7 +146,7 @@ Begin CP-3 with `WO-009` through `WO-011`: AI Gateway and PHI boundary, athenahe
 - `pnpm --filter @aura-note/api typecheck`
 - `pnpm --filter @aura-note/clinicos-adapter typecheck`
 - Full repository gate passed before opening the `WO-011` PR: `pnpm install --frozen-lockfile`, `pnpm lint`, `pnpm lint:phi`, `pnpm typecheck`, `pnpm test`, `pnpm test:e2e`, `pnpm build`, `node scripts/status.js`, and `git diff --check`.
-- GitHub Actions `AURA Note CI / build-test` passed on PR #9 and PR #10. The `WO-011` PR must pass before merge.
+- GitHub Actions `AURA Note CI / build-test` passed on PR #9, PR #10, and PR #11.
 
 ## Open risks
 
