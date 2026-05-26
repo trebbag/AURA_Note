@@ -5,6 +5,14 @@ import type { INestApplication } from '@nestjs/common';
 import request from 'supertest';
 import { AppModule } from '../app.module';
 
+const billingStatements = [
+  'I have reviewed and accepted the final note.',
+  'I have reviewed and accepted the patient summary.',
+  'I have reviewed selected codes/items and understand they remain my responsibility.',
+  'I have resolved, closed, or assigned open history questions.',
+  'I understand the draft claim preview is a support tool and not an automated claim submission.'
+];
+
 describe('schedule appointment lifecycle API', () => {
   let app: INestApplication;
 
@@ -211,5 +219,93 @@ describe('schedule appointment lifecycle API', () => {
 
     assert.equal(approved.body.data.finalizationSession.readyForBillingAttest, true);
     assert.equal(approved.body.data.finalizationSession.currentStep, 'billing_attest');
+  });
+
+  it('runs WO-007 Billing & Attest and Sign & Dispatch without submitting a claim', async () => {
+    const created = await request(app.getHttpServer())
+      .post('/api/v1/schedule/appointments')
+      .set('x-aura-role', 'ma')
+      .set('idempotency-key', 'idem-e2e-wo007')
+      .send({
+        safePatientId: 'safe-patient-e2e-007',
+        clinicianId: 'clinician-e2e-007',
+        visitType: 'Chronic follow-up',
+        startsAt: '2026-05-26T18:00:00.000Z',
+        durationMinutes: 30,
+        modality: 'in_person',
+        reasonForVisit: 'Synthetic billing attest visit'
+      })
+      .expect(201);
+
+    const noteId = created.body.data.note.noteId;
+    const appointmentId = created.body.data.appointment.appointmentId;
+    await request(app.getHttpServer())
+      .post(`/api/v1/schedule/appointments/${appointmentId}/start-visit`)
+      .set('x-aura-role', 'clinician')
+      .expect(201);
+    await request(app.getHttpServer())
+      .post(`/api/v1/notes/${noteId}/visit-selections`)
+      .set('x-aura-role', 'clinician')
+      .send({ category: 'cpt', label: 'CPT 99214 candidate', confidence: 0.82 })
+      .expect(201);
+    const started = await request(app.getHttpServer())
+      .post(`/api/v1/notes/${noteId}/finalization/start`)
+      .set('x-aura-role', 'clinician')
+      .expect(201);
+    const selectionId = started.body.data.finalizationSession.frozenSnapshot.visitSelections[0].visitSelectionId;
+    await request(app.getHttpServer())
+      .post(`/api/v1/notes/${noteId}/finalization/code-review/selections/${selectionId}`)
+      .set('x-aura-role', 'clinician')
+      .send({ decision: 'keep' })
+      .expect(201);
+    await request(app.getHttpServer())
+      .post(`/api/v1/notes/${noteId}/finalization/code-review/complete`)
+      .set('x-aura-role', 'clinician')
+      .expect(201);
+    for (const suggestionId of ['suggestion-demo-cpt-99214', 'suggestion-demo-icd10-e119', 'suggestion-demo-quality-bp']) {
+      await request(app.getHttpServer())
+        .post(`/api/v1/notes/${noteId}/finalization/suggestion-review/suggestions/${suggestionId}`)
+        .set('x-aura-role', 'clinician')
+        .send({ decision: 'remove', reason: 'Synthetic final-pass e2e removal' })
+        .expect(201);
+    }
+    await request(app.getHttpServer())
+      .post(`/api/v1/notes/${noteId}/finalization/suggestion-review/complete`)
+      .set('x-aura-role', 'clinician')
+      .expect(201);
+    await request(app.getHttpServer()).post(`/api/v1/notes/${noteId}/finalization/compose`).set('x-aura-role', 'clinician').expect(201);
+    await request(app.getHttpServer())
+      .post(`/api/v1/notes/${noteId}/finalization/compare-edit/approve-note`)
+      .set('x-aura-role', 'clinician')
+      .send({ approved: true, attestation: 'Synthetic final note approval' })
+      .expect(201);
+    await request(app.getHttpServer())
+      .post(`/api/v1/notes/${noteId}/finalization/compare-edit/approve-summary`)
+      .set('x-aura-role', 'clinician')
+      .send({ approved: true, attestation: 'Synthetic patient summary approval' })
+      .expect(201);
+
+    const preview = await request(app.getHttpServer())
+      .post(`/api/v1/notes/${noteId}/finalization/billing-attest/draft-claim-preview`)
+      .set('x-aura-role', 'clinician')
+      .expect(201);
+    assert.equal(preview.body.data.finalizationSession.draftClaimPreview.submittedClaim, false);
+
+    const attested = await request(app.getHttpServer())
+      .post(`/api/v1/notes/${noteId}/finalization/billing-attest/complete`)
+      .set('x-aura-role', 'clinician')
+      .send({ acceptedStatements: billingStatements, estimateCaveatAcknowledged: true, routeToBillingReview: true })
+      .expect(201);
+    assert.equal(attested.body.data.finalizationSession.currentStep, 'sign_dispatch');
+
+    const signed = await request(app.getHttpServer())
+      .post(`/api/v1/notes/${noteId}/finalization/sign-dispatch`)
+      .set('x-aura-role', 'clinician')
+      .expect(201);
+    assert.equal(signed.body.data.finalizationSession.finalNote.readOnly, true);
+    assert.equal(signed.body.data.finalizationSession.patientSummary.patientFacing, true);
+
+    const finalized = await request(app.getHttpServer()).get(`/api/v1/notes/finalized/${noteId}`).set('x-aura-role', 'clinician').expect(200);
+    assert.equal(finalized.body.data.finalNoteAvailable, true);
   });
 });

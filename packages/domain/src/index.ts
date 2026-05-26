@@ -202,6 +202,20 @@ export interface CompareEditReadiness {
   enhancedOutputStale: boolean;
 }
 
+export interface BillingAttestReadiness {
+  finalNoteApproved: boolean;
+  patientSummaryApproved: boolean;
+  draftClaimPreviewGenerated: boolean;
+  requiredAttestationsAccepted: boolean;
+  estimateCaveatAcknowledged: boolean;
+  unresolvedBlockerTaskCount: number;
+  criticalPayerEvidenceGapCount: number;
+}
+
+export interface SignDispatchGateReadiness extends SignDispatchReadiness {
+  billingAttested: boolean;
+}
+
 export const LOW_CONFIDENCE_DIAGNOSIS_THRESHOLD = 0.75;
 const patientSummaryForbiddenPattern = /\b(revenue|claim|payer|billing|cpt|hcpcs|icd-?10|hcc|modifier|medical necessity|confidence|coaching)\b/i;
 
@@ -437,6 +451,22 @@ export function blocksSigning(tasks: BlockingTaskState[]): boolean {
 
 export function canSignAndDispatch(readiness: SignDispatchReadiness): boolean {
   return readiness.finalNoteApproved && readiness.patientSummaryApproved && !blocksSigning(readiness.tasks);
+}
+
+export function canCompleteBillingAttest(readiness: BillingAttestReadiness): boolean {
+  return (
+    readiness.finalNoteApproved &&
+    readiness.patientSummaryApproved &&
+    readiness.draftClaimPreviewGenerated &&
+    readiness.requiredAttestationsAccepted &&
+    readiness.estimateCaveatAcknowledged &&
+    readiness.unresolvedBlockerTaskCount === 0 &&
+    readiness.criticalPayerEvidenceGapCount === 0
+  );
+}
+
+export function canSignAndDispatchAfterBilling(readiness: SignDispatchGateReadiness): boolean {
+  return readiness.billingAttested && canSignAndDispatch(readiness);
 }
 
 export function canStartFinalization(readiness: FinalizationStartReadiness): boolean {

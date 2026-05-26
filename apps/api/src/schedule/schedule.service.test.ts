@@ -13,6 +13,53 @@ const createRequest = {
   reasonForVisit: 'Synthetic follow-up appointment'
 };
 
+const billingStatements = [
+  'I have reviewed and accepted the final note.',
+  'I have reviewed and accepted the patient summary.',
+  'I have reviewed selected codes/items and understand they remain my responsibility.',
+  'I have resolved, closed, or assigned open history questions.',
+  'I understand the draft claim preview is a support tool and not an automated claim submission.'
+];
+
+function completeThroughCompareEdit(service: ScheduleService) {
+  const appointment = service
+    .createAppointment(createRequest, service.createRequestContext({ 'x-aura-role': 'ma' }))
+    .data.appointment;
+  const clinician = service.createRequestContext({ 'x-aura-role': 'clinician' });
+  service.startVisit(appointment.appointmentId, clinician);
+  service.addVisitSelection(appointment.noteId, { category: 'cpt', label: 'CPT 99214 candidate', confidence: 0.82 }, clinician);
+  service.appendTranscriptSegment(
+    appointment.appointmentId,
+    { speakerRole: 'clinician', text: 'Synthetic billing review transcript segment' },
+    clinician
+  );
+  const started = service.startFinalization(appointment.noteId, clinician);
+  const selectionId = started.data.finalizationSession.frozenSnapshot.visitSelections[0]?.visitSelectionId ?? 'missing-selection';
+  service.decideFinalizationSelection(appointment.noteId, selectionId, { decision: 'keep' }, clinician);
+  service.completeCodeReview(appointment.noteId, clinician);
+  for (const suggestionId of ['suggestion-demo-cpt-99214', 'suggestion-demo-icd10-e119', 'suggestion-demo-quality-bp']) {
+    service.decideFinalizationSuggestion(
+      appointment.noteId,
+      suggestionId,
+      { decision: 'remove', reason: 'Synthetic final-pass removal' },
+      clinician
+    );
+  }
+  service.completeSuggestionReview(appointment.noteId, clinician);
+  service.composeFinalizationDrafts(appointment.noteId, clinician);
+  service.approveFinalNote(
+    appointment.noteId,
+    { approved: true, attestation: 'I reviewed the current synthetic final note.' },
+    clinician
+  );
+  service.approvePatientSummary(
+    appointment.noteId,
+    { approved: true, attestation: 'I reviewed the current synthetic patient summary.' },
+    clinician
+  );
+  return { appointment, clinician };
+}
+
 describe('ScheduleService', () => {
   it('creates an appointment and exactly one note shell', () => {
     const service = new ScheduleService();
@@ -397,5 +444,99 @@ describe('ScheduleService', () => {
     assert.equal(summaryApproved.data.finalizationSession.readyForBillingAttest, true);
     assert.equal(summaryApproved.data.finalizationSession.currentStep, 'billing_attest');
     assert.equal(summaryApproved.data.domainEvents.map((event) => event.eventType).includes('finalization.step_completed.v1'), true);
+  });
+
+  it('generates a draft claim preview without submitting a claim', () => {
+    const service = new ScheduleService();
+    const { appointment, clinician } = completeThroughCompareEdit(service);
+
+    const preview = service.generateDraftClaimPreview(appointment.noteId, clinician);
+
+    assert.equal(preview.data.finalizationSession.draftClaimPreview?.status, 'draft_preview');
+    assert.equal(preview.data.finalizationSession.draftClaimPreview?.submittedClaim, false);
+    assert.equal(preview.data.finalizationSession.draftClaimPreview?.estimateStatus, 'unavailable_caveated');
+    assert.equal(preview.data.domainEvents[0]?.eventType, 'draft_claim_preview.generated.v1');
+  });
+
+  it('requires Billing & Attest before moving to Sign & Dispatch', () => {
+    const service = new ScheduleService();
+    const { appointment, clinician } = completeThroughCompareEdit(service);
+    service.generateDraftClaimPreview(appointment.noteId, clinician);
+
+    assert.throws(
+      () =>
+        service.completeBillingAttest(
+          appointment.noteId,
+          { acceptedStatements: billingStatements.slice(0, 1), estimateCaveatAcknowledged: true, routeToBillingReview: false },
+          clinician
+        ),
+      BadRequestException
+    );
+
+    const attested = service.completeBillingAttest(
+      appointment.noteId,
+      { acceptedStatements: billingStatements, estimateCaveatAcknowledged: true, routeToBillingReview: false },
+      clinician
+    );
+
+    assert.equal(attested.data.finalizationSession.billingAttested, true);
+    assert.equal(attested.data.finalizationSession.currentStep, 'sign_dispatch');
+  });
+
+  it('routes billing review and grants billing staff transcript access only after the trigger', () => {
+    const service = new ScheduleService();
+    const { appointment, clinician } = completeThroughCompareEdit(service);
+    const billingStaff = service.createRequestContext({ 'x-aura-role': 'billing_staff' });
+
+    assert.throws(() => service.getTranscriptByAppointment(appointment.appointmentId, billingStaff), ForbiddenException);
+
+    service.generateDraftClaimPreview(appointment.noteId, clinician);
+    service.completeBillingAttest(
+      appointment.noteId,
+      { acceptedStatements: billingStatements, estimateCaveatAcknowledged: true, routeToBillingReview: true },
+      clinician
+    );
+
+    const transcript = service.getTranscriptByAppointment(appointment.appointmentId, billingStaff);
+    assert.equal(transcript.data.segments.length, 1);
+  });
+
+  it('blocks Sign & Dispatch when a blocker task opens after Billing & Attest', () => {
+    const service = new ScheduleService();
+    const { appointment, clinician } = completeThroughCompareEdit(service);
+    service.generateDraftClaimPreview(appointment.noteId, clinician);
+    service.completeBillingAttest(
+      appointment.noteId,
+      { acceptedStatements: billingStatements, estimateCaveatAcknowledged: true, routeToBillingReview: false },
+      clinician
+    );
+    service.createHistoryGapTask(
+      appointment.noteId,
+      'history-gap-demo-001',
+      { blocksSigning: true, ownerRole: 'ma' },
+      clinician
+    );
+
+    assert.throws(() => service.signAndDispatch(appointment.noteId, clinician), BadRequestException);
+  });
+
+  it('signs and dispatches final note and patient summary records when gates pass', () => {
+    const service = new ScheduleService();
+    const { appointment, clinician } = completeThroughCompareEdit(service);
+    service.generateDraftClaimPreview(appointment.noteId, clinician);
+    service.completeBillingAttest(
+      appointment.noteId,
+      { acceptedStatements: billingStatements, estimateCaveatAcknowledged: true, routeToBillingReview: false },
+      clinician
+    );
+
+    const signed = service.signAndDispatch(appointment.noteId, clinician);
+
+    assert.equal(signed.data.finalizationSession.finalNote?.readOnly, true);
+    assert.equal(signed.data.finalizationSession.patientSummary?.internalBillingDetailsExcluded, true);
+    assert.equal(signed.data.finalizationSession.signedAndDispatched, true);
+    assert.equal(signed.data.domainEvents.map((event) => event.eventType).includes('note.dispatched.v1'), true);
+    assert.equal(service.listDraftNotes(clinician).data.notes.length, 0);
+    assert.equal(service.getFinalizedNote(appointment.noteId, clinician).data.finalNoteAvailable, true);
   });
 });
