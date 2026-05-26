@@ -4,6 +4,9 @@ import {
   createApiEnvelope,
   createEventEnvelope,
   isStateChangingEvent,
+  type AiContextPackageDto,
+  type AiGatewayInvocationResponseDto,
+  type AiGatewayStatusDto,
   type ComplianceReviewDto,
   type DocumentationWorkspaceDto,
   type DraftNoteSummaryDto,
@@ -63,7 +66,124 @@ describe('event envelope', () => {
     assert.equal(isStateChangingEvent('transcript.segment_appended.v1'), true);
     assert.equal(isStateChangingEvent('suggestion.accepted.v1'), true);
     assert.equal(isStateChangingEvent('finalization.compose_completed.v1'), true);
+    assert.equal(isStateChangingEvent('ai.request_prepared.v1'), true);
+    assert.equal(isStateChangingEvent('ai.response_recorded.v1'), true);
     assert.equal(isStateChangingEvent('audit.event_recorded.v1'), false);
+  });
+});
+
+describe('AI gateway contracts', () => {
+  it('represents mock-only AI status without enabling external AI', () => {
+    const status: AiGatewayStatusDto = {
+      providerMode: 'mock',
+      externalAiEnabled: false,
+      policy: {
+        policyId: 'aura-note-ai-policy-v1',
+        mode: 'mock_only',
+        externalAiEnabled: false,
+        privateBaaRequired: true,
+        humanReviewRequired: true,
+        allowedOutputTypes: ['suggestion', 'draft', 'candidate', 'summary', 'coaching_feedback'],
+        prohibitedAutonomousActions: ['submit_claim']
+      },
+      promptRegistry: [
+        {
+          promptId: 'aura-note-suggestions-v1',
+          promptVersion: '2026-05-26.cp3',
+          purpose: 'suggestions',
+          outputType: 'suggestion',
+          sourceLinkRequired: true,
+          humanReviewRequired: true
+        }
+      ]
+    };
+
+    assert.equal(status.externalAiEnabled, false);
+    assert.equal(status.promptRegistry[0]?.humanReviewRequired, true);
+  });
+
+  it('represents an invocation with deidentified context and governance events', () => {
+    const contextPackage: AiContextPackageDto = {
+      contextPackageId: 'ai-context-trace-001',
+      tenantId: 'tenant-001',
+      siteId: 'site-001',
+      safePatientId: 'safe-patient-001',
+      noteId: 'note-001',
+      clinicalFacts: { diagnosisContext: 'Synthetic deidentified fact' },
+      evidence: [
+        {
+          evidenceId: 'evidence-001',
+          evidenceType: 'chart_slice',
+          sourceSystem: 'synthetic_fixture',
+          sourceRef: 'chart-001',
+          displayLabel: 'Synthetic chart slice',
+          excerptOrValue: 'Synthetic value',
+          freshness: 'recent',
+          sourceQuality: 'high',
+          phiClassification: 'deidentified',
+          allowedRoles: ['clinician']
+        }
+      ],
+      sourceIds: ['evidence-001'],
+      phiHandling: 'redact',
+      redactedPaths: ['clinicalFacts.patientName'],
+      rejectedPaths: [],
+      deidentified: true,
+      createdAt: '2026-05-26T17:00:00.000Z'
+    };
+    const invocation: AiGatewayInvocationResponseDto = {
+      contextPackage,
+      request: {
+        tenantId: 'tenant-001',
+        siteId: 'site-001',
+        purpose: 'suggestions',
+        contextPackage,
+        outputType: 'suggestion',
+        traceId: 'trace-001',
+        promptId: 'aura-note-suggestions-v1',
+        promptVersion: '2026-05-26.cp3',
+        modelVersion: 'mock-aura-note-cp3',
+        policyMode: 'mock_only',
+        humanReviewStatus: 'required'
+      },
+      response: {
+        output: { draftOnly: true },
+        outputType: 'suggestion',
+        modelMode: 'mock',
+        confidence: 0.8,
+        warnings: ['Mock output'],
+        humanReviewRequired: true,
+        sourceEvidenceIds: ['evidence-001'],
+        rejected: false
+      },
+      auditEvent: {
+        auditEventId: 'audit-ai-001',
+        tenantId: 'tenant-001',
+        action: 'ai.mock_invocation',
+        entityType: 'AiGateway',
+        entityId: 'ai-context-trace-001',
+        traceId: 'trace-001',
+        createdAt: '2026-05-26T17:00:00.000Z'
+      },
+      domainEvents: [
+        createEventEnvelope({
+          eventId: 'evt-ai-001',
+          eventType: 'ai.request_prepared.v1',
+          tenantId: 'tenant-001',
+          siteId: 'site-001',
+          producer: 'aura-note-api',
+          traceId: 'trace-001',
+          idempotencyKey: 'idem-ai-001',
+          sensitivity: 'restricted',
+          retentionClass: 'audit',
+          payload: { contextPackageId: 'ai-context-trace-001' }
+        })
+      ]
+    };
+
+    assert.equal(invocation.contextPackage.deidentified, true);
+    assert.equal(invocation.response.humanReviewRequired, true);
+    assert.equal(invocation.domainEvents[0]?.eventType, 'ai.request_prepared.v1');
   });
 });
 

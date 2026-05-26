@@ -8,7 +8,7 @@
     "lint": "tsc --noEmit -p tsconfig.json",
     "lint:phi": "node ../../scripts/lint-phi.js packages/ai-gateway",
     "typecheck": "tsc --noEmit -p tsconfig.json",
-    "test": "node -e \"console.log('ai-gateway scaffold verified by typecheck; PHI gateway implementation begins in WO-009')\"",
+    "test": "node --import tsx --test src/index.test.ts",
     "test:unit": "pnpm test",
     "test:e2e": "node -e \"console.log('ai-gateway e2e deferred until WO-009')\""
   },

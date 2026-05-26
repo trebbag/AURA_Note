@@ -59,6 +59,11 @@ export type CoreEventType =
   | 'export.generated.v1'
   | 'ehr_writeback.queued.v1'
   | 'ehr_writeback.failed.v1'
+  | 'ai.request_prepared.v1'
+  | 'ai.context_scrubbed.v1'
+  | 'ai.phi_rejected.v1'
+  | 'ai.response_recorded.v1'
+  | 'ai.output_rejected.v1'
   | 'audit.event_recorded.v1';
 
 export interface ApiMeta {
@@ -515,6 +520,132 @@ export interface ExportActionResponseDto {
 export interface EhrWritebackActionResponseDto {
   writeback: EhrWritebackQueueDto;
   finalizedNote: FinalizedNoteDetailDto;
+  auditEvent: AuditEventDto;
+  domainEvents: Array<AuraNoteEvent<Record<string, unknown>>>;
+}
+
+export type AiGatewayPurposeDto = 'suggestions' | 'compose_note' | 'patient_summary' | 'billing_preview' | 'coaching';
+export type AiGatewayOutputTypeDto = 'suggestion' | 'draft' | 'candidate' | 'summary' | 'coaching_feedback';
+export type AiGatewayModelModeDto = 'mock' | 'private_baa' | 'external_disabled';
+export type AiGatewayPolicyModeDto = 'mock_only' | 'external_disabled' | 'private_baa_governed';
+export type AiPhiHandlingDto = 'reject' | 'redact';
+export type AiHumanReviewStatusDto = 'required' | 'approved_by_human' | 'rejected_by_human';
+
+export interface AiEvidenceNodeDto {
+  evidenceId: string;
+  evidenceType:
+    | 'note_text'
+    | 'transcript_segment'
+    | 'chart_slice'
+    | 'lab'
+    | 'vital'
+    | 'medication'
+    | 'problem'
+    | 'diagnosis'
+    | 'quality_measure'
+    | 'payer_rule'
+    | 'staff_answer'
+    | 'patient_form'
+    | 'task'
+    | 'prior_note';
+  sourceSystem: 'aura_note' | 'ehr_adapter' | 'clinicos' | 'synthetic_fixture';
+  sourceRef: string;
+  displayLabel: string;
+  excerptOrValue: string;
+  freshness: 'current_visit' | 'recent' | 'historical' | 'unknown';
+  sourceQuality: 'high' | 'medium' | 'low';
+  phiClassification: 'deidentified' | 'phi_reference' | 'restricted';
+  allowedRoles: string[];
+}
+
+export interface AiPromptRegistryEntryDto {
+  promptId: string;
+  promptVersion: string;
+  purpose: AiGatewayPurposeDto;
+  outputType: AiGatewayOutputTypeDto;
+  sourceLinkRequired: boolean;
+  humanReviewRequired: true;
+}
+
+export interface AiSafetyPolicyDto {
+  policyId: string;
+  mode: AiGatewayPolicyModeDto;
+  externalAiEnabled: boolean;
+  privateBaaRequired: true;
+  humanReviewRequired: true;
+  allowedOutputTypes: AiGatewayOutputTypeDto[];
+  prohibitedAutonomousActions: string[];
+}
+
+export interface AiContextPackageDto {
+  contextPackageId: string;
+  tenantId: string;
+  siteId: string;
+  safePatientId: string;
+  noteId?: string;
+  appointmentId?: string;
+  visitType?: string;
+  clinicalFacts: Record<string, unknown>;
+  evidence: AiEvidenceNodeDto[];
+  sourceIds: string[];
+  phiHandling: AiPhiHandlingDto;
+  redactedPaths: string[];
+  rejectedPaths: string[];
+  deidentified: boolean;
+  createdAt: string;
+}
+
+export interface AiGatewayInvocationRequestDto {
+  purpose: AiGatewayPurposeDto;
+  outputType?: AiGatewayOutputTypeDto;
+  phiHandling?: AiPhiHandlingDto;
+  safePatientId: string;
+  noteId?: string;
+  appointmentId?: string;
+  visitType?: string;
+  clinicalFacts: Record<string, unknown>;
+  evidence: AiEvidenceNodeDto[];
+}
+
+export interface AiGatewayRequestDto {
+  tenantId: string;
+  siteId: string;
+  purpose: AiGatewayPurposeDto;
+  contextPackage: AiContextPackageDto;
+  outputType: AiGatewayOutputTypeDto;
+  traceId: string;
+  promptId: string;
+  promptVersion: string;
+  modelVersion: string;
+  policyMode: AiGatewayPolicyModeDto;
+  humanReviewStatus: AiHumanReviewStatusDto;
+}
+
+export interface AiGatewayResponseDto {
+  output: Record<string, unknown>;
+  outputType: AiGatewayOutputTypeDto;
+  modelMode: AiGatewayModelModeDto;
+  confidence?: number;
+  warnings: string[];
+  promptId?: string;
+  promptVersion?: string;
+  modelVersion?: string;
+  humanReviewRequired: true;
+  sourceEvidenceIds: string[];
+  rejected: boolean;
+}
+
+export interface AiGatewayStatusDto {
+  policy: AiSafetyPolicyDto;
+  promptRegistry: AiPromptRegistryEntryDto[];
+  providerMode: AiGatewayModelModeDto;
+  externalAiEnabled: false;
+}
+
+export interface AiGatewayInvocationResponseDto {
+  request: AiGatewayRequestDto;
+  response: AiGatewayResponseDto;
+  contextPackage: AiContextPackageDto;
   auditEvent: AuditEventDto;
   domainEvents: Array<AuraNoteEvent<Record<string, unknown>>>;
 }

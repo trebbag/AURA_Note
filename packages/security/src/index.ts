@@ -22,6 +22,8 @@ export type Permission =
   | 'final_note:export'
   | 'patient_summary:export'
   | 'ehr_writeback:queue'
+  | 'ai_gateway:invoke'
+  | 'ai_governance:view'
   | 'coaching_own:view'
   | 'coaching_dashboard:view'
   | 'audit:view';
@@ -42,6 +44,11 @@ export interface PhiScanResult {
   paths: string[];
 }
 
+export interface PhiTextScanResult {
+  containsForbiddenPhiText: boolean;
+  paths: string[];
+}
+
 export const FORBIDDEN_PHI_KEYS = [
   'patientName',
   'mrn',
@@ -49,15 +56,29 @@ export const FORBIDDEN_PHI_KEYS = [
   'socialSecurity',
   'dob',
   'dateOfBirth',
+  'externalPatientId',
+  'patientExternalId',
+  'insuranceMemberId',
+  'memberId',
   'phone',
   'phoneNumber',
   'email',
   'emailAddress',
   'address',
-  'streetAddress'
+  'streetAddress',
+  'caregiverName',
+  'clinicianName',
+  'facilityIdentifier',
+  'appointmentDateTime'
 ] as const;
 
 const forbiddenPhiKeySet = new Set<string>(FORBIDDEN_PHI_KEYS);
+const forbiddenPhiTextPatterns = [
+  /\b\d{3}-\d{2}-\d{4}\b/,
+  /\b[\w.%+-]+@[\w.-]+\.[A-Za-z]{2,}\b/,
+  /\b(?:\+?1[-.\s]?)?(?:\(?\d{3}\)?[-.\s]?)\d{3}[-.\s]?\d{4}\b/,
+  /\bMRN[:\s-]*[A-Za-z0-9-]{3,}\b/i
+] as const;
 
 export function canViewTranscript(ctx: AccessContext): boolean {
   if (ctx.authorizedAdmin) return true;
@@ -119,6 +140,10 @@ export function canPerform(permission: Permission, ctx: AccessContext): boolean 
       return (ctx.authorizedAdmin || ['clinician', 'ma'].includes(ctx.role)) && canViewPatientSummary(ctx);
     case 'ehr_writeback:queue':
       return ctx.authorizedAdmin || (ctx.role === 'clinician' && ctx.treatingClinician && ctx.linkedToVisit);
+    case 'ai_gateway:invoke':
+      return ctx.authorizedAdmin || (ctx.role === 'clinician' && ctx.treatingClinician && ctx.linkedToVisit);
+    case 'ai_governance:view':
+      return ctx.authorizedAdmin || ctx.role === 'compliance_privacy_lead';
     case 'coaching_own:view':
       return canViewCoaching(ctx);
     case 'coaching_dashboard:view':
@@ -159,6 +184,37 @@ export function containsForbiddenPhiKeys(value: unknown): boolean {
   return scanForForbiddenPhiKeys(value).containsForbiddenPhi;
 }
 
+export function scanForForbiddenPhiText(value: unknown): PhiTextScanResult {
+  const paths: string[] = [];
+
+  function visit(current: unknown, path: string): void {
+    if (Array.isArray(current)) {
+      current.forEach((item, index) => visit(item, `${path}[${index}]`));
+      return;
+    }
+
+    if (typeof current === 'string') {
+      if (forbiddenPhiTextPatterns.some((pattern) => pattern.test(current))) {
+        paths.push(path);
+      }
+      return;
+    }
+
+    if (!current || typeof current !== 'object') return;
+
+    for (const [key, child] of Object.entries(current as Record<string, unknown>)) {
+      const childPath = path ? `${path}.${key}` : key;
+      visit(child, childPath);
+    }
+  }
+
+  visit(value, '');
+  return {
+    containsForbiddenPhiText: paths.length > 0,
+    paths
+  };
+}
+
 export function redactForbiddenPhiKeys(value: unknown): unknown {
   if (Array.isArray(value)) {
     return value.map((item) => redactForbiddenPhiKeys(item));
@@ -174,4 +230,26 @@ export function redactForbiddenPhiKeys(value: unknown): unknown {
       forbiddenPhiKeySet.has(key) ? '[REDACTED]' : redactForbiddenPhiKeys(child)
     ])
   );
+}
+
+export function redactForbiddenPhiText(value: unknown): unknown {
+  if (Array.isArray(value)) {
+    return value.map((item) => redactForbiddenPhiText(item));
+  }
+
+  if (typeof value === 'string') {
+    return forbiddenPhiTextPatterns.some((pattern) => pattern.test(value)) ? '[REDACTED]' : value;
+  }
+
+  if (!value || typeof value !== 'object') {
+    return value;
+  }
+
+  return Object.fromEntries(
+    Object.entries(value as Record<string, unknown>).map(([key, child]) => [key, redactForbiddenPhiText(child)])
+  );
+}
+
+export function redactForbiddenPhi(value: unknown): unknown {
+  return redactForbiddenPhiText(redactForbiddenPhiKeys(value));
 }

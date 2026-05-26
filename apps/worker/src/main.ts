@@ -1,12 +1,17 @@
-import type { EhrWritebackQueueDto, RawAudioRetentionMetadataDto } from '@aura-note/contracts';
+import type { AiGatewayInvocationResponseDto, EhrWritebackQueueDto, RawAudioRetentionMetadataDto } from '@aura-note/contracts';
 
 export function getWorkerStatus() {
   return {
     service: 'aura-note-worker',
-    status: 'cp2_export_writeback_scaffold_ready',
-    checkpoint: 'CP-2',
-    implementedJobs: ['raw_audio_retention_candidate_scan', 'export_artifact_status_scan', 'ehr_writeback_queue_status_scan'],
-    jobsDeferredToWorkOrders: ['ai_queue', 'live_ehr_writeback', 'analytics']
+    status: 'cp3_ai_gateway_scaffold_ready',
+    checkpoint: 'CP-3-in-progress',
+    implementedJobs: [
+      'raw_audio_retention_candidate_scan',
+      'export_artifact_status_scan',
+      'ehr_writeback_queue_status_scan',
+      'ai_gateway_mock_invocation_status_scan'
+    ],
+    jobsDeferredToWorkOrders: ['live_ai_provider_queue', 'live_ehr_writeback', 'analytics']
   };
 }
 
@@ -35,6 +40,19 @@ export function evaluateEhrWritebackQueue(records: EhrWritebackQueueDto[]): EhrW
     }
     return record;
   });
+}
+
+export function evaluateAiGatewayInvocationQueue(
+  records: AiGatewayInvocationResponseDto[]
+): Array<Pick<AiGatewayInvocationResponseDto, 'contextPackage' | 'response'>> {
+  return records.map((record) => ({
+    contextPackage: record.contextPackage,
+    response: {
+      ...record.response,
+      rejected: record.response.rejected || record.contextPackage.rejectedPaths.length > 0,
+      humanReviewRequired: true
+    }
+  }));
 }
 
 if (require.main === module) {
