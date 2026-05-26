@@ -154,6 +154,15 @@ export interface LowConfidenceOverrideDecision {
   flagsCoachingReview: boolean;
 }
 
+export interface SuggestionAcceptanceInput extends LowConfidenceOverrideInput {
+  category: VisitSelectionCategory;
+}
+
+export interface ComplianceGateInput {
+  hardBlockCount: number;
+  unresolvedBlockerTaskCount: number;
+}
+
 export interface SignDispatchReadiness {
   tasks: BlockingTaskState[];
   finalNoteApproved: boolean;
@@ -365,6 +374,23 @@ export function evaluateLowConfidenceOverride(input: LowConfidenceOverrideInput)
     flagsBillingReview: accepted,
     flagsCoachingReview: accepted
   };
+}
+
+export function canAcceptSuggestion(input: SuggestionAcceptanceInput): LowConfidenceOverrideDecision {
+  if (input.category !== 'diagnosis' && input.category !== 'icd10') {
+    return {
+      overrideRequired: false,
+      accepted: true,
+      flagsBillingReview: false,
+      flagsCoachingReview: false
+    };
+  }
+
+  return evaluateLowConfidenceOverride(input);
+}
+
+export function complianceBlocksFinalize(input: ComplianceGateInput): boolean {
+  return input.hardBlockCount > 0 || input.unresolvedBlockerTaskCount > 0;
 }
 
 export function isTaskAdjudicatedForSigning(status: TaskAdjudicationStatus): boolean {

@@ -173,3 +173,15 @@ The shell preserves the appointment-to-note one-to-one relationship and adds exp
 - mock transcript segments are synthetic, source-marked as `mock_transcription`, and retained indefinitely.
 
 Raw audio metadata is classified as `audio_ephemeral` with a one-week purge window. The worker has a retention candidate scan scaffold that marks records purge-eligible when `purgeAfter` is reached; it does not connect to production storage.
+
+## WO-005 review panel scaffold status
+
+`WO-005` adds deterministic synthetic review state for:
+
+- draft-only `Suggestion` candidates with confidence, rationale, supporting evidence, missing evidence, and status;
+- `VisitSelection` records created only through human accept/manual add actions;
+- `ComplianceIssue` and `ComplianceReview` records that can disable Finalize-facing actions when hard blockers exist;
+- `HistoryGapQuestion` records that can create MA-owned blocker tasks;
+- `Task` records linked to the note with signing blocker state.
+
+Diagnosis/ICD suggestions below 75 percent require override metadata before they can move into Visit Selections. No suggestion is treated as a final diagnosis, final code, final bill, medical-necessity determination, or claim submission.

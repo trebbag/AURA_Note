@@ -14,19 +14,33 @@ import {
   type FinalizedNotesViewDto,
   type NoteDto,
   type AppendTranscriptSegmentRequestDto,
+  type AddVisitSelectionRequestDto,
   type RawAudioRetentionMetadataDto,
   type RecordingExceptionRequestDto,
+  type ComplianceIssueDto,
+  type ComplianceReviewDto,
+  type CreateHistoryGapTaskRequestDto,
   type ScheduleAppointmentDto,
   type ScheduleViewDto,
+  type ReviewActionResponseDto,
+  type SuggestionDecisionRequestDto,
+  type SuggestionDto,
+  type SuggestionsViewDto,
+  type TaskDto,
+  type HistoryGapQuestionDto,
   type StartVisitResponseDto,
   type TranscriptSegmentDto,
   type TranscriptViewDto,
+  type VisitSelectionDto,
+  type VisitSelectionsViewDto,
   type VisitSessionControlResponseDto,
   type VisitSessionDto
 } from '@aura-note/contracts';
 import {
   approveRecordingException,
   canEditNote,
+  canAcceptSuggestion,
+  complianceBlocksFinalize,
   canStartVisit,
   createAppointmentLifecycle,
   createAppointmentNoteInvariant,
@@ -52,6 +66,11 @@ interface StoredAppointment {
   visitSession?: VisitSessionDto;
   rawAudioRetention?: RawAudioRetentionMetadataDto;
   transcript?: TranscriptViewDto;
+  suggestions?: SuggestionDto[];
+  visitSelections?: VisitSelectionDto[];
+  complianceIssues?: ComplianceIssueDto[];
+  historyGaps?: HistoryGapQuestionDto[];
+  tasks?: TaskDto[];
 }
 
 interface RequestContext {
@@ -522,6 +541,164 @@ export class ScheduleService {
     );
   }
 
+  evaluateSuggestions(noteId: string, context: RequestContext): ApiEnvelope<ReviewActionResponseDto> {
+    const stored = this.getReviewableNote(noteId, context);
+    stored.suggestions = this.createDeterministicSuggestions(stored);
+    stored.historyGaps = stored.historyGaps ?? this.createDeterministicHistoryGaps(stored);
+    stored.complianceIssues = this.evaluateComplianceIssues(stored);
+
+    return this.createReviewActionEnvelope(stored, context, 'suggestions.evaluate', ['suggestions.evaluated.v1']);
+  }
+
+  listSuggestions(noteId: string, context: RequestContext): ApiEnvelope<SuggestionsViewDto> {
+    const stored = this.getReviewableNote(noteId, context);
+    stored.suggestions = stored.suggestions ?? this.createDeterministicSuggestions(stored);
+    return createApiEnvelope({ noteId, suggestions: stored.suggestions }, this.createMeta(context));
+  }
+
+  acceptSuggestion(
+    noteId: string,
+    suggestionId: string,
+    request: SuggestionDecisionRequestDto,
+    context: RequestContext
+  ): ApiEnvelope<ReviewActionResponseDto> {
+    const stored = this.getReviewableNote(noteId, context);
+    stored.suggestions = stored.suggestions ?? this.createDeterministicSuggestions(stored);
+    const suggestion = this.getSuggestion(stored, suggestionId);
+    const decision = canAcceptSuggestion({
+      category: suggestion.category,
+      confidence: suggestion.confidence,
+      ...request
+    });
+    if (!decision.accepted) {
+      throw new BadRequestException({
+        code: 'LOW_CONFIDENCE_OVERRIDE_REQUIRED',
+        message: 'Diagnosis suggestions below 75 percent confidence require complete override metadata.'
+      });
+    }
+
+    stored.suggestions = stored.suggestions.map((candidate) =>
+      candidate.suggestionId === suggestionId ? { ...candidate, status: 'accepted' } : candidate
+    );
+    stored.visitSelections = [
+      ...(stored.visitSelections ?? []),
+      {
+        visitSelectionId: this.nextId('visit-selection'),
+        noteId,
+        category: suggestion.category,
+        label: suggestion.label,
+        confidence: suggestion.confidence,
+        humanApproved: true,
+        sourceSuggestionId: suggestion.suggestionId,
+        ...(request.overrideReason ? { overrideReason: request.overrideReason } : {})
+      }
+    ];
+    stored.complianceIssues = this.evaluateComplianceIssues(stored);
+
+    return this.createReviewActionEnvelope(stored, context, 'suggestion.accept', [
+      'suggestion.accepted.v1',
+      'visit_selection.added.v1'
+    ]);
+  }
+
+  removeSuggestion(noteId: string, suggestionId: string, context: RequestContext): ApiEnvelope<ReviewActionResponseDto> {
+    const stored = this.getReviewableNote(noteId, context);
+    stored.suggestions = stored.suggestions ?? this.createDeterministicSuggestions(stored);
+    this.getSuggestion(stored, suggestionId);
+    stored.suggestions = stored.suggestions.map((candidate) =>
+      candidate.suggestionId === suggestionId ? { ...candidate, status: 'removed' } : candidate
+    );
+    stored.complianceIssues = this.evaluateComplianceIssues(stored);
+
+    return this.createReviewActionEnvelope(stored, context, 'suggestion.remove', ['suggestion.removed.v1']);
+  }
+
+  listVisitSelections(noteId: string, context: RequestContext): ApiEnvelope<VisitSelectionsViewDto> {
+    const stored = this.getReviewableNote(noteId, context);
+    return createApiEnvelope(
+      {
+        noteId,
+        selections: stored.visitSelections ?? [],
+        availableFilters: ['cpt', 'hcpcs', 'icd10', 'hcc', 'em', 'quality_measure', 'diagnosis', 'differential', 'service', 'procedure', 'appointment_to_schedule', 'plan_item', 'staff_task']
+      },
+      this.createMeta(context)
+    );
+  }
+
+  addVisitSelection(
+    noteId: string,
+    request: AddVisitSelectionRequestDto,
+    context: RequestContext
+  ): ApiEnvelope<ReviewActionResponseDto> {
+    const stored = this.getReviewableNote(noteId, context);
+    if (!request.label.trim()) {
+      throw new BadRequestException('visit selection label is required');
+    }
+    stored.visitSelections = [
+      ...(stored.visitSelections ?? []),
+      {
+        visitSelectionId: this.nextId('visit-selection'),
+        noteId,
+        category: request.category,
+        label: request.label,
+        ...(request.confidence === undefined ? {} : { confidence: request.confidence }),
+        humanApproved: true
+      }
+    ];
+    stored.complianceIssues = this.evaluateComplianceIssues(stored);
+
+    return this.createReviewActionEnvelope(stored, context, 'visit_selection.add', ['visit_selection.added.v1']);
+  }
+
+  evaluateCompliance(noteId: string, context: RequestContext): ApiEnvelope<ComplianceReviewDto> {
+    const stored = this.getReviewableNote(noteId, context);
+    stored.complianceIssues = this.evaluateComplianceIssues(stored);
+    return createApiEnvelope(this.toComplianceReview(stored), this.createMeta(context));
+  }
+
+  listHistoryGaps(noteId: string, context: RequestContext): ApiEnvelope<{ noteId: string; questions: HistoryGapQuestionDto[] }> {
+    const stored = this.getReviewableNote(noteId, context);
+    stored.historyGaps = stored.historyGaps ?? this.createDeterministicHistoryGaps(stored);
+    return createApiEnvelope({ noteId, questions: stored.historyGaps }, this.createMeta(context));
+  }
+
+  createHistoryGapTask(
+    noteId: string,
+    questionId: string,
+    request: CreateHistoryGapTaskRequestDto,
+    context: RequestContext
+  ): ApiEnvelope<ReviewActionResponseDto> {
+    const stored = this.getReviewableNote(noteId, context);
+    stored.historyGaps = stored.historyGaps ?? this.createDeterministicHistoryGaps(stored);
+    const question = stored.historyGaps.find((candidate) => candidate.historyGapQuestionId === questionId);
+    if (!question) {
+      throw new NotFoundException('history gap question not found');
+    }
+
+    stored.historyGaps = stored.historyGaps.map((candidate) =>
+      candidate.historyGapQuestionId === questionId ? { ...candidate, status: 'sent_to_ma' } : candidate
+    );
+    stored.tasks = [
+      ...(stored.tasks ?? []),
+      {
+        taskId: this.nextId('task'),
+        noteId,
+        safePatientId: stored.appointment.safePatientId,
+        title: question.question,
+        blocksSigning: request.blocksSigning,
+        adjudicationStatus: 'open',
+        ownerRole: request.ownerRole
+      }
+    ];
+    stored.complianceIssues = this.evaluateComplianceIssues(stored);
+
+    return this.createReviewActionEnvelope(stored, context, 'history_gap.task_create', [
+      'history_gap.task_created.v1',
+      'task.blocker_changed.v1',
+      'compliance.evaluated.v1'
+    ]);
+  }
+
   createRequestContext(headers: Record<string, string | string[] | undefined>): RequestContext {
     const roleHeader = this.headerValue(headers['x-aura-role']);
     const role = this.parseRole(roleHeader);
@@ -559,6 +736,167 @@ export class ScheduleService {
       ehrSchedulingEnabled: false,
       clinicOsSchedulingEnabled: false
     };
+  }
+
+  private createReviewActionEnvelope(
+    entry: StoredAppointment,
+    context: RequestContext,
+    auditAction: string,
+    eventTypes: CoreEventType[]
+  ): ApiEnvelope<ReviewActionResponseDto> {
+    return createApiEnvelope(
+      {
+        suggestions: entry.suggestions ?? [],
+        visitSelections: entry.visitSelections ?? [],
+        complianceReview: this.toComplianceReview(entry),
+        historyGaps: entry.historyGaps ?? [],
+        tasks: entry.tasks ?? [],
+        auditEvent: this.createAuditEvent(auditAction, 'Note', entry.note.noteId, context),
+        domainEvents: eventTypes.map((eventType) =>
+          createEventEnvelope({
+            eventId: this.nextId('evt'),
+            eventType,
+            tenantId: TENANT_ID,
+            siteId: SITE_ID,
+            appointmentId: entry.appointment.appointmentId,
+            noteId: entry.note.noteId,
+            ...(entry.visitSession ? { visitSessionId: entry.visitSession.visitSessionId } : {}),
+            producer: 'aura-note-api',
+            traceId: context.traceId,
+            idempotencyKey: context.idempotencyKey ?? this.nextId('idem'),
+            sensitivity: 'phi_reference',
+            retentionClass: 'audit',
+            payload: {
+              suggestions: entry.suggestions?.length ?? 0,
+              visitSelections: entry.visitSelections?.length ?? 0,
+              complianceIssues: entry.complianceIssues?.length ?? 0,
+              tasks: entry.tasks?.length ?? 0
+            }
+          })
+        )
+      },
+      this.createMeta(context)
+    );
+  }
+
+  private createDeterministicSuggestions(entry: StoredAppointment): SuggestionDto[] {
+    return [
+      {
+        suggestionId: 'suggestion-demo-cpt-99214',
+        noteId: entry.note.noteId,
+        category: 'cpt',
+        label: 'CPT 99214 candidate',
+        confidence: 0.82,
+        rationale: 'Synthetic chronic follow-up complexity signal.',
+        supportingEvidence: ['Synthetic medication review', 'Synthetic chronic condition follow-up'],
+        missingEvidence: ['Final MDM support not completed'],
+        status: 'candidate',
+        lowConfidenceOverrideRequired: false,
+        draftOnly: true
+      },
+      {
+        suggestionId: 'suggestion-demo-icd10-e119',
+        noteId: entry.note.noteId,
+        category: 'icd10',
+        label: 'ICD-10 E11.9 candidate',
+        confidence: 0.74,
+        rationale: 'Synthetic diagnosis candidate below locked 75 percent threshold.',
+        supportingEvidence: ['Synthetic historical problem list reference'],
+        missingEvidence: ['No confirming assessment text in current draft'],
+        status: 'candidate',
+        lowConfidenceOverrideRequired: true,
+        draftOnly: true
+      },
+      {
+        suggestionId: 'suggestion-demo-quality-bp',
+        noteId: entry.note.noteId,
+        category: 'quality_measure',
+        label: 'Quality measure follow-up candidate',
+        confidence: 0.88,
+        rationale: 'Synthetic quality review signal.',
+        supportingEvidence: ['Synthetic vitals review placeholder'],
+        missingEvidence: ['Final plan text not completed'],
+        status: 'candidate',
+        lowConfidenceOverrideRequired: false,
+        draftOnly: true
+      }
+    ];
+  }
+
+  private createDeterministicHistoryGaps(entry: StoredAppointment): HistoryGapQuestionDto[] {
+    return [
+      {
+        historyGapQuestionId: 'history-gap-demo-001',
+        noteId: entry.note.noteId,
+        question: 'Confirm whether the synthetic follow-up history supports the selected diagnosis candidate.',
+        supportsItem: 'ICD-10 E11.9 candidate',
+        category: 'diagnosis_confidence',
+        confidenceImpact: 'high',
+        status: 'open',
+        blockerEligible: true
+      }
+    ];
+  }
+
+  private evaluateComplianceIssues(entry: StoredAppointment): ComplianceIssueDto[] {
+    const issues: ComplianceIssueDto[] = [];
+    const unresolvedBlockers = (entry.tasks ?? []).filter((task) => task.blocksSigning && task.adjudicationStatus === 'open');
+
+    if ((entry.visitSelections ?? []).length === 0) {
+      issues.push({
+        complianceIssueId: 'compliance-demo-selection-empty',
+        noteId: entry.note.noteId,
+        severity: 'soft_block',
+        title: 'Visit Selections not reviewed',
+        detail: 'Synthetic CP-1 review requires human review of candidate selections before finalize preparation.',
+        blocksFinalize: false,
+        source: 'deterministic_mock'
+      });
+    }
+
+    if (unresolvedBlockers.length > 0) {
+      issues.push({
+        complianceIssueId: 'compliance-demo-history-gap-blocker',
+        noteId: entry.note.noteId,
+        severity: 'hard_block',
+        title: 'Open MA History Gap blocker',
+        detail: 'A History Gap follow-up task blocks signing until answered, closed, or reassigned nonblocking.',
+        blocksFinalize: true,
+        source: 'deterministic_mock'
+      });
+    }
+
+    return issues;
+  }
+
+  private toComplianceReview(entry: StoredAppointment): ComplianceReviewDto {
+    const issues = entry.complianceIssues ?? this.evaluateComplianceIssues(entry);
+    const hardBlockCount = issues.filter((issue) => issue.blocksFinalize || issue.severity === 'hard_block').length;
+    const unresolvedBlockerTaskCount = (entry.tasks ?? []).filter(
+      (task) => task.blocksSigning && task.adjudicationStatus === 'open'
+    ).length;
+
+    return {
+      noteId: entry.note.noteId,
+      issues,
+      finalizeDisabled: complianceBlocksFinalize({ hardBlockCount, unresolvedBlockerTaskCount })
+    };
+  }
+
+  private getReviewableNote(noteId: string, context: RequestContext): StoredAppointment {
+    const stored = this.getStoredByNoteId(noteId);
+    if (!canPerform('draft_note:view', this.createLinkedVisitContext(context.access))) {
+      throw new ForbiddenException('role cannot review note');
+    }
+    return stored;
+  }
+
+  private getSuggestion(entry: StoredAppointment, suggestionId: string): SuggestionDto {
+    const suggestion = (entry.suggestions ?? []).find((candidate) => candidate.suggestionId === suggestionId);
+    if (!suggestion) {
+      throw new NotFoundException('suggestion not found');
+    }
+    return suggestion;
   }
 
   private createVisitControlEnvelope(
@@ -679,16 +1017,36 @@ export class ScheduleService {
           itemCount: editorUnlocked ? 1 : 0,
           ...(editorLockedReason ? { blockedReason: editorLockedReason } : {})
         },
-        { panelId: 'visit_selections', label: 'Visit Selections', state: 'empty', itemCount: 0 },
-        { panelId: 'suggestions', label: 'Suggestions', state: 'empty', itemCount: 0 },
+        {
+          panelId: 'visit_selections',
+          label: 'Visit Selections',
+          state: (entry.visitSelections ?? []).length > 0 ? 'ready' : 'empty',
+          itemCount: entry.visitSelections?.length ?? 0
+        },
+        {
+          panelId: 'suggestions',
+          label: 'Suggestions',
+          state: (entry.suggestions ?? []).length > 0 ? 'ready' : 'empty',
+          itemCount: entry.suggestions?.length ?? 0
+        },
         {
           panelId: 'transcript',
           label: 'Transcript',
           state: entry.transcript && entry.transcript.segments.length > 0 ? 'ready' : 'empty',
           itemCount: entry.transcript?.segments.length ?? 0
         },
-        { panelId: 'compliance', label: 'Compliance & Quality Review', state: 'empty', itemCount: 0 },
-        { panelId: 'history_gap', label: 'History Gap Review', state: 'empty', itemCount: 0 }
+        {
+          panelId: 'compliance',
+          label: 'Compliance & Quality Review',
+          state: (entry.complianceIssues ?? []).some((issue) => issue.blocksFinalize) ? 'blocked' : (entry.complianceIssues ?? []).length > 0 ? 'warning' : 'empty',
+          itemCount: entry.complianceIssues?.length ?? 0
+        },
+        {
+          panelId: 'history_gap',
+          label: 'History Gap Review',
+          state: (entry.historyGaps ?? []).length > 0 ? 'ready' : 'empty',
+          itemCount: entry.historyGaps?.length ?? 0
+        }
       ]
     };
   }

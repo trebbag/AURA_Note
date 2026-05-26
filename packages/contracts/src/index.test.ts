@@ -4,8 +4,11 @@ import {
   createApiEnvelope,
   createEventEnvelope,
   isStateChangingEvent,
+  type ComplianceReviewDto,
   type DocumentationWorkspaceDto,
   type DraftNoteSummaryDto,
+  type ReviewActionResponseDto,
+  type SuggestionDto,
   type TranscriptViewDto,
   type VisitSessionControlResponseDto,
   type ScheduleAppointmentDto
@@ -54,6 +57,7 @@ describe('event envelope', () => {
   it('treats domain events as state-changing and audit recording as non-domain state change', () => {
     assert.equal(isStateChangingEvent('task.blocker_changed.v1'), true);
     assert.equal(isStateChangingEvent('transcript.segment_appended.v1'), true);
+    assert.equal(isStateChangingEvent('suggestion.accepted.v1'), true);
     assert.equal(isStateChangingEvent('audit.event_recorded.v1'), false);
   });
 });
@@ -85,6 +89,66 @@ describe('schedule contracts', () => {
     assert.equal(card.startVisitEnabled, true);
     assert.equal(card.ehrSchedulingEnabled, false);
     assert.equal(card.clinicOsSchedulingEnabled, false);
+  });
+});
+
+describe('review panel contracts', () => {
+  it('represents draft-only suggestions and compliance hard blocks', () => {
+    const suggestion: SuggestionDto = {
+      suggestionId: 'suggestion-001',
+      noteId: 'note-001',
+      category: 'icd10',
+      label: 'ICD-10 synthetic candidate',
+      confidence: 0.74,
+      rationale: 'Synthetic low-confidence rationale',
+      supportingEvidence: ['Synthetic support'],
+      missingEvidence: ['Synthetic missing evidence'],
+      status: 'candidate',
+      lowConfidenceOverrideRequired: true,
+      draftOnly: true
+    };
+    const compliance: ComplianceReviewDto = {
+      noteId: 'note-001',
+      issues: [
+        {
+          complianceIssueId: 'compliance-001',
+          noteId: 'note-001',
+          severity: 'hard_block',
+          title: 'Open blocker',
+          detail: 'Synthetic blocker',
+          blocksFinalize: true,
+          source: 'deterministic_mock'
+        }
+      ],
+      finalizeDisabled: true
+    };
+
+    assert.equal(suggestion.draftOnly, true);
+    assert.equal(suggestion.lowConfidenceOverrideRequired, true);
+    assert.equal(compliance.finalizeDisabled, true);
+  });
+
+  it('groups Suggestions, Visit Selections, Compliance, History Gap, and tasks in one review action response', () => {
+    const response: ReviewActionResponseDto = {
+      suggestions: [],
+      visitSelections: [],
+      complianceReview: { noteId: 'note-001', issues: [], finalizeDisabled: false },
+      historyGaps: [],
+      tasks: [],
+      auditEvent: {
+        auditEventId: 'audit-001',
+        tenantId: 'tenant-001',
+        action: 'suggestions.evaluate',
+        entityType: 'Note',
+        entityId: 'note-001',
+        traceId: 'trace-001',
+        createdAt: '2026-05-26T14:00:00.000Z'
+      },
+      domainEvents: []
+    };
+
+    assert.equal(response.complianceReview.finalizeDisabled, false);
+    assert.equal(Array.isArray(response.historyGaps), true);
   });
 });
 

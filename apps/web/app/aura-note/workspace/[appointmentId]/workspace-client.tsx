@@ -4,6 +4,7 @@ import { useMemo, useState } from 'react';
 
 type TimerState = 'not_started' | 'running' | 'paused' | 'stopped';
 type RecordingState = 'not_started' | 'recording' | 'paused' | 'stopped' | 'exception_approved';
+type SuggestionStatus = 'candidate' | 'accepted' | 'removed';
 
 interface WorkspaceClientProps {
   appointmentId: string;
@@ -15,14 +16,56 @@ interface TranscriptSegment {
   text: string;
 }
 
+interface Suggestion {
+  suggestionId: string;
+  category: string;
+  label: string;
+  confidence: number;
+  status: SuggestionStatus;
+  lowConfidenceOverrideRequired: boolean;
+}
+
+const initialSuggestions: Suggestion[] = [
+  {
+    suggestionId: 'suggestion-demo-cpt-99214',
+    category: 'cpt',
+    label: 'CPT 99214 candidate',
+    confidence: 0.82,
+    status: 'candidate',
+    lowConfidenceOverrideRequired: false
+  },
+  {
+    suggestionId: 'suggestion-demo-icd10-e119',
+    category: 'icd10',
+    label: 'ICD-10 E11.9 candidate',
+    confidence: 0.74,
+    status: 'candidate',
+    lowConfidenceOverrideRequired: true
+  },
+  {
+    suggestionId: 'suggestion-demo-quality-bp',
+    category: 'quality_measure',
+    label: 'Quality measure follow-up candidate',
+    confidence: 0.88,
+    status: 'candidate',
+    lowConfidenceOverrideRequired: false
+  }
+];
+
 export function WorkspaceClient({ appointmentId }: WorkspaceClientProps) {
   const [timerState, setTimerState] = useState<TimerState>('not_started');
   const [recordingState, setRecordingState] = useState<RecordingState>('not_started');
   const [seconds, setSeconds] = useState(0);
   const [exceptionReason, setExceptionReason] = useState('');
   const [transcriptSegments, setTranscriptSegments] = useState<TranscriptSegment[]>([]);
+  const [suggestions, setSuggestions] = useState<Suggestion[]>(initialSuggestions);
+  const [visitSelections, setVisitSelections] = useState<Suggestion[]>([]);
+  const [overrideReason, setOverrideReason] = useState('');
+  const [historyGapBlocked, setHistoryGapBlocked] = useState(false);
+  const [reviewMessage, setReviewMessage] = useState('Suggestions are deterministic mock candidates and require human review.');
 
   const editorUnlocked = timerState === 'running' || recordingState === 'exception_approved';
+  const finalizeDisabled = !editorUnlocked || historyGapBlocked;
   const statusText = useMemo(() => {
     if (editorUnlocked) return 'Editor unlocked by timer or approved recording exception.';
     if (timerState === 'paused') return 'Editor locked while the visit timer is paused.';
@@ -69,19 +112,62 @@ export function WorkspaceClient({ appointmentId }: WorkspaceClientProps) {
     ]);
   }
 
+  function acceptSuggestion(suggestionId: string) {
+    const suggestion = suggestions.find((candidate) => candidate.suggestionId === suggestionId);
+    if (!suggestion) return;
+    if (suggestion.lowConfidenceOverrideRequired && !overrideReason.trim()) {
+      setReviewMessage('Low-confidence diagnosis candidates below 75 percent require override metadata first.');
+      return;
+    }
+
+    setSuggestions((current) =>
+      current.map((candidate) => (candidate.suggestionId === suggestionId ? { ...candidate, status: 'accepted' } : candidate))
+    );
+    setVisitSelections((current) => [...current, { ...suggestion, status: 'accepted' }]);
+    setReviewMessage(`${suggestion.label} moved into Visit Selections for human review.`);
+  }
+
+  function removeSuggestion(suggestionId: string) {
+    setSuggestions((current) =>
+      current.map((candidate) => (candidate.suggestionId === suggestionId ? { ...candidate, status: 'removed' } : candidate))
+    );
+    setReviewMessage('Suggestion removed from the candidate list.');
+  }
+
+  function createHistoryGapTask() {
+    setHistoryGapBlocked(true);
+    setReviewMessage('History Gap question sent to MA follow-up as a signing blocker.');
+  }
+
   const panels = [
     { label: 'Visit Context', state: 'ready', detail: 'Synthetic standalone visit context and disabled integration state.' },
     { label: 'Visit Controls', state: timerState === 'not_started' ? 'blocked' : 'ready', detail: `Timer: ${timerState}` },
     { label: 'Note Editor', state: editorUnlocked ? 'ready' : 'blocked', detail: statusText },
-    { label: 'Visit Selections', state: 'empty', detail: 'Selected codes/items panel arrives in WO-005.' },
-    { label: 'Suggestions', state: 'empty', detail: 'Deterministic suggestion cards arrive in WO-005.' },
+    {
+      label: 'Visit Selections',
+      state: visitSelections.length > 0 ? 'ready' : 'empty',
+      detail: `${visitSelections.length} selected item${visitSelections.length === 1 ? '' : 's'} awaiting human review.`
+    },
+    {
+      label: 'Suggestions',
+      state: suggestions.some((suggestion) => suggestion.status === 'candidate') ? 'ready' : 'empty',
+      detail: `${suggestions.filter((suggestion) => suggestion.status === 'candidate').length} deterministic candidates.`
+    },
     {
       label: 'Transcript',
       state: transcriptSegments.length > 0 ? 'ready' : 'empty',
       detail: `${transcriptSegments.length} mock segment${transcriptSegments.length === 1 ? '' : 's'} retained indefinitely.`
     },
-    { label: 'Compliance & Quality Review', state: 'empty', detail: 'Compliance drawer arrives in WO-005.' },
-    { label: 'History Gap Review', state: 'empty', detail: 'History Gap drawer arrives in WO-005.' }
+    {
+      label: 'Compliance & Quality Review',
+      state: historyGapBlocked ? 'blocked' : 'warning',
+      detail: historyGapBlocked ? 'Open MA follow-up blocker disables finalize.' : 'No hard block until a blocker task exists.'
+    },
+    {
+      label: 'History Gap Review',
+      state: historyGapBlocked ? 'blocked' : 'ready',
+      detail: historyGapBlocked ? 'MA blocker task is open.' : 'One deterministic question can be routed to MA follow-up.'
+    }
   ];
 
   return (
@@ -132,7 +218,7 @@ export function WorkspaceClient({ appointmentId }: WorkspaceClientProps) {
         <button type="button" disabled={timerState !== 'running' && timerState !== 'paused'} onClick={stopVisit}>
           Stop
         </button>
-        <button type="button" disabled={!editorUnlocked}>
+        <button type="button" disabled={finalizeDisabled}>
           Finalize Note
         </button>
       </section>
@@ -145,6 +231,59 @@ export function WorkspaceClient({ appointmentId }: WorkspaceClientProps) {
           Append Mock Transcript
         </button>
         <span>{exceptionReason || 'No recording exception active'}</span>
+      </section>
+
+      <section className="review-board" aria-label="Suggestions and review panels" aria-live="polite">
+        <article>
+          <h2>Suggestions</h2>
+          <p>{reviewMessage}</p>
+          <label>
+            Override Reason
+            <input
+              value={overrideReason}
+              onChange={(event) => setOverrideReason(event.target.value)}
+              placeholder="Required for diagnosis suggestions under 75 percent"
+            />
+          </label>
+          <div className="suggestion-list">
+            {suggestions.map((suggestion) => (
+              <div key={suggestion.suggestionId} className="suggestion-row">
+                <div>
+                  <strong>{suggestion.label}</strong>
+                  <span>
+                    {suggestion.category} / {Math.round(suggestion.confidence * 100)}% / {suggestion.status}
+                  </span>
+                </div>
+                <button type="button" disabled={suggestion.status !== 'candidate'} onClick={() => acceptSuggestion(suggestion.suggestionId)}>
+                  Accept
+                </button>
+                <button type="button" disabled={suggestion.status !== 'candidate'} onClick={() => removeSuggestion(suggestion.suggestionId)}>
+                  Remove
+                </button>
+              </div>
+            ))}
+          </div>
+        </article>
+
+        <article>
+          <h2>Visit Selections</h2>
+          <div className="selection-list">
+            {visitSelections.length === 0 ? <p>No selected items yet.</p> : null}
+            {visitSelections.map((selection) => (
+              <span key={selection.suggestionId}>
+                {selection.category}: {selection.label}
+              </span>
+            ))}
+          </div>
+        </article>
+
+        <article>
+          <h2>History Gap Review</h2>
+          <p>Confirm whether the synthetic follow-up history supports the selected diagnosis candidate.</p>
+          <button type="button" disabled={historyGapBlocked} onClick={createHistoryGapTask}>
+            Send to MA as Blocker
+          </button>
+        </article>
       </section>
 
       <section className="workspace-grid">

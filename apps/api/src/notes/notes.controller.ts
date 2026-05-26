@@ -1,5 +1,11 @@
 import { Body, Controller, Get, Headers, Inject, Param, Post } from '@nestjs/common';
-import type { AppendTranscriptSegmentRequestDto, RecordingExceptionRequestDto } from '@aura-note/contracts';
+import type {
+  AddVisitSelectionRequestDto,
+  AppendTranscriptSegmentRequestDto,
+  CreateHistoryGapTaskRequestDto,
+  RecordingExceptionRequestDto,
+  SuggestionDecisionRequestDto
+} from '@aura-note/contracts';
 import { ScheduleService } from '../schedule/schedule.service';
 
 @Controller()
@@ -76,6 +82,82 @@ export class NotesController {
   ) {
     return this.scheduleService.appendTranscriptSegment(
       appointmentId,
+      body,
+      this.scheduleService.createRequestContext(headers)
+    );
+  }
+
+  @Get('notes/:noteId/suggestions')
+  listSuggestions(@Param('noteId') noteId: string, @Headers() headers: Record<string, string | string[] | undefined>) {
+    return this.scheduleService.listSuggestions(noteId, this.scheduleService.createRequestContext(headers));
+  }
+
+  @Post('notes/:noteId/suggestions/evaluate')
+  evaluateSuggestions(@Param('noteId') noteId: string, @Headers() headers: Record<string, string | string[] | undefined>) {
+    return this.scheduleService.evaluateSuggestions(noteId, this.scheduleService.createRequestContext(headers));
+  }
+
+  @Post('notes/:noteId/suggestions/:suggestionId/accept')
+  acceptSuggestion(
+    @Param('noteId') noteId: string,
+    @Param('suggestionId') suggestionId: string,
+    @Body() body: SuggestionDecisionRequestDto,
+    @Headers() headers: Record<string, string | string[] | undefined>
+  ) {
+    return this.scheduleService.acceptSuggestion(
+      noteId,
+      suggestionId,
+      body,
+      this.scheduleService.createRequestContext(headers)
+    );
+  }
+
+  @Post('notes/:noteId/suggestions/:suggestionId/remove')
+  removeSuggestion(
+    @Param('noteId') noteId: string,
+    @Param('suggestionId') suggestionId: string,
+    @Headers() headers: Record<string, string | string[] | undefined>
+  ) {
+    return this.scheduleService.removeSuggestion(noteId, suggestionId, this.scheduleService.createRequestContext(headers));
+  }
+
+  @Get('notes/:noteId/visit-selections')
+  listVisitSelections(
+    @Param('noteId') noteId: string,
+    @Headers() headers: Record<string, string | string[] | undefined>
+  ) {
+    return this.scheduleService.listVisitSelections(noteId, this.scheduleService.createRequestContext(headers));
+  }
+
+  @Post('notes/:noteId/visit-selections')
+  addVisitSelection(
+    @Param('noteId') noteId: string,
+    @Body() body: AddVisitSelectionRequestDto,
+    @Headers() headers: Record<string, string | string[] | undefined>
+  ) {
+    return this.scheduleService.addVisitSelection(noteId, body, this.scheduleService.createRequestContext(headers));
+  }
+
+  @Get('notes/:noteId/compliance')
+  evaluateCompliance(@Param('noteId') noteId: string, @Headers() headers: Record<string, string | string[] | undefined>) {
+    return this.scheduleService.evaluateCompliance(noteId, this.scheduleService.createRequestContext(headers));
+  }
+
+  @Get('notes/:noteId/history-gaps')
+  listHistoryGaps(@Param('noteId') noteId: string, @Headers() headers: Record<string, string | string[] | undefined>) {
+    return this.scheduleService.listHistoryGaps(noteId, this.scheduleService.createRequestContext(headers));
+  }
+
+  @Post('notes/:noteId/history-gaps/:questionId/tasks')
+  createHistoryGapTask(
+    @Param('noteId') noteId: string,
+    @Param('questionId') questionId: string,
+    @Body() body: CreateHistoryGapTaskRequestDto,
+    @Headers() headers: Record<string, string | string[] | undefined>
+  ) {
+    return this.scheduleService.createHistoryGapTask(
+      noteId,
+      questionId,
       body,
       this.scheduleService.createRequestContext(headers)
     );

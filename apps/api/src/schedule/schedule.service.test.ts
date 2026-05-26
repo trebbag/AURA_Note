@@ -204,4 +204,73 @@ describe('ScheduleService', () => {
     assert.equal(appended.data.transcript?.segments[0]?.source, 'mock_transcription');
     assert.equal(appended.data.domainEvents[0]?.eventType, 'transcript.segment_appended.v1');
   });
+
+  it('evaluates deterministic suggestions and moves accepted cards into Visit Selections', () => {
+    const service = new ScheduleService();
+    const appointment = service
+      .createAppointment(createRequest, service.createRequestContext({ 'x-aura-role': 'ma' }))
+      .data.appointment;
+    const clinician = service.createRequestContext({ 'x-aura-role': 'clinician' });
+    service.startVisit(appointment.appointmentId, clinician);
+
+    const evaluated = service.evaluateSuggestions(appointment.noteId, clinician);
+    assert.equal(evaluated.data.suggestions.length, 3);
+    assert.equal(evaluated.data.suggestions.every((suggestion) => suggestion.draftOnly), true);
+
+    const accepted = service.acceptSuggestion(appointment.noteId, 'suggestion-demo-cpt-99214', {}, clinician);
+    assert.equal(accepted.data.visitSelections.length, 1);
+    assert.equal(accepted.data.visitSelections[0]?.category, 'cpt');
+    assert.equal(accepted.data.domainEvents.map((event) => event.eventType).includes('visit_selection.added.v1'), true);
+  });
+
+  it('requires override metadata for low-confidence diagnosis suggestions below 75 percent', () => {
+    const service = new ScheduleService();
+    const appointment = service
+      .createAppointment(createRequest, service.createRequestContext({ 'x-aura-role': 'ma' }))
+      .data.appointment;
+    const clinician = service.createRequestContext({ 'x-aura-role': 'clinician' });
+    service.startVisit(appointment.appointmentId, clinician);
+    service.evaluateSuggestions(appointment.noteId, clinician);
+
+    assert.throws(
+      () => service.acceptSuggestion(appointment.noteId, 'suggestion-demo-icd10-e119', {}, clinician),
+      BadRequestException
+    );
+
+    const accepted = service.acceptSuggestion(
+      appointment.noteId,
+      'suggestion-demo-icd10-e119',
+      {
+        overrideReason: 'Synthetic clinician override',
+        supportingEvidence: 'Synthetic supporting evidence',
+        nonSupportingEvidence: 'Synthetic missing evidence',
+        uncertaintyExplanation: 'Synthetic uncertainty',
+        confidenceImprovementPlan: 'Synthetic follow-up plan'
+      },
+      clinician
+    );
+
+    assert.equal(accepted.data.visitSelections[0]?.overrideReason, 'Synthetic clinician override');
+  });
+
+  it('creates History Gap blocker tasks and compliance hard blocks finalize preparation', () => {
+    const service = new ScheduleService();
+    const appointment = service
+      .createAppointment(createRequest, service.createRequestContext({ 'x-aura-role': 'ma' }))
+      .data.appointment;
+    const clinician = service.createRequestContext({ 'x-aura-role': 'clinician' });
+    service.startVisit(appointment.appointmentId, clinician);
+    service.evaluateSuggestions(appointment.noteId, clinician);
+
+    const taskResponse = service.createHistoryGapTask(
+      appointment.noteId,
+      'history-gap-demo-001',
+      { blocksSigning: true, ownerRole: 'ma' },
+      clinician
+    );
+
+    assert.equal(taskResponse.data.tasks[0]?.blocksSigning, true);
+    assert.equal(taskResponse.data.complianceReview.finalizeDisabled, true);
+    assert.equal(taskResponse.data.complianceReview.issues.some((issue) => issue.severity === 'hard_block'), true);
+  });
 });
