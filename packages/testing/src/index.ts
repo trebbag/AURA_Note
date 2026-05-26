@@ -3,6 +3,8 @@ import type {
   AiGatewayInvocationRequestDto,
   AppointmentDto,
   ClinicOsIntegrationStatusDto,
+  CoachingDashboardDto,
+  CoachingReportDto,
   EhrChartContextPackageDto,
   NoteDto,
   TaskDto,
@@ -184,6 +186,96 @@ export function createSyntheticClinicOsStatus(
       entityId: 'clinicos_integrated',
       traceId: 'trace-clinicos-synthetic-001',
       createdAt: '2026-05-26T18:30:00.000Z'
+    },
+    domainEvents: [],
+    ...overrides
+  };
+}
+
+export function createSyntheticCoachingReport(overrides: Partial<CoachingReportDto> = {}): CoachingReportDto {
+  return {
+    reportId: 'coach-report-synthetic-001',
+    clinicianId: syntheticIds.clinicianId,
+    noteId: syntheticIds.noteId,
+    generatedAt: '2026-05-26T18:45:00.000Z',
+    overallScore: 82,
+    signals: [
+      {
+        coachingSignalId: 'coach-signal-synthetic-001',
+        noteId: syntheticIds.noteId,
+        clinicianId: syntheticIds.clinicianId,
+        category: 'documentation_completeness',
+        score: 84,
+        title: 'Synthetic documentation completeness',
+        detail: 'Synthetic coaching signal for clinician-only review.',
+        evidenceIds: ['evidence-synthetic-001'],
+        improvementPrompt: 'Keep assessment and plan linked by problem.',
+        billingRelated: false,
+        patientFacingExcluded: true,
+        generatedAt: '2026-05-26T18:45:00.000Z'
+      }
+    ],
+    unavailableReasons: [],
+    privacyLabel: 'own_clinician_only',
+    patientFacingExcluded: true,
+    auditEvent: {
+      auditEventId: 'audit-coaching-synthetic-001',
+      tenantId: syntheticIds.tenantId,
+      siteId: syntheticIds.siteId,
+      actorUserId: syntheticIds.clinicianId,
+      action: 'coaching.view_own',
+      entityType: 'CoachingReport',
+      entityId: 'coach-report-synthetic-001',
+      traceId: 'trace-coaching-synthetic-001',
+      createdAt: '2026-05-26T18:45:00.000Z'
+    },
+    domainEvents: [],
+    ...overrides
+  };
+}
+
+export function createSyntheticCoachingDashboard(
+  overrides: Partial<CoachingDashboardDto> = {}
+): CoachingDashboardDto {
+  return {
+    dashboardId: 'coach-dashboard-synthetic-001',
+    visibilityMode: 'aggregate_only',
+    generatedAt: '2026-05-26T18:50:00.000Z',
+    aggregateOnly: true,
+    providerCount: 2,
+    overallAverage: 83,
+    categoryAverages: {
+      documentation_completeness: 84,
+      billing_optimization: 78,
+      patient_voice_fidelity: 90,
+      communication_clarity: 86,
+      clinical_reasoning: 82,
+      history_taking_depth: 80,
+      em_justification: 76
+    },
+    clinicianSummaries: [
+      {
+        signalCount: 7,
+        averageScore: 83
+      }
+    ],
+    roiSignals: {
+      timeSavedMinutes: 42,
+      revenueCapturedLabel: 'internal_only_not_patient_facing',
+      denialsReducedCount: 1,
+      trainingImprovementItems: 3
+    },
+    privacyLabel: 'aggregate_only',
+    auditEvent: {
+      auditEventId: 'audit-coaching-dashboard-synthetic-001',
+      tenantId: syntheticIds.tenantId,
+      siteId: syntheticIds.siteId,
+      actorUserId: 'synthetic-authorized-admin',
+      action: 'coaching.dashboard_view',
+      entityType: 'CoachingDashboard',
+      entityId: 'coach-dashboard-synthetic-001',
+      traceId: 'trace-coaching-dashboard-synthetic-001',
+      createdAt: '2026-05-26T18:50:00.000Z'
     },
     domainEvents: [],
     ...overrides

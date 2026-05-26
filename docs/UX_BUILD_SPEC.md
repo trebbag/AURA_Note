@@ -306,6 +306,17 @@ Must support:
 
 `WO-008` completes the CP-2 browser shell by adding a read-only finalized-note viewer with Final Note and Patient Summary tabs, copy buttons, PDF buttons, structured export, and EHR writeback status controls. The viewer shows signed/read-only state, makes export artifact states visible, and keeps EHR writeback configuration-gated with not-configured, queued, and failed scaffold states. The finalization screen now links to the finalized viewer only after Sign & Dispatch; before signing, copy/export/PDF/writeback actions remain visibly disabled.
 
+## Coaching and analytics
+
+`WO-012` adds `/aura-note/coaching` as a browser-testable synthetic shell for premium coaching:
+
+- treating-clinician own report state with signal categories, scores, and improvement prompts;
+- authorized-admin premium dashboard state with aggregate-only defaults;
+- explicit permission states for billing staff denial, patient exclusion, and recording-exception transcript-metric unavailability;
+- non-patient-facing ROI labels for time saved, internal revenue capture, denials reduced, and training improvement.
+
+The page is functional scaffolding for review and does not implement live AI coaching, production analytics warehousing, punitive productivity monitoring, or patient-facing coaching output.
+
 ## Required accessibility and UX states
 
 Every screen must have empty, loading, ready, saving, blocked, failed, permission-denied, and read-only states.

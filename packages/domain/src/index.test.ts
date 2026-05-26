@@ -14,6 +14,8 @@ import {
   canSignAndDispatchAfterBilling,
   canStartFinalization,
   canStartVisit,
+  buildCoachingDashboardProjection,
+  buildOwnCoachingReport,
   complianceBlocksFinalize,
   approveRecordingException,
   createAppointmentLifecycle,
@@ -28,7 +30,9 @@ import {
   recordingExceptionIsActive,
   resolveEhrWritebackStatus,
   resumeVisitGate,
-  stopVisitGate
+  stopVisitGate,
+  validateCoachingSignal,
+  type CoachingSignal
 } from './index';
 
 describe('appointment-note invariant', () => {
@@ -462,5 +466,118 @@ describe('finalization gates', () => {
     assert.equal(complianceBlocksFinalize({ hardBlockCount: 1, unresolvedBlockerTaskCount: 0 }), true);
     assert.equal(complianceBlocksFinalize({ hardBlockCount: 0, unresolvedBlockerTaskCount: 1 }), true);
     assert.equal(complianceBlocksFinalize({ hardBlockCount: 0, unresolvedBlockerTaskCount: 0 }), false);
+  });
+});
+
+describe('coaching analytics scaffold', () => {
+  const signals: CoachingSignal[] = [
+    {
+      coachingSignalId: 'coach-signal-001',
+      noteId: 'note-001',
+      clinicianId: 'clinician-001',
+      category: 'documentation_completeness',
+      score: 86,
+      title: 'Assessment linked to plan',
+      detail: 'Synthetic signal shows the assessment and plan are consistently linked.',
+      evidenceIds: ['evidence-001'],
+      improvementPrompt: 'Keep problem-specific plans paired with the assessment.',
+      billingRelated: false,
+      patientFacingExcluded: true,
+      generatedAt: '2026-05-26T18:30:00.000Z'
+    },
+    {
+      coachingSignalId: 'coach-signal-002',
+      noteId: 'note-001',
+      clinicianId: 'clinician-001',
+      category: 'em_justification',
+      score: 74,
+      title: 'E/M support needs stronger MDM detail',
+      detail: 'Synthetic signal flags a missing risk-detail sentence for the selected E/M level.',
+      evidenceIds: ['evidence-002'],
+      improvementPrompt: 'Add concise MDM support when the selected E/M level depends on risk.',
+      billingRelated: true,
+      patientFacingExcluded: true,
+      generatedAt: '2026-05-26T18:31:00.000Z'
+    },
+    {
+      coachingSignalId: 'coach-signal-003',
+      noteId: 'note-002',
+      clinicianId: 'clinician-002',
+      category: 'patient_voice_fidelity',
+      score: 91,
+      title: 'Patient concern retained',
+      detail: 'Synthetic signal shows the patient-stated concern is retained in the summary.',
+      evidenceIds: ['evidence-003'],
+      improvementPrompt: 'Continue preserving patient-stated goals in the note.',
+      billingRelated: false,
+      patientFacingExcluded: true,
+      generatedAt: '2026-05-26T18:32:00.000Z'
+    }
+  ];
+
+  it('validates coaching signals and excludes them from patient-facing output', () => {
+    const firstSignal = signals[0];
+    assert.ok(firstSignal);
+
+    assert.deepEqual(validateCoachingSignal(firstSignal), []);
+    assert.match(
+      validateCoachingSignal({ ...firstSignal, patientFacingExcluded: false } as unknown as CoachingSignal).join(', '),
+      /patient-facing/
+    );
+  });
+
+  it('builds an own-clinician coaching report from only that clinician note', () => {
+    const report = buildOwnCoachingReport({
+      reportId: 'coach-report-001',
+      clinicianId: 'clinician-001',
+      noteId: 'note-001',
+      generatedAt: '2026-05-26T18:40:00.000Z',
+      signals,
+      recordingExceptionApproved: false
+    });
+
+    assert.equal(report.overallScore, 80);
+    assert.equal(report.signals.length, 2);
+    assert.equal(report.signals.every((signal) => signal.clinicianId === 'clinician-001'), true);
+    assert.equal(report.patientFacingExcluded, true);
+  });
+
+  it('marks transcript-dependent coaching unavailable after recording exception', () => {
+    const report = buildOwnCoachingReport({
+      reportId: 'coach-report-002',
+      clinicianId: 'clinician-001',
+      noteId: 'note-001',
+      generatedAt: '2026-05-26T18:40:00.000Z',
+      signals,
+      recordingExceptionApproved: true
+    });
+
+    assert.match(report.unavailableReasons[0] ?? '', /recording exception/);
+  });
+
+  it('hides clinician identifiers in aggregate-only admin dashboards', () => {
+    const dashboard = buildCoachingDashboardProjection({
+      dashboardId: 'coach-dashboard-001',
+      visibilityMode: 'aggregate_only',
+      generatedAt: '2026-05-26T18:45:00.000Z',
+      signals
+    });
+
+    assert.equal(dashboard.aggregateOnly, true);
+    assert.equal(dashboard.providerCount, 2);
+    assert.equal(dashboard.clinicianSummaries.length, 2);
+    assert.equal(dashboard.clinicianSummaries.some((summary) => summary.clinicianId), false);
+  });
+
+  it('shows clinician identifiers only in full admin mode', () => {
+    const dashboard = buildCoachingDashboardProjection({
+      dashboardId: 'coach-dashboard-002',
+      visibilityMode: 'full_admin',
+      generatedAt: '2026-05-26T18:45:00.000Z',
+      signals
+    });
+
+    assert.equal(dashboard.aggregateOnly, false);
+    assert.equal(dashboard.clinicianSummaries.some((summary) => summary.clinicianId === 'clinician-001'), true);
   });
 });

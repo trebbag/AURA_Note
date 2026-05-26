@@ -255,3 +255,16 @@ The package includes `DisabledEhrAdapter`, `MockEhrAdapter`, and isolated `Athen
 - `ClinicOsPublishedEvent` records adapter outbox status for AURA Note events targeted to ClinicOS module families.
 
 Standalone mode remains the default and does not require ClinicOS tables or services. ClinicOS mock mode stores synthetic mappings and outbox records only. Unavailable ClinicOS mode degrades safely by skipping mappings and marking event publication failed/unavailable. AURA Note permission checks remain authoritative before ClinicOS context is returned or mappings are written.
+
+## WO-012 coaching and premium analytics scaffold status
+
+`WO-012` adds synthetic coaching records and aggregate analytics projections:
+
+- `CoachingSignal` records represent deterministic documentation-quality and revenue-integrity learning signals derived from already-approved synthetic note artifacts, selections, transcript metadata, and billing-support metadata;
+- signal categories cover documentation completeness, billing optimization, patient-voice fidelity, communication clarity, clinical reasoning, history-taking depth, and E/M justification;
+- `CoachingReport` is limited to the treating clinician's own note and is marked `patientFacingExcluded = true`;
+- recording-exception visits mark transcript-dependent coaching as unavailable instead of pretending normal transcript fidelity exists;
+- `CoachingDashboardProjection` supports authorized-admin dashboard views and defaults to `aggregate_only`, which hides individual clinician identifiers;
+- full-admin mode can expose clinician identifiers only to authorized admins and remains internal/non-patient-facing.
+
+The scaffold does not perform live AI coaching analysis, punitive productivity scoring, patient-facing coaching display, billing surveillance, claim submission, or medical-necessity determination.

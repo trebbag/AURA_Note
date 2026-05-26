@@ -39,7 +39,8 @@ button:disabled {
 .schedule-shell,
 .notes-shell,
 .workspace-shell,
-.wizard-shell {
+.wizard-shell,
+.coaching-shell {
   width: min(1180px, calc(100vw - 32px));
   margin: 0 auto;
   padding: 24px 0 40px;
@@ -481,6 +482,52 @@ textarea {
   padding-top: 12px;
 }
 
+.coaching-grid,
+.coaching-panel,
+.coaching-signal-list,
+.coaching-signal,
+.analytics-list {
+  display: grid;
+  gap: 14px;
+}
+
+.coaching-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  align-items: start;
+  margin-top: 20px;
+}
+
+.coaching-panel,
+.coaching-signal {
+  border: 1px solid #d5dae3;
+  background: #fff;
+  padding: 16px;
+}
+
+.coaching-signal {
+  grid-template-columns: minmax(0, 1fr) 60px;
+  align-items: start;
+}
+
+.coaching-signal p {
+  grid-column: 1 / -1;
+  color: #596579;
+}
+
+.coaching-signal span {
+  color: #596579;
+}
+
+.analytics-list div {
+  display: flex;
+  min-height: 40px;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  border-top: 1px solid #d5dae3;
+  padding-top: 10px;
+}
+
 .final-viewer-grid {
   grid-template-columns: minmax(0, 1fr) minmax(240px, 320px);
   align-items: start;
@@ -558,7 +605,9 @@ textarea {
   .decision-row,
   .compare-grid,
   .final-viewer-grid,
-  .artifact-status-grid {
+  .artifact-status-grid,
+  .coaching-grid,
+  .coaching-signal {
     grid-template-columns: 1fr;
   }
 

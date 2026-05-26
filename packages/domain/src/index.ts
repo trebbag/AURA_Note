@@ -244,6 +244,58 @@ export interface EhrWritebackReadiness {
   vendorSupportsWriteback: boolean;
 }
 
+export type CoachingSignalCategory =
+  | 'documentation_completeness'
+  | 'billing_optimization'
+  | 'patient_voice_fidelity'
+  | 'communication_clarity'
+  | 'clinical_reasoning'
+  | 'history_taking_depth'
+  | 'em_justification';
+
+export type CoachingVisibilityMode = 'disabled' | 'own_only' | 'aggregate_only' | 'full_admin';
+
+export interface CoachingSignal {
+  coachingSignalId: string;
+  noteId: string;
+  clinicianId: string;
+  category: CoachingSignalCategory;
+  score: number;
+  title: string;
+  detail: string;
+  evidenceIds: string[];
+  improvementPrompt: string;
+  billingRelated: boolean;
+  patientFacingExcluded: true;
+  generatedAt: string;
+}
+
+export interface CoachingReport {
+  reportId: string;
+  clinicianId: string;
+  noteId: string;
+  generatedAt: string;
+  overallScore: number;
+  signals: CoachingSignal[];
+  unavailableReasons: string[];
+  patientFacingExcluded: true;
+}
+
+export interface CoachingDashboardProjection {
+  dashboardId: string;
+  visibilityMode: CoachingVisibilityMode;
+  generatedAt: string;
+  aggregateOnly: boolean;
+  providerCount: number;
+  overallAverage: number;
+  categoryAverages: Record<CoachingSignalCategory, number>;
+  clinicianSummaries: Array<{
+    clinicianId?: string;
+    signalCount: number;
+    averageScore: number;
+  }>;
+}
+
 export const LOW_CONFIDENCE_DIAGNOSIS_THRESHOLD = 0.75;
 const patientSummaryForbiddenPattern = /\b(revenue|claim|payer|billing|cpt|hcpcs|icd-?10|hcc|modifier|medical necessity|confidence|coaching)\b/i;
 
@@ -557,4 +609,112 @@ export function getNextWizardStep(completedSteps: readonly WizardStep[]): Wizard
 
 export function canCompleteWizardStep(completedSteps: readonly WizardStep[], candidate: WizardStep): boolean {
   return getNextWizardStep(completedSteps) === candidate;
+}
+
+export function validateCoachingSignal(signal: CoachingSignal): string[] {
+  const errors: string[] = [];
+  if (!signal.coachingSignalId.trim()) errors.push('coachingSignalId is required');
+  if (!signal.noteId.trim()) errors.push('noteId is required');
+  if (!signal.clinicianId.trim()) errors.push('clinicianId is required');
+  if (!Number.isFinite(signal.score) || signal.score < 0 || signal.score > 100) {
+    errors.push('score must be between 0 and 100');
+  }
+  if (!signal.title.trim()) errors.push('title is required');
+  if (!signal.detail.trim()) errors.push('detail is required');
+  if (!signal.improvementPrompt.trim()) errors.push('improvementPrompt is required');
+  if (!signal.patientFacingExcluded) errors.push('coaching must be excluded from patient-facing outputs');
+  if (Number.isNaN(Date.parse(signal.generatedAt))) errors.push('generatedAt must be an ISO date');
+  return errors;
+}
+
+export function buildOwnCoachingReport(input: {
+  reportId: string;
+  clinicianId: string;
+  noteId: string;
+  generatedAt: string;
+  signals: CoachingSignal[];
+  recordingExceptionApproved: boolean;
+}): CoachingReport {
+  const ownSignals = input.signals.filter(
+    (signal) => signal.clinicianId === input.clinicianId && signal.noteId === input.noteId
+  );
+  const unavailableReasons = input.recordingExceptionApproved
+    ? ['Transcript-dependent coaching is unavailable because the visit used an approved recording exception.']
+    : [];
+
+  return {
+    reportId: input.reportId,
+    clinicianId: input.clinicianId,
+    noteId: input.noteId,
+    generatedAt: input.generatedAt,
+    overallScore: averageScore(ownSignals),
+    signals: ownSignals,
+    unavailableReasons,
+    patientFacingExcluded: true
+  };
+}
+
+export function buildCoachingDashboardProjection(input: {
+  dashboardId: string;
+  visibilityMode: CoachingVisibilityMode;
+  generatedAt: string;
+  signals: CoachingSignal[];
+}): CoachingDashboardProjection {
+  if (input.visibilityMode === 'disabled' || input.visibilityMode === 'own_only') {
+    return {
+      dashboardId: input.dashboardId,
+      visibilityMode: input.visibilityMode,
+      generatedAt: input.generatedAt,
+      aggregateOnly: true,
+      providerCount: 0,
+      overallAverage: 0,
+      categoryAverages: emptyCategoryAverages(),
+      clinicianSummaries: []
+    };
+  }
+
+  const byClinician = new Map<string, CoachingSignal[]>();
+  for (const signal of input.signals) {
+    byClinician.set(signal.clinicianId, [...(byClinician.get(signal.clinicianId) ?? []), signal]);
+  }
+
+  return {
+    dashboardId: input.dashboardId,
+    visibilityMode: input.visibilityMode,
+    generatedAt: input.generatedAt,
+    aggregateOnly: input.visibilityMode === 'aggregate_only',
+    providerCount: byClinician.size,
+    overallAverage: averageScore(input.signals),
+    categoryAverages: categoryAverages(input.signals),
+    clinicianSummaries: Array.from(byClinician.entries()).map(([clinicianId, clinicianSignals]) => ({
+      ...(input.visibilityMode === 'full_admin' ? { clinicianId } : {}),
+      signalCount: clinicianSignals.length,
+      averageScore: averageScore(clinicianSignals)
+    }))
+  };
+}
+
+function averageScore(signals: CoachingSignal[]): number {
+  if (signals.length === 0) return 0;
+  return Math.round(signals.reduce((sum, signal) => sum + signal.score, 0) / signals.length);
+}
+
+function emptyCategoryAverages(): Record<CoachingSignalCategory, number> {
+  return {
+    documentation_completeness: 0,
+    billing_optimization: 0,
+    patient_voice_fidelity: 0,
+    communication_clarity: 0,
+    clinical_reasoning: 0,
+    history_taking_depth: 0,
+    em_justification: 0
+  };
+}
+
+function categoryAverages(signals: CoachingSignal[]): Record<CoachingSignalCategory, number> {
+  const categories = emptyCategoryAverages();
+  for (const category of Object.keys(categories) as CoachingSignalCategory[]) {
+    categories[category] = averageScore(signals.filter((signal) => signal.category === category));
+  }
+  return categories;
 }
