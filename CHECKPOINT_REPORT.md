@@ -24,6 +24,7 @@ Codex should overwrite this file at each checkpoint gate with a concise status r
 - Security tests cover transcript visibility, final-note visibility, coaching visibility, and forbidden PHI key detection/redaction.
 - Contracts tests cover API envelopes and CP-0 event envelopes.
 - Synthetic fixture tests cover safe appointment, note, visit-session, blocker-task, and access-context fixtures.
+- GitHub Actions `AURA Note CI / build-test` passed on PR #1.
 
 ## Validation commands
 
@@ -39,11 +40,13 @@ Codex should overwrite this file at each checkpoint gate with a concise status r
 - `pnpm test`
 - `pnpm build`
 - `node scripts/status.js`
+- GitHub Actions PR check: `AURA Note CI / build-test`
 
 ## Open risks
 
 - Browser E2E and API integration tests are deferred until `WO-002`, when the first workflow route and state transitions are implemented.
 - Later AI, EHR, export, writeback, coaching, and retention packages remain scaffolded only. Their package checks intentionally verify type/build readiness, not runtime behavior.
+- GitHub Actions emitted a non-failing Node 20 action-runtime deprecation annotation. The project runtime is intentionally pinned to Node 20 for CP-0; revisit the CI action runtime before GitHub removes Node 20 runner support.
 
 ## Unresolved SPEC_GAPs
 
