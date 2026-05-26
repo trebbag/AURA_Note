@@ -1,6 +1,12 @@
 import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
-import { evaluateAiGatewayInvocationQueue, evaluateEhrWritebackQueue, evaluateRawAudioRetention, getWorkerStatus } from './main';
+import {
+  evaluateAiGatewayInvocationQueue,
+  evaluateEhrAdapterHealth,
+  evaluateEhrWritebackQueue,
+  evaluateRawAudioRetention,
+  getWorkerStatus
+} from './main';
 
 describe('worker scaffold', () => {
   it('reports the CP-3 AI gateway scaffold', () => {
@@ -10,6 +16,7 @@ describe('worker scaffold', () => {
     assert.equal(status.checkpoint, 'CP-3-in-progress');
     assert.equal(status.implementedJobs.includes('raw_audio_retention_candidate_scan'), true);
     assert.equal(status.implementedJobs.includes('ehr_writeback_queue_status_scan'), true);
+    assert.equal(status.implementedJobs.includes('ehr_adapter_health_check_scan'), true);
     assert.equal(status.implementedJobs.includes('ai_gateway_mock_invocation_status_scan'), true);
   });
 
@@ -128,5 +135,32 @@ describe('worker scaffold', () => {
 
     assert.equal(invocation?.response.humanReviewRequired, true);
     assert.equal(invocation?.response.rejected, true);
+  });
+
+  it('normalizes disabled and failed EHR adapter health for support review', () => {
+    const [disabled, failed] = evaluateEhrAdapterHealth([
+      {
+        vendor: 'athenahealth',
+        connected: true,
+        mode: 'disabled',
+        tenantId: 'tenant-synthetic-primary',
+        siteId: 'site-synthetic-primary',
+        health: 'ok',
+        warnings: []
+      },
+      {
+        vendor: 'athenahealth',
+        connected: true,
+        mode: 'sandbox',
+        tenantId: 'tenant-synthetic-primary',
+        siteId: 'site-synthetic-primary',
+        health: 'failed',
+        warnings: ['Synthetic failure']
+      }
+    ]);
+
+    assert.equal(disabled?.connected, false);
+    assert.equal(disabled?.health, 'disabled');
+    assert.equal(failed?.connected, false);
   });
 });

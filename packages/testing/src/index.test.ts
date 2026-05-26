@@ -8,6 +8,7 @@ import {
   createSyntheticAiInvocationRequest,
   createSyntheticAppointment,
   createSyntheticBlockingTask,
+  createSyntheticEhrChartContext,
   createSyntheticNote,
   createSyntheticVisitSession
 } from './index';
@@ -47,6 +48,14 @@ describe('synthetic CP-0 fixtures', () => {
     assert.equal(invocation.safePatientId.startsWith('safe-patient-'), true);
     assert.equal(invocation.clinicalFacts.patientName, undefined);
     assert.equal(invocation.evidence[0]?.phiClassification, 'deidentified');
+  });
+
+  it('creates synthetic EHR chart context fixtures with evidence IDs', () => {
+    const chartContext = createSyntheticEhrChartContext();
+
+    assert.equal(chartContext.sourceSystem, 'athenahealth');
+    assert.equal(chartContext.safePatientId.startsWith('safe-patient-'), true);
+    assert.equal(chartContext.slices[0]?.evidenceIds.length, 1);
   });
 
   it('creates role contexts that exercise transcript visibility rules', () => {

@@ -1,4 +1,9 @@
-import type { AiGatewayInvocationResponseDto, EhrWritebackQueueDto, RawAudioRetentionMetadataDto } from '@aura-note/contracts';
+import type {
+  AiGatewayInvocationResponseDto,
+  EhrAdapterStatusDto,
+  EhrWritebackQueueDto,
+  RawAudioRetentionMetadataDto
+} from '@aura-note/contracts';
 
 export function getWorkerStatus() {
   return {
@@ -9,6 +14,7 @@ export function getWorkerStatus() {
       'raw_audio_retention_candidate_scan',
       'export_artifact_status_scan',
       'ehr_writeback_queue_status_scan',
+      'ehr_adapter_health_check_scan',
       'ai_gateway_mock_invocation_status_scan'
     ],
     jobsDeferredToWorkOrders: ['live_ai_provider_queue', 'live_ehr_writeback', 'analytics']
@@ -53,6 +59,18 @@ export function evaluateAiGatewayInvocationQueue(
       humanReviewRequired: true
     }
   }));
+}
+
+export function evaluateEhrAdapterHealth(records: EhrAdapterStatusDto[]): EhrAdapterStatusDto[] {
+  return records.map((record) => {
+    if (record.mode === 'disabled') {
+      return { ...record, connected: false, health: 'disabled' };
+    }
+    if (record.health === 'failed') {
+      return { ...record, connected: false };
+    }
+    return record;
+  });
 }
 
 if (require.main === module) {

@@ -2,7 +2,7 @@
   "project": "AURA Note v1",
   "mode": "cp3_in_progress",
   "current_checkpoint": "CP-3",
-  "next_work_order": "WO-010",
+  "next_work_order": "WO-011",
   "work_orders": {
     "WO-000": "done",
     "WO-001": "done",
@@ -14,13 +14,13 @@
     "WO-007": "done",
     "WO-008": "done",
     "WO-009": "done",
-    "WO-010": "todo",
+    "WO-010": "done",
     "WO-011": "todo",
     "WO-012": "todo",
     "WO-013": "todo",
     "WO-014": "todo"
   },
-  "last_updated_by": "Codex WO-009 implementation",
-  "last_updated_at": "2026-05-26T17:29:54Z",
-  "notes": "WO-009 AI Gateway PHI boundary is implemented in mock-only mode with local tests passing. Next implementation scope is WO-010 EHR adapters athenahealth-first scaffold."
+  "last_updated_by": "Codex WO-010 implementation",
+  "last_updated_at": "2026-05-26T17:40:21Z",
+  "notes": "WO-010 EHR adapters athenahealth-first scaffold is implemented with local focused tests passing. Next implementation scope is WO-011 ClinicOS integration adapter."
 }
