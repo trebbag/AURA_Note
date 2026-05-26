@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
 import {
   evaluateAiGatewayInvocationQueue,
+  evaluateClinicOsOutbox,
   evaluateEhrAdapterHealth,
   evaluateEhrWritebackQueue,
   evaluateRawAudioRetention,
@@ -17,6 +18,7 @@ describe('worker scaffold', () => {
     assert.equal(status.implementedJobs.includes('raw_audio_retention_candidate_scan'), true);
     assert.equal(status.implementedJobs.includes('ehr_writeback_queue_status_scan'), true);
     assert.equal(status.implementedJobs.includes('ehr_adapter_health_check_scan'), true);
+    assert.equal(status.implementedJobs.includes('clinicos_mapping_outbox_scan'), true);
     assert.equal(status.implementedJobs.includes('ai_gateway_mock_invocation_status_scan'), true);
   });
 
@@ -162,5 +164,46 @@ describe('worker scaffold', () => {
     assert.equal(disabled?.connected, false);
     assert.equal(disabled?.health, 'disabled');
     assert.equal(failed?.connected, false);
+  });
+
+  it('preserves AURA Note permission enforcement on ClinicOS outbox records', () => {
+    const [status] = evaluateClinicOsOutbox([
+      {
+        modeContext: {
+          enabled: true,
+          hostMode: 'clinicos_integrated',
+          tenantId: 'tenant-synthetic-primary',
+          siteId: 'site-synthetic-primary',
+          availability: 'unavailable',
+          warnings: []
+        },
+        mappings: [],
+        publishedEvents: [
+          {
+            outboxId: 'clinicos-outbox-001',
+            tenantId: 'tenant-synthetic-primary',
+            siteId: 'site-synthetic-primary',
+            eventType: 'visit.started.v1',
+            targetModules: ['M03', 'M17'],
+            status: 'queued',
+            createdAt: '2026-05-26T18:30:00.000Z'
+          }
+        ],
+        permissionsStillEnforcedByAuraNote: true,
+        auditEvent: {
+          auditEventId: 'audit-clinicos-001',
+          tenantId: 'tenant-synthetic-primary',
+          action: 'clinicos.status',
+          entityType: 'ClinicOsAdapter',
+          entityId: 'clinicos_integrated',
+          traceId: 'trace-clinicos-worker-001',
+          createdAt: '2026-05-26T18:30:00.000Z'
+        },
+        domainEvents: []
+      }
+    ]);
+
+    assert.equal(status?.permissionsStillEnforcedByAuraNote, true);
+    assert.equal(status?.publishedEvents[0]?.status, 'failed_unavailable');
   });
 });

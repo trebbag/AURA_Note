@@ -8,6 +8,7 @@ import {
   createSyntheticAiInvocationRequest,
   createSyntheticAppointment,
   createSyntheticBlockingTask,
+  createSyntheticClinicOsStatus,
   createSyntheticEhrChartContext,
   createSyntheticNote,
   createSyntheticVisitSession
@@ -56,6 +57,14 @@ describe('synthetic CP-0 fixtures', () => {
     assert.equal(chartContext.sourceSystem, 'athenahealth');
     assert.equal(chartContext.safePatientId.startsWith('safe-patient-'), true);
     assert.equal(chartContext.slices[0]?.evidenceIds.length, 1);
+  });
+
+  it('creates synthetic ClinicOS mapping fixtures without weakening AURA Note permissions', () => {
+    const status = createSyntheticClinicOsStatus();
+
+    assert.equal(status.modeContext.hostMode, 'clinicos_integrated');
+    assert.equal(status.mappings[0]?.clinicosModuleId, 'M03');
+    assert.equal(status.permissionsStillEnforcedByAuraNote, true);
   });
 
   it('creates role contexts that exercise transcript visibility rules', () => {

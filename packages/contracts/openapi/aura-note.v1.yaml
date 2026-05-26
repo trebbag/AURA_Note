@@ -709,7 +709,29 @@ paths:
     get:
       operationId: getClinicOsStatus
       responses:
-        '200': { description: ClinicOS status }
+        '200':
+          description: WO-011 implemented ClinicOS mode status.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ClinicOsIntegrationStatusResponse'
+  /integrations/clinicos/map-visit:
+    post:
+      operationId: mapClinicOsVisitContext
+      description: WO-011 implemented mock ClinicOS VisitGraph/M17 mapping for appointment-note context.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ClinicOsMapVisitRequest'
+      responses:
+        '201':
+          description: ClinicOS visit context mapping recorded or safely skipped when unavailable.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ClinicOsMapVisitResponse'
 components:
   schemas:
     ApiMeta:
@@ -1784,6 +1806,112 @@ components:
                     $ref: '#/components/schemas/AuraNoteEvent'
             meta:
               $ref: '#/components/schemas/ApiMeta'
+    ClinicOsModeContext:
+      type: object
+      required: [enabled, hostMode, tenantId, siteId, availability, warnings]
+      properties:
+        enabled: { type: boolean }
+        hostMode: { type: string, enum: [standalone, clinicos_integrated, ehr_embedded, hybrid_transition] }
+        tenantId: { type: string }
+        siteId: { type: string }
+        availability: { type: string, enum: [available, disabled, unavailable, degraded] }
+        visitGraphId: { type: string }
+        workOsQueueId: { type: string }
+        npCockpitContextId: { type: string }
+        chargeIntegrityContextId: { type: string }
+        copilotRuntimeContextId: { type: string }
+        governanceContextId: { type: string }
+        integrationHubContextId: { type: string }
+        dataCloudContextId: { type: string }
+        warnings:
+          type: array
+          items: { type: string }
+    ClinicOsMappingRecord:
+      type: object
+      required: [mappingId, tenantId, siteId, localObjectType, localObjectId, clinicosModuleId, clinicosObjectId, sourceOfTruth, status, createdAt]
+      properties:
+        mappingId: { type: string }
+        tenantId: { type: string }
+        siteId: { type: string }
+        localObjectType: { type: string, enum: [appointment, note, task, ai_request, charge_preview, event, analytics_signal] }
+        localObjectId: { type: string }
+        clinicosModuleId: { type: string, enum: [M03, M04, M17, M21, M23, M24, M25, M26] }
+        clinicosObjectId: { type: string }
+        sourceOfTruth: { type: string, enum: [aura_note, clinicos, ehr, hybrid] }
+        status: { type: string, enum: [active, pending, unavailable, failed] }
+        createdAt: { type: string, format: date-time }
+    ClinicOsPublishedEvent:
+      type: object
+      required: [outboxId, tenantId, siteId, eventType, targetModules, status, createdAt]
+      properties:
+        outboxId: { type: string }
+        tenantId: { type: string }
+        siteId: { type: string }
+        eventType: { type: string }
+        targetModules:
+          type: array
+          items: { type: string, enum: [M03, M04, M17, M21, M23, M24, M25, M26] }
+        status: { type: string, enum: [queued, skipped_disabled, failed_unavailable] }
+        createdAt: { type: string, format: date-time }
+    ClinicOsIntegrationStatusResponse:
+      allOf:
+        - type: object
+          properties:
+            data:
+              type: object
+              required: [modeContext, mappings, publishedEvents, permissionsStillEnforcedByAuraNote, auditEvent, domainEvents]
+              properties:
+                modeContext:
+                  $ref: '#/components/schemas/ClinicOsModeContext'
+                mappings:
+                  type: array
+                  items:
+                    $ref: '#/components/schemas/ClinicOsMappingRecord'
+                publishedEvents:
+                  type: array
+                  items:
+                    $ref: '#/components/schemas/ClinicOsPublishedEvent'
+                permissionsStillEnforcedByAuraNote: { type: boolean, const: true }
+                auditEvent:
+                  $ref: '#/components/schemas/AuditEvent'
+                domainEvents:
+                  type: array
+                  items:
+                    $ref: '#/components/schemas/AuraNoteEvent'
+            meta:
+              $ref: '#/components/schemas/ApiMeta'
+    ClinicOsMapVisitRequest:
+      type: object
+      required: [localAppointmentId, localNoteId]
+      properties:
+        localAppointmentId: { type: string }
+        localNoteId: { type: string }
+    ClinicOsMapVisitResponse:
+      allOf:
+        - type: object
+          properties:
+            data:
+              type: object
+              required: [modeContext, mappings, publishedEvent, auditEvent, domainEvents]
+              properties:
+                modeContext:
+                  $ref: '#/components/schemas/ClinicOsModeContext'
+                visitGraphId: { type: string }
+                m17ContextId: { type: string }
+                mappings:
+                  type: array
+                  items:
+                    $ref: '#/components/schemas/ClinicOsMappingRecord'
+                publishedEvent:
+                  $ref: '#/components/schemas/ClinicOsPublishedEvent'
+                auditEvent:
+                  $ref: '#/components/schemas/AuditEvent'
+                domainEvents:
+                  type: array
+                  items:
+                    $ref: '#/components/schemas/AuraNoteEvent'
+            meta:
+              $ref: '#/components/schemas/ApiMeta'
     AiEvidenceNode:
       type: object
       required: [evidenceId, evidenceType, sourceSystem, sourceRef, displayLabel, excerptOrValue, freshness, sourceQuality, phiClassification, allowedRoles]
@@ -1930,7 +2058,7 @@ components:
         eventId: { type: string }
         eventType:
           type: string
-          enum: [appointment.created.v1, note.shell_created.v1, visit.started.v1, visit.paused.v1, visit.resumed.v1, visit.stopped.v1, recording.started.v1, recording.exception_approved.v1, recording.stopped.v1, raw_audio.retention_scheduled.v1, transcript.segment_appended.v1, suggestions.evaluated.v1, suggestion.accepted.v1, suggestion.removed.v1, visit_selection.added.v1, compliance.evaluated.v1, history_gap.task_created.v1, task.blocker_changed.v1, low_confidence_diagnosis.override_recorded.v1, finalization.started.v1, finalization.selection_decided.v1, finalization.suggestion_decided.v1, finalization.compose_requested.v1, finalization.compose_completed.v1, finalization.compare_edit_updated.v1, finalization.compose_rebeautified.v1, finalization.step_completed.v1, final_note.approved.v1, patient_summary.approved.v1, billing_review.triggered.v1, draft_claim_preview.generated.v1, billing_attestation.completed.v1, final_note.created.v1, patient_summary.finalized.v1, note.signed.v1, note.dispatched.v1, export.generated.v1, ehr_writeback.queued.v1, ehr_writeback.failed.v1, ehr.adapter_status_checked.v1, ehr.patient_matched.v1, ehr.chart_context_loaded.v1, ai.request_prepared.v1, ai.context_scrubbed.v1, ai.phi_rejected.v1, ai.response_recorded.v1, ai.output_rejected.v1, audit.event_recorded.v1]
+          enum: [appointment.created.v1, note.shell_created.v1, visit.started.v1, visit.paused.v1, visit.resumed.v1, visit.stopped.v1, recording.started.v1, recording.exception_approved.v1, recording.stopped.v1, raw_audio.retention_scheduled.v1, transcript.segment_appended.v1, suggestions.evaluated.v1, suggestion.accepted.v1, suggestion.removed.v1, visit_selection.added.v1, compliance.evaluated.v1, history_gap.task_created.v1, task.blocker_changed.v1, low_confidence_diagnosis.override_recorded.v1, finalization.started.v1, finalization.selection_decided.v1, finalization.suggestion_decided.v1, finalization.compose_requested.v1, finalization.compose_completed.v1, finalization.compare_edit_updated.v1, finalization.compose_rebeautified.v1, finalization.step_completed.v1, final_note.approved.v1, patient_summary.approved.v1, billing_review.triggered.v1, draft_claim_preview.generated.v1, billing_attestation.completed.v1, final_note.created.v1, patient_summary.finalized.v1, note.signed.v1, note.dispatched.v1, export.generated.v1, ehr_writeback.queued.v1, ehr_writeback.failed.v1, ehr.adapter_status_checked.v1, ehr.patient_matched.v1, ehr.chart_context_loaded.v1, clinicos.mode_resolved.v1, clinicos.mapping_recorded.v1, clinicos.event_published.v1, clinicos.unavailable.v1, ai.request_prepared.v1, ai.context_scrubbed.v1, ai.phi_rejected.v1, ai.response_recorded.v1, ai.output_rejected.v1, audit.event_recorded.v1]
         schemaVersion: { type: string, enum: [v1] }
         tenantId: { type: string }
         siteId: { type: string }

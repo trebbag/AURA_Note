@@ -10,7 +10,7 @@
     "typecheck": "tsc --noEmit -p tsconfig.json",
     "test": "node --import tsx --test src/index.test.ts",
     "test:unit": "pnpm test",
-    "test:e2e": "node -e \"console.log('testing e2e deferred until browser/API harness is implemented')\""
+    "test:e2e": "node --import tsx --test src/index.test.ts"
   },
   "dependencies": {
     "@aura-note/contracts": "workspace:*",

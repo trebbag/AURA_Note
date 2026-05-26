@@ -10,7 +10,7 @@
     "typecheck": "tsc --noEmit -p tsconfig.json",
     "test": "node --import tsx --test src/index.test.ts",
     "test:unit": "pnpm test",
-    "test:e2e": "node -e \"console.log('domain e2e deferred until app flows are implemented')\""
+    "test:e2e": "node --import tsx --test src/index.test.ts"
   },
   "devDependencies": { "typescript": "^5.6.0" }
 }

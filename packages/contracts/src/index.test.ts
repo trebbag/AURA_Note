@@ -7,6 +7,8 @@ import {
   type AiContextPackageDto,
   type AiGatewayInvocationResponseDto,
   type AiGatewayStatusDto,
+  type ClinicOsIntegrationStatusDto,
+  type ClinicOsMapVisitResponseDto,
   type ComplianceReviewDto,
   type DocumentationWorkspaceDto,
   type DraftNoteSummaryDto,
@@ -260,6 +262,90 @@ describe('EHR adapter contracts', () => {
     assert.equal(chartContext.sourceSystem, 'athenahealth');
     assert.equal(chartContext.slices[0]?.allowedPurposes.includes('ai_context_packaging'), true);
     assert.equal(chartContext.slices[0]?.evidenceIds.length, 1);
+  });
+});
+
+describe('ClinicOS adapter contracts', () => {
+  it('represents standalone-safe ClinicOS status without bypassing AURA Note permissions', () => {
+    const status: ClinicOsIntegrationStatusDto = {
+      modeContext: {
+        enabled: false,
+        hostMode: 'standalone',
+        tenantId: 'tenant-001',
+        siteId: 'site-001',
+        availability: 'disabled',
+        warnings: ['ClinicOS disabled']
+      },
+      mappings: [],
+      publishedEvents: [],
+      permissionsStillEnforcedByAuraNote: true,
+      auditEvent: {
+        auditEventId: 'audit-clinicos-001',
+        tenantId: 'tenant-001',
+        action: 'clinicos.status',
+        entityType: 'ClinicOsAdapter',
+        entityId: 'standalone',
+        traceId: 'trace-clinicos-001',
+        createdAt: '2026-05-26T18:30:00.000Z'
+      },
+      domainEvents: []
+    };
+
+    assert.equal(status.modeContext.hostMode, 'standalone');
+    assert.equal(status.permissionsStillEnforcedByAuraNote, true);
+  });
+
+  it('represents VisitGraph and M17 mapping records for mock ClinicOS mode', () => {
+    const mapped: ClinicOsMapVisitResponseDto = {
+      modeContext: {
+        enabled: true,
+        hostMode: 'clinicos_integrated',
+        tenantId: 'tenant-001',
+        siteId: 'site-001',
+        availability: 'available',
+        visitGraphId: 'clinicos-m03-visitgraph-synthetic-001',
+        npCockpitContextId: 'clinicos-m17-context-synthetic-001',
+        warnings: []
+      },
+      visitGraphId: 'clinicos-m03-visitgraph-synthetic-001',
+      m17ContextId: 'clinicos-m17-context-synthetic-001',
+      mappings: [
+        {
+          mappingId: 'clinicos-map-001',
+          tenantId: 'tenant-001',
+          siteId: 'site-001',
+          localObjectType: 'appointment',
+          localObjectId: 'appt-001',
+          clinicosModuleId: 'M03',
+          clinicosObjectId: 'clinicos-m03-visitgraph-synthetic-001',
+          sourceOfTruth: 'clinicos',
+          status: 'active',
+          createdAt: '2026-05-26T18:30:00.000Z'
+        }
+      ],
+      publishedEvent: {
+        outboxId: 'clinicos-outbox-001',
+        tenantId: 'tenant-001',
+        siteId: 'site-001',
+        eventType: 'visit.started.v1',
+        targetModules: ['M03', 'M17'],
+        status: 'queued',
+        createdAt: '2026-05-26T18:30:00.000Z'
+      },
+      auditEvent: {
+        auditEventId: 'audit-clinicos-map-001',
+        tenantId: 'tenant-001',
+        action: 'clinicos.map_visit',
+        entityType: 'ClinicOsAdapter',
+        entityId: 'appt-001',
+        traceId: 'trace-clinicos-map-001',
+        createdAt: '2026-05-26T18:30:00.000Z'
+      },
+      domainEvents: []
+    };
+
+    assert.equal(mapped.mappings[0]?.clinicosModuleId, 'M03');
+    assert.deepEqual(mapped.publishedEvent.targetModules, ['M03', 'M17']);
   });
 });
 

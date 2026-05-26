@@ -26,6 +26,9 @@ importers:
       '@aura-note/ai-gateway':
         specifier: workspace:^
         version: link:../../packages/ai-gateway
+      '@aura-note/clinicos-adapter':
+        specifier: workspace:^
+        version: link:../../packages/clinicos-adapter
       '@aura-note/contracts':
         specifier: workspace:^
         version: link:../../packages/contracts
