@@ -57,6 +57,10 @@ export type WizardStep =
   | 'billing_attest'
   | 'sign_dispatch';
 
+export type WizardStepStatus = 'not_started' | 'in_progress' | 'completed' | 'blocked';
+export type FinalizationSelectionDecision = 'keep' | 'remove' | 'convert_to_task' | 'send_follow_up';
+export type FinalizationSuggestionDecision = 'keep' | 'remove';
+
 export const FINALIZATION_WIZARD_STEPS: readonly WizardStep[] = [
   'code_review',
   'suggestion_review',
@@ -169,7 +173,37 @@ export interface SignDispatchReadiness {
   patientSummaryApproved: boolean;
 }
 
+export interface FinalizationStartReadiness {
+  noteState: NoteState;
+  hardBlockCount: number;
+  unresolvedBlockerTaskCount: number;
+}
+
+export interface CodeReviewReadiness {
+  requiredDecisionCount: number;
+  completedDecisionCount: number;
+  unresolvedBlockerTaskCount: number;
+}
+
+export interface SuggestionReviewReadiness {
+  includedSuggestionCount: number;
+  completedDecisionCount: number;
+}
+
+export interface ComposeReadiness {
+  enhancedNoteGenerated: boolean;
+  patientSummaryGenerated: boolean;
+  patientSummaryContainsInternalDetails: boolean;
+}
+
+export interface CompareEditReadiness {
+  finalNoteApproved: boolean;
+  patientSummaryApproved: boolean;
+  enhancedOutputStale: boolean;
+}
+
 export const LOW_CONFIDENCE_DIAGNOSIS_THRESHOLD = 0.75;
+const patientSummaryForbiddenPattern = /\b(revenue|claim|payer|billing|cpt|hcpcs|icd-?10|hcc|modifier|medical necessity|confidence|coaching)\b/i;
 
 export function validateAppointmentDraft(draft: AppointmentDraft): string[] {
   const errors: string[] = [];
@@ -403,6 +437,41 @@ export function blocksSigning(tasks: BlockingTaskState[]): boolean {
 
 export function canSignAndDispatch(readiness: SignDispatchReadiness): boolean {
   return readiness.finalNoteApproved && readiness.patientSummaryApproved && !blocksSigning(readiness.tasks);
+}
+
+export function canStartFinalization(readiness: FinalizationStartReadiness): boolean {
+  return (
+    ['visit_active', 'documentation_in_progress', 'ready_to_finalize'].includes(readiness.noteState) &&
+    readiness.hardBlockCount === 0 &&
+    readiness.unresolvedBlockerTaskCount === 0
+  );
+}
+
+export function canCompleteCodeReview(readiness: CodeReviewReadiness): boolean {
+  return (
+    readiness.requiredDecisionCount === readiness.completedDecisionCount &&
+    readiness.unresolvedBlockerTaskCount === 0
+  );
+}
+
+export function canCompleteSuggestionReview(readiness: SuggestionReviewReadiness): boolean {
+  return readiness.includedSuggestionCount === readiness.completedDecisionCount;
+}
+
+export function patientSummaryContainsInternalDetails(text: string): boolean {
+  return patientSummaryForbiddenPattern.test(text);
+}
+
+export function canCompleteCompose(readiness: ComposeReadiness): boolean {
+  return (
+    readiness.enhancedNoteGenerated &&
+    readiness.patientSummaryGenerated &&
+    !readiness.patientSummaryContainsInternalDetails
+  );
+}
+
+export function canCompleteCompareEdit(readiness: CompareEditReadiness): boolean {
+  return readiness.finalNoteApproved && readiness.patientSummaryApproved && !readiness.enhancedOutputStale;
 }
 
 export function getNextWizardStep(completedSteps: readonly WizardStep[]): WizardStep | null {

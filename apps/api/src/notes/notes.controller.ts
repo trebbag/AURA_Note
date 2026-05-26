@@ -1,9 +1,14 @@
 import { Body, Controller, Get, Headers, Inject, Param, Post } from '@nestjs/common';
 import type {
   AddVisitSelectionRequestDto,
+  ApprovalRequestDto,
   AppendTranscriptSegmentRequestDto,
+  CompareEditUpdateRequestDto,
   CreateHistoryGapTaskRequestDto,
+  FinalizationSelectionDecisionRequestDto,
+  FinalizationSuggestionDecisionRequestDto,
   RecordingExceptionRequestDto,
+  RebeautifyRequestDto,
   SuggestionDecisionRequestDto
 } from '@aura-note/contracts';
 import { ScheduleService } from '../schedule/schedule.service';
@@ -161,5 +166,105 @@ export class NotesController {
       body,
       this.scheduleService.createRequestContext(headers)
     );
+  }
+
+  @Get('notes/:noteId/finalization')
+  getFinalizationSession(
+    @Param('noteId') noteId: string,
+    @Headers() headers: Record<string, string | string[] | undefined>
+  ) {
+    return this.scheduleService.getFinalizationSession(noteId, this.scheduleService.createRequestContext(headers));
+  }
+
+  @Post('notes/:noteId/finalization/start')
+  startFinalization(@Param('noteId') noteId: string, @Headers() headers: Record<string, string | string[] | undefined>) {
+    return this.scheduleService.startFinalization(noteId, this.scheduleService.createRequestContext(headers));
+  }
+
+  @Post('notes/:noteId/finalization/code-review/selections/:visitSelectionId')
+  decideFinalizationSelection(
+    @Param('noteId') noteId: string,
+    @Param('visitSelectionId') visitSelectionId: string,
+    @Body() body: FinalizationSelectionDecisionRequestDto,
+    @Headers() headers: Record<string, string | string[] | undefined>
+  ) {
+    return this.scheduleService.decideFinalizationSelection(
+      noteId,
+      visitSelectionId,
+      body,
+      this.scheduleService.createRequestContext(headers)
+    );
+  }
+
+  @Post('notes/:noteId/finalization/code-review/complete')
+  completeCodeReview(@Param('noteId') noteId: string, @Headers() headers: Record<string, string | string[] | undefined>) {
+    return this.scheduleService.completeCodeReview(noteId, this.scheduleService.createRequestContext(headers));
+  }
+
+  @Post('notes/:noteId/finalization/suggestion-review/suggestions/:suggestionId')
+  decideFinalizationSuggestion(
+    @Param('noteId') noteId: string,
+    @Param('suggestionId') suggestionId: string,
+    @Body() body: FinalizationSuggestionDecisionRequestDto,
+    @Headers() headers: Record<string, string | string[] | undefined>
+  ) {
+    return this.scheduleService.decideFinalizationSuggestion(
+      noteId,
+      suggestionId,
+      body,
+      this.scheduleService.createRequestContext(headers)
+    );
+  }
+
+  @Post('notes/:noteId/finalization/suggestion-review/complete')
+  completeSuggestionReview(
+    @Param('noteId') noteId: string,
+    @Headers() headers: Record<string, string | string[] | undefined>
+  ) {
+    return this.scheduleService.completeSuggestionReview(noteId, this.scheduleService.createRequestContext(headers));
+  }
+
+  @Post('notes/:noteId/finalization/compose')
+  composeFinalizationDrafts(
+    @Param('noteId') noteId: string,
+    @Headers() headers: Record<string, string | string[] | undefined>
+  ) {
+    return this.scheduleService.composeFinalizationDrafts(noteId, this.scheduleService.createRequestContext(headers));
+  }
+
+  @Post('notes/:noteId/finalization/compare-edit/original')
+  updateCompareEditOriginal(
+    @Param('noteId') noteId: string,
+    @Body() body: CompareEditUpdateRequestDto,
+    @Headers() headers: Record<string, string | string[] | undefined>
+  ) {
+    return this.scheduleService.updateCompareEditOriginal(noteId, body, this.scheduleService.createRequestContext(headers));
+  }
+
+  @Post('notes/:noteId/finalization/compare-edit/rebeautify')
+  rebeautifyFinalization(
+    @Param('noteId') noteId: string,
+    @Body() body: RebeautifyRequestDto,
+    @Headers() headers: Record<string, string | string[] | undefined>
+  ) {
+    return this.scheduleService.rebeautifyFinalization(noteId, body, this.scheduleService.createRequestContext(headers));
+  }
+
+  @Post('notes/:noteId/finalization/compare-edit/approve-note')
+  approveFinalNote(
+    @Param('noteId') noteId: string,
+    @Body() body: ApprovalRequestDto,
+    @Headers() headers: Record<string, string | string[] | undefined>
+  ) {
+    return this.scheduleService.approveFinalNote(noteId, body, this.scheduleService.createRequestContext(headers));
+  }
+
+  @Post('notes/:noteId/finalization/compare-edit/approve-summary')
+  approvePatientSummary(
+    @Param('noteId') noteId: string,
+    @Body() body: ApprovalRequestDto,
+    @Headers() headers: Record<string, string | string[] | undefined>
+  ) {
+    return this.scheduleService.approvePatientSummary(noteId, body, this.scheduleService.createRequestContext(headers));
   }
 }

@@ -20,9 +20,17 @@ import {
   type ComplianceIssueDto,
   type ComplianceReviewDto,
   type CreateHistoryGapTaskRequestDto,
+  type ApprovalRequestDto,
+  type CompareEditUpdateRequestDto,
   type ScheduleAppointmentDto,
   type ScheduleViewDto,
+  type FinalizationActionResponseDto,
+  type FinalizationComposeOutputDto,
+  type FinalizationSelectionDecisionRequestDto,
+  type FinalizationSessionDto,
+  type FinalizationSuggestionDecisionRequestDto,
   type ReviewActionResponseDto,
+  type RebeautifyRequestDto,
   type SuggestionDecisionRequestDto,
   type SuggestionDto,
   type SuggestionsViewDto,
@@ -31,6 +39,7 @@ import {
   type StartVisitResponseDto,
   type TranscriptSegmentDto,
   type TranscriptViewDto,
+  type UnusedAuditItemDto,
   type VisitSelectionDto,
   type VisitSelectionsViewDto,
   type VisitSessionControlResponseDto,
@@ -39,19 +48,26 @@ import {
 import {
   approveRecordingException,
   canEditNote,
+  canCompleteCodeReview,
+  canCompleteCompareEdit,
+  canCompleteCompose,
+  canCompleteSuggestionReview,
   canAcceptSuggestion,
   complianceBlocksFinalize,
+  canStartFinalization,
   canStartVisit,
   createAppointmentLifecycle,
   createAppointmentNoteInvariant,
   createRawAudioRetentionMetadata,
   createTranscriptRetentionMetadata,
   pauseVisitGate,
+  patientSummaryContainsInternalDetails,
   resumeVisitGate,
   startVisitLifecycle,
   stopVisitGate,
   validateAppointmentDraft,
-  type AppointmentLifecycle
+  type AppointmentLifecycle,
+  type NoteState
 } from '@aura-note/domain';
 import { canPerform, canViewTranscript, type AccessContext, type Role } from '@aura-note/security';
 
@@ -71,6 +87,7 @@ interface StoredAppointment {
   complianceIssues?: ComplianceIssueDto[];
   historyGaps?: HistoryGapQuestionDto[];
   tasks?: TaskDto[];
+  finalization?: FinalizationSessionDto;
 }
 
 interface RequestContext {
@@ -699,6 +716,296 @@ export class ScheduleService {
     ]);
   }
 
+  getFinalizationSession(noteId: string, context: RequestContext): ApiEnvelope<FinalizationSessionDto> {
+    const stored = this.getReviewableNote(noteId, context);
+    this.assertFinalizationManageAllowed(context);
+    if (!stored.finalization) {
+      throw new NotFoundException('finalization session not found');
+    }
+    return createApiEnvelope(stored.finalization, this.createMeta(context));
+  }
+
+  startFinalization(noteId: string, context: RequestContext): ApiEnvelope<FinalizationActionResponseDto> {
+    const stored = this.getReviewableNote(noteId, context);
+    this.assertFinalizationManageAllowed(context);
+    stored.complianceIssues = this.evaluateComplianceIssues(stored);
+    const compliance = this.toComplianceReview(stored);
+    const hardBlockCount = compliance.issues.filter((issue) => issue.blocksFinalize || issue.severity === 'hard_block').length;
+    const unresolvedBlockerTaskCount = this.countUnresolvedBlockerTasks(stored);
+
+    if (!canStartFinalization({ noteState: stored.note.state, hardBlockCount, unresolvedBlockerTaskCount })) {
+      throw new BadRequestException({
+        code: 'FINALIZATION_BLOCKED',
+        message: 'Finalization cannot start until the note is active and hard blockers are cleared.'
+      });
+    }
+
+    if (stored.finalization) {
+      return this.createFinalizationEnvelope(stored, context, 'finalization.start_replay', []);
+    }
+
+    const stoppedVisitForFinalization = Boolean(stored.visitSession && stored.visitSession.timerState !== 'stopped');
+    if (stored.visitSession && stored.visitSession.timerState !== 'stopped') {
+      const stoppedGate = stopVisitGate(stored.visitSession);
+      stored.visitSession = { ...stored.visitSession, ...stoppedGate, stoppedAt: new Date().toISOString() };
+    }
+
+    stored.suggestions = stored.suggestions ?? this.createDeterministicSuggestions(stored);
+    stored.visitSelections = stored.visitSelections ?? [];
+    stored.historyGaps = stored.historyGaps ?? this.createDeterministicHistoryGaps(stored);
+    stored.finalization = this.createFinalizationSession(stored);
+    stored.appointment = { ...stored.appointment, state: 'finalization_in_progress' };
+    stored.note = { ...stored.note, state: 'finalization_code_review' };
+    stored.lifecycle = {
+      ...stored.lifecycle,
+      appointmentState: 'finalization_in_progress',
+      noteState: 'finalization_code_review',
+      noteVisibleInDrafts: true
+    };
+
+    return this.createFinalizationEnvelope(stored, context, 'finalization.start', [
+      'finalization.started.v1',
+      ...(stoppedVisitForFinalization ? (['visit.stopped.v1', 'recording.stopped.v1'] as CoreEventType[]) : [])
+    ]);
+  }
+
+  decideFinalizationSelection(
+    noteId: string,
+    visitSelectionId: string,
+    request: FinalizationSelectionDecisionRequestDto,
+    context: RequestContext
+  ): ApiEnvelope<FinalizationActionResponseDto> {
+    const stored = this.getActiveFinalization(noteId, context, 'code_review');
+    const session = stored.finalization;
+    const selection = session.frozenSnapshot.visitSelections.find((candidate) => candidate.visitSelectionId === visitSelectionId);
+    if (!selection) {
+      throw new NotFoundException('finalization visit selection not found');
+    }
+    if (request.decision === 'remove' && !request.reason?.trim()) {
+      throw new BadRequestException('removed visit selections require a reason for the unused audit list');
+    }
+
+    const decidedAt = new Date().toISOString();
+    session.selectionDecisions = [
+      ...session.selectionDecisions.filter((decision) => decision.visitSelectionId !== visitSelectionId),
+      {
+        visitSelectionId,
+        decision: request.decision,
+        ...(request.reason ? { reason: request.reason } : {}),
+        decidedByUserId: context.actorUserId,
+        decidedAt
+      }
+    ];
+    if (request.decision === 'remove') {
+      session.unusedAuditItems = this.upsertUnusedAuditItem(session, {
+        unusedAuditItemId: this.nextId('unused'),
+        noteId,
+        sourceType: 'visit_selection',
+        sourceId: visitSelectionId,
+        label: selection.label,
+        ...(request.reason ? { reason: request.reason } : {}),
+        recordedAt: decidedAt
+      });
+    }
+    session.updatedAt = decidedAt;
+
+    return this.createFinalizationEnvelope(stored, context, 'finalization.selection_decide', [
+      'finalization.selection_decided.v1'
+    ]);
+  }
+
+  completeCodeReview(noteId: string, context: RequestContext): ApiEnvelope<FinalizationActionResponseDto> {
+    const stored = this.getActiveFinalization(noteId, context, 'code_review');
+    const session = stored.finalization;
+    if (
+      !canCompleteCodeReview({
+        requiredDecisionCount: session.frozenSnapshot.visitSelections.length,
+        completedDecisionCount: session.selectionDecisions.length,
+        unresolvedBlockerTaskCount: this.countUnresolvedBlockerTasks(stored)
+      })
+    ) {
+      throw new BadRequestException('Code Review requires decisions on all selected items and no unresolved blocker tasks.');
+    }
+
+    this.advanceFinalizationStep(stored, 'code_review', 'suggestion_review');
+    return this.createFinalizationEnvelope(stored, context, 'finalization.code_review_complete', [
+      'finalization.step_completed.v1'
+    ]);
+  }
+
+  decideFinalizationSuggestion(
+    noteId: string,
+    suggestionId: string,
+    request: FinalizationSuggestionDecisionRequestDto,
+    context: RequestContext
+  ): ApiEnvelope<FinalizationActionResponseDto> {
+    const stored = this.getActiveFinalization(noteId, context, 'suggestion_review');
+    const session = stored.finalization;
+    const suggestion = session.frozenSnapshot.finalPassSuggestions.find((candidate) => candidate.suggestionId === suggestionId);
+    if (!suggestion) {
+      throw new NotFoundException('final-pass suggestion not found');
+    }
+
+    const decidedAt = new Date().toISOString();
+    session.suggestionDecisions = [
+      ...session.suggestionDecisions.filter((decision) => decision.suggestionId !== suggestionId),
+      {
+        suggestionId,
+        decision: request.decision,
+        ...(request.reason ? { reason: request.reason } : {}),
+        decidedByUserId: context.actorUserId,
+        decidedAt
+      }
+    ];
+    if (request.decision === 'keep') {
+      stored.suggestions = (stored.suggestions ?? []).map((candidate) =>
+        candidate.suggestionId === suggestionId ? { ...candidate, status: 'accepted' } : candidate
+      );
+      if (!(stored.visitSelections ?? []).some((selection) => selection.sourceSuggestionId === suggestionId)) {
+        stored.visitSelections = [
+          ...(stored.visitSelections ?? []),
+          {
+            visitSelectionId: this.nextId('visit-selection'),
+            noteId,
+            category: suggestion.category,
+            label: suggestion.label,
+            confidence: suggestion.confidence,
+            humanApproved: true,
+            sourceSuggestionId: suggestion.suggestionId
+          }
+        ];
+      }
+    } else {
+      stored.suggestions = (stored.suggestions ?? []).map((candidate) =>
+        candidate.suggestionId === suggestionId ? { ...candidate, status: 'removed' } : candidate
+      );
+      session.unusedAuditItems = this.upsertUnusedAuditItem(session, {
+        unusedAuditItemId: this.nextId('unused'),
+        noteId,
+        sourceType: 'suggestion',
+        sourceId: suggestionId,
+        label: suggestion.label,
+        ...(request.reason ? { reason: request.reason } : {}),
+        recordedAt: decidedAt
+      });
+    }
+    session.updatedAt = decidedAt;
+
+    return this.createFinalizationEnvelope(stored, context, 'finalization.suggestion_decide', [
+      'finalization.suggestion_decided.v1'
+    ]);
+  }
+
+  completeSuggestionReview(noteId: string, context: RequestContext): ApiEnvelope<FinalizationActionResponseDto> {
+    const stored = this.getActiveFinalization(noteId, context, 'suggestion_review');
+    const session = stored.finalization;
+    if (
+      !canCompleteSuggestionReview({
+        includedSuggestionCount: session.frozenSnapshot.finalPassSuggestions.length,
+        completedDecisionCount: session.suggestionDecisions.length
+      })
+    ) {
+      throw new BadRequestException('Suggestion Review requires a keep/remove decision on every final-pass suggestion.');
+    }
+
+    this.advanceFinalizationStep(stored, 'suggestion_review', 'compose');
+    return this.createFinalizationEnvelope(stored, context, 'finalization.suggestion_review_complete', [
+      'finalization.step_completed.v1'
+    ]);
+  }
+
+  composeFinalizationDrafts(noteId: string, context: RequestContext): ApiEnvelope<FinalizationActionResponseDto> {
+    const stored = this.getActiveFinalization(noteId, context, 'compose');
+    const session = stored.finalization;
+    const generatedAt = new Date().toISOString();
+    session.composePhases = this.completedComposePhases();
+    session.composeOutput = this.generateComposeOutput(stored, generatedAt, (session.composeOutput?.version ?? 0) + 1, false);
+    if (
+      !canCompleteCompose({
+        enhancedNoteGenerated: Boolean(session.composeOutput.enhancedNoteText),
+        patientSummaryGenerated: Boolean(session.composeOutput.patientSummaryText),
+        patientSummaryContainsInternalDetails: session.composeOutput.patientSummaryInternalDetailsDetected
+      })
+    ) {
+      throw new BadRequestException('Compose output failed source integrity or patient-summary safety validation.');
+    }
+
+    this.advanceFinalizationStep(stored, 'compose', 'compare_edit', generatedAt);
+    return this.createFinalizationEnvelope(stored, context, 'finalization.compose', [
+      'finalization.compose_requested.v1',
+      'finalization.compose_completed.v1',
+      'finalization.step_completed.v1'
+    ]);
+  }
+
+  updateCompareEditOriginal(
+    noteId: string,
+    request: CompareEditUpdateRequestDto,
+    context: RequestContext
+  ): ApiEnvelope<FinalizationActionResponseDto> {
+    const stored = this.getActiveFinalization(noteId, context, 'compare_edit');
+    if (!request.originalNoteText.trim()) {
+      throw new BadRequestException('Compare & Edit original note text is required');
+    }
+    stored.finalization.frozenSnapshot.originalNoteText = request.originalNoteText;
+    if (stored.finalization.composeOutput) {
+      stored.finalization.composeOutput = {
+        ...stored.finalization.composeOutput,
+        staleDueToEdit: true
+      };
+    }
+    stored.finalization.finalNoteApproved = false;
+    stored.finalization.patientSummaryApproved = false;
+    stored.finalization.updatedAt = new Date().toISOString();
+
+    return this.createFinalizationEnvelope(stored, context, 'finalization.compare_edit_update', [
+      'finalization.compare_edit_updated.v1'
+    ]);
+  }
+
+  rebeautifyFinalization(
+    noteId: string,
+    _request: RebeautifyRequestDto,
+    context: RequestContext
+  ): ApiEnvelope<FinalizationActionResponseDto> {
+    const stored = this.getActiveFinalization(noteId, context, 'compare_edit');
+    if (!stored.finalization.composeOutput) {
+      throw new BadRequestException('Compose must complete before Re-beautify');
+    }
+    const generatedAt = new Date().toISOString();
+    stored.finalization.composePhases = this.completedComposePhases();
+    stored.finalization.composeOutput = this.generateComposeOutput(
+      stored,
+      generatedAt,
+      stored.finalization.composeOutput.version + 1,
+      false
+    );
+    stored.finalization.finalNoteApproved = false;
+    stored.finalization.patientSummaryApproved = false;
+    stored.finalization.updatedAt = generatedAt;
+
+    return this.createFinalizationEnvelope(stored, context, 'finalization.rebeautify', [
+      'finalization.compose_rebeautified.v1',
+      'finalization.compose_completed.v1'
+    ]);
+  }
+
+  approveFinalNote(
+    noteId: string,
+    request: ApprovalRequestDto,
+    context: RequestContext
+  ): ApiEnvelope<FinalizationActionResponseDto> {
+    return this.approveCompareEditArtifact(noteId, request, context, 'final_note');
+  }
+
+  approvePatientSummary(
+    noteId: string,
+    request: ApprovalRequestDto,
+    context: RequestContext
+  ): ApiEnvelope<FinalizationActionResponseDto> {
+    return this.approveCompareEditArtifact(noteId, request, context, 'patient_summary');
+  }
+
   createRequestContext(headers: Record<string, string | string[] | undefined>): RequestContext {
     const roleHeader = this.headerValue(headers['x-aura-role']);
     const role = this.parseRole(roleHeader);
@@ -771,6 +1078,296 @@ export class ScheduleService {
               visitSelections: entry.visitSelections?.length ?? 0,
               complianceIssues: entry.complianceIssues?.length ?? 0,
               tasks: entry.tasks?.length ?? 0
+            }
+          })
+        )
+      },
+      this.createMeta(context)
+    );
+  }
+
+  private createFinalizationSession(entry: StoredAppointment): FinalizationSessionDto {
+    const now = new Date().toISOString();
+    const finalPassSuggestions = (entry.suggestions ?? this.createDeterministicSuggestions(entry)).filter(
+      (suggestion) => suggestion.status === 'candidate' && suggestion.confidence > 0.5
+    );
+
+    return {
+      finalizationSessionId: this.nextId('finalization'),
+      noteId: entry.note.noteId,
+      appointmentId: entry.appointment.appointmentId,
+      currentStep: 'code_review',
+      completedSteps: [],
+      stepStatuses: {
+        code_review: 'in_progress',
+        suggestion_review: 'not_started',
+        compose: 'not_started',
+        compare_edit: 'not_started',
+        billing_attest: 'not_started',
+        sign_dispatch: 'not_started'
+      },
+      frozenSnapshot: {
+        originalNoteText: this.createDeterministicOriginalNote(entry),
+        visitSelections: entry.visitSelections ?? [],
+        finalPassSuggestions,
+        transcriptSegmentCount: entry.transcript?.segments.length ?? 0,
+        historyGapQuestionCount: entry.historyGaps?.length ?? 0
+      },
+      selectionDecisions: [],
+      suggestionDecisions: [],
+      unusedAuditItems: [],
+      composePhases: [],
+      patientOpportunities: this.createDeterministicPatientOpportunities(entry),
+      finalNoteApproved: false,
+      patientSummaryApproved: false,
+      readyForBillingAttest: false,
+      createdAt: now,
+      updatedAt: now
+    };
+  }
+
+  private createDeterministicOriginalNote(entry: StoredAppointment): string {
+    const selectionLabels = (entry.visitSelections ?? []).map((selection) => selection.label).join('; ') || 'No selections yet';
+    return [
+      `Synthetic draft note for ${entry.appointment.visitType}.`,
+      `Visit selections at wizard launch: ${selectionLabels}.`,
+      'Clinician-authored source text is represented as deterministic scaffold content for WO-006.'
+    ].join('\n');
+  }
+
+  private createDeterministicPatientOpportunities(entry: StoredAppointment): FinalizationSessionDto['patientOpportunities'] {
+    return [
+      {
+        patientOpportunityId: 'opportunity-demo-care-gap',
+        noteId: entry.note.noteId,
+        category: 'clinical',
+        title: 'Confirm follow-up plan',
+        detail: 'Synthetic clinical opportunity to make the patient follow-up plan explicit.',
+        patientFacingAllowed: true,
+        revenueHiddenFromPatient: true
+      },
+      {
+        patientOpportunityId: 'opportunity-demo-quality',
+        noteId: entry.note.noteId,
+        category: 'quality',
+        title: 'Quality measure follow-up',
+        detail: 'Synthetic quality opportunity remains human-review-required before it appears in any output.',
+        patientFacingAllowed: false,
+        revenueHiddenFromPatient: true
+      }
+    ];
+  }
+
+  private completedComposePhases(): FinalizationSessionDto['composePhases'] {
+    return [
+      { phase: 'analyzing_content', status: 'completed' },
+      { phase: 'enhancing_structure', status: 'completed' },
+      { phase: 'beautifying_language', status: 'completed' },
+      { phase: 'final_review', status: 'completed' }
+    ];
+  }
+
+  private generateComposeOutput(
+    entry: StoredAppointment & { finalization: FinalizationSessionDto },
+    generatedAt: string,
+    version: number,
+    staleDueToEdit: boolean
+  ): FinalizationComposeOutputDto {
+    const keptSelectionLabels = entry.finalization.frozenSnapshot.visitSelections
+      .filter((selection) => {
+        const decision = entry.finalization.selectionDecisions.find((candidate) => candidate.visitSelectionId === selection.visitSelectionId);
+        return !decision || decision.decision === 'keep';
+      })
+      .map((selection) => selection.label);
+    const keptSuggestionLabels = entry.finalization.suggestionDecisions
+      .filter((decision) => decision.decision === 'keep')
+      .map((decision) => entry.finalization.frozenSnapshot.finalPassSuggestions.find((suggestion) => suggestion.suggestionId === decision.suggestionId)?.label)
+      .filter((label): label is string => Boolean(label));
+    const supportItems = [...keptSelectionLabels, ...keptSuggestionLabels];
+    const payerSupport =
+      supportItems.length > 0
+        ? `Payer-readable support is limited to clinician-reviewed synthetic items: ${supportItems.join('; ')}.`
+        : 'No payer-readable support items were kept in the synthetic finalization snapshot.';
+    const patientSummary =
+      'Today we reviewed your follow-up plan. Bring your medication list to the next visit and contact the clinic if symptoms change.';
+
+    return {
+      composeOutputId: this.nextId('compose-output'),
+      noteId: entry.note.noteId,
+      version,
+      enhancedNoteText: [
+        'Enhanced Synthetic Clinician Note',
+        entry.finalization.frozenSnapshot.originalNoteText,
+        payerSupport,
+        'All generated content remains draft-only until clinician approval.'
+      ].join('\n\n'),
+      patientSummaryText: patientSummary,
+      payerReadableSupportSection: payerSupport,
+      planTaskMapping: ['Synthetic follow-up plan item remains available for staff task routing in later work orders.'],
+      sourceIntegrityWarnings: [
+        'WO-006 compose uses deterministic synthetic content only.',
+        'No unsupported symptoms, diagnoses, procedures, time, or billing finalization were added.'
+      ],
+      patientSummaryInternalDetailsDetected: patientSummaryContainsInternalDetails(patientSummary),
+      staleDueToEdit,
+      generatedAt,
+      draftOnly: true
+    };
+  }
+
+  private upsertUnusedAuditItem(
+    session: FinalizationSessionDto,
+    item: UnusedAuditItemDto
+  ): UnusedAuditItemDto[] {
+    return [...session.unusedAuditItems.filter((candidate) => candidate.sourceId !== item.sourceId), item];
+  }
+
+  private countUnresolvedBlockerTasks(entry: StoredAppointment): number {
+    return (entry.tasks ?? []).filter((task) => task.blocksSigning && task.adjudicationStatus === 'open').length;
+  }
+
+  private getActiveFinalization(
+    noteId: string,
+    context: RequestContext,
+    expectedStep: FinalizationSessionDto['currentStep']
+  ): StoredAppointment & { finalization: FinalizationSessionDto } {
+    const stored = this.getReviewableNote(noteId, context);
+    this.assertFinalizationManageAllowed(context);
+    if (!stored.finalization) {
+      throw new NotFoundException('finalization session not found');
+    }
+    if (stored.finalization.currentStep !== expectedStep) {
+      throw new BadRequestException(`finalization is currently on ${stored.finalization.currentStep}`);
+    }
+    return stored as StoredAppointment & { finalization: FinalizationSessionDto };
+  }
+
+  private advanceFinalizationStep(
+    entry: StoredAppointment & { finalization: FinalizationSessionDto },
+    completedStep: FinalizationSessionDto['currentStep'],
+    nextStep: FinalizationSessionDto['currentStep'],
+    updatedAt = new Date().toISOString()
+  ): void {
+    entry.finalization.completedSteps = Array.from(new Set([...entry.finalization.completedSteps, completedStep]));
+    entry.finalization.stepStatuses = {
+      ...entry.finalization.stepStatuses,
+      [completedStep]: 'completed',
+      [nextStep]: 'in_progress'
+    };
+    entry.finalization.currentStep = nextStep;
+    entry.finalization.updatedAt = updatedAt;
+    entry.note = { ...entry.note, state: this.noteStateForWizardStep(nextStep) };
+    entry.lifecycle = {
+      ...entry.lifecycle,
+      noteState: entry.note.state,
+      appointmentState: 'finalization_in_progress',
+      noteVisibleInDrafts: true
+    };
+  }
+
+  private noteStateForWizardStep(step: FinalizationSessionDto['currentStep']): NoteState {
+    switch (step) {
+      case 'code_review':
+        return 'finalization_code_review';
+      case 'suggestion_review':
+        return 'finalization_suggestion_review';
+      case 'compose':
+        return 'finalization_compose';
+      case 'compare_edit':
+        return 'finalization_compare_edit';
+      case 'billing_attest':
+        return 'finalization_billing_attest';
+      case 'sign_dispatch':
+        return 'finalization_sign_dispatch';
+    }
+  }
+
+  private approveCompareEditArtifact(
+    noteId: string,
+    request: ApprovalRequestDto,
+    context: RequestContext,
+    artifact: 'final_note' | 'patient_summary'
+  ): ApiEnvelope<FinalizationActionResponseDto> {
+    const stored = this.getActiveFinalization(noteId, context, 'compare_edit');
+    if (!request.approved || !request.attestation.trim()) {
+      throw new BadRequestException('approval requires an affirmative attestation');
+    }
+    if (!stored.finalization.composeOutput || stored.finalization.composeOutput.staleDueToEdit) {
+      throw new BadRequestException('current compose output must be available and not stale before approval');
+    }
+
+    if (artifact === 'final_note') {
+      stored.finalization.finalNoteApproved = true;
+    } else {
+      stored.finalization.patientSummaryApproved = true;
+    }
+    const eventTypes: CoreEventType[] = [artifact === 'final_note' ? 'final_note.approved.v1' : 'patient_summary.approved.v1'];
+    if (
+      canCompleteCompareEdit({
+        finalNoteApproved: stored.finalization.finalNoteApproved,
+        patientSummaryApproved: stored.finalization.patientSummaryApproved,
+        enhancedOutputStale: stored.finalization.composeOutput.staleDueToEdit
+      })
+    ) {
+      stored.finalization.readyForBillingAttest = true;
+      this.advanceFinalizationStep(stored, 'compare_edit', 'billing_attest');
+      eventTypes.push('finalization.step_completed.v1');
+    } else {
+      stored.finalization.updatedAt = new Date().toISOString();
+    }
+
+    return this.createFinalizationEnvelope(
+      stored,
+      context,
+      artifact === 'final_note' ? 'finalization.final_note_approve' : 'finalization.patient_summary_approve',
+      eventTypes
+    );
+  }
+
+  private assertFinalizationManageAllowed(context: RequestContext): void {
+    if (!canPerform('finalization:manage', this.createLinkedVisitContext(context.access))) {
+      throw new ForbiddenException('role cannot manage finalization');
+    }
+  }
+
+  private createFinalizationEnvelope(
+    entry: StoredAppointment & { finalization?: FinalizationSessionDto },
+    context: RequestContext,
+    auditAction: string,
+    eventTypes: CoreEventType[]
+  ): ApiEnvelope<FinalizationActionResponseDto> {
+    if (!entry.finalization) {
+      throw new BadRequestException('finalization session is not active');
+    }
+    const finalization = entry.finalization;
+
+    return createApiEnvelope(
+      {
+        finalizationSession: finalization,
+        auditEvent: this.createAuditEvent(auditAction, 'Note', entry.note.noteId, context),
+        domainEvents: eventTypes.map((eventType) =>
+          createEventEnvelope({
+            eventId: this.nextId('evt'),
+            eventType,
+            tenantId: TENANT_ID,
+            siteId: SITE_ID,
+            appointmentId: entry.appointment.appointmentId,
+            noteId: entry.note.noteId,
+            ...(entry.visitSession ? { visitSessionId: entry.visitSession.visitSessionId } : {}),
+            producer: 'aura-note-api',
+            traceId: context.traceId,
+            idempotencyKey: context.idempotencyKey ?? this.nextId('idem'),
+            sensitivity: 'phi_reference',
+            retentionClass: 'audit',
+            payload: {
+              currentStep: finalization.currentStep,
+              completedSteps: finalization.completedSteps,
+              selectionDecisions: finalization.selectionDecisions.length,
+              suggestionDecisions: finalization.suggestionDecisions.length,
+              unusedAuditItems: finalization.unusedAuditItems.length,
+              finalNoteApproved: finalization.finalNoteApproved,
+              patientSummaryApproved: finalization.patientSummaryApproved,
+              readyForBillingAttest: finalization.readyForBillingAttest
             }
           })
         )

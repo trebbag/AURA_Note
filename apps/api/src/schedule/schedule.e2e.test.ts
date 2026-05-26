@@ -135,4 +135,81 @@ describe('schedule appointment lifecycle API', () => {
     assert.equal(finalized.body.data.readOnly, true);
     assert.equal(finalized.body.data.finalNoteAvailable, false);
   });
+
+  it('runs the WO-006 finalization wizard through Compare & Edit approval gates', async () => {
+    const created = await request(app.getHttpServer())
+      .post('/api/v1/schedule/appointments')
+      .set('x-aura-role', 'ma')
+      .set('idempotency-key', 'idem-e2e-wo006')
+      .send({
+        safePatientId: 'safe-patient-e2e-006',
+        clinicianId: 'clinician-e2e-006',
+        visitType: 'Chronic follow-up',
+        startsAt: '2026-05-26T17:00:00.000Z',
+        durationMinutes: 30,
+        modality: 'in_person',
+        reasonForVisit: 'Synthetic finalization visit'
+      })
+      .expect(201);
+
+    const noteId = created.body.data.note.noteId;
+    await request(app.getHttpServer())
+      .post(`/api/v1/schedule/appointments/${created.body.data.appointment.appointmentId}/start-visit`)
+      .set('x-aura-role', 'clinician')
+      .expect(201);
+
+    const started = await request(app.getHttpServer())
+      .post(`/api/v1/notes/${noteId}/finalization/start`)
+      .set('x-aura-role', 'clinician')
+      .expect(201);
+
+    assert.equal(started.body.data.finalizationSession.currentStep, 'code_review');
+    assert.equal(started.body.data.finalizationSession.frozenSnapshot.finalPassSuggestions.length, 3);
+
+    await request(app.getHttpServer())
+      .post(`/api/v1/notes/${noteId}/finalization/code-review/complete`)
+      .set('x-aura-role', 'clinician')
+      .expect(201);
+
+    await request(app.getHttpServer())
+      .post(`/api/v1/notes/${noteId}/finalization/suggestion-review/complete`)
+      .set('x-aura-role', 'clinician')
+      .expect(400);
+
+    for (const suggestionId of ['suggestion-demo-cpt-99214', 'suggestion-demo-icd10-e119', 'suggestion-demo-quality-bp']) {
+      await request(app.getHttpServer())
+        .post(`/api/v1/notes/${noteId}/finalization/suggestion-review/suggestions/${suggestionId}`)
+        .set('x-aura-role', 'clinician')
+        .send({ decision: 'remove', reason: 'Synthetic final-pass e2e removal' })
+        .expect(201);
+    }
+
+    await request(app.getHttpServer())
+      .post(`/api/v1/notes/${noteId}/finalization/suggestion-review/complete`)
+      .set('x-aura-role', 'clinician')
+      .expect(201);
+
+    const composed = await request(app.getHttpServer())
+      .post(`/api/v1/notes/${noteId}/finalization/compose`)
+      .set('x-aura-role', 'clinician')
+      .expect(201);
+
+    assert.equal(composed.body.data.finalizationSession.currentStep, 'compare_edit');
+    assert.equal(composed.body.data.finalizationSession.composeOutput.patientSummaryInternalDetailsDetected, false);
+
+    await request(app.getHttpServer())
+      .post(`/api/v1/notes/${noteId}/finalization/compare-edit/approve-note`)
+      .set('x-aura-role', 'clinician')
+      .send({ approved: true, attestation: 'Synthetic note approval attestation' })
+      .expect(201);
+
+    const approved = await request(app.getHttpServer())
+      .post(`/api/v1/notes/${noteId}/finalization/compare-edit/approve-summary`)
+      .set('x-aura-role', 'clinician')
+      .send({ approved: true, attestation: 'Synthetic patient summary approval attestation' })
+      .expect(201);
+
+    assert.equal(approved.body.data.finalizationSession.readyForBillingAttest, true);
+    assert.equal(approved.body.data.finalizationSession.currentStep, 'billing_attest');
+  });
 });

@@ -38,7 +38,8 @@ button:disabled {
 
 .schedule-shell,
 .notes-shell,
-.workspace-shell {
+.workspace-shell,
+.wizard-shell {
   width: min(1180px, calc(100vw - 32px));
   margin: 0 auto;
   padding: 24px 0 40px;
@@ -231,6 +232,8 @@ textarea {
 .read-only-viewer,
 .empty-state,
 .workspace-topline,
+.wizard-status,
+.wizard-grid article,
 .editor-pane,
 .panel-row {
   border: 1px solid #d5dae3;
@@ -244,7 +247,8 @@ textarea {
 }
 
 .note-row > div,
-.finalized-note > div {
+.finalized-note > div,
+.row-actions {
   display: grid;
   gap: 4px;
 }
@@ -361,6 +365,103 @@ textarea {
   border-left-color: #596579;
 }
 
+.wizard-status,
+.wizard-progress,
+.wizard-grid,
+.decision-list,
+.decision-row,
+.compose-phases,
+.compare-grid,
+.opportunity-list {
+  display: grid;
+  gap: 14px;
+}
+
+.wizard-status {
+  grid-template-columns: 1fr auto;
+  align-items: center;
+}
+
+.wizard-status dl {
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: minmax(110px, auto);
+  gap: 16px;
+}
+
+.wizard-progress {
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  margin: 18px 0;
+  padding: 0;
+  list-style: none;
+}
+
+.wizard-progress li,
+.compose-phases span,
+.opportunity-list span {
+  border: 1px solid #d5dae3;
+  background: #fff;
+  padding: 10px;
+}
+
+.wizard-progress li {
+  display: grid;
+  gap: 4px;
+  border-top-width: 4px;
+}
+
+.wizard-progress .state-in_progress {
+  border-top-color: #155eef;
+}
+
+.wizard-progress .state-completed,
+.compose-phases .complete {
+  border-color: #0f7b4f;
+}
+
+.wizard-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.wizard-grid article {
+  align-content: start;
+}
+
+.decision-row {
+  grid-template-columns: minmax(0, 1fr) 88px 96px;
+  align-items: center;
+  border-top: 1px solid #d5dae3;
+  padding-top: 10px;
+}
+
+.decision-row div {
+  display: grid;
+  gap: 4px;
+}
+
+.decision-row span,
+.wizard-status p,
+.wizard-progress small {
+  color: #596579;
+}
+
+.compose-phases {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.compare-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.compare-grid textarea {
+  min-height: 220px;
+  resize: vertical;
+}
+
+.wizard-actions {
+  grid-template-columns: repeat(5, minmax(120px, 1fr));
+}
+
 @media (max-width: 860px) {
   .page-header,
   .status-band,
@@ -371,7 +472,12 @@ textarea {
   .workspace-grid,
   .controls-bar,
   .review-board,
-  .suggestion-row {
+  .suggestion-row,
+  .wizard-status,
+  .wizard-progress,
+  .wizard-grid,
+  .decision-row,
+  .compare-grid {
     grid-template-columns: 1fr;
   }
 
@@ -387,5 +493,10 @@ textarea {
   .workspace-topline dl {
     grid-auto-flow: row;
     grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .wizard-status dl {
+    grid-auto-flow: row;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }

@@ -2,7 +2,7 @@
 
 ## CP-1 — Standalone clinical workflow shell ready
 
-**Status:** Complete on branch `tranche/wo-005-suggestions-selections-review` pending GitHub Actions confirmation for the final CP-1 PR.
+**Status:** Complete and merged to `main`. PR #5 passed GitHub Actions before `WO-006` began.
 
 ## Completed work orders
 
@@ -38,8 +38,8 @@
 - `pnpm build`
 - `node scripts/status.js`
 - `git diff --check`
-- GitHub Actions `AURA Note CI / build-test` passed on PR #2, PR #3, and PR #4.
-- Final `WO-005` local gate passed; GitHub Actions evidence is expected on the CP-1 PR after branch publication.
+- GitHub Actions `AURA Note CI / build-test` passed on PR #2, PR #3, PR #4, and PR #5.
+- Final `WO-005` local gate passed before PR #5 was merged.
 
 ## Open risks
 

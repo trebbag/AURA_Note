@@ -273,4 +273,129 @@ describe('ScheduleService', () => {
     assert.equal(taskResponse.data.complianceReview.finalizeDisabled, true);
     assert.equal(taskResponse.data.complianceReview.issues.some((issue) => issue.severity === 'hard_block'), true);
   });
+
+  it('starts WO-006 finalization from a frozen snapshot and requires Step 1 decisions', () => {
+    const service = new ScheduleService();
+    const appointment = service
+      .createAppointment(createRequest, service.createRequestContext({ 'x-aura-role': 'ma' }))
+      .data.appointment;
+    const clinician = service.createRequestContext({ 'x-aura-role': 'clinician' });
+    service.startVisit(appointment.appointmentId, clinician);
+    service.addVisitSelection(appointment.noteId, { category: 'cpt', label: 'CPT 99214 candidate', confidence: 0.82 }, clinician);
+
+    const started = service.startFinalization(appointment.noteId, clinician);
+    const selectionId = started.data.finalizationSession.frozenSnapshot.visitSelections[0]?.visitSelectionId;
+
+    assert.equal(started.data.finalizationSession.currentStep, 'code_review');
+    assert.equal(started.data.finalizationSession.frozenSnapshot.finalPassSuggestions.every((suggestion) => suggestion.confidence > 0.5), true);
+    assert.equal(started.data.finalizationSession.frozenSnapshot.transcriptSegmentCount, 0);
+    assert.throws(() => service.completeCodeReview(appointment.noteId, clinician), BadRequestException);
+
+    service.decideFinalizationSelection(
+      appointment.noteId,
+      selectionId ?? 'missing-selection',
+      { decision: 'keep' },
+      clinician
+    );
+    const completed = service.completeCodeReview(appointment.noteId, clinician);
+
+    assert.equal(completed.data.finalizationSession.currentStep, 'suggestion_review');
+    assert.equal(completed.data.finalizationSession.completedSteps.includes('code_review'), true);
+  });
+
+  it('requires Step 2 decisions before compose and moves kept suggestions into Visit Selections', () => {
+    const service = new ScheduleService();
+    const appointment = service
+      .createAppointment(createRequest, service.createRequestContext({ 'x-aura-role': 'ma' }))
+      .data.appointment;
+    const clinician = service.createRequestContext({ 'x-aura-role': 'clinician' });
+    service.startVisit(appointment.appointmentId, clinician);
+    service.startFinalization(appointment.noteId, clinician);
+    service.completeCodeReview(appointment.noteId, clinician);
+
+    assert.throws(() => service.completeSuggestionReview(appointment.noteId, clinician), BadRequestException);
+    service.decideFinalizationSuggestion(
+      appointment.noteId,
+      'suggestion-demo-cpt-99214',
+      { decision: 'keep' },
+      clinician
+    );
+    service.decideFinalizationSuggestion(
+      appointment.noteId,
+      'suggestion-demo-icd10-e119',
+      { decision: 'remove', reason: 'Synthetic unsupported final-pass suggestion' },
+      clinician
+    );
+    service.decideFinalizationSuggestion(
+      appointment.noteId,
+      'suggestion-demo-quality-bp',
+      { decision: 'remove', reason: 'Synthetic defer quality item' },
+      clinician
+    );
+    const completed = service.completeSuggestionReview(appointment.noteId, clinician);
+
+    assert.equal(completed.data.finalizationSession.currentStep, 'compose');
+    assert.equal(completed.data.finalizationSession.unusedAuditItems.length, 2);
+    assert.equal(service.listVisitSelections(appointment.noteId, clinician).data.selections.some((selection) => selection.category === 'cpt'), true);
+  });
+
+  it('composes deterministic draft outputs and requires separate note and summary approvals', () => {
+    const service = new ScheduleService();
+    const appointment = service
+      .createAppointment(createRequest, service.createRequestContext({ 'x-aura-role': 'ma' }))
+      .data.appointment;
+    const clinician = service.createRequestContext({ 'x-aura-role': 'clinician' });
+    service.startVisit(appointment.appointmentId, clinician);
+    service.startFinalization(appointment.noteId, clinician);
+    service.completeCodeReview(appointment.noteId, clinician);
+    for (const suggestionId of ['suggestion-demo-cpt-99214', 'suggestion-demo-icd10-e119', 'suggestion-demo-quality-bp']) {
+      service.decideFinalizationSuggestion(
+        appointment.noteId,
+        suggestionId,
+        { decision: 'remove', reason: 'Synthetic final-pass removal' },
+        clinician
+      );
+    }
+    service.completeSuggestionReview(appointment.noteId, clinician);
+
+    const composed = service.composeFinalizationDrafts(appointment.noteId, clinician);
+    assert.equal(composed.data.finalizationSession.currentStep, 'compare_edit');
+    assert.equal(composed.data.finalizationSession.composeOutput?.draftOnly, true);
+    assert.equal(composed.data.finalizationSession.composeOutput?.patientSummaryInternalDetailsDetected, false);
+
+    service.updateCompareEditOriginal(
+      appointment.noteId,
+      { originalNoteText: 'Synthetic edited original source note.' },
+      clinician
+    );
+    assert.throws(
+      () =>
+        service.approveFinalNote(
+          appointment.noteId,
+          { approved: true, attestation: 'I reviewed the current synthetic final note.' },
+          clinician
+        ),
+      BadRequestException
+    );
+    const rebeautified = service.rebeautifyFinalization(appointment.noteId, { reason: 'Synthetic source edit' }, clinician);
+    assert.equal(rebeautified.data.finalizationSession.composeOutput?.version, 2);
+
+    const noteApproved = service.approveFinalNote(
+      appointment.noteId,
+      { approved: true, attestation: 'I reviewed the current synthetic final note.' },
+      clinician
+    );
+    assert.equal(noteApproved.data.finalizationSession.finalNoteApproved, true);
+    assert.equal(noteApproved.data.finalizationSession.currentStep, 'compare_edit');
+
+    const summaryApproved = service.approvePatientSummary(
+      appointment.noteId,
+      { approved: true, attestation: 'I reviewed the current synthetic patient summary.' },
+      clinician
+    );
+    assert.equal(summaryApproved.data.finalizationSession.patientSummaryApproved, true);
+    assert.equal(summaryApproved.data.finalizationSession.readyForBillingAttest, true);
+    assert.equal(summaryApproved.data.finalizationSession.currentStep, 'billing_attest');
+    assert.equal(summaryApproved.data.domainEvents.map((event) => event.eventType).includes('finalization.step_completed.v1'), true);
+  });
 });
