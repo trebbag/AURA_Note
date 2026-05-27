@@ -182,6 +182,8 @@ Workers must support:
 - The schema foundation covers platform, identity, appointment, note, visit session, transcript, review panel, finalization, export, writeback, coaching, audit, event, integration, feature-flag, and support status records.
 - Runtime repository replacement, row-level-security policy implementation, live database migration apply/rollback, production credentials, and PHI-bearing persistence are deferred to later numbered work orders.
 
+`WO-020` adds the first runtime repository seam for schedule/note state and a migration SQL readiness verifier. It does not change the default runtime adapter from in-memory to PostgreSQL, does not apply migrations to a live database, and does not authorize PHI-bearing persistence.
+
 `WO-016` adds the first tenant identity and access foundation:
 
 - API request contexts use a shared local synthetic session parser from `packages/security`.

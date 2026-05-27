@@ -144,3 +144,27 @@ All post-CP4 work must preserve the existing prohibitions:
 ## Promotion rule
 
 Do not implement these tranches directly from this backlog. Promote one tranche at a time into `work_orders/WO-###_*.md`, update `work_orders/README.md`, and update `repo_status.json` only when the tranche is ready to become active implementation work.
+
+## Follow-on Tranche P6-01 — Persistence Runtime Readiness
+
+**Promotion status:** Promoted to `WO-020` as a repository-seam and migration-readiness tranche. Runtime still defaults to an in-memory adapter; live database connection and full Prisma-backed repository replacement remain deferred.
+
+**Objective:** Move from schema-only persistence toward replaceable runtime repositories and repeatable migration SQL evidence without storing production data.
+
+**Candidate scope:**
+
+- Extract current process-local schedule/note state behind a repository port.
+- Keep the in-memory adapter as the only enabled runtime adapter.
+- Add tests for appointment-note one-to-one lookup and idempotency replay at the repository boundary.
+- Add deterministic Prisma forward/rollback SQL generation evidence.
+
+**Acceptance evidence:**
+
+- Existing API, browser, acceptance, and persistence gates continue to pass.
+- Runtime repository tests prove one appointment maps to one note.
+- Migration readiness command validates schema and generates forward plus rollback SQL without connecting to a live database.
+
+**Known risks:**
+
+- This does not yet persist runtime data.
+- Full Prisma-backed adapter replacement will touch broad API workflows and should remain a later, reviewable work order.

@@ -1,7 +1,7 @@
 {
   "project": "AURA Note v1",
   "mode": "post_cp4_in_progress",
-  "current_checkpoint": "P5",
+  "current_checkpoint": "P6",
   "next_work_order": null,
   "work_orders": {
     "WO-000": "done",
@@ -23,9 +23,10 @@
     "WO-016": "done",
     "WO-017": "done",
     "WO-018": "done",
-    "WO-019": "done"
+    "WO-019": "done",
+    "WO-020": "done"
   },
-  "last_updated_by": "Codex WO-019 design UX compliance review package",
-  "last_updated_at": "2026-05-27T01:58:38Z",
-  "notes": "WO-019 post-CP4 design-token, UX copy review, responsive browser hardening, and compliance/security/privacy review package is complete as review scaffolding. Final Figma fidelity, visual regression baselines, compliance certification, production launch approval, production PHI, and live external integrations remain deferred."
+  "last_updated_by": "Codex WO-020 persistence runtime readiness",
+  "last_updated_at": "2026-05-27T02:10:37Z",
+  "notes": "WO-020 post-CP4 persistence runtime readiness is complete as a repository-seam and migration SQL evidence tranche. Runtime still defaults to in-memory synthetic repositories; live database connection, row-level security, production PHI persistence, production credentials, and full Prisma-backed repository replacement remain deferred."
 }

@@ -58,3 +58,14 @@ Runtime enforcement still belongs to the domain, security, API, and repository l
 ## Next persistence tranche
 
 A later work order should introduce repository adapters that run the existing appointment-note, workspace, finalization, export, coaching, audit, and support tests against a local database. That work should add migration apply/rollback evidence and tenant-scoped query tests before production persistence is claimed.
+
+## WO-020 runtime readiness update
+
+`WO-020` begins that follow-on in a bounded way:
+
+- schedule/note process-local state now sits behind an explicit repository port;
+- the enabled runtime adapter remains in-memory and synthetic;
+- repository tests cover one appointment to one note shell and idempotency-key remapping protection;
+- `pnpm persistence:runtime-readiness` validates the Prisma schema and generates forward plus rollback SQL from the datamodel without touching a live database.
+
+This is still not production persistence. It does not apply migrations, connect API routes to PostgreSQL, enable row-level security, store PHI, or replace every process-local repository with Prisma-backed adapters.

@@ -129,3 +129,12 @@ Codex should add tests as implementation proceeds.
 - compliance/security/privacy review evidence lives in `docs/COMPLIANCE_SECURITY_PRIVACY_REVIEW_PACKAGE.md`;
 - UX copy review evidence lives in `docs/UX_COPY_REVIEW.md`;
 - final Figma fidelity, visual regression baselines, compliance certification, and production launch approval remain deferred.
+
+## Post-CP4 persistence runtime readiness
+
+`WO-020` adds repository-seam and migration SQL evidence checks:
+
+- `apps/api/src/schedule/schedule.repository.test.ts` covers appointment-to-note lookup in both directions, duplicate note remapping rejection, and idempotency-key remapping rejection;
+- existing schedule service and API e2e tests continue to exercise runtime behavior through the in-memory repository adapter;
+- `pnpm persistence:runtime-readiness` validates the Prisma schema and checks generated forward plus rollback SQL for key tables, tenant/site indexes, and the `Note.appointmentId` unique index;
+- live database apply/rollback, row-level security tests, PHI-bearing persistence, and full Prisma-backed adapter replacement remain deferred.
