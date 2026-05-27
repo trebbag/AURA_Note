@@ -366,3 +366,17 @@ This is still not runtime database persistence. The relation graph is intentiona
 - raw-audio retention and transcript-retention semantics remain unchanged from the existing domain/worker scaffolds.
 
 This is still not runtime database persistence. It does not apply migrations, connect Prisma Client, enable row-level security, store production PHI, connect recording/transcription vendors, or replace the in-memory synthetic repositories.
+
+## WO-025 review panel Prisma relationship readiness status
+
+`WO-025` adds schema-level relation coverage for the WO-005 review-panel graph:
+
+- `Suggestion` now relates to `Tenant`, `Site`, `Note`, and source-linked `VisitSelection` rows;
+- `VisitSelection` now relates to `Tenant`, `Site`, `Note`, and optional source `Suggestion`;
+- `ComplianceIssue` now relates to `Tenant`, `Site`, and `Note`;
+- `HistoryGapQuestion` now relates to `Tenant`, `Site`, `Note`, and optional linked blocker `Task`;
+- `Task` now relates to `Tenant`, `Site`, optional `Note`, optional `Patient`, optional owner `User`, and linked History Gap questions;
+- generated migration SQL includes foreign-key constraints for those review-panel relationships;
+- draft-only suggestion, low-confidence override, hard-block, and blocker-task semantics remain enforced by the existing domain/API scaffolds rather than by this schema-only tranche.
+
+This is still not runtime database persistence. It does not apply migrations, connect Prisma Client, enable row-level security, store production PHI, autonomously finalize diagnoses/codes/billing, or replace the in-memory synthetic repositories.

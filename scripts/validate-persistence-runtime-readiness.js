@@ -85,7 +85,41 @@ const requiredForwardFragments = [
     'ALTER TABLE "TranscriptSegment" ADD CONSTRAINT "TranscriptSegment_transcriptId_fkey"',
     'TranscriptSegment transcript foreign key'
   ],
-  ['ALTER TABLE "TranscriptSegment" ADD CONSTRAINT "TranscriptSegment_noteId_fkey"', 'TranscriptSegment note foreign key']
+  ['ALTER TABLE "TranscriptSegment" ADD CONSTRAINT "TranscriptSegment_noteId_fkey"', 'TranscriptSegment note foreign key'],
+  ['ALTER TABLE "Suggestion" ADD CONSTRAINT "Suggestion_tenantId_fkey"', 'Suggestion tenant foreign key'],
+  ['ALTER TABLE "Suggestion" ADD CONSTRAINT "Suggestion_siteId_fkey"', 'Suggestion site foreign key'],
+  ['ALTER TABLE "Suggestion" ADD CONSTRAINT "Suggestion_noteId_fkey"', 'Suggestion note foreign key'],
+  ['ALTER TABLE "VisitSelection" ADD CONSTRAINT "VisitSelection_tenantId_fkey"', 'VisitSelection tenant foreign key'],
+  ['ALTER TABLE "VisitSelection" ADD CONSTRAINT "VisitSelection_siteId_fkey"', 'VisitSelection site foreign key'],
+  ['ALTER TABLE "VisitSelection" ADD CONSTRAINT "VisitSelection_noteId_fkey"', 'VisitSelection note foreign key'],
+  [
+    'ALTER TABLE "VisitSelection" ADD CONSTRAINT "VisitSelection_sourceSuggestionId_fkey"',
+    'VisitSelection source suggestion foreign key'
+  ],
+  ['ALTER TABLE "ComplianceIssue" ADD CONSTRAINT "ComplianceIssue_tenantId_fkey"', 'ComplianceIssue tenant foreign key'],
+  ['ALTER TABLE "ComplianceIssue" ADD CONSTRAINT "ComplianceIssue_siteId_fkey"', 'ComplianceIssue site foreign key'],
+  ['ALTER TABLE "ComplianceIssue" ADD CONSTRAINT "ComplianceIssue_noteId_fkey"', 'ComplianceIssue note foreign key'],
+  [
+    'ALTER TABLE "HistoryGapQuestion" ADD CONSTRAINT "HistoryGapQuestion_tenantId_fkey"',
+    'HistoryGapQuestion tenant foreign key'
+  ],
+  [
+    'ALTER TABLE "HistoryGapQuestion" ADD CONSTRAINT "HistoryGapQuestion_siteId_fkey"',
+    'HistoryGapQuestion site foreign key'
+  ],
+  [
+    'ALTER TABLE "HistoryGapQuestion" ADD CONSTRAINT "HistoryGapQuestion_noteId_fkey"',
+    'HistoryGapQuestion note foreign key'
+  ],
+  [
+    'ALTER TABLE "HistoryGapQuestion" ADD CONSTRAINT "HistoryGapQuestion_linkedTaskId_fkey"',
+    'HistoryGapQuestion linked task foreign key'
+  ],
+  ['ALTER TABLE "Task" ADD CONSTRAINT "Task_tenantId_fkey"', 'Task tenant foreign key'],
+  ['ALTER TABLE "Task" ADD CONSTRAINT "Task_siteId_fkey"', 'Task site foreign key'],
+  ['ALTER TABLE "Task" ADD CONSTRAINT "Task_noteId_fkey"', 'Task note foreign key'],
+  ['ALTER TABLE "Task" ADD CONSTRAINT "Task_patientId_fkey"', 'Task patient foreign key'],
+  ['ALTER TABLE "Task" ADD CONSTRAINT "Task_ownerUserId_fkey"', 'Task owner user foreign key']
 ];
 
 for (const [fragment, label] of requiredForwardFragments) {
