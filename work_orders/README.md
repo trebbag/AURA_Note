@@ -30,6 +30,7 @@ Codex must complete work orders sequentially unless a checkpoint or blocker stop
 - `WO-019` — Design system, UX hardening, and compliance review package.
 - `WO-020` — Persistence runtime readiness.
 - `WO-021` — Prisma adapter scaffold.
+- `WO-022` — Persistence UUID projection readiness.
 
 ## Work order rules
 
@@ -57,3 +58,5 @@ Post-CP4 productionization candidates are documented in `docs/POST_CP4_PRODUCTIO
 `WO-020` promotes the next persistence follow-on into a repository-seam and migration-readiness tranche. Runtime still defaults to the in-memory adapter; live database connection, production PHI storage, and full Prisma-backed repository replacement remain out of scope until later numbered work orders.
 
 `WO-021` promotes a disabled Prisma adapter scaffold into a package-level persistence boundary. It maps schedule/note DTOs into synthetic row projections and keeps runtime database writes disabled until later local database integration evidence exists.
+
+`WO-022` hardens the disabled Prisma projection so schema ID and reference fields use deterministic UUID-shaped values while semantic fixture identifiers remain natural keys. Runtime database writes remain disabled.

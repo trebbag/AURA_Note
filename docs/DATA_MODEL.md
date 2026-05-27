@@ -325,8 +325,20 @@ The data model is still not a live production store. Migrations are not applied 
 `WO-021` adds `@aura-note/persistence` to represent the next persistence boundary:
 
 - adapter planning distinguishes the enabled local in-memory adapter from disabled future Prisma mode;
-- schedule/note DTOs can be projected into synthetic rows for `Tenant`, `Site`, `Patient`, `Appointment`, and `Note`;
+- schedule/note DTOs can be projected into synthetic rows for `Tenant`, `Site`, `User`, `Patient`, `Appointment`, and `Note`;
 - projection keeps patient identity at `safePatientId` level and rejects forbidden PHI key material;
 - mismatched appointment/note references are rejected before any persistence row projection is created.
 
 The package does not connect to PostgreSQL, generate Prisma Client, apply migrations, or replace API runtime storage.
+
+## WO-022 persistence UUID projection readiness status
+
+`WO-022` aligns the disabled projection more closely to the current Prisma schema:
+
+- projected `@db.Uuid` IDs and reference fields are deterministic UUID-shaped values derived from synthetic natural keys;
+- semantic fixture IDs are preserved as natural keys or safe external references instead of being used directly as database primary keys;
+- appointment rows now reference projected patient and clinician UUIDs using schema field names;
+- note rows now reference projected appointment, patient, and clinician UUIDs using schema field names;
+- the projection includes a synthetic clinician `User` row needed by appointment and note clinician references.
+
+This remains projection-only evidence. It is not a live database adapter, does not create production ID policy, and does not store PHI.

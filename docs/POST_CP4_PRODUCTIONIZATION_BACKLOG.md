@@ -192,3 +192,29 @@ Do not implement these tranches directly from this backlog. Promote one tranche 
 
 - Projection tests are not database integration tests.
 - The next database-backed work order will still need local database orchestration and transaction/error-path coverage.
+
+## Follow-on Tranche P6-03 — Persistence UUID Projection Readiness
+
+**Promotion status:** Promoted to `WO-022` as deterministic UUID projection hardening for the disabled Prisma adapter scaffold. Runtime database writes remain disabled.
+
+**Objective:** Ensure the disabled Prisma row projection uses UUID-shaped primary keys and reference fields that match the PostgreSQL Prisma schema before any later work order enables local database writes.
+
+**Candidate scope:**
+
+- Add deterministic UUID projection for synthetic natural keys.
+- Preserve semantic fixture identifiers as natural keys or safe references.
+- Align appointment and note projected field names with the current Prisma schema.
+- Add a synthetic clinician `User` projection row because appointment and note clinician references are UUID fields.
+- Keep in-memory runtime as the only enabled adapter.
+
+**Acceptance evidence:**
+
+- Persistence package tests prove projected identifiers are UUID-shaped and deterministic.
+- Appointment and note row references point to projected UUIDs rather than semantic fixture IDs.
+- One appointment to one note and PHI-key rejection tests continue to pass.
+- CI runs `pnpm persistence:adapter-readiness`.
+
+**Known risks:**
+
+- Deterministic UUID projection is readiness scaffolding, not final production ID policy.
+- Local database orchestration, transaction behavior, row-level security, foreign-key enforcement, and full Prisma-backed repository replacement remain later work.

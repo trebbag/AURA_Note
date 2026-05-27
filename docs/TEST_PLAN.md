@@ -146,3 +146,13 @@ Codex should add tests as implementation proceeds.
 - `pnpm --filter @aura-note/persistence test` covers in-memory/default adapter planning, disabled Prisma mode, production PHI persistence blocking, appointment/note projection, one-to-one mismatch rejection, and forbidden PHI key rejection;
 - `pnpm persistence:adapter-readiness` runs persistence package tests plus typecheck locally and in CI;
 - database-backed repository integration tests remain deferred until a later work order introduces local database orchestration.
+
+## Post-CP4 persistence UUID projection readiness
+
+`WO-022` extends the persistence adapter scaffold checks:
+
+- `pnpm --filter @aura-note/persistence test` proves projected `@db.Uuid` row IDs and appointment/note reference fields are UUID-shaped;
+- deterministic UUID tests prove the same synthetic natural key maps to the same projected ID and a different key maps to a different ID;
+- projection tests verify appointment rows reference the projected patient UUID and note rows reference the projected appointment UUID;
+- one-to-one mismatch rejection and forbidden PHI-key rejection continue to pass;
+- runtime database writes, live PostgreSQL, row-level security, and full Prisma-backed repository tests remain deferred.

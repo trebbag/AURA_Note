@@ -3,8 +3,11 @@ import { describe, it } from 'node:test';
 import type { AppointmentDto, NoteDto } from '@aura-note/contracts';
 import {
   mapAppointmentNoteToPrismaProjection,
-  resolvePersistenceAdapterPlan
+  resolvePersistenceAdapterPlan,
+  toDeterministicPersistenceUuid
 } from './index';
+
+const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-5[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/;
 
 const appointment: AppointmentDto = {
   appointmentId: 'appt-persistence-001',
@@ -76,11 +79,31 @@ describe('appointment-note Prisma projection', () => {
     assert.equal(projection.adapterKind, 'prisma');
     assert.equal(projection.syntheticOnly, true);
     assert.equal(projection.liveDatabaseConnectionAllowed, false);
+    assert.equal(projection.identifierStrategy, 'deterministic_uuid_scaffold');
     assert.deepEqual(
       projection.rows.map((row) => row.table),
-      ['Tenant', 'Site', 'Patient', 'Appointment', 'Note']
+      ['Tenant', 'Site', 'User', 'Patient', 'Appointment', 'Note']
     );
-    assert.equal(projection.rows.find((row) => row.table === 'Note')?.data.appointmentId, 'appt-persistence-001');
+    assert.match(String(projection.rows.find((row) => row.table === 'Tenant')?.data.id), uuidPattern);
+    assert.match(String(projection.rows.find((row) => row.table === 'Appointment')?.data.patientId), uuidPattern);
+    assert.equal(
+      projection.rows.find((row) => row.table === 'Appointment')?.data.patientId,
+      projection.rows.find((row) => row.table === 'Patient')?.data.id
+    );
+    assert.equal(
+      projection.rows.find((row) => row.table === 'Note')?.data.appointmentId,
+      projection.rows.find((row) => row.table === 'Appointment')?.data.id
+    );
+  });
+
+  it('creates stable UUID-shaped identifiers for the same synthetic natural keys', () => {
+    const first = toDeterministicPersistenceUuid('appointment', appointment.tenantId, appointment.appointmentId);
+    const second = toDeterministicPersistenceUuid('appointment', appointment.tenantId, appointment.appointmentId);
+    const other = toDeterministicPersistenceUuid('appointment', appointment.tenantId, 'appt-persistence-other');
+
+    assert.match(first, uuidPattern);
+    assert.equal(first, second);
+    assert.notEqual(first, other);
   });
 
   it('rejects appointment and note mappings that do not preserve one-to-one identity', () => {
