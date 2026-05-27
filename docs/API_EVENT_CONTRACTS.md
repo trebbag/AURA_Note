@@ -220,3 +220,25 @@ The new `pnpm persistence:durable-runtime-readiness` evidence proves the backing
 The implemented event family now includes `patient.shell_created.v1`, `patient.updated.v1`, `patient.linkage_recorded.v1`, `appointment.updated.v1`, `appointment.checked_in.v1`, `appointment.cancelled.v1`, `appointment.no_show_marked.v1`, `chart_context.snapshot_created.v1`, and `chart_context.snapshot_viewed.v1`.
 
 These events are synthetic/local, metadata-safe evidence for standalone patient shell, patient linkage, chart freshness, and appointment lifecycle behavior. Chart context uses safe patient identifiers and source freshness warnings only; it does not represent live EHR completeness, production patient matching, production PHI storage approval, live ClinicOS synchronization, claim submission, charge finalization, or autonomous clinical/coding/billing behavior.
+
+## WO-039 standalone operations event evidence
+
+`WO-039` adds implemented synthetic/local API behavior for standalone daily operations:
+
+- `GET /api/v1/standalone/operations/tasks`
+- `PATCH /api/v1/standalone/operations/tasks/{taskId}`
+- `GET /api/v1/standalone/operations/billing-review`
+- `PATCH /api/v1/standalone/operations/billing-review/{billingReviewId}`
+- `GET /api/v1/standalone/operations/settings`
+- `PATCH /api/v1/standalone/operations/settings/integrations/{integrationId}`
+- `GET /api/v1/standalone/operations/templates`
+- `POST /api/v1/standalone/operations/templates`
+- `PATCH /api/v1/standalone/operations/dot-phrases/{dotPhraseId}`
+- `GET /api/v1/standalone/operations/estimate-config`
+- `PATCH /api/v1/standalone/operations/estimate-config`
+- `GET /api/v1/standalone/operations/rules-catalog`
+- `POST /api/v1/standalone/operations/rules-catalog/publish`
+
+The implemented event family now includes `task.adjudicated.v1`, `task.blocker_changed.v1`, `billing_review.status_changed.v1`, `settings.integration_updated.v1`, `template.created.v1`, `dot_phrase.updated.v1`, `estimate_config.updated.v1`, and `rules_catalog.published.v1`.
+
+These events are audit-safe metadata for synthetic standalone operations. Billing review transcript access is limited to billing staff in a triggered review context; draft claim preview state keeps `submittedClaim=false`; estimate configuration remains internal-only; and rules catalog entries remain source-linked, human-review-required, and prohibited from autonomous finalization or medical-necessity determination.

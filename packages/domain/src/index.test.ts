@@ -35,6 +35,11 @@ import {
   stopVisitGate,
   validateCoachingSignal,
   validateStandalonePatientDraft,
+  validateTemplateDefinition,
+  validateDotPhrase,
+  estimateConfigurationIsSafe,
+  rulesCatalogEntryIsSafe,
+  canAccessBillingTranscriptForReview,
   type CoachingSignal
 } from './index';
 
@@ -635,5 +640,110 @@ describe('coaching analytics scaffold', () => {
 
     assert.equal(dashboard.aggregateOnly, false);
     assert.equal(dashboard.clinicianSummaries.some((summary) => summary.clinicianId === 'clinician-001'), true);
+  });
+});
+
+describe('standalone operations domain helpers', () => {
+  it('validates safe template and dot phrase placeholders', () => {
+    assert.deepEqual(
+      validateTemplateDefinition({
+        name: 'Follow-up',
+        visitType: 'Chronic follow-up',
+        sections: ['Assessment', 'Plan'],
+        variables: ['{{follow_up_interval}}']
+      }),
+      []
+    );
+    assert.match(
+      validateTemplateDefinition({
+        name: 'Unsafe',
+        visitType: 'AWV',
+        sections: ['Plan'],
+        variables: ['patientName']
+      }).join(', '),
+      /safe_variable/
+    );
+
+    assert.deepEqual(
+      validateDotPhrase({
+        trigger: '.awvplan',
+        expansion: 'Follow up in {{follow_up_interval}}.',
+        variables: ['{{follow_up_interval}}']
+      }),
+      []
+    );
+    assert.match(
+      validateDotPhrase({
+        trigger: 'awvplan',
+        expansion: 'MRN: 12345',
+        variables: ['{{follow_up_interval}}']
+      }).join(', '),
+      /trigger/
+    );
+  });
+
+  it('keeps estimates internal-only and rules human-reviewed', () => {
+    assert.equal(
+      estimateConfigurationIsSafe({
+        internalEstimatesEnabled: true,
+        patientFacingEstimatesEnabled: false,
+        caveatText: 'Internal estimate support is not a patient-facing financial conclusion.'
+      }),
+      true
+    );
+    assert.equal(
+      estimateConfigurationIsSafe({
+        internalEstimatesEnabled: true,
+        patientFacingEstimatesEnabled: true,
+        caveatText: 'Internal estimate support is not a patient-facing financial conclusion.'
+      }),
+      false
+    );
+
+    assert.equal(
+      rulesCatalogEntryIsSafe({
+        sourceEvidence: ['synthetic-rules-catalog:v1'],
+        humanReviewRequired: true,
+        autonomousFinalizationAllowed: false,
+        medicalNecessityDeterminationAllowed: false
+      }),
+      true
+    );
+    assert.equal(
+      rulesCatalogEntryIsSafe({
+        sourceEvidence: [],
+        humanReviewRequired: true,
+        autonomousFinalizationAllowed: false,
+        medicalNecessityDeterminationAllowed: false
+      }),
+      false
+    );
+  });
+
+  it('allows billing transcript access only for triggered billing review', () => {
+    assert.equal(
+      canAccessBillingTranscriptForReview({
+        role: 'billing_staff',
+        billingReviewTriggered: true,
+        linkedToVisit: true
+      }),
+      true
+    );
+    assert.equal(
+      canAccessBillingTranscriptForReview({
+        role: 'billing_staff',
+        billingReviewTriggered: false,
+        linkedToVisit: true
+      }),
+      false
+    );
+    assert.equal(
+      canAccessBillingTranscriptForReview({
+        role: 'support',
+        billingReviewTriggered: true,
+        linkedToVisit: true
+      }),
+      false
+    );
   });
 });

@@ -50,7 +50,15 @@ export type CoreEventType =
   | 'visit_selection.added.v1'
   | 'compliance.evaluated.v1'
   | 'history_gap.task_created.v1'
+  | 'task.adjudicated.v1'
   | 'task.blocker_changed.v1'
+  | 'billing_review.status_changed.v1'
+  | 'settings.integration_updated.v1'
+  | 'template.created.v1'
+  | 'template.updated.v1'
+  | 'dot_phrase.updated.v1'
+  | 'estimate_config.updated.v1'
+  | 'rules_catalog.published.v1'
   | 'low_confidence_diagnosis.override_recorded.v1'
   | 'finalization.started.v1'
   | 'finalization.selection_decided.v1'
@@ -330,6 +338,210 @@ export interface TaskDto {
   blocksSigning: boolean;
   adjudicationStatus: TaskAdjudicationStatus;
   ownerRole?: string;
+}
+
+export interface OperationalTaskDto extends TaskDto {
+  tenantId: string;
+  siteId: string;
+  appointmentId?: string;
+  patientDisplayLabel: string;
+  dueAt: string;
+  priority: 'routine' | 'urgent';
+  worklist: 'task_inbox' | 'ma_follow_up';
+  source: 'history_gap' | 'compliance' | 'billing_review' | 'manual_synthetic';
+  demoFixture: true;
+}
+
+export interface TaskWorklistViewDto {
+  tasks: OperationalTaskDto[];
+  counts: {
+    total: number;
+    blockers: number;
+    maFollowUp: number;
+    overdue: number;
+  };
+  states: Array<'empty' | 'loading' | 'ready' | 'saving' | 'blocked' | 'failed' | 'permission-denied' | 'read-only' | 'demo fixture'>;
+}
+
+export interface UpdateOperationalTaskRequestDto {
+  adjudicationStatus: TaskAdjudicationStatus;
+  blocksSigning?: boolean;
+  resolutionNote?: string;
+}
+
+export interface OperationalActionResponseDto {
+  task?: OperationalTaskDto;
+  billingReview?: BillingReviewQueueItemDto;
+  template?: TemplateManagementDto;
+  dotPhrase?: DotPhraseDto;
+  estimateConfig?: EstimateConfigurationDto;
+  rulesCatalog?: RulesCatalogViewDto;
+  settings?: SettingsAdminViewDto;
+  auditEvent: AuditEventDto;
+  domainEvents: Array<AuraNoteEvent<Record<string, unknown>>>;
+}
+
+export interface BillingReviewQueueItemDto {
+  billingReviewId: string;
+  tenantId: string;
+  siteId: string;
+  noteId: string;
+  safePatientId: string;
+  draftClaimPreviewId: string;
+  status: 'triggered' | 'in_review' | 'needs_clinician' | 'cleared';
+  transcriptAccess: 'not_requested' | 'allowed_for_triggered_review' | 'denied';
+  transcriptAccessReason: string;
+  draftClaimPreview: DraftClaimPreviewDto;
+  assignedRole: 'billing_staff';
+  dueAt: string;
+  submittedClaim: false;
+}
+
+export interface BillingReviewQueueViewDto {
+  items: BillingReviewQueueItemDto[];
+  transcriptAccessLimitedToTriggeredReview: true;
+  supportUsersDenied: true;
+}
+
+export interface UpdateBillingReviewRequestDto {
+  status: BillingReviewQueueItemDto['status'];
+  requestTranscriptAccess?: boolean;
+  noteForClinician?: string;
+}
+
+export interface SettingsAdminViewDto {
+  tenant: {
+    tenantId: string;
+    displayName: string;
+    standaloneOwned: true;
+  };
+  sites: Array<{
+    siteId: string;
+    displayName: string;
+    status: 'active';
+  }>;
+  users: Array<{
+    userId: string;
+    role: LocalAuthSessionDto['role'];
+    status: 'active' | 'disabled';
+    disabledUserBlocked: boolean;
+  }>;
+  featureFlags: FeatureFlagDto[];
+  integrations: IntegrationConnectionDto[];
+  modeMappings: Array<{
+    localObject: string;
+    clinicosTarget: string;
+    status: 'safe_degraded' | 'not_configured';
+  }>;
+  demoFixture: true;
+}
+
+export interface FeatureFlagDto {
+  key: string;
+  enabled: boolean;
+  governs: string;
+  defaultValue: false;
+  visibleToAdmins: true;
+}
+
+export interface IntegrationConnectionDto {
+  integrationId: string;
+  vendor: 'athenahealth' | 'clinicos' | 'generic_ehr' | 'payer_clearinghouse';
+  status: 'disabled' | 'mock_ready' | 'not_configured';
+  configured: boolean;
+  liveCredentialPresent: false;
+  mode: 'standalone_local' | 'mock_adapter';
+}
+
+export interface UpdateIntegrationRequestDto {
+  status: 'disabled' | 'mock_ready';
+  reason: string;
+}
+
+export interface TemplateManagementDto {
+  templateId: string;
+  tenantId: string;
+  siteId: string;
+  name: string;
+  visitType: string;
+  sections: string[];
+  variables: string[];
+  status: 'draft' | 'active' | 'retired';
+  syntheticOnly: true;
+}
+
+export interface DotPhraseDto {
+  dotPhraseId: string;
+  tenantId: string;
+  siteId: string;
+  trigger: string;
+  expansion: string;
+  variables: string[];
+  smartPhrasePlaceholders: string[];
+  status: 'draft' | 'active' | 'retired';
+  syntheticOnly: true;
+}
+
+export interface TemplatesViewDto {
+  templates: TemplateManagementDto[];
+  dotPhrases: DotPhraseDto[];
+  forbiddenPhiRejected: true;
+}
+
+export interface CreateTemplateRequestDto {
+  name: string;
+  visitType: string;
+  sections: string[];
+  variables: string[];
+}
+
+export interface UpdateDotPhraseRequestDto {
+  expansion: string;
+  variables?: string[];
+  status?: DotPhraseDto['status'];
+}
+
+export interface EstimateConfigurationDto {
+  estimateConfigId: string;
+  tenantId: string;
+  siteId: string;
+  internalEstimatesEnabled: boolean;
+  patientFacingEstimatesEnabled: false;
+  sourceDataConfigured: boolean;
+  caveatText: string;
+  updatedAt: string;
+  syntheticOnly: true;
+}
+
+export interface UpdateEstimateConfigurationRequestDto {
+  internalEstimatesEnabled: boolean;
+  patientFacingEstimatesEnabled?: boolean;
+  caveatText: string;
+}
+
+export interface RulesCatalogEntryDto {
+  ruleId: string;
+  category: 'cpt' | 'hcpcs' | 'icd10' | 'hcc' | 'em' | 'quality_measure' | 'visit_type' | 'confidence_threshold';
+  codeOrKey: string;
+  title: string;
+  sourceEvidence: string[];
+  effectiveDate: string;
+  status: 'draft' | 'active';
+  humanReviewRequired: true;
+  autonomousFinalizationAllowed: false;
+  medicalNecessityDeterminationAllowed: false;
+}
+
+export interface RulesCatalogViewDto {
+  entries: RulesCatalogEntryDto[];
+  sourceEvidenceRequired: true;
+  certifiedProductionRules: false;
+  draftOnly: true;
+}
+
+export interface PublishRulesCatalogRequestDto {
+  ruleIds: string[];
+  attestation: string;
 }
 
 export interface FinalizationSelectionDecisionDto {

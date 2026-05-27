@@ -29,6 +29,7 @@
     "persistence:finalization-output-adapter": "node scripts/verify-finalization-output-adapter.js",
     "persistence:durable-runtime-readiness": "node scripts/verify-durable-runtime-readiness.js",
     "standalone:patient-schedule-readiness": "node scripts/validate-standalone-patient-schedule-readiness.js",
+    "standalone:operations-readiness": "node scripts/validate-standalone-operations-readiness.js",
     "storage:azure-adapter-readiness": "pnpm --filter @aura-note/storage test && pnpm --filter @aura-note/storage typecheck && node scripts/validate-azure-storage-adapter-readiness.js",
     "retention:storage-deletion-readiness": "pnpm --filter @aura-note/worker test && node scripts/validate-storage-retention-readiness.js",
     "production:readiness": "node scripts/production-build-readiness.js",

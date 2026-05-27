@@ -21,6 +21,10 @@ import {
   type FinalizationSessionDto,
   type FinalizedNoteDetailDto,
   type LocalAuthSessionDto,
+  type BillingReviewQueueItemDto,
+  type EstimateConfigurationDto,
+  type OperationalTaskDto,
+  type RulesCatalogEntryDto,
   type EhrWritebackActionResponseDto,
   type ReviewActionResponseDto,
   type RetentionJobResultDto,
@@ -28,6 +32,7 @@ import {
   type StandalonePatientDto,
   type StandalonePatientLinkageDto,
   type SupportStatusDto,
+  type TemplateManagementDto,
   type SuggestionDto,
   type TranscriptViewDto,
   type VisitSessionControlResponseDto,
@@ -162,6 +167,105 @@ describe('standalone patient and chart-context contracts', () => {
     assert.equal(snapshot.sourceSystem, 'standalone_local');
     assert.equal(snapshot.productionPhiStorageApproved, false);
     assert.equal(snapshot.aiPackagingAllowed, false);
+  });
+});
+
+describe('standalone operations contracts', () => {
+  it('represents worklists, billing review, templates, estimates, and rules as synthetic human-reviewed surfaces', () => {
+    const task: OperationalTaskDto = {
+      taskId: 'task-001',
+      tenantId: 'tenant-synthetic-primary',
+      siteId: 'site-synthetic-primary',
+      noteId: 'note-001',
+      safePatientId: 'safe-patient-001',
+      title: 'Clarify evidence',
+      blocksSigning: true,
+      adjudicationStatus: 'open',
+      ownerRole: 'ma',
+      patientDisplayLabel: 'Standalone safe-patient-001',
+      dueAt: '2026-05-28T14:00:00.000Z',
+      priority: 'urgent',
+      worklist: 'ma_follow_up',
+      source: 'history_gap',
+      demoFixture: true
+    };
+    const billingReview: BillingReviewQueueItemDto = {
+      billingReviewId: 'billing-review-001',
+      tenantId: task.tenantId,
+      siteId: task.siteId,
+      noteId: 'note-001',
+      safePatientId: task.safePatientId ?? 'safe-patient-001',
+      draftClaimPreviewId: 'draft-claim-001',
+      status: 'triggered',
+      transcriptAccess: 'allowed_for_triggered_review',
+      transcriptAccessReason: 'Allowed only for triggered billing review.',
+      draftClaimPreview: {
+        draftClaimPreviewId: 'draft-claim-001',
+        noteId: 'note-001',
+        status: 'draft_preview',
+        claimReadiness: 'needs_billing_review',
+        patientReference: task.safePatientId ?? 'safe-patient-001',
+        encounterDate: '2026-05-27',
+        renderingClinicianId: 'clinician-001',
+        placeOfService: '11',
+        visitType: 'AWV plus problem',
+        cptCandidates: ['99214'],
+        hcpcsCandidates: ['G0439'],
+        icd10Candidates: ['I10'],
+        emCandidate: 'moderate',
+        diagnosisToServiceLinks: ['I10 -> 99214'],
+        payerReadableJustification: 'Synthetic human-review-required support.',
+        missingEvidence: [],
+        denialRiskFlags: [],
+        estimateStatus: 'unavailable_caveated',
+        estimateCaveat: 'Internal estimate support is not a patient-facing financial conclusion.',
+        billingReviewTriggered: true,
+        submittedClaim: false
+      },
+      assignedRole: 'billing_staff',
+      dueAt: '2026-05-28T20:00:00.000Z',
+      submittedClaim: false
+    };
+    const template: TemplateManagementDto = {
+      templateId: 'template-001',
+      tenantId: task.tenantId,
+      siteId: task.siteId,
+      name: 'Follow-up',
+      visitType: 'Chronic follow-up',
+      sections: ['Assessment', 'Plan'],
+      variables: ['{{follow_up_interval}}'],
+      status: 'active',
+      syntheticOnly: true
+    };
+    const estimateConfig: EstimateConfigurationDto = {
+      estimateConfigId: 'estimate-config-001',
+      tenantId: task.tenantId,
+      siteId: task.siteId,
+      internalEstimatesEnabled: true,
+      patientFacingEstimatesEnabled: false,
+      sourceDataConfigured: false,
+      caveatText: 'Internal estimate support is not a patient-facing financial conclusion.',
+      updatedAt: '2026-05-27T22:55:00.000Z',
+      syntheticOnly: true
+    };
+    const rule: RulesCatalogEntryDto = {
+      ruleId: 'rule-001',
+      category: 'confidence_threshold',
+      codeOrKey: 'diagnosis-low-confidence-0.75',
+      title: 'Low-confidence diagnosis override threshold',
+      sourceEvidence: ['WO-001'],
+      effectiveDate: '2026-05-27',
+      status: 'active',
+      humanReviewRequired: true,
+      autonomousFinalizationAllowed: false,
+      medicalNecessityDeterminationAllowed: false
+    };
+
+    assert.equal(task.blocksSigning, true);
+    assert.equal(billingReview.draftClaimPreview.submittedClaim, false);
+    assert.equal(template.syntheticOnly, true);
+    assert.equal(estimateConfig.patientFacingEstimatesEnabled, false);
+    assert.equal(rule.autonomousFinalizationAllowed, false);
   });
 });
 

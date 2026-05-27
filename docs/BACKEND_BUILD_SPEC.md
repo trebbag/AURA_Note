@@ -223,6 +223,8 @@ Production Azure Blob use requires soft delete, versioning, private containers, 
 
 `WO-038` adds standalone patient shell, chart-context snapshot, and schedule completion APIs in the synthetic/local runtime. Patient shell operations, appointment edit/status transitions, and chart-context reads are tenant/site scoped, permission checked, audit/event emitting, and covered by API/browser readiness evidence through `pnpm standalone:patient-schedule-readiness`. Core schedule RLS evidence now includes `PatientLinkage` and `ChartContextSnapshot`. Production identity, production database approval, live vendor integrations, live AI, charge finalization, and claim submission remain deferred.
 
+`WO-039` adds a synthetic/local standalone operations API module for daily product surfaces that do not depend on ClinicOS: task inbox, MA follow-up worklist, billing review queue, settings/admin/integrations, templates/dot phrases, estimate configuration, and rules catalog. State-changing routes validate input, enforce tenant/site scope through the local identity boundary, enforce RBAC/ABAC permissions, emit audit/domain events, and keep all behavior synthetic-only. Billing staff transcript access is granted only when billing review is triggered and linked to the visit. Estimate configuration rejects patient-facing financial conclusions. Rules catalog publication requires human-review attestation and does not enable autonomous coding, charge finalization, medical-necessity determination, or claim submission.
+
 `WO-016` adds the first tenant identity and access foundation:
 
 - API request contexts use a shared local synthetic session parser from `packages/security`.

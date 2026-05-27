@@ -18,6 +18,16 @@ export type Permission =
   | 'appointment:create'
   | 'appointment:update'
   | 'appointment:status'
+  | 'task:view'
+  | 'task:update'
+  | 'billing_review:view'
+  | 'billing_review:update'
+  | 'settings:view'
+  | 'settings:manage'
+  | 'template:manage'
+  | 'estimate_config:manage'
+  | 'rules_catalog:view'
+  | 'rules_catalog:manage'
   | 'visit:start'
   | 'draft_note:view'
   | 'finalization:manage'
@@ -441,6 +451,26 @@ export function canPerform(permission: Permission, ctx: AccessContext): boolean 
       return ctx.authorizedAdmin || ['clinician', 'ma', 'admin', 'clinic_manager'].includes(ctx.role);
     case 'appointment:status':
       return ctx.authorizedAdmin || ['clinician', 'ma', 'admin', 'clinic_manager'].includes(ctx.role);
+    case 'task:view':
+      return ctx.authorizedAdmin || ['clinician', 'ma', 'admin', 'clinic_manager'].includes(ctx.role);
+    case 'task:update':
+      return ctx.authorizedAdmin || ['ma', 'clinician', 'admin', 'clinic_manager'].includes(ctx.role);
+    case 'billing_review:view':
+      return ctx.authorizedAdmin || ['billing_staff', 'clinician', 'admin', 'clinic_manager'].includes(ctx.role);
+    case 'billing_review:update':
+      return ctx.authorizedAdmin || ['billing_staff', 'admin', 'clinic_manager'].includes(ctx.role);
+    case 'settings:view':
+      return ctx.authorizedAdmin || ['admin', 'clinic_manager', 'compliance_privacy_lead'].includes(ctx.role);
+    case 'settings:manage':
+      return ctx.authorizedAdmin || ['admin', 'clinic_manager'].includes(ctx.role);
+    case 'template:manage':
+      return ctx.authorizedAdmin || ['clinician', 'admin', 'clinic_manager'].includes(ctx.role);
+    case 'estimate_config:manage':
+      return ctx.authorizedAdmin || ['admin', 'clinic_manager'].includes(ctx.role);
+    case 'rules_catalog:view':
+      return ctx.authorizedAdmin || ['clinician', 'billing_staff', 'admin', 'clinic_manager', 'compliance_privacy_lead'].includes(ctx.role);
+    case 'rules_catalog:manage':
+      return ctx.authorizedAdmin || ['admin', 'clinic_manager', 'compliance_privacy_lead'].includes(ctx.role);
     case 'visit:start':
       return ctx.authorizedAdmin || (ctx.role === 'clinician' && ctx.linkedToVisit);
     case 'draft_note:view':

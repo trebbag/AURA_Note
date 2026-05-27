@@ -137,6 +137,38 @@ export interface ChartContextFreshnessInput {
   sliceCount: number;
 }
 
+export interface TemplateDefinitionInput {
+  name: string;
+  visitType: string;
+  sections: string[];
+  variables: string[];
+}
+
+export interface DotPhraseInput {
+  trigger: string;
+  expansion: string;
+  variables: string[];
+}
+
+export interface EstimateConfigurationInput {
+  internalEstimatesEnabled: boolean;
+  patientFacingEstimatesEnabled: boolean;
+  caveatText: string;
+}
+
+export interface RulesCatalogEntryInput {
+  sourceEvidence: string[];
+  humanReviewRequired: boolean;
+  autonomousFinalizationAllowed: boolean;
+  medicalNecessityDeterminationAllowed: boolean;
+}
+
+export interface BillingReviewTranscriptAccessInput {
+  role: string;
+  billingReviewTriggered: boolean;
+  linkedToVisit: boolean;
+}
+
 export interface AppointmentLifecycle {
   appointmentId: string;
   noteId: string;
@@ -360,6 +392,51 @@ export function assertPatientLinkage(input: PatientLinkageInput): PatientLinkage
 
 export function chartContextRequiresFreshnessWarning(input: ChartContextFreshnessInput): boolean {
   return input.sliceCount === 0 || input.sourceFreshness === 'historical' || input.sourceFreshness === 'unknown';
+}
+
+export function validateTemplateDefinition(input: TemplateDefinitionInput): string[] {
+  const errors: string[] = [];
+  if (!input.name.trim()) errors.push('template name is required');
+  if (!input.visitType.trim()) errors.push('template visit type is required');
+  if (input.sections.length === 0) errors.push('template requires at least one section');
+  if (input.variables.some((variable) => !/^\{\{[a-z][a-z0-9_]*\}\}$/i.test(variable))) {
+    errors.push('template variables must use {{safe_variable}} placeholders');
+  }
+  return errors;
+}
+
+export function validateDotPhrase(input: DotPhraseInput): string[] {
+  const errors: string[] = [];
+  if (!/^\.[a-z][a-z0-9_]*$/i.test(input.trigger)) errors.push('dot phrase trigger must start with . and use safe characters');
+  if (!input.expansion.trim()) errors.push('dot phrase expansion is required');
+  if (input.variables.some((variable) => !/^\{\{[a-z][a-z0-9_]*\}\}$/i.test(variable))) {
+    errors.push('dot phrase variables must use {{safe_variable}} placeholders');
+  }
+  if (/\b(?:MRN|DOB|SSN|@|\d{3}-\d{2}-\d{4}|patientName)\b/i.test(input.expansion)) {
+    errors.push('dot phrase expansion must not contain obvious PHI');
+  }
+  return errors;
+}
+
+export function estimateConfigurationIsSafe(input: EstimateConfigurationInput): boolean {
+  return (
+    input.internalEstimatesEnabled &&
+    !input.patientFacingEstimatesEnabled &&
+    /\bnot a patient-facing financial conclusion\b/i.test(input.caveatText)
+  );
+}
+
+export function rulesCatalogEntryIsSafe(input: RulesCatalogEntryInput): boolean {
+  return (
+    input.sourceEvidence.length > 0 &&
+    input.humanReviewRequired &&
+    !input.autonomousFinalizationAllowed &&
+    !input.medicalNecessityDeterminationAllowed
+  );
+}
+
+export function canAccessBillingTranscriptForReview(input: BillingReviewTranscriptAccessInput): boolean {
+  return input.role === 'billing_staff' && input.billingReviewTriggered && input.linkedToVisit;
 }
 
 export function createAppointmentLifecycle(
