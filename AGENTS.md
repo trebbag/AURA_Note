@@ -78,6 +78,8 @@ At the start of every run:
 6. Update `repo_status.json`, `RUN_LOG.md`, and `SPEC_GAPS.md`.
 7. If the work order is complete and no checkpoint is required, continue to the next work order.
 
+Post-`WO-032`, `repo_status.json` may contain future work orders with status `planned`, `todo`, `in_progress`, or `done`. `planned` means the work order is discoverable but not yet active. Codex should treat the first work order whose status is `todo` or `in_progress` as the active implementation target. A work order may move from `planned` to `todo` only when its work-order file exists and readiness scripts can distinguish production-build progress from the completed synthetic/local readiness baseline.
+
 If `repo_status.json` is missing or malformed, recreate it from `work_orders/README.md`, mark all work orders as `todo`, and begin with `WO-000`.
 
 ## 6. Checkpoint gates
@@ -108,6 +110,46 @@ Definition: AI gateway, PHI scrubbing, model-governance events, athenahealth-fir
 Required after `WO-012` through `WO-014`.
 
 Definition: premium coaching scaffolding, production security controls, observability, retention jobs, audit exports, support runbooks, regression tests, and readiness review are complete.
+
+### P6.5 — Build rails re-established
+Required after `WO-033`.
+
+Definition: the production build plan, work-order index, status model, readiness scripts, checkpoint sequence, `SPEC_GAPS.md`, and run-log evidence are aligned so Codex can continue safely without falsely claiming production readiness.
+
+### P7 — Durable runtime candidate
+Required after `WO-034` through `WO-037`.
+
+Definition: broad workflow state is Prisma-backed locally, tenant/site query enforcement exists, RLS evidence exists for persisted tenant-owned data, and audit/event records are durable.
+
+### P7.5 — Standalone product completion candidate
+Required after `WO-038` through `WO-039`.
+
+Definition: standalone patient shell, chart context, day/week schedule states, task inbox, MA follow-up worklist, billing review queue, settings/admin/integrations, templates, dot phrases, estimate configuration, and code/rules catalog exist in browser/API-testable form without requiring ClinicOS for core v1 operation.
+
+### P8 — Production platform candidate
+Required after `WO-041` through `WO-043`.
+
+Definition: production-shaped identity, tenant administration, secrets/config validation, feature flags, object storage, secure downloads, retention deletion controls, backup/restore evidence, observability, support status, and runbooks are ready for security/privacy review.
+
+### P8.5 — Audio and transcription candidate
+Required after `WO-040`.
+
+Definition: timer-controlled browser recording, approved exception path, audio upload/storage metadata, transcription adapter, mock provider, transcript retention, transcription worker behavior, confidence/source metadata, correction history, and diarization placeholder are implemented with governed live-provider boundaries.
+
+### P9 — Integration and AI candidate
+Required after `WO-044` through `WO-047`.
+
+Definition: athenahealth-first sandbox path, generic EHR adapter, EHR writeback queue hardening, ClinicOS adapter hardening, AI gateway production governance, model/prompt/eval scaffolding, PHI-scrubbing enforcement, human-review gates, and security/privacy/threat-model remediation are ready for external review.
+
+### P10 — Launch candidate
+Required after `WO-048` through `WO-050`.
+
+Definition: UX/accessibility hardening, deployment/runbooks, operational drills, performance/reliability testing, beta onboarding, security/privacy/compliance launch package, and founder/clinical/compliance/security review evidence are complete.
+
+### P11 — Claim/payer decision gate
+Required after `WO-051`.
+
+Definition: claim submission, clearinghouse, payer integration, denial automation, and payment workflows are decision-captured. Live claim submission remains out of the default v1 implementation unless a later founder-approved work order explicitly authorizes it.
 
 At each checkpoint, Codex must produce a concise checkpoint report in `CHECKPOINT_REPORT.md`, including completed work orders, acceptance evidence, open risks, unresolved SPEC_GAPs, and next recommended batch.
 

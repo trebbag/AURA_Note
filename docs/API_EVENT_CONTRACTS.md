@@ -140,3 +140,14 @@ The CP-0 event scaffold covers the first state-transition families needed by `WO
 `WO-012` implements coaching and premium analytics scaffolding. The API emits `coaching.report_generated.v1` when a treating clinician views their own synthetic coaching report and `coaching.dashboard_viewed.v1` when an authorized admin views the premium dashboard scaffold. `coaching.signal_created.v1` is added as the event contract seed for future asynchronous signal generation. Coaching events are restricted audit metadata only; they are not patient-facing, do not expose revenue details to patients, and do not grant billing staff access to coaching outputs.
 
 `WO-013` implements production-hardening scaffolding for support status, structured logging posture, feature flags, retention scans, and redacted audit export metadata. The worker emits `retention.scan_completed.v1` when the synthetic retention job evaluates raw-audio and transcript policies. The API emits `audit.export_requested.v1` when an authorized compliance/privacy lead or authorized admin requests a redacted JSONL metadata export. These events are audit-safe metadata only; they do not perform destructive storage purge, deliver downloadable audit files, expose PHI, enable external AI, connect to live EHRs, or sync production analytics.
+
+`WO-033` does not add runtime API operations or domain events. It re-establishes the production build rails so future API/event implementation is sequenced safely:
+
+- `WO-034` through `WO-037` must add durable audit/event evidence for persisted workflow state changes;
+- `WO-038` through `WO-039` must add or harden standalone patient, chart, schedule, task, billing review, settings, template, estimate, and rules-catalog APIs;
+- `WO-040` must add recording transport and transcription adapter API/event evidence;
+- `WO-041` through `WO-043` must harden identity/config/storage/retention/observability/support APIs;
+- `WO-044` through `WO-046` must harden EHR, ClinicOS, and AI governance APIs/events;
+- `WO-051` remains a claim/payer decision gate and must not add live claim submission by default.
+
+Every future state-changing API remains subject to validation, tenant/site scoping, permission checks, audit events, idempotency where applicable, PHI-safe logging, and standalone/ClinicOS mode boundaries.

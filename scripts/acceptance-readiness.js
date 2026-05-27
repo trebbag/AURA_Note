@@ -37,30 +37,37 @@ const runLog = readText('RUN_LOG.md');
 const specGaps = readText('SPEC_GAPS.md');
 const openApi = readText('packages/contracts/openapi/aura-note.v1.yaml');
 
-const requiredWorkOrders = Array.from({ length: 33 }, (_, index) => `WO-${String(index).padStart(3, '0')}`);
-const incompleteWorkOrders = requiredWorkOrders.filter((workOrder) => repoStatus.work_orders?.[workOrder] !== 'done');
-const incompleteRecordedWorkOrders = Object.entries(repoStatus.work_orders ?? {})
-  .filter(([, status]) => status !== 'done')
+const completedSyntheticWorkOrders = Array.from({ length: 33 }, (_, index) => `WO-${String(index).padStart(3, '0')}`);
+const incompleteSyntheticWorkOrders = completedSyntheticWorkOrders.filter((workOrder) => repoStatus.work_orders?.[workOrder] !== 'done');
+const invalidRecordedStatuses = Object.entries(repoStatus.work_orders ?? {})
+  .filter(([, status]) => !['done', 'todo', 'planned', 'in_progress', 'blocked'].includes(status))
+  .map(([workOrder, status]) => ({ workOrder, status }));
+const futureDoneWithoutRunLog = Object.entries(repoStatus.work_orders ?? {})
+  .filter(([workOrder, status]) => status === 'done' && Number(workOrder.slice(3)) > 32 && !runLog.includes(workOrder))
   .map(([workOrder]) => workOrder);
-const allowedModes = ['cp4_complete', 'post_cp4_in_progress'];
+const allowedModes = ['cp4_complete', 'post_cp4_in_progress', 'production_build_planned', 'production_build_in_progress'];
 
-check('status.all-work-orders-done', 'All defined work orders are marked done', incompleteWorkOrders.length === 0, {
-  requiredWorkOrders,
-  incompleteWorkOrders
+check('status.synthetic-work-orders-done', 'Synthetic/local baseline work orders through WO-032 are marked done', incompleteSyntheticWorkOrders.length === 0, {
+  completedSyntheticWorkOrders,
+  incompleteSyntheticWorkOrders
 });
-check('status.cp4-complete', 'Repository mode records CP-4 or post-CP4 readiness', allowedModes.includes(repoStatus.mode), repoStatus.mode);
-check('status.all-recorded-work-orders-done', 'All recorded work orders are marked done', incompleteRecordedWorkOrders.length === 0, {
-  incompleteRecordedWorkOrders
+check('status.cp4-or-production-build-mode', 'Repository mode records CP-4, post-CP4, or production-build progress without launch claim', allowedModes.includes(repoStatus.mode), repoStatus.mode);
+check('status.recorded-status-values-valid', 'Recorded work order statuses use known lifecycle values', invalidRecordedStatuses.length === 0, {
+  invalidRecordedStatuses
 });
-check('status.no-next-work-order', 'No further active local work order remains', repoStatus.next_work_order === null, {
+check('status.future-done-runlog-evidence', 'Future work orders marked done have run-log evidence', futureDoneWithoutRunLog.length === 0, {
+  futureDoneWithoutRunLog
+});
+check('status.synthetic-readiness-not-production-launch', 'Acceptance readiness is not a production launch claim', repoStatus.mode !== 'production_launch_ready', {
+  mode: repoStatus.mode,
   nextWorkOrder: repoStatus.next_work_order
 });
 
-const activeGapSection = specGaps.split('## Active gaps')[1]?.split('## Gap entry format')[0] ?? '';
+const activeGapSection = specGaps.split('## Active gaps')[1]?.split('## Deferred production decisions')[0] ?? '';
 check(
   'gaps.no-active-gaps',
   'SPEC_GAPS has no active open or blocking entries',
-  activeGapSection.includes('None') && !activeGapSection.includes('SPEC_GAP-'),
+  activeGapSection.toLowerCase().includes('no active gaps') && !activeGapSection.includes('SPEC_GAP-'),
   'SPEC_GAPS.md active section'
 );
 

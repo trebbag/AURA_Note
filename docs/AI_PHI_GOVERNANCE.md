@@ -69,3 +69,9 @@ AI invocation, output generation, review, approval, rejection, prompt version ch
 ## WO-013 hardening posture
 
 `WO-013` adds explicit default-off feature flags for external AI and production analytics. Structured logs use request ID and trace ID correlation and redact forbidden PHI keys plus obvious PHI-like text before log payloads are considered safe. Audit exports are redacted metadata-only bundles with `includePhi = false`; they do not deliver downloadable files or expose raw clinical payloads in CP-4.
+
+## Post-WO-032 production AI governance rails
+
+`WO-033` preserves external AI as disabled and re-sequences production AI work into `WO-046`. That future work order must add prompt registry/versioning, model configuration records, evaluation harnesses, PHI scrubber/de-identification hardening, output schema validation, source-linked evidence, durable AI governance events, and regression tests proving no raw PHI is sent to external AI.
+
+Live external AI with PHI remains blocked until private/BAA model pathway, privacy/security review, tenant policy, source freshness rules, monitoring, and incident response are approved and implemented. AI outputs remain draft/candidate/suggestion-only.

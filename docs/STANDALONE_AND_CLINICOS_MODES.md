@@ -99,3 +99,11 @@ These invariants apply in both modes:
 - Open blocker questions/tasks prevent signing.
 - Final note and patient summary require clinician approval.
 - Role-based visibility is enforced before retrieval and before display.
+
+## Post-WO-032 production mode rails
+
+`WO-033` keeps the one-product/two-host-mode rule in force for the production build. Future work must not fork AURA Note into separate standalone and ClinicOS applications.
+
+- `WO-038` through `WO-039` complete standalone patient, chart, schedule, worklist, settings, template, estimate, and rules-catalog behavior so AURA Note can operate without ClinicOS.
+- `WO-045` hardens ClinicOS-integrated mode through M03 VisitGraph, M04 WorkOS/tasks, M17 NP Cockpit, M21 Charge Integrity, M23 Copilot Runtime, M24 AI Governance, M25 Integration Hub, and M26 Data Cloud adapter boundaries.
+- In every future work order, ClinicOS-provided identity, schedule, task, AI governance, integration, or analytics context must still pass AURA Note permission checks before data is returned or state is changed.
