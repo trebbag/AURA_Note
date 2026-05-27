@@ -4,6 +4,8 @@ dist/
 build/
 coverage/
 .playwright/
+test-results/
+playwright-report/
 .turbo/
 .env
 .env.*

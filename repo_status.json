@@ -20,9 +20,10 @@
     "WO-013": "done",
     "WO-014": "done",
     "WO-015": "done",
-    "WO-016": "done"
+    "WO-016": "done",
+    "WO-017": "done"
   },
-  "last_updated_by": "Codex WO-016 tenant identity access foundation",
-  "last_updated_at": "2026-05-27T01:21:03Z",
-  "notes": "WO-016 post-CP4 tenant identity and access foundation is complete as local synthetic auth/session scaffolding. Production SSO, MFA, account administration, persistent identity/session storage, real ClinicOS/OIDC delegation, and broader tenant administration remain deferred to later numbered work orders."
+  "last_updated_by": "Codex WO-017 browser e2e accessibility suite",
+  "last_updated_at": "2026-05-27T01:30:35Z",
+  "notes": "WO-017 post-CP4 committed browser E2E and accessibility suite is complete with local Playwright Chromium route and semantic checks. Visual regression, Figma fidelity, and production API-backed browser orchestration remain deferred to later numbered work orders."
 }

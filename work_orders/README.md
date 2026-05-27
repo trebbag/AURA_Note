@@ -25,6 +25,7 @@ Codex must complete work orders sequentially unless a checkpoint or blocker stop
 - `WO-014` — End-to-end acceptance and readiness report.
 - `WO-015` — Persistence migration foundation.
 - `WO-016` — Tenant identity and access foundation.
+- `WO-017` — Committed browser E2E and accessibility suite.
 
 ## Work order rules
 
@@ -42,3 +43,5 @@ Post-CP4 productionization candidates are documented in `docs/POST_CP4_PRODUCTIO
 `WO-015` promotes the first post-CP4 productionization tranche into an active persistence migration foundation. Runtime repository replacement remains out of scope until a later numbered work order.
 
 `WO-016` promotes the second post-CP4 productionization tranche into an active local synthetic tenant identity and access foundation. Production SSO, MFA, and identity administration remain out of scope until a later numbered work order.
+
+`WO-017` promotes the third post-CP4 productionization tranche into a committed Playwright browser E2E and accessibility-oriented route regression suite. Visual regression and final design-system work remain out of scope until later numbered work orders.

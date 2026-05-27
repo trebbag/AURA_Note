@@ -231,3 +231,15 @@ Codex must append a dated entry after each work order or meaningful implementati
 - **Accepted risks:** This is local synthetic auth/session scaffolding, not production identity management. Delegated identity modes are represented only so later adapters have an explicit boundary, and they deny access until configured.
 - **Open SPEC_GAPs:** None discovered for the local synthetic identity/access foundation.
 - **Next step:** Run the full local gate, open the WO-016 PR, confirm GitHub Actions, then begin the committed browser E2E/accessibility tranche if no blocker appears.
+
+## 2026-05-27T01:30:35Z — WO-017 Committed browser E2E and accessibility suite
+
+- **Work order:** `WO-017` Committed Browser E2E and Accessibility Suite.
+- **Summary of changes:** Promoted the third post-CP4 productionization tranche into an active work order and added a committed Playwright Chromium browser regression suite for the current synthetic web shell.
+- **Browser behavior:** Added route-level checks for Status, Schedule, Draft Notes, Documentation Workspace, Finalization, Finalized Notes, finalized viewer, Coaching, and Support hardening. The suite verifies main landmarks, H1 headings, shared section navigation, accessible form labels, accessible button names, named regions, blocked/disabled workspace states, read-only finalized-note tabs, coaching permission states, and support degraded-mode states.
+- **Files changed:** `.github/workflows/ci.yml`, `.gitignore`, `package.json`, `pnpm-lock.yaml`, `apps/web/package.json`, `playwright.config.ts`, `apps/web/e2e/aura-note-routes.spec.ts`, `work_orders/WO-017_committed_browser_e2e_accessibility.md`, `work_orders/README.md`, `docs/BROWSER_E2E_ACCESSIBILITY.md`, `docs/POST_CP4_PRODUCTIONIZATION_BACKLOG.md`, `docs/TEST_PLAN.md`, `docs/UX_BUILD_SPEC.md`, `repo_status.json`, and `RUN_LOG.md`.
+- **Tests run:** `pnpm exec playwright install chromium`; `pnpm test:browser`; `pnpm --filter @aura-note/web test:e2e`; `pnpm install --frozen-lockfile`; `pnpm lint`; `pnpm lint:phi`; `pnpm typecheck`; `pnpm test`; `pnpm test:e2e`; `pnpm build`; `pnpm acceptance:readiness`; `pnpm persistence:foundation`; `node scripts/status.js`; `git diff --check`.
+- **Tests not run:** GitHub Actions remains to be run before merge. Visual regression, screenshot baselines, final Figma fidelity, production API-backed browser orchestration, and real PHI/EHR/AI/ClinicOS/claim flows are intentionally not run.
+- **Accepted risks:** Browser coverage is semantic route/workflow regression coverage, not visual QA. CI now installs Chromium, which adds runtime and can introduce browser-install failures independent of product behavior.
+- **Open SPEC_GAPs:** None discovered for the committed browser/accessibility foundation.
+- **Next step:** Open the WO-017 PR, confirm GitHub Actions including browser tests, then begin observability/deployment/support runbooks if no blocker appears.

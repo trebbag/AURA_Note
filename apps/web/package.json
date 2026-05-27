@@ -10,7 +10,7 @@
     "typecheck": "tsc --noEmit",
     "test": "node -e \"console.log('web scaffold verified by typecheck and Next build')\"",
     "test:unit": "pnpm test",
-    "test:e2e": "node -e \"console.log('web e2e scaffold: route behavior is covered by API e2e and Next build until a Playwright suite is introduced')\"",
+    "test:e2e": "playwright test --config ../../playwright.config.ts",
     "storybook": "node -e \"console.log('storybook deferred until component stories are introduced')\""
   },
   "dependencies": {

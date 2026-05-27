@@ -25,6 +25,8 @@ jobs:
       - run: pnpm lint:phi
       - run: pnpm typecheck
       - run: pnpm test
+      - run: pnpm exec playwright install --with-deps chromium
+      - run: pnpm test:browser
       - run: pnpm build
       - run: pnpm acceptance:readiness
       - run: pnpm persistence:foundation
