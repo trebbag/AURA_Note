@@ -46,6 +46,8 @@ All post-CP4 work must preserve the existing prohibitions:
 
 ## Tranche P5-02 — Tenant Identity And Access Foundation
 
+**Promotion status:** Promoted to `WO-016` as a local synthetic tenant identity and access foundation. Production SSO, MFA, account administration, persistent identity storage, and real ClinicOS/OIDC delegation remain deferred to later numbered work orders.
+
 **Objective:** Replace header-only scaffold identity with an authenticated tenant/user/session boundary while preserving RBAC/ABAC behavior.
 
 **Candidate scope:**

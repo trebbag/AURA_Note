@@ -59,6 +59,20 @@ describe('ClinicOS integration service', () => {
     );
   });
 
+  it('denies delegated identity mode until a provider adapter is configured', async () => {
+    const service = new ClinicOsService();
+
+    await assert.rejects(
+      () =>
+        service.getStatus({
+          'x-aura-role': 'clinician',
+          'x-aura-linked-visit': 'true',
+          'x-aura-identity-provider': 'oidc_delegate'
+        }),
+      ForbiddenException
+    );
+  });
+
   it('degrades safely when ClinicOS is unavailable', async () => {
     const service = new ClinicOsService();
     const mapped = await service.mapVisit(

@@ -2,11 +2,13 @@ import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
 import {
   buildExternalIntegrationFeatureFlags,
+  authorizeTenantScope,
   canPerform,
   canViewCoaching,
   canViewFinalNote,
   canViewTranscript,
   containsForbiddenPhiKeys,
+  createSyntheticLocalSession,
   createStructuredLogEntry,
   redactForStructuredLog,
   redactForbiddenPhi,
@@ -14,6 +16,92 @@ import {
   scanForForbiddenPhiKeys,
   scanForForbiddenPhiText
 } from './index';
+
+describe('synthetic local identity boundary', () => {
+  it('creates a tenant-scoped session from local synthetic headers', () => {
+    const session = createSyntheticLocalSession(
+      {
+        'x-aura-role': 'clinician',
+        'x-aura-user-id': 'user-clinician-synthetic-001',
+        'x-aura-session-id': 'session-local-001',
+        'x-aura-tenant-id': 'tenant-synthetic-primary',
+        'x-aura-site-id': 'site-synthetic-primary',
+        'x-aura-purpose-of-use': 'treatment'
+      },
+      {
+        defaultTenantId: 'tenant-synthetic-primary',
+        defaultSiteId: 'site-synthetic-primary',
+        requestId: 'req-test',
+        traceId: 'trace-test'
+      }
+    );
+
+    assert.equal(session.tenantScopeAllowed, true);
+    assert.equal(session.identityProviderMode, 'local_synthetic');
+    assert.equal(session.access.tenantId, 'tenant-synthetic-primary');
+    assert.equal(session.access.siteId, 'site-synthetic-primary');
+    assert.equal(session.access.actorUserId, 'user-clinician-synthetic-001');
+    assert.equal(session.access.sessionId, 'session-local-001');
+    assert.equal(session.access.purposeOfUse, 'treatment');
+    assert.equal(session.access.treatingClinician, true);
+  });
+
+  it('denies cross-tenant and delegated identity access until configured', () => {
+    const crossTenant = createSyntheticLocalSession(
+      {
+        'x-aura-role': 'clinician',
+        'x-aura-tenant-id': 'tenant-other'
+      },
+      {
+        defaultTenantId: 'tenant-synthetic-primary',
+        defaultSiteId: 'site-synthetic-primary',
+        requestId: 'req-test',
+        traceId: 'trace-test'
+      }
+    );
+    const delegated = createSyntheticLocalSession(
+      {
+        'x-aura-role': 'clinician',
+        'x-aura-identity-provider': 'oidc_delegate'
+      },
+      {
+        defaultTenantId: 'tenant-synthetic-primary',
+        defaultSiteId: 'site-synthetic-primary',
+        requestId: 'req-test',
+        traceId: 'trace-test'
+      }
+    );
+
+    assert.equal(crossTenant.tenantScopeAllowed, false);
+    assert.match(crossTenant.denialReason ?? '', /cross-tenant/);
+    assert.equal(delegated.tenantScopeAllowed, false);
+    assert.match(delegated.denialReason ?? '', /delegated identity/);
+  });
+
+  it('authorizes only matching tenant-scoped resources', () => {
+    const session = createSyntheticLocalSession(
+      { 'x-aura-role': 'authorized_admin' },
+      {
+        defaultTenantId: 'tenant-synthetic-primary',
+        defaultSiteId: 'site-synthetic-primary',
+        requestId: 'req-test',
+        traceId: 'trace-test'
+      }
+    );
+
+    assert.deepEqual(authorizeTenantScope(session.access, { tenantId: 'tenant-synthetic-primary' }), {
+      allowed: true
+    });
+    assert.deepEqual(authorizeTenantScope(session.access, { tenantId: 'tenant-other' }), {
+      allowed: false,
+      reason: 'cross-tenant access denied'
+    });
+    assert.deepEqual(authorizeTenantScope(session.access, { tenantId: 'tenant-synthetic-primary', siteId: 'site-other' }), {
+      allowed: false,
+      reason: 'cross-site access denied'
+    });
+  });
+});
 
 describe('role-limited transcript access', () => {
   it('allows treating clinicians linked to the visit', () => {

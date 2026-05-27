@@ -36,6 +36,12 @@ export type Permission =
 
 export interface AccessContext {
   role: Role;
+  tenantId?: string;
+  siteId?: string;
+  actorUserId?: string;
+  sessionId?: string;
+  purposeOfUse?: PurposeOfUse;
+  identityProviderMode?: IdentityProviderMode;
   linkedToPatient: boolean;
   linkedToVisit: boolean;
   treatingClinician: boolean;
@@ -43,6 +49,52 @@ export interface AccessContext {
   authorizedAdmin: boolean;
   ownCoachingReport?: boolean;
   breakGlassActive?: boolean;
+}
+
+export type IdentityProviderMode = 'local_synthetic' | 'clinicos_delegate' | 'oidc_delegate';
+
+export type PurposeOfUse = 'treatment' | 'payment' | 'operations' | 'support' | 'audit' | 'coaching' | 'break_glass';
+
+export type HeaderMap = Record<string, string | string[] | undefined>;
+
+export interface SyntheticLocalSessionOptions {
+  defaultTenantId: string;
+  defaultSiteId: string;
+  defaultRole?: Role;
+  defaultUserId?: string;
+  defaultSessionId?: string;
+  defaultPurposeOfUse?: PurposeOfUse;
+  defaultLinkedToPatient?: boolean | ((role: Role) => boolean);
+  defaultLinkedToVisit?: boolean | ((role: Role) => boolean);
+  defaultBillingReviewTriggered?: boolean;
+  requestId: string;
+  traceId: string;
+  userIdForRole?: (role: Role) => string;
+  overrides?: Partial<AccessContext>;
+}
+
+export interface SyntheticLocalSession {
+  tenantId: string;
+  siteId: string;
+  actorUserId: string;
+  sessionId: string;
+  requestId: string;
+  traceId: string;
+  idempotencyKey?: string;
+  access: AccessContext;
+  identityProviderMode: IdentityProviderMode;
+  tenantScopeAllowed: boolean;
+  denialReason?: string;
+}
+
+export interface TenantScopedResource {
+  tenantId: string;
+  siteId?: string;
+}
+
+export interface TenantScopeDecision {
+  allowed: boolean;
+  reason?: string;
 }
 
 export interface PhiScanResult {
@@ -133,8 +185,135 @@ const forbiddenPhiTextPatterns = [
   /\bMRN[:\s-]*[A-Za-z0-9-]{3,}\b/i
 ] as const;
 
+const roles: Role[] = [
+  'clinician',
+  'ma',
+  'billing_staff',
+  'admin',
+  'authorized_admin',
+  'clinic_manager',
+  'compliance_privacy_lead',
+  'support',
+  'service_account'
+];
+
+const roleSet = new Set<Role>(roles);
+
+const identityProviderModes = new Set<IdentityProviderMode>(['local_synthetic', 'clinicos_delegate', 'oidc_delegate']);
+
+function headerValue(value: string | string[] | undefined): string | undefined {
+  return Array.isArray(value) ? value[0] : value;
+}
+
+function parseBooleanHeader(value: string | undefined): boolean | undefined {
+  if (value === undefined) return undefined;
+  if (value === 'true') return true;
+  if (value === 'false') return false;
+  return undefined;
+}
+
+function parseRole(value: string | undefined, defaultRole: Role): Role {
+  return value && roleSet.has(value as Role) ? (value as Role) : defaultRole;
+}
+
+function parseIdentityProviderMode(value: string | undefined): IdentityProviderMode {
+  return value && identityProviderModes.has(value as IdentityProviderMode)
+    ? (value as IdentityProviderMode)
+    : 'local_synthetic';
+}
+
+function defaultPurposeOfUse(role: Role): PurposeOfUse {
+  if (role === 'billing_staff') return 'payment';
+  if (role === 'support') return 'support';
+  if (role === 'compliance_privacy_lead') return 'audit';
+  if (role === 'authorized_admin' || role === 'admin' || role === 'clinic_manager' || role === 'service_account') {
+    return 'operations';
+  }
+  return 'treatment';
+}
+
+function resolveRoleBooleanDefault(value: boolean | ((role: Role) => boolean) | undefined, role: Role, fallback: boolean): boolean {
+  if (typeof value === 'function') return value(role);
+  return value ?? fallback;
+}
+
 export function isForbiddenPhiKey(key: string): boolean {
   return forbiddenPhiKeySet.has(key);
+}
+
+export function createSyntheticLocalSession(headers: HeaderMap, options: SyntheticLocalSessionOptions): SyntheticLocalSession {
+  const role = parseRole(headerValue(headers['x-aura-role']), options.defaultRole ?? 'clinician');
+  const tenantId = headerValue(headers['x-aura-tenant-id']) ?? options.defaultTenantId;
+  const siteId = headerValue(headers['x-aura-site-id']) ?? options.defaultSiteId;
+  const identityProviderMode = parseIdentityProviderMode(headerValue(headers['x-aura-identity-provider']));
+  const actorUserId =
+    headerValue(headers['x-aura-user-id']) ?? options.defaultUserId ?? options.userIdForRole?.(role) ?? `synthetic-${role}`;
+  const sessionId =
+    headerValue(headers['x-aura-session-id']) ?? options.defaultSessionId ?? `session-${actorUserId}-${tenantId}`;
+  const purposeOfUse =
+    (headerValue(headers['x-aura-purpose-of-use']) as PurposeOfUse | undefined) ??
+    options.defaultPurposeOfUse ??
+    defaultPurposeOfUse(role);
+  const linkedToPatient =
+    parseBooleanHeader(headerValue(headers['x-aura-linked-patient'])) ??
+    resolveRoleBooleanDefault(options.defaultLinkedToPatient, role, role !== 'billing_staff');
+  const linkedToVisit =
+    parseBooleanHeader(headerValue(headers['x-aura-linked-visit'])) ??
+    resolveRoleBooleanDefault(options.defaultLinkedToVisit, role, role === 'clinician');
+  const billingReviewTriggered =
+    parseBooleanHeader(headerValue(headers['x-aura-billing-review-triggered'])) ??
+    options.defaultBillingReviewTriggered ??
+    false;
+  const breakGlassActive = parseBooleanHeader(headerValue(headers['x-aura-break-glass-active'])) ?? false;
+  const idempotencyKey = headerValue(headers['idempotency-key']);
+
+  let tenantScopeAllowed = true;
+  let denialReason: string | undefined;
+  if (identityProviderMode !== 'local_synthetic') {
+    tenantScopeAllowed = false;
+    denialReason = 'delegated identity providers are not configured in this local scaffold';
+  } else if (tenantId !== options.defaultTenantId || siteId !== options.defaultSiteId) {
+    tenantScopeAllowed = false;
+    denialReason = 'cross-tenant or cross-site access is denied by the local synthetic identity boundary';
+  }
+
+  return {
+    tenantId,
+    siteId,
+    actorUserId,
+    sessionId,
+    requestId: headerValue(headers['x-request-id']) ?? options.requestId,
+    traceId: headerValue(headers['x-trace-id']) ?? options.traceId,
+    ...(idempotencyKey ? { idempotencyKey } : {}),
+    identityProviderMode,
+    tenantScopeAllowed,
+    ...(denialReason ? { denialReason } : {}),
+    access: {
+      role,
+      tenantId,
+      siteId,
+      actorUserId,
+      sessionId,
+      purposeOfUse,
+      identityProviderMode,
+      linkedToPatient,
+      linkedToVisit,
+      treatingClinician: role === 'clinician' && linkedToVisit,
+      billingReviewTriggered,
+      authorizedAdmin: role === 'authorized_admin' || role === 'admin',
+      ...(breakGlassActive ? { breakGlassActive } : {}),
+      ...options.overrides
+    }
+  };
+}
+
+export function authorizeTenantScope(access: AccessContext, resource: TenantScopedResource): TenantScopeDecision {
+  if (!access.tenantId) return { allowed: false, reason: 'access context is missing tenant scope' };
+  if (access.tenantId !== resource.tenantId) return { allowed: false, reason: 'cross-tenant access denied' };
+  if (resource.siteId && access.siteId && access.siteId !== resource.siteId) {
+    return { allowed: false, reason: 'cross-site access denied' };
+  }
+  return { allowed: true };
 }
 
 export function canViewTranscript(ctx: AccessContext): boolean {

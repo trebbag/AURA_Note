@@ -83,7 +83,12 @@ import {
   type AppointmentLifecycle,
   type NoteState
 } from '@aura-note/domain';
-import { canPerform, canViewTranscript, type AccessContext, type Role } from '@aura-note/security';
+import {
+  canPerform,
+  canViewTranscript,
+  createSyntheticLocalSession,
+  type AccessContext
+} from '@aura-note/security';
 
 const TENANT_ID = 'tenant-synthetic-primary';
 const SITE_ID = 'site-synthetic-primary';
@@ -1228,33 +1233,28 @@ export class ScheduleService {
   }
 
   createRequestContext(headers: Record<string, string | string[] | undefined>): RequestContext {
-    const roleHeader = this.headerValue(headers['x-aura-role']);
-    const role = this.parseRole(roleHeader);
-    const requestId = this.headerValue(headers['x-request-id']) ?? this.nextId('req');
-    const traceId = this.headerValue(headers['x-trace-id']) ?? this.nextId('trace');
-    const idempotencyKey = this.headerValue(headers['idempotency-key']);
-    const linkedToPatient =
-      this.parseBooleanHeader(this.headerValue(headers['x-aura-linked-patient'])) ?? role !== 'billing_staff';
-    const linkedToVisit = this.parseBooleanHeader(this.headerValue(headers['x-aura-linked-visit'])) ?? role === 'clinician';
-    const billingReviewTriggered =
-      this.parseBooleanHeader(this.headerValue(headers['x-aura-billing-review-triggered'])) ?? false;
+    const session = createSyntheticLocalSession(headers, {
+      defaultTenantId: TENANT_ID,
+      defaultSiteId: SITE_ID,
+      requestId: this.nextId('req'),
+      traceId: this.nextId('trace'),
+      defaultLinkedToPatient: (role) => role !== 'billing_staff',
+      defaultLinkedToVisit: (role) => role === 'clinician'
+    });
+
+    if (!session.tenantScopeAllowed) {
+      throw new ForbiddenException(session.denialReason ?? 'tenant access denied');
+    }
 
     const context: RequestContext = {
-      requestId,
-      traceId,
-      actorUserId: this.headerValue(headers['x-aura-user-id']) ?? `synthetic-${role}`,
-      access: {
-        role,
-        linkedToPatient,
-        linkedToVisit,
-        treatingClinician: role === 'clinician' && linkedToVisit,
-        billingReviewTriggered,
-        authorizedAdmin: role === 'authorized_admin' || role === 'admin'
-      }
+      requestId: session.requestId,
+      traceId: session.traceId,
+      actorUserId: session.actorUserId,
+      access: session.access
     };
 
-    if (idempotencyKey) {
-      context.idempotencyKey = idempotencyKey;
+    if (session.idempotencyKey) {
+      context.idempotencyKey = session.idempotencyKey;
     }
 
     return context;
@@ -2408,29 +2408,4 @@ export class ScheduleService {
     return id;
   }
 
-  private headerValue(value: string | string[] | undefined): string | undefined {
-    return Array.isArray(value) ? value[0] : value;
-  }
-
-  private parseBooleanHeader(value: string | undefined): boolean | undefined {
-    if (value === undefined) return undefined;
-    if (value.toLowerCase() === 'true') return true;
-    if (value.toLowerCase() === 'false') return false;
-    return undefined;
-  }
-
-  private parseRole(value: string | undefined): Role {
-    const allowedRoles: Role[] = [
-      'clinician',
-      'ma',
-      'billing_staff',
-      'admin',
-      'authorized_admin',
-      'clinic_manager',
-      'compliance_privacy_lead',
-      'support',
-      'service_account'
-    ];
-    return allowedRoles.includes(value as Role) ? (value as Role) : 'clinician';
-  }
 }

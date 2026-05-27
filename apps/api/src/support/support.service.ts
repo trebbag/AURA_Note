@@ -16,11 +16,11 @@ import {
 import {
   buildExternalIntegrationFeatureFlags,
   canPerform,
+  createSyntheticLocalSession,
   createStructuredLogEntry,
   redactForStructuredLog,
   type AccessContext,
-  type FeatureFlagDecision,
-  type Role
+  type FeatureFlagDecision
 } from '@aura-note/security';
 
 const TENANT_ID = 'tenant-synthetic-primary';
@@ -268,27 +268,28 @@ export class SupportService {
   }
 
   createRequestContext(headers: Record<string, string | string[] | undefined>): RequestContext {
-    const role = this.parseRole(this.headerValue(headers['x-aura-role']));
-    const requestId = this.headerValue(headers['x-request-id']) ?? this.nextId('req');
-    const traceId = this.headerValue(headers['x-trace-id']) ?? this.nextId('trace');
-    const idempotencyKey = this.headerValue(headers['idempotency-key']);
+    const session = createSyntheticLocalSession(headers, {
+      defaultTenantId: TENANT_ID,
+      defaultSiteId: SITE_ID,
+      requestId: this.nextId('req'),
+      traceId: this.nextId('trace'),
+      defaultLinkedToPatient: false,
+      defaultLinkedToVisit: false
+    });
+
+    if (!session.tenantScopeAllowed) {
+      throw new ForbiddenException(session.denialReason ?? 'tenant access denied');
+    }
 
     const requestContext: RequestContext = {
-      requestId,
-      traceId,
-      actorUserId: this.headerValue(headers['x-aura-user-id']) ?? `synthetic-${role}`,
-      access: {
-        role,
-        linkedToPatient: false,
-        linkedToVisit: false,
-        treatingClinician: false,
-        billingReviewTriggered: false,
-        authorizedAdmin: role === 'authorized_admin' || role === 'admin'
-      }
+      requestId: session.requestId,
+      traceId: session.traceId,
+      actorUserId: session.actorUserId,
+      access: session.access
     };
 
-    if (idempotencyKey) {
-      requestContext.idempotencyKey = idempotencyKey;
+    if (session.idempotencyKey) {
+      requestContext.idempotencyKey = session.idempotencyKey;
     }
 
     return requestContext;
@@ -315,26 +316,6 @@ export class SupportService {
       mode: APP_MODE,
       generatedAt: new Date().toISOString()
     };
-  }
-
-  private headerValue(value: string | string[] | undefined): string | undefined {
-    return Array.isArray(value) ? value[0] : value;
-  }
-
-  private parseRole(value: string | undefined): Role {
-    switch (value) {
-      case 'ma':
-      case 'billing_staff':
-      case 'admin':
-      case 'authorized_admin':
-      case 'clinic_manager':
-      case 'compliance_privacy_lead':
-      case 'support':
-      case 'service_account':
-        return value;
-      default:
-        return 'clinician';
-    }
   }
 
   private nextId(prefix: string): string {

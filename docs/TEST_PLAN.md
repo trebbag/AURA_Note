@@ -88,3 +88,13 @@ Codex should add tests as implementation proceeds.
 - `pnpm db:migration:diff` generates PostgreSQL SQL from the Prisma datamodel without connecting to a live database;
 - `pnpm persistence:foundation` runs schema validation plus `scripts/validate-persistence-foundation.js`;
 - runtime repository replacement and database-backed e2e tests are deferred to a later numbered work order.
+
+## Post-CP4 tenant identity and access foundation
+
+`WO-016` adds local synthetic identity/access checks:
+
+- `pnpm --filter @aura-note/security test` covers local synthetic session creation, cross-tenant denial, delegated-provider denial, and tenant-scoped resource authorization;
+- `pnpm --filter @aura-note/contracts test` covers `LocalAuthSession` and `TenantScopeDecision` contract seeds;
+- `pnpm --filter @aura-note/api test` covers cross-tenant denial for schedule, AI Gateway, EHR adapter, coaching, and support service paths, plus disabled delegated identity mode for ClinicOS;
+- `pnpm --filter @aura-note/api test:e2e` covers cross-tenant schedule denial through the HTTP boundary;
+- production SSO/MFA/provider tests are deferred because production identity integration is intentionally out of scope.

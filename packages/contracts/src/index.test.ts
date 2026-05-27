@@ -20,13 +20,15 @@ import {
   type ExportActionResponseDto,
   type FinalizationSessionDto,
   type FinalizedNoteDetailDto,
+  type LocalAuthSessionDto,
   type EhrWritebackActionResponseDto,
   type ReviewActionResponseDto,
   type SupportStatusDto,
   type SuggestionDto,
   type TranscriptViewDto,
   type VisitSessionControlResponseDto,
-  type ScheduleAppointmentDto
+  type ScheduleAppointmentDto,
+  type TenantScopeDecisionDto
 } from './index';
 
 describe('API envelope', () => {
@@ -44,6 +46,31 @@ describe('API envelope', () => {
     assert.equal(envelope.data.status, 'ok');
     assert.equal(envelope.meta.mode, 'standalone');
     assert.equal(envelope.warnings, undefined);
+  });
+});
+
+describe('identity and tenant scope contracts', () => {
+  it('represents local synthetic sessions without claiming production SSO', () => {
+    const session: LocalAuthSessionDto = {
+      tenantId: 'tenant-synthetic-primary',
+      siteId: 'site-synthetic-primary',
+      userId: 'user-clinician-synthetic-001',
+      role: 'clinician',
+      sessionId: 'session-synthetic-001',
+      identityProviderMode: 'local_synthetic',
+      purposeOfUse: 'treatment',
+      localSyntheticOnly: true
+    };
+    const denied: TenantScopeDecisionDto = {
+      allowed: false,
+      tenantId: 'tenant-other',
+      siteId: 'site-other',
+      deniedReason: 'cross-tenant access denied'
+    };
+
+    assert.equal(session.localSyntheticOnly, true);
+    assert.equal(session.identityProviderMode, 'local_synthetic');
+    assert.equal(denied.allowed, false);
   });
 });
 

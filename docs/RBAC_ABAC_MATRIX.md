@@ -53,3 +53,5 @@ AURA Note must enforce role permissions and relationship-to-patient constraints.
 - Support users require break-glass reason and time-boxed access.
 - `WO-013` adds `support_status:view` for support, service account, clinic manager, compliance/privacy lead, and authorized admin roles. It does not expose PHI payloads.
 - `WO-013` adds `audit:export` for compliance/privacy leads and authorized admins only. Support users can view status but cannot request audit exports.
+- `WO-016` adds a local synthetic tenant/session boundary. Every implemented API context now carries tenant, site, actor user, session, purpose-of-use, and identity-provider mode metadata.
+- `WO-016` denies cross-tenant and cross-site requests before route behavior executes. Delegated `clinicos_delegate` and `oidc_delegate` modes are represented but denied until configured by later work orders.

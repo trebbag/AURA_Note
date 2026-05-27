@@ -41,6 +41,19 @@ describe('SupportService', () => {
     );
   });
 
+  it('denies cross-tenant support status access', () => {
+    const service = new SupportService();
+
+    assert.throws(
+      () =>
+        service.getStatus({
+          ...supportHeaders,
+          'x-aura-tenant-id': 'tenant-other'
+        }),
+      (error) => error instanceof ForbiddenException
+    );
+  });
+
   it('creates a redacted metadata-only audit export for compliance users', () => {
     const service = new SupportService();
     const response = service.requestAuditExport(complianceHeaders, {

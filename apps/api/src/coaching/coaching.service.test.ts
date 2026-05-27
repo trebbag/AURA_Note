@@ -45,6 +45,20 @@ describe('CoachingService', () => {
     );
   });
 
+  it('denies cross-tenant coaching access before report generation', () => {
+    const service = new CoachingService();
+
+    assert.throws(
+      () =>
+        service.getOwnCoaching({
+          'x-aura-role': 'clinician',
+          'x-aura-linked-visit': 'true',
+          'x-aura-tenant-id': 'tenant-other'
+        }),
+      ForbiddenException
+    );
+  });
+
   it('returns aggregate-only dashboard without clinician identifiers by default', () => {
     const service = new CoachingService();
     const dashboard = service.getDashboard({

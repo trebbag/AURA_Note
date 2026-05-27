@@ -54,4 +54,19 @@ describe('EHR integration service', () => {
       ForbiddenException
     );
   });
+
+  it('denies cross-tenant EHR adapter access before adapter calls', async () => {
+    const service = new EhrService();
+
+    await assert.rejects(
+      () =>
+        service.getStatus({
+          'x-aura-role': 'clinician',
+          'x-aura-linked-patient': 'true',
+          'x-aura-linked-visit': 'true',
+          'x-aura-tenant-id': 'tenant-other'
+        }),
+      ForbiddenException
+    );
+  });
 });
