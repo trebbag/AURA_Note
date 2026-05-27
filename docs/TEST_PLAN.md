@@ -156,3 +156,12 @@ Codex should add tests as implementation proceeds.
 - projection tests verify appointment rows reference the projected patient UUID and note rows reference the projected appointment UUID;
 - one-to-one mismatch rejection and forbidden PHI-key rejection continue to pass;
 - runtime database writes, live PostgreSQL, row-level security, and full Prisma-backed repository tests remain deferred.
+
+## Post-CP4 core Prisma relationship readiness
+
+`WO-023` extends schema SQL-generation checks:
+
+- `pnpm db:schema:validate` proves the Prisma relation fields are valid;
+- `pnpm persistence:foundation` continues to verify the schema foundation;
+- `pnpm persistence:runtime-readiness` now checks generated forward SQL includes core foreign-key constraints for Site, Patient, Appointment, and Note relationships;
+- full runtime database tests, row-level security tests, transaction tests, and complete 35-model relation coverage remain deferred.

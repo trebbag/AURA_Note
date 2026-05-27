@@ -92,3 +92,16 @@ This package does not use Prisma Client, connect to PostgreSQL, apply migrations
 - the projection emits a synthetic clinician `User` row because the Prisma schema stores appointment and note clinician references as UUIDs.
 
 Runtime database writes remain disabled. This still does not use Prisma Client, connect to PostgreSQL, apply migrations, enable row-level security, or store production PHI.
+
+## WO-023 core relationship readiness update
+
+`WO-023` adds Prisma relation fields for the core schedule and note graph:
+
+- `Tenant` relates to `Site`, `User`, `Patient`, `Appointment`, and `Note`;
+- `Site` relates to its tenant and core schedule/note records;
+- `User` relates to tenant and clinician-owned appointment/note records;
+- `Patient` relates to tenant, site, appointments, and notes;
+- `Appointment` relates to tenant, site, patient, clinician user, and optional note;
+- `Note` relates to tenant, site, appointment, patient, and clinician user.
+
+`pnpm persistence:runtime-readiness` now verifies generated forward SQL includes the core foreign-key constraints for those relationships. This is still SQL-generation evidence only: migrations are not applied, Prisma Client is not used at runtime, row-level security is not enabled, and production PHI is not stored.

@@ -37,7 +37,7 @@ const runLog = readText('RUN_LOG.md');
 const specGaps = readText('SPEC_GAPS.md');
 const openApi = readText('packages/contracts/openapi/aura-note.v1.yaml');
 
-const requiredWorkOrders = Array.from({ length: 23 }, (_, index) => `WO-${String(index).padStart(3, '0')}`);
+const requiredWorkOrders = Array.from({ length: 24 }, (_, index) => `WO-${String(index).padStart(3, '0')}`);
 const incompleteWorkOrders = requiredWorkOrders.filter((workOrder) => repoStatus.work_orders?.[workOrder] !== 'done');
 const incompleteRecordedWorkOrders = Object.entries(repoStatus.work_orders ?? {})
   .filter(([, status]) => status !== 'done')

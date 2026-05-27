@@ -54,7 +54,14 @@ const requiredForwardFragments = [
   ['CREATE TABLE "DomainEvent"', 'DomainEvent table creation'],
   ['CREATE UNIQUE INDEX "Note_appointmentId_key" ON "Note"("appointmentId")', 'one appointment to one note unique index'],
   ['CREATE INDEX "Appointment_tenantId_siteId_startsAt_idx"', 'tenant/site schedule index'],
-  ['CREATE INDEX "Note_tenantId_siteId_state_idx"', 'tenant/site note status index']
+  ['CREATE INDEX "Note_tenantId_siteId_state_idx"', 'tenant/site note status index'],
+  ['ALTER TABLE "Site" ADD CONSTRAINT "Site_tenantId_fkey"', 'Site tenant foreign key'],
+  ['ALTER TABLE "Patient" ADD CONSTRAINT "Patient_siteId_fkey"', 'Patient site foreign key'],
+  ['ALTER TABLE "Appointment" ADD CONSTRAINT "Appointment_patientId_fkey"', 'Appointment patient foreign key'],
+  ['ALTER TABLE "Appointment" ADD CONSTRAINT "Appointment_clinicianId_fkey"', 'Appointment clinician foreign key'],
+  ['ALTER TABLE "Note" ADD CONSTRAINT "Note_appointmentId_fkey"', 'Note appointment foreign key'],
+  ['ALTER TABLE "Note" ADD CONSTRAINT "Note_patientId_fkey"', 'Note patient foreign key'],
+  ['ALTER TABLE "Note" ADD CONSTRAINT "Note_clinicianId_fkey"', 'Note clinician foreign key']
 ];
 
 for (const [fragment, label] of requiredForwardFragments) {

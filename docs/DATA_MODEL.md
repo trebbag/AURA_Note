@@ -342,3 +342,14 @@ The package does not connect to PostgreSQL, generate Prisma Client, apply migrat
 - the projection includes a synthetic clinician `User` row needed by appointment and note clinician references.
 
 This remains projection-only evidence. It is not a live database adapter, does not create production ID policy, and does not store PHI.
+
+## WO-023 core Prisma relationship readiness status
+
+`WO-023` adds schema-level relation coverage for the core schedule and note graph:
+
+- `Tenant`, `Site`, `User`, `Patient`, `Appointment`, and `Note` now have Prisma relation fields for their core parent/child relationships;
+- generated migration SQL includes foreign-key constraints for site-to-tenant, patient-to-tenant/site, appointment-to-tenant/site/patient/clinician, and note-to-tenant/site/appointment/patient/clinician;
+- the one appointment to one note persistence invariant remains represented by `Note.appointmentId` uniqueness;
+- `scripts/validate-persistence-runtime-readiness.js` now checks those generated foreign-key fragments.
+
+This is still not runtime database persistence. The relation graph is intentionally limited to the core schedule/note path; full 35-model relationship completion, RLS policy implementation, live migration apply/rollback, and Prisma-backed repository replacement remain deferred.
