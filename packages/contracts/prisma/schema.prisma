@@ -86,6 +86,8 @@ model Tenant {
   patientSummaryVersions PatientSummaryVersion[]
   billingAttestations BillingAttestation[]
   draftClaimPreviews DraftClaimPreview[]
+  exportArtifacts ExportArtifact[]
+  ehrWritebackJobs EhrWritebackJob[]
 
   @@index([mode])
 }
@@ -117,6 +119,8 @@ model Site {
   patientSummaryVersions PatientSummaryVersion[]
   billingAttestations BillingAttestation[]
   draftClaimPreviews DraftClaimPreview[]
+  exportArtifacts ExportArtifact[]
+  ehrWritebackJobs EhrWritebackJob[]
 
   @@index([tenantId])
 }
@@ -140,6 +144,7 @@ model User {
   approvedPatientSummaries PatientSummaryVersion[] @relation("PatientSummaryApprovedBy")
   billingAttestations    BillingAttestation[] @relation("BillingAttestationActor")
   generatedDraftClaimPreviews DraftClaimPreview[] @relation("DraftClaimPreviewGenerator")
+  generatedExportArtifacts ExportArtifact[] @relation("ExportArtifactGenerator")
 
   @@unique([tenantId, email])
   @@index([tenantId, status])
@@ -257,6 +262,8 @@ model Note {
   patientSummaryVersions PatientSummaryVersion[]
   billingAttestations BillingAttestation[]
   draftClaimPreviews DraftClaimPreview[]
+  exportArtifacts ExportArtifact[]
+  ehrWritebackJobs EhrWritebackJob[]
 
   @@index([tenantId, siteId, state])
   @@index([tenantId, patientId])
@@ -646,6 +653,11 @@ model ExportArtifact {
   generatedAt         DateTime       @default(now())
   metadataJson        Json?
 
+  tenant      Tenant @relation(fields: [tenantId], references: [id])
+  site        Site   @relation(fields: [siteId], references: [id])
+  note        Note   @relation(fields: [noteId], references: [id])
+  generatedBy User?  @relation("ExportArtifactGenerator", fields: [generatedById], references: [id])
+
   @@index([tenantId, noteId, artifactType])
 }
 
@@ -662,6 +674,10 @@ model EhrWritebackJob {
   failureReason  String?
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
+
+  tenant Tenant @relation(fields: [tenantId], references: [id])
+  site   Site   @relation(fields: [siteId], references: [id])
+  note   Note   @relation(fields: [noteId], references: [id])
 
   @@index([tenantId, noteId, status])
 }

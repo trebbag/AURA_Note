@@ -314,3 +314,27 @@ Do not implement these tranches directly from this backlog. Promote one tranche 
 
 - This is finalization relationship readiness, not full durable finalization workflow behavior.
 - Local database orchestration, row-level security, transaction/error-path behavior, tenant-scoped query tests, and full Prisma-backed repository replacement remain later work.
+
+## Follow-on Tranche P6-08 — Output And Writeback Prisma Relationship Readiness
+
+**Promotion status:** Promoted to `WO-027` as output/writeback relation and generated foreign-key SQL evidence. Runtime database writes and live writeback remain disabled.
+
+**Objective:** Extend schema-level relationship constraints into signed export artifacts and EHR writeback jobs before any local database-backed adapter can be enabled.
+
+**Candidate scope:**
+
+- Add Prisma relation fields for `ExportArtifact` and `EhrWritebackJob`.
+- Preserve signed-version-locked export metadata and conservative writeback queue status semantics.
+- Extend SQL-generation readiness checks for output/writeback foreign-key fragments.
+- Keep in-memory runtime as the only enabled adapter.
+
+**Acceptance evidence:**
+
+- Prisma schema validation passes.
+- Persistence runtime readiness checks generated forward SQL for output/writeback foreign keys.
+- Existing repository, browser, acceptance, and persistence adapter gates continue to pass.
+
+**Known risks:**
+
+- This is output/writeback relationship readiness, not production storage, PDF delivery, or live EHR writeback.
+- Local database orchestration, row-level security, transaction/error-path behavior, tenant-scoped query tests, production storage policy, and full Prisma-backed repository replacement remain later work.

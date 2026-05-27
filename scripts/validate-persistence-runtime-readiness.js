@@ -201,7 +201,17 @@ const requiredForwardFragments = [
   [
     'ALTER TABLE "DraftClaimPreview" ADD CONSTRAINT "DraftClaimPreview_generatedById_fkey"',
     'DraftClaimPreview generated-by user foreign key'
-  ]
+  ],
+  ['ALTER TABLE "ExportArtifact" ADD CONSTRAINT "ExportArtifact_tenantId_fkey"', 'ExportArtifact tenant foreign key'],
+  ['ALTER TABLE "ExportArtifact" ADD CONSTRAINT "ExportArtifact_siteId_fkey"', 'ExportArtifact site foreign key'],
+  ['ALTER TABLE "ExportArtifact" ADD CONSTRAINT "ExportArtifact_noteId_fkey"', 'ExportArtifact note foreign key'],
+  [
+    'ALTER TABLE "ExportArtifact" ADD CONSTRAINT "ExportArtifact_generatedById_fkey"',
+    'ExportArtifact generated-by user foreign key'
+  ],
+  ['ALTER TABLE "EhrWritebackJob" ADD CONSTRAINT "EhrWritebackJob_tenantId_fkey"', 'EhrWritebackJob tenant foreign key'],
+  ['ALTER TABLE "EhrWritebackJob" ADD CONSTRAINT "EhrWritebackJob_siteId_fkey"', 'EhrWritebackJob site foreign key'],
+  ['ALTER TABLE "EhrWritebackJob" ADD CONSTRAINT "EhrWritebackJob_noteId_fkey"', 'EhrWritebackJob note foreign key']
 ];
 
 for (const [fragment, label] of requiredForwardFragments) {
