@@ -119,7 +119,89 @@ const requiredForwardFragments = [
   ['ALTER TABLE "Task" ADD CONSTRAINT "Task_siteId_fkey"', 'Task site foreign key'],
   ['ALTER TABLE "Task" ADD CONSTRAINT "Task_noteId_fkey"', 'Task note foreign key'],
   ['ALTER TABLE "Task" ADD CONSTRAINT "Task_patientId_fkey"', 'Task patient foreign key'],
-  ['ALTER TABLE "Task" ADD CONSTRAINT "Task_ownerUserId_fkey"', 'Task owner user foreign key']
+  ['ALTER TABLE "Task" ADD CONSTRAINT "Task_ownerUserId_fkey"', 'Task owner user foreign key'],
+  ['ALTER TABLE "FinalizationRun" ADD CONSTRAINT "FinalizationRun_tenantId_fkey"', 'FinalizationRun tenant foreign key'],
+  ['ALTER TABLE "FinalizationRun" ADD CONSTRAINT "FinalizationRun_siteId_fkey"', 'FinalizationRun site foreign key'],
+  ['ALTER TABLE "FinalizationRun" ADD CONSTRAINT "FinalizationRun_noteId_fkey"', 'FinalizationRun note foreign key'],
+  [
+    'ALTER TABLE "WizardStepDecision" ADD CONSTRAINT "WizardStepDecision_tenantId_fkey"',
+    'WizardStepDecision tenant foreign key'
+  ],
+  [
+    'ALTER TABLE "WizardStepDecision" ADD CONSTRAINT "WizardStepDecision_siteId_fkey"',
+    'WizardStepDecision site foreign key'
+  ],
+  [
+    'ALTER TABLE "WizardStepDecision" ADD CONSTRAINT "WizardStepDecision_finalizationRunId_fkey"',
+    'WizardStepDecision finalization run foreign key'
+  ],
+  ['ALTER TABLE "WizardStepDecision" ADD CONSTRAINT "WizardStepDecision_noteId_fkey"', 'WizardStepDecision note foreign key'],
+  [
+    'ALTER TABLE "WizardStepDecision" ADD CONSTRAINT "WizardStepDecision_actorUserId_fkey"',
+    'WizardStepDecision actor user foreign key'
+  ],
+  [
+    'ALTER TABLE "EnhancedNoteVersion" ADD CONSTRAINT "EnhancedNoteVersion_tenantId_fkey"',
+    'EnhancedNoteVersion tenant foreign key'
+  ],
+  [
+    'ALTER TABLE "EnhancedNoteVersion" ADD CONSTRAINT "EnhancedNoteVersion_siteId_fkey"',
+    'EnhancedNoteVersion site foreign key'
+  ],
+  ['ALTER TABLE "EnhancedNoteVersion" ADD CONSTRAINT "EnhancedNoteVersion_noteId_fkey"', 'EnhancedNoteVersion note foreign key'],
+  [
+    'ALTER TABLE "EnhancedNoteVersion" ADD CONSTRAINT "EnhancedNoteVersion_finalizationRunId_fkey"',
+    'EnhancedNoteVersion finalization run foreign key'
+  ],
+  [
+    'ALTER TABLE "EnhancedNoteVersion" ADD CONSTRAINT "EnhancedNoteVersion_approvedById_fkey"',
+    'EnhancedNoteVersion approved-by user foreign key'
+  ],
+  [
+    'ALTER TABLE "PatientSummaryVersion" ADD CONSTRAINT "PatientSummaryVersion_tenantId_fkey"',
+    'PatientSummaryVersion tenant foreign key'
+  ],
+  [
+    'ALTER TABLE "PatientSummaryVersion" ADD CONSTRAINT "PatientSummaryVersion_siteId_fkey"',
+    'PatientSummaryVersion site foreign key'
+  ],
+  [
+    'ALTER TABLE "PatientSummaryVersion" ADD CONSTRAINT "PatientSummaryVersion_noteId_fkey"',
+    'PatientSummaryVersion note foreign key'
+  ],
+  [
+    'ALTER TABLE "PatientSummaryVersion" ADD CONSTRAINT "PatientSummaryVersion_finalizationRunId_fkey"',
+    'PatientSummaryVersion finalization run foreign key'
+  ],
+  [
+    'ALTER TABLE "PatientSummaryVersion" ADD CONSTRAINT "PatientSummaryVersion_approvedById_fkey"',
+    'PatientSummaryVersion approved-by user foreign key'
+  ],
+  [
+    'ALTER TABLE "BillingAttestation" ADD CONSTRAINT "BillingAttestation_tenantId_fkey"',
+    'BillingAttestation tenant foreign key'
+  ],
+  ['ALTER TABLE "BillingAttestation" ADD CONSTRAINT "BillingAttestation_siteId_fkey"', 'BillingAttestation site foreign key'],
+  ['ALTER TABLE "BillingAttestation" ADD CONSTRAINT "BillingAttestation_noteId_fkey"', 'BillingAttestation note foreign key'],
+  [
+    'ALTER TABLE "BillingAttestation" ADD CONSTRAINT "BillingAttestation_finalizationRunId_fkey"',
+    'BillingAttestation finalization run foreign key'
+  ],
+  [
+    'ALTER TABLE "BillingAttestation" ADD CONSTRAINT "BillingAttestation_attestedById_fkey"',
+    'BillingAttestation attested-by user foreign key'
+  ],
+  ['ALTER TABLE "DraftClaimPreview" ADD CONSTRAINT "DraftClaimPreview_tenantId_fkey"', 'DraftClaimPreview tenant foreign key'],
+  ['ALTER TABLE "DraftClaimPreview" ADD CONSTRAINT "DraftClaimPreview_siteId_fkey"', 'DraftClaimPreview site foreign key'],
+  ['ALTER TABLE "DraftClaimPreview" ADD CONSTRAINT "DraftClaimPreview_noteId_fkey"', 'DraftClaimPreview note foreign key'],
+  [
+    'ALTER TABLE "DraftClaimPreview" ADD CONSTRAINT "DraftClaimPreview_finalizationRunId_fkey"',
+    'DraftClaimPreview finalization run foreign key'
+  ],
+  [
+    'ALTER TABLE "DraftClaimPreview" ADD CONSTRAINT "DraftClaimPreview_generatedById_fkey"',
+    'DraftClaimPreview generated-by user foreign key'
+  ]
 ];
 
 for (const [fragment, label] of requiredForwardFragments) {

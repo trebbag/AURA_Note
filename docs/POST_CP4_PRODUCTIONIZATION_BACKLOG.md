@@ -290,3 +290,27 @@ Do not implement these tranches directly from this backlog. Promote one tranche 
 
 - This is review-panel relationship readiness, not full 35-model relationship completion or durable workflow behavior.
 - Local database orchestration, row-level security, transaction/error-path behavior, tenant-scoped query tests, and full Prisma-backed repository replacement remain later work.
+
+## Follow-on Tranche P6-07 — Finalization Prisma Relationship Readiness
+
+**Promotion status:** Promoted to `WO-026` as finalization relation and generated foreign-key SQL evidence. Runtime database writes remain disabled.
+
+**Objective:** Extend schema-level relationship constraints into finalization runs, wizard decisions, enhanced note versions, patient summary versions, billing attestations, and draft claim previews before any local database-backed adapter can be enabled.
+
+**Candidate scope:**
+
+- Add Prisma relation fields for `FinalizationRun`, `WizardStepDecision`, `EnhancedNoteVersion`, `PatientSummaryVersion`, `BillingAttestation`, and `DraftClaimPreview`.
+- Preserve human-review-required finalization and `submittedClaim = false` draft claim semantics.
+- Extend SQL-generation readiness checks for finalization foreign-key fragments.
+- Keep in-memory runtime as the only enabled adapter.
+
+**Acceptance evidence:**
+
+- Prisma schema validation passes.
+- Persistence runtime readiness checks generated forward SQL for finalization foreign keys.
+- Existing repository, browser, acceptance, and persistence adapter gates continue to pass.
+
+**Known risks:**
+
+- This is finalization relationship readiness, not full durable finalization workflow behavior.
+- Local database orchestration, row-level security, transaction/error-path behavior, tenant-scoped query tests, and full Prisma-backed repository replacement remain later work.

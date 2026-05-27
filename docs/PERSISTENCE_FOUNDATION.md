@@ -129,3 +129,16 @@ Runtime database writes remain disabled. This still does not use Prisma Client, 
 - `Task` relates to `Tenant`, `Site`, optional `Note`, optional `Patient`, optional owner `User`, and linked History Gap questions.
 
 `pnpm persistence:runtime-readiness` now verifies generated forward SQL includes those review-panel foreign-key constraints. This remains SQL-generation evidence only: migrations are not applied, Prisma Client is not used at runtime, row-level security is not enabled, and production PHI is not stored.
+
+## WO-026 finalization relationship readiness update
+
+`WO-026` extends Prisma relation fields into the finalization wizard graph:
+
+- `FinalizationRun` relates to `Tenant`, `Site`, `Note`, wizard decisions, enhanced note versions, patient summary versions, billing attestations, and draft claim previews;
+- `WizardStepDecision` relates to `Tenant`, `Site`, `FinalizationRun`, `Note`, and optional actor `User`;
+- `EnhancedNoteVersion` relates to `Tenant`, `Site`, `Note`, `FinalizationRun`, and optional approving `User`;
+- `PatientSummaryVersion` relates to `Tenant`, `Site`, `Note`, `FinalizationRun`, and optional approving `User`;
+- `BillingAttestation` relates to `Tenant`, `Site`, `Note`, `FinalizationRun`, and optional attesting `User`;
+- `DraftClaimPreview` relates to `Tenant`, `Site`, `Note`, `FinalizationRun`, and optional generating `User`.
+
+`pnpm persistence:runtime-readiness` now verifies generated forward SQL includes those finalization foreign-key constraints. This remains SQL-generation evidence only: migrations are not applied, Prisma Client is not used at runtime, row-level security is not enabled, production PHI is not stored, and claim submission remains prohibited.
