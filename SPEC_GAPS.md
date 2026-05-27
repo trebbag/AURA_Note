@@ -1,10 +1,79 @@
 # SPEC_GAPS
 
-This file tracks missing, conflicting, or unsafe product/technical requirements discovered during implementation.
+This file tracks missing, conflicting, unsafe, or deliberately deferred product and technical decisions discovered during implementation.
 
 ## Active gaps
 
-None at initial package creation.
+No active gaps as of post-`WO-032` / production-build re-rail review on 2026-05-27.
+
+The repo remains not production-ready. The items below are deferred production decisions rather than active blockers for the current rails work order.
+
+## Deferred production decisions
+
+These items must stay visible and must be resolved before the related production work can be declared complete. They are not blockers for `WO-033` because `WO-033` is a planning/readiness-control work order.
+
+### Deferred Decision — Production identity provider and account lifecycle
+
+- **Related future work:** `WO-041`
+- **Status:** deferred
+- **Decision needed before live use:** production IdP selection, OIDC/SAML/ClinicOS delegation posture, MFA expectations, account recovery, tenant/user/site administration ownership, disabled-user handling, and access-review cadence.
+- **Safe current posture:** local synthetic identity and adapter boundaries only; delegated modes remain denied or scaffolded until configured.
+
+### Deferred Decision — Production PHI persistence and database operations
+
+- **Related future work:** `WO-034` through `WO-037`
+- **Status:** deferred
+- **Decision needed before live use:** production database roles, RLS coverage review, backup/restore operations, migration approval/rollback process, PHI storage policy, and tenant data isolation review.
+- **Safe current posture:** local synthetic PostgreSQL evidence only; broad workflow runtime still migrates in controlled work orders.
+
+### Deferred Decision — Production Azure Blob storage and destructive deletion
+
+- **Related future work:** `WO-042`
+- **Status:** deferred
+- **Decision needed before live use:** Azure credential source, private container policy, soft-delete/versioning configuration, backup/restore drill, deletion approval workflow, recovery window, and evidence retention.
+- **Safe current posture:** production-shaped adapter boundary and deterministic fake storage tests; no PHI-bearing production object delivery or destructive production deletion.
+
+### Deferred Decision — Live transcription provider
+
+- **Related future work:** `WO-040`
+- **Status:** deferred
+- **Decision needed before live use:** transcription vendor, BAA/privacy review, audio transport constraints, diarization support, confidence metadata, correction retention, and failure-handling policy.
+- **Safe current posture:** mock transcription and metadata scaffolds only.
+
+### Deferred Decision — External AI provider and PHI governance
+
+- **Related future work:** `WO-046`
+- **Status:** deferred
+- **Decision needed before live use:** private/BAA model path, de-identification policy, source-freshness rules, model/prompt approval, evaluation thresholds, monitoring, and incident response.
+- **Safe current posture:** external AI remains disabled by default; mock-only/draft-only gateway rejects or redacts obvious PHI.
+
+### Deferred Decision — EHR sandbox and production writeback
+
+- **Related future work:** `WO-044`
+- **Status:** deferred
+- **Decision needed before live use:** athenahealth sandbox credentials, production credentialing, writeback scope, approval roles, reconciliation rules, retry/dead-letter policy, and rollback support.
+- **Safe current posture:** adapter scaffolds and writeback queue metadata only; no live writeback.
+
+### Deferred Decision — ClinicOS live integration contracts
+
+- **Related future work:** `WO-045`
+- **Status:** deferred
+- **Decision needed before live use:** live ClinicOS module contracts, tenant/user mapping, VisitGraph/WorkOS/Charge Integrity/Copilot/Governance/Integration/Data Cloud event schemas, and operational ownership.
+- **Safe current posture:** standalone remains authoritative; ClinicOS mock/integration scaffolds cannot bypass AURA Note permissions.
+
+### Deferred Decision — Revenue estimates and patient-facing financial content
+
+- **Related future work:** `WO-039`, `WO-051`
+- **Status:** deferred
+- **Decision needed before live use:** tenant estimate source data, caveat language, patient-facing permission, payer/fee/payment data governance, and compliance review.
+- **Safe current posture:** no patient-facing revenue by default; estimates show unavailable/caveat language unless configured.
+
+### Deferred Decision — Claim submission, clearinghouse, payer integration, and denial automation
+
+- **Related future work:** `WO-051`
+- **Status:** deferred
+- **Decision needed before implementation:** whether live claim submission belongs in v1 or later, clearinghouse/payer strategy, billing compliance requirements, human approval model, audit model, and rollback/voiding procedures.
+- **Safe current posture:** draft claim preview only with `submittedClaim = false`; no autonomous charge finalization or claim submission.
 
 ## Gap entry format
 

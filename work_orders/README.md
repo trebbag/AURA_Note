@@ -41,6 +41,25 @@ Codex must complete work orders sequentially unless a checkpoint or blocker stop
 - `WO-030` — Prisma schedule runtime adapter.
 - `WO-031` — Tenant isolation and core RLS evidence.
 - `WO-032` — Azure Blob export delivery and retention deletion readiness.
+- `WO-033` — Production build rails and readiness controls.
+- `WO-034` — Durable visit capture runtime persistence.
+- `WO-035` — Durable review panels, selections, compliance, and task persistence.
+- `WO-036` — Durable finalization, output metadata, and writeback queue persistence.
+- `WO-037` — Durable audit, events, support, configuration, coaching, and broad RLS completion.
+- `WO-038` — Standalone patient, chart context, and schedule completion.
+- `WO-039` — Standalone worklists, settings, templates, estimates, and rules catalog.
+- `WO-040` — Browser audio capture and transcription candidate.
+- `WO-041` — Production identity, tenant administration, secrets, configuration, and feature flags.
+- `WO-042` — Azure storage, secure downloads, retention deletion, backup, and restore controls.
+- `WO-043` — Production observability, support operations, and status views.
+- `WO-044` — EHR sandbox integration and writeback queue hardening.
+- `WO-045` — ClinicOS integration hardening.
+- `WO-046` — AI Gateway production governance and evaluation harness.
+- `WO-047` — Security, privacy, compliance, and threat-model remediation.
+- `WO-048` — UX, accessibility, responsive, and visual regression hardening.
+- `WO-049` — Deployment, environment promotion, performance, reliability, and operational drills.
+- `WO-050` — Beta pilot and limited production launch gate.
+- `WO-051` — Claim submission and payer integration decision gate.
 
 ## Work order rules
 
@@ -48,6 +67,7 @@ Codex must complete work orders sequentially unless a checkpoint or blocker stop
 - Update tests and docs with every work order.
 - Stop at checkpoint gates.
 - Create SPEC_GAPs instead of inventing missing behavior.
+- Future work orders may be listed as `planned` in `repo_status.json`. Codex should treat the first `todo` or `in_progress` work order as active.
 
 ## Post-CP4 planning
 
@@ -90,3 +110,19 @@ Post-CP4 productionization candidates are documented in `docs/POST_CP4_PRODUCTIO
 `WO-031` adds live local PostgreSQL tenant/site query evidence and adopts core row-level security policies for the currently persisted schedule/note slice only. Broader-table RLS expansion and full Prisma-backed workflow persistence remain out of scope.
 
 `WO-032` adds Azure Blob-oriented object storage adapter boundaries, storage-backed export/audit delivery metadata, and raw-audio storage deletion readiness with synthetic approval controls. Real Azure credentials, production storage execution, PHI-bearing payloads, and production backup/restore execution remain out of scope.
+
+`WO-033` re-establishes the production build rails after `WO-032`. It updates status semantics, checkpoint sequence, readiness scripts, `SPEC_GAPS.md`, and future-work-order discoverability. It does not implement runtime product behavior.
+
+`WO-034` through `WO-037` form the P7 durable runtime candidate. They move broad workflow state to local Prisma/PostgreSQL persistence, add tenant/site query enforcement, expand RLS coverage, and make audit/event records durable.
+
+`WO-038` through `WO-039` form the P7.5 standalone product completion candidate. They complete standalone patient/chart/schedule/worklist/settings/template/estimate/rules-catalog surfaces so core v1 operation does not depend on ClinicOS.
+
+`WO-040` forms the P8.5 audio and transcription candidate. It adds browser microphone capture, recording transport, transcription adapters, mock provider coverage, retention metadata, correction history, and provider-governance boundaries.
+
+`WO-041` through `WO-043` form the P8 production platform candidate. They harden identity, tenant administration, config/secrets, feature flags, Azure storage/download/retention/backup/restore, observability, support operations, and status views.
+
+`WO-044` through `WO-047` form the P9 integration and AI candidate. They harden EHR, ClinicOS, AI governance/evaluation, and security/privacy/compliance evidence without enabling prohibited autonomous behavior.
+
+`WO-048` through `WO-050` form the P10 launch candidate. They cover UX/accessibility/visual regression, deployment/release controls, performance/reliability/operational drills, beta readiness, and limited launch governance.
+
+`WO-051` is the P11 claim/payer decision gate. It captures the strategy for claim submission, clearinghouse, payer integration, denial automation, and payment workflows without implementing autonomous submission by default.

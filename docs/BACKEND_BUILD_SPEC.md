@@ -211,6 +211,8 @@ The broader API runtime remains in-memory for workflow state that is not yet saf
 
 Production Azure Blob use requires soft delete, versioning, private containers, managed identity or workload identity, database backup alignment, restore-readiness drills, and security/privacy review before any PHI-bearing payload or production credential is allowed.
 
+`WO-033` re-establishes the production build rails after `WO-032`. Backend implementation resumes with `WO-034` through `WO-037` for durable workflow persistence and RLS expansion, `WO-041` through `WO-043` for production identity/config/storage/observability controls, `WO-044` through `WO-046` for EHR/ClinicOS/AI hardening, and `WO-049` through `WO-050` for deployment, operational, beta, and launch readiness. `acceptance:readiness` remains a synthetic/post-CP4 readiness gate; production-build readiness is checked separately with `pnpm production:readiness`.
+
 `WO-016` adds the first tenant identity and access foundation:
 
 - API request contexts use a shared local synthetic session parser from `packages/security`.

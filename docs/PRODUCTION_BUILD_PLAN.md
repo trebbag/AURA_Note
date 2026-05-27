@@ -2,42 +2,49 @@
 
 ## Purpose
 
-This document converts the remaining post-`WO-032` productionization work into a sequential, reviewable work-order plan. It is a planning artifact only. It does not promote any new work order, change `repo_status.json`, or claim production readiness.
+This document is the post-`WO-032` production build rail for AURA Note. It converts the remaining work into sequential, reviewable work orders with explicit safety boundaries, checkpoint gates, completion criteria, and stop conditions.
 
-The current implemented baseline is:
+This is not a production-readiness claim. The current baseline is strong synthetic/local-first scaffolding with local PostgreSQL and storage readiness evidence for bounded slices. AURA Note is not yet commercially production-ready, not yet fully durable across the workflow, and not yet live against production identity, production object storage, production EHR, production AI, production PHI storage, or production claim submission.
 
-- all numbered work orders through `WO-032` are complete;
-- local synthetic CP-4 and post-CP4 readiness gates pass;
-- the schedule/note slice has local PostgreSQL, tenant/site query evidence, and core RLS evidence;
-- Azure Blob-oriented storage, signed delivery metadata, and raw-audio deletion behavior exist as synthetic/local readiness scaffolding;
-- the broad runtime still uses in-memory or local synthetic state for most workflow areas;
-- real production PHI storage, real Azure storage execution, live EHR writeback, live external AI with PHI, production identity, claim submission, and autonomous clinical/coding/billing behavior remain disabled or out of scope.
+## Current baseline
 
-## Safety boundaries for every work order
+- `WO-000` through `WO-032` are complete and must not be renumbered.
+- The schedule/note slice has local Prisma/PostgreSQL adapter evidence, tenant/site scoped query tests, and core RLS evidence.
+- Storage-backed export/audit metadata and raw-audio deletion behavior are synthetic/local readiness scaffolds only.
+- Most workflow state still uses in-memory/local synthetic repositories.
+- `acceptance:readiness` proves CP-4/post-CP4 synthetic readiness. It must not be used as a production launch readiness claim.
+- Future production work must be promoted deliberately through numbered work orders and status updates.
 
-Every work order below must preserve these boundaries unless a later founder-approved specification explicitly changes them:
+## Universal safety boundaries
 
-- no autonomous diagnosis;
-- no autonomous ICD-10, CPT, HCPCS, HCC, E/M, modifier, quality-measure, charge, claim, or medical-necessity finalization;
-- no live claim submission;
-- no live EHR writeback without explicit configuration, audit, permission, idempotency, rollback/recovery, and human approval gates;
-- no production PHI sent to external AI until business associate, privacy, security, governance, and tenant-policy requirements are approved and implemented;
-- no production storage deletion until retention controls, approvals, backup/restore, soft-delete/versioning, and recovery evidence are complete;
-- no patient-facing revenue estimate unless tenant policy and source data authorize it;
-- no `.env`, real credential, private key, production connection string, or real patient data may be committed.
+Every future work order must preserve these boundaries:
 
-## Standard gate for each implementation work order
+- AI may draft, summarize, suggest, score confidence, identify missing evidence, create candidate items/tasks, draft patient summaries, draft payer-readable support language, route work for human review, create draft claim previews, and create coaching feedback.
+- AI and automation must not diagnose, finalize diagnoses/codes/charges/claims, submit claims, determine medical necessity, place orders, deny care, override safety/compliance protocols, or create final patient financial conclusions.
+- No raw PHI may be sent to external AI.
+- No production storage deletion may run without approved retention, backup, restore, soft-delete/versioning, approval, recovery, and audit evidence.
+- ClinicOS context must never bypass AURA Note permissions.
+- athenahealth must remain behind a vendor-neutral EHR adapter boundary.
+- No real credential, `.env`, private key, production connection string, or real patient data may be committed.
+
+## Standard work-order gate
 
 Unless a work order states otherwise, completion requires:
 
-- implementation traced to `AGENTS.md`, locked decisions, specs, data model, contracts, events, RBAC/ABAC, and the active work order;
-- unit, integration, contract, security, and browser/e2e coverage appropriate to the changed surface;
-- OpenAPI/DTO/event/data-model documentation updates when public behavior changes;
-- `RUN_LOG.md`, `repo_status.json`, and relevant docs updated;
-- no new active `SPEC_GAP` remains unless the work order explicitly stops at a documented decision gate;
-- CI passes on a reviewable PR before the work order is marked done.
+- implementation traced to `AGENTS.md`, locked decisions, canonical specs, work order, data model, API/event contracts, and RBAC/ABAC;
+- positive and negative unit/integration tests;
+- browser/e2e coverage where UX or route behavior changes;
+- OpenAPI/DTO/event/data-model updates when public behavior changes;
+- tenant/site scoping and permission checks for state-changing operations;
+- audit/domain event evidence for state-changing operations;
+- idempotency where duplicate submissions are plausible;
+- PHI/security tests for sensitive data paths;
+- standalone mode preserved;
+- ClinicOS-integrated mode supported through adapters or safely degraded;
+- `RUN_LOG.md`, `repo_status.json`, `CHECKPOINT_REPORT.md` at checkpoints, and relevant docs updated;
+- CI and the relevant local gates passing before a work order is marked done.
 
-The default local gate is:
+Default local gate:
 
 ```bash
 pnpm install --frozen-lockfile
@@ -58,433 +65,440 @@ pnpm persistence:prisma-schedule-adapter
 pnpm persistence:tenant-isolation
 pnpm storage:azure-adapter-readiness
 pnpm retention:storage-deletion-readiness
+pnpm production:readiness
 pnpm acceptance:readiness
 node scripts/status.js
 git diff --check
 ```
 
-Additional gates must be added as new production surfaces are introduced.
-
 ## Checkpoint sequence
 
-- **P7 Durable Runtime Candidate:** `WO-033` through `WO-036`. Goal: broad workflow state is Prisma-backed locally with tenant/site query enforcement, RLS evidence, and durable audit/event records.
-- **P8 Production Platform Candidate:** `WO-037` through `WO-041`. Goal: production identity, secrets/config, Azure storage execution, retention deletion controls, and observability are ready for security/privacy review.
-- **P9 Integration And AI Candidate:** `WO-042` through `WO-045`. Goal: EHR, ClinicOS, and AI production paths are sandboxed, governed, audited, and externally reviewable without weakening human-review boundaries.
-- **P10 Launch Candidate:** `WO-046` through `WO-050`. Goal: UX/accessibility polish, deployment automation, operational drills, beta readiness, and limited launch governance are complete.
-- **Decision Gate:** `WO-051`. Goal: claim-submission and payer integration decisions are captured without implementing prohibited billing behavior by default.
-
-## WO-033 — Durable Visit Capture Runtime Persistence
-
-**Objective:** Move visit session, recording asset, transcript, and transcript segment runtime state from in-memory/local synthetic state to Prisma-backed local PostgreSQL while preserving timer gates, recording exception behavior, raw-audio retention metadata, and indefinite transcript retention.
-
-**Scope:**
-
-- Add repository ports and Prisma adapters for `VisitSession`, `RecordingAsset`, `Transcript`, and `TranscriptSegment`.
-- Persist start, pause, resume, stop, recording-exception, and mock transcript append/retrieval behavior.
-- Add transaction boundaries for session state changes and transcript segment append.
-- Add tenant/site-scoped query filters and cross-tenant/site denial tests.
-- Add RLS policy artifacts and tests for the visit capture tables.
-- Keep production PHI storage disabled unless explicitly configured for synthetic/local tests.
-
-**Completion criteria:**
-
-- API and worker tests prove persisted visit/session state reloads after adapter recreation.
-- Cross-tenant and cross-site persisted records are denied before DTO exposure.
-- Timer/editor gate behavior remains unchanged in browser/e2e tests.
-- RLS read, insert, and update denial tests pass for the new tables.
-- Raw-audio retention metadata persists, and transcript purge count remains zero.
-- Full standard gate and new `pnpm persistence:visit-capture-adapter` gate pass locally and in CI.
-
-## WO-034 — Durable Review Panels, Selections, Compliance, And Task Persistence
-
-**Objective:** Move suggestions, Visit Selections, compliance issues, History Gap questions, and blocker tasks to Prisma-backed local PostgreSQL while preserving draft-only, human-review-required behavior.
-
-**Scope:**
-
-- Add repository ports and Prisma adapters for `Suggestion`, `VisitSelection`, `ComplianceIssue`, `HistoryGapQuestion`, and `Task`.
-- Persist suggestion filtering, accept/remove/manual-add actions, low-confidence override metadata, compliance hard blocks, and MA follow-up blocker tasks.
-- Add transaction boundaries for accept/remove operations and blocker task creation.
-- Add tenant/site query tests and RLS policy evidence for the review-panel tables.
-- Preserve deterministic mock suggestion behavior; do not add live AI.
-
-**Completion criteria:**
-
-- Persisted suggestion and selection state reloads correctly.
-- Diagnosis suggestions below 75 percent still require override metadata before acceptance.
-- Blocker tasks prevent finalization preparation after reload.
-- Cross-tenant/site denial and RLS read/write denial tests pass.
-- Browser tests prove panels still expose empty, ready, blocked, permission-denied, and demo fixture states.
-- Full standard gate and new `pnpm persistence:review-panel-adapter` gate pass locally and in CI.
-
-## WO-035 — Durable Finalization, Output Metadata, And Writeback Queue Persistence
-
-**Objective:** Move finalization runs, wizard decisions, enhanced note versions, patient summary versions, billing attestations, draft claim previews, export artifact metadata, and EHR writeback queue records to Prisma-backed local PostgreSQL.
-
-**Scope:**
-
-- Add repository ports and Prisma adapters for the finalization/output/writeback graph.
-- Persist all six Finalization Wizard steps and immutable signed output metadata.
-- Persist draft claim previews with `submittedClaim = false`.
-- Persist writeback queue status without enabling live EHR writeback.
-- Add transaction boundaries for finalization decisions and Sign & Dispatch preparation.
-- Add tenant/site query tests and RLS policy evidence for finalization, output, and writeback tables.
-
-**Completion criteria:**
-
-- A note can proceed through finalization, export metadata creation, and writeback queue preparation using the Prisma-backed local adapter.
-- Read-only final note and patient summary versions reload after adapter recreation.
-- Draft claim previews remain non-submitted and human-review-required.
-- Cross-tenant/site denial and RLS read/write denial tests pass.
-- Existing finalization, finalized viewer, export/copy/PDF, and writeback e2e tests pass unchanged.
-- Full standard gate and new `pnpm persistence:finalization-output-adapter` gate pass locally and in CI.
-
-## WO-036 — Durable Audit, Domain Events, Support Status, And Broad RLS Completion
-
-**Objective:** Persist audit events, domain events, support status snapshots, feature flags, integration connections, templates, dot phrases, coaching reports, and remaining core records, then complete RLS evidence for every table that is locally persisted.
-
-**Scope:**
-
-- Add durable repositories for audit/event/support/config/coaching records.
-- Ensure every state-changing operation emits durable audit/event evidence.
-- Expand RLS policy artifacts to all persisted runtime tables.
-- Add tenant/site query tests for support, audit export metadata, coaching visibility, and configuration access.
-- Add migration and rollback evidence after full persistence expansion.
-- Update acceptance readiness so it distinguishes local durable runtime readiness from production launch readiness.
-
-**Completion criteria:**
-
-- All local runtime workflow state has a Prisma-backed local adapter or a documented reason it remains intentionally in-memory.
-- Every persisted table has tenant/site query tests or a documented non-tenant-scoped rationale.
-- Every tenant-owned persisted table has RLS `USING` and `WITH CHECK` policy evidence.
-- Audit/event persistence is durable and queryable for support/compliance roles without exposing PHI improperly.
-- Full standard gate and new `pnpm persistence:durable-runtime-readiness` gate pass locally and in CI.
-- P7 checkpoint report documents completed persistence scope, remaining production limitations, and open risks.
-
-## WO-037 — Production Identity, SSO, Session, And Tenant Administration Foundation
-
-**Objective:** Replace local header/session scaffolding with a production-shaped identity boundary while preserving existing RBAC/ABAC and tenant/site isolation.
-
-**Scope:**
-
-- Add an identity provider adapter interface for OIDC/SAML/ClinicOS delegation.
-- Add production-shaped session validation middleware and local fake IdP tests.
-- Persist tenant, site, user, role assignment, clinician linkage, purpose-of-use, and account status behavior.
-- Add tenant administration APIs or admin scaffolds only where specified.
-- Add MFA/account recovery decision records as explicit deferred or implemented controls.
-
-**Completion criteria:**
-
-- API and browser routes work through the identity boundary in local fake-IdP mode.
-- Cross-tenant identity spoofing attempts are denied.
-- Role-limited transcript, final note, billing, coaching, support, and audit access still passes tests.
-- Session expiration, disabled user, wrong tenant, wrong site, and missing purpose-of-use denial tests pass.
-- No real IdP secrets are committed.
-- Full standard gate and new `pnpm identity:production-readiness` gate pass locally and in CI.
-
-## WO-038 — Production Secrets, Configuration, And Feature-Flag Governance
-
-**Objective:** Define and enforce production configuration rules for database, storage, identity, observability, EHR, ClinicOS, AI, retention, and feature flags without committing secrets.
-
-**Scope:**
-
-- Add typed configuration validation and startup failure modes.
-- Add environment matrix checks for local, test, staging, and production.
-- Add secret-source placeholders and prohibited-inline-secret detection.
-- Add feature-flag governance for live AI, live EHR writeback, production storage delivery, and destructive deletion.
-- Add runbooks for configuration rotation and emergency disablement.
-
-**Completion criteria:**
-
-- Missing or unsafe production config fails closed.
-- Local/test config continues to run with synthetic defaults.
-- CI proves no `.env`, credential, private key, or production connection string is committed.
-- High-risk features cannot be enabled without required approval/config evidence.
-- Full standard gate and new `pnpm config:production-readiness` gate pass locally and in CI.
-
-## WO-039 — Azure Blob Live Adapter And Secure Download Service
-
-**Objective:** Implement a real Azure Blob adapter path and secure download service while keeping PHI-bearing payloads disabled until security/privacy review approves production use.
-
-**Scope:**
-
-- Add Azure SDK-backed adapter behind explicit configuration.
-- Add emulator or controlled test path where feasible; keep deterministic fake adapter for CI.
-- Implement signed download token validation as a server-mediated, permission-checked path.
-- Validate tenant/site/object ownership before download metadata or content access.
-- Add content checksum, length, content type, retention class, and audit evidence for every artifact.
-- Preserve patient-summary internal-detail exclusion.
-
-**Completion criteria:**
-
-- Fake adapter tests and Azure request-construction tests pass in CI.
-- Optional local emulator tests are documented and runnable without production credentials.
-- Expired, wrong-tenant, wrong-site, wrong-role, and wrong-artifact tokens are denied.
-- Audit export, final note, patient summary, copy, and structured export metadata paths work through the storage boundary.
-- No public Blob URLs are returned.
-- Full standard gate and new `pnpm storage:secure-download-readiness` gate pass locally and in CI.
-
-## WO-040 — Production Retention Deletion, Backup, Restore, And Evidence Controls
-
-**Objective:** Prepare retention deletion for production review by proving backup/restore readiness, approval controls, recovery windows, and audit-safe evidence before any destructive production deletion is allowed.
-
-**Scope:**
-
-- Add raw-audio deletion job integration with the storage adapter.
-- Add approval token, approval ID, trace ID, recovery window, and deletion evidence persistence.
-- Add Azure Blob soft-delete/versioning policy checks or documented manual evidence requirements.
-- Add database backup and restore-readiness checks for metadata.
-- Add restore drill documentation and local synthetic restore validation.
-- Keep transcript retention indefinite and transcript deletion disabled.
-
-**Completion criteria:**
-
-- Deletion does not run without destructive feature flag and approval evidence.
-- Deletion results persist object key, checksum/eTag, approval ID, trace ID, recovery-window status, and outcome.
-- Transcript purge count remains zero in tests and DTOs.
-- Backup/restore readiness checks pass locally and in CI.
-- Runbooks define recovery and emergency stop procedures.
-- Full standard gate and new `pnpm retention:production-readiness` gate pass locally and in CI.
-
-## WO-041 — Production Observability, SIEM/APM, And Support Operations Integration
-
-**Objective:** Connect the local observability model to production-shaped log, metric, trace, alert, and support workflows without exposing PHI.
-
-**Scope:**
-
-- Add adapter boundaries for production log, metric, trace, and SIEM sinks.
-- Add redaction and structured logging enforcement at API, worker, and adapter boundaries.
-- Add request/trace correlation across API, worker, storage, persistence, AI, EHR, and ClinicOS events.
-- Add support status views backed by durable operational evidence.
-- Add alert taxonomy, severity mapping, and incident runbook hooks.
-
-**Completion criteria:**
-
-- Logs and traces are redacted and correlated in tests.
-- Failure states for database, storage, identity, AI, EHR, ClinicOS, and retention jobs are visible to authorized support roles.
-- Support users cannot access unauthorized PHI, billing, transcript, or coaching data.
-- Local fake observability sink and static production-config verifier pass.
-- Full standard gate and new `pnpm observability:production-readiness` gate pass locally and in CI.
-
-## WO-042 — EHR Sandbox Integration And Writeback Queue Hardening
-
-**Objective:** Move from mock EHR adapter behavior to sandbox-ready EHR integration with conservative writeback queue controls and human approval.
-
-**Scope:**
-
-- Add credentialed sandbox configuration boundary without committing credentials.
-- Harden athenahealth-first adapter request/response contracts.
-- Add idempotent writeback queue processing, retry, dead-letter, and reconciliation evidence.
-- Add human approval and permission checks before any writeback leaves AURA Note.
-- Add audit events for queued, approved, sent, failed, retried, dead-lettered, and reconciled states.
-- Keep live production writeback disabled.
-
-**Completion criteria:**
-
-- Sandbox-mode tests can run with fake credentials and documented optional real-sandbox setup.
-- Writeback queue is durable, idempotent, auditable, and recoverable.
-- Unauthorized or unapproved writeback attempts are denied.
-- Final note and patient summary writeback preserve signed-version linkage.
-- Full standard gate and new `pnpm ehr:sandbox-readiness` gate pass locally and in CI.
-
-## WO-043 — ClinicOS Integration Hardening
-
-**Objective:** Harden ClinicOS adapter behavior for tenant identity, VisitGraph/workflow mappings, Charge Integrity/Copilot/Data Cloud boundaries, and embedded-mode operation.
-
-**Scope:**
-
-- Add durable mapping records and tenant/site/user reconciliation behavior.
-- Add inbound/outbound event validation and idempotency.
-- Add failure, stale mapping, disabled integration, and permission-denied states.
-- Add embedded-mode browser/API tests.
-- Preserve AURA Note authorization even when ClinicOS supplies identity/context.
-
-**Completion criteria:**
-
-- Standalone and ClinicOS-integrated modes both pass route/API tests.
-- Mapping conflicts, stale VisitGraph references, disabled integration, and cross-tenant delegation attempts are denied or safely degraded.
-- ClinicOS outbound events are durable, auditable, and retryable.
-- Full standard gate and new `pnpm clinicos:integration-readiness` gate pass locally and in CI.
-
-## WO-044 — AI Gateway Production Governance And Evaluation Harness
-
-**Objective:** Prepare the AI gateway for production review with policy enforcement, evaluation coverage, prompt/model governance, and PHI controls. This does not automatically authorize production PHI transfer to external AI.
-
-**Scope:**
-
-- Add prompt registry, model policy registry, and output schema validation for all AI-assisted surfaces.
-- Add purpose-of-use, source freshness, tenant policy, role, and feature-flag checks.
-- Add evaluation fixtures for unsafe diagnosis, coding, billing, medical-necessity, and unsupported-output refusal.
-- Add audit-safe model metadata persistence.
-- Add optional external provider boundary that remains disabled without approved configuration.
-
-**Completion criteria:**
-
-- AI outputs remain draft/candidate/suggestion only.
-- Unsafe autonomous diagnosis, coding, billing, charge, claim, medical-necessity, or order behavior is rejected in tests.
-- PHI scrubber/redaction/rejection tests pass before any provider invocation boundary.
-- Prompt/model/version metadata is audit-safe and durable.
-- Full standard gate and new `pnpm ai:governance-readiness` gate pass locally and in CI.
-
-## WO-045 — Security, Privacy, Compliance, And Threat-Model Remediation
-
-**Objective:** Convert the implementation evidence into a security/privacy/compliance review package and remediate findings that block limited production readiness.
-
-**Scope:**
-
-- Produce threat model for identity, persistence, storage, AI, EHR, ClinicOS, support, audit, and retention deletion.
-- Review RBAC/ABAC matrix against implemented checks.
-- Review data retention, PHI boundaries, audit evidence, backup/restore, and vendor dependencies.
-- Add remediation work for high-priority gaps.
-- Document any founder/legal/security decisions required before launch.
-
-**Completion criteria:**
-
-- Review package separates implemented, synthetic, disabled, deferred, prohibited, and decision-required behavior.
-- High-severity remediation items are fixed or tracked as blocking `SPEC_GAP`s.
-- No production launch claim is made if compliance-critical gaps remain.
-- Full standard gate and new `pnpm security:review-readiness` gate pass locally and in CI.
-- P9 checkpoint report documents external-review readiness and blockers.
-
-## WO-046 — Final UX, Design-System, Accessibility, And Visual Regression Hardening
-
-**Objective:** Move the browser-testable operational shell toward production-quality UX, accessibility, and visual stability.
-
-**Scope:**
-
-- Align UI with final design-system tokens and Figma decisions when available.
-- Add visual regression baselines for critical routes.
-- Expand accessibility checks beyond smoke coverage.
-- Harden keyboard navigation, focus management, empty/loading/failed/blocked/permission-denied states, and mobile layouts.
-- Review patient-facing, clinician-facing, billing-facing, support-facing, and admin-facing copy.
-
-**Completion criteria:**
-
-- Critical routes pass visual regression and accessibility gates.
-- No patient-facing screen exposes internal billing, coaching, audit, or revenue details.
-- Controls are keyboard-operable and screen-reader-labeled.
-- Browser tests cover responsive layouts without horizontal overflow.
-- Full standard gate and new `pnpm ux:production-readiness` gate pass locally and in CI.
-
-## WO-047 — Deployment Automation, Environment Promotion, And Release Controls
-
-**Objective:** Add production-shaped deployment automation and controlled environment promotion without embedding secrets in the repo.
-
-**Scope:**
-
-- Define infrastructure-as-code or deployment manifests for staging and production.
-- Add deployment smoke tests and rollback procedures.
-- Add release versioning, changelog, migration ordering, and feature-flag rollout controls.
-- Add environment-specific health checks.
-- Add release approval gates and emergency disablement instructions.
-
-**Completion criteria:**
-
-- Staging deployment can be built and validated from CI/CD without production secrets in source control.
-- Rollback and migration rollback procedures are tested in staging or documented as blocked.
-- Health checks cover API, web, worker, database, storage, identity, and integration disabled states.
-- Full standard gate and new `pnpm deployment:readiness` gate pass locally and in CI.
-
-## WO-048 — Operational Tabletop, Support Playbooks, And Incident Drill Evidence
-
-**Objective:** Prove that support, privacy, security, and engineering operations can handle likely production incidents.
-
-**Scope:**
-
-- Run tabletop scenarios for database outage, storage outage, identity outage, failed retention deletion, wrong-tenant access attempt, audit export request, EHR writeback failure, and unsafe AI output.
-- Add or update support runbooks with detection, triage, containment, recovery, communication, and evidence steps.
-- Add synthetic incident fixtures and support dashboard states.
-- Add post-incident evidence and audit export examples using synthetic data.
-
-**Completion criteria:**
-
-- Runbooks cover each tabletop scenario with owner, severity, response steps, and rollback/recovery path.
-- Support surfaces show safe degraded states.
-- Incident evidence contains no real PHI or credentials.
-- Full standard gate and new `pnpm ops:tabletop-readiness` gate pass locally and in CI.
-
-## WO-049 — Beta Pilot Readiness Package
-
-**Objective:** Prepare a limited beta/pilot readiness package for a controlled tenant using synthetic or sandbox-only data until production approvals are complete.
-
-**Scope:**
-
-- Define pilot tenant setup checklist.
-- Define user roles, training flows, disabled feature list, and support escalation path.
-- Add pilot smoke tests and acceptance scripts.
-- Add data-handling and no-real-PHI guardrails if the pilot is still synthetic/sandbox.
-- Add go/no-go checklist with explicit founder and security/privacy approvals.
-
-**Completion criteria:**
-
-- Pilot package identifies enabled, disabled, deferred, and prohibited capabilities.
-- Smoke tests pass in the target environment.
-- Support and rollback contacts are documented.
-- No pilot uses production PHI unless all earlier security/privacy/storage/identity/database approvals are complete.
-- Full standard gate and new `pnpm pilot:readiness` gate pass locally and in CI.
-
-## WO-050 — Limited Production Launch Gate And Post-Launch Monitoring
-
-**Objective:** Establish the final controlled launch gate for a limited production release after all required security, privacy, operational, and technical approvals are complete.
-
-**Scope:**
-
-- Add production launch checklist and signoff artifact.
-- Confirm all high-risk feature flags are configured safely.
-- Confirm backup/restore, retention, audit export, support, observability, and incident response are operational.
-- Add post-launch monitoring dashboard and rollback criteria.
-- Add first-week production support plan.
-
-**Completion criteria:**
-
-- All P7 through P10 checkpoint criteria are met or explicitly waived by the founder with documented risk.
-- Security/privacy/compliance blockers are closed.
-- Production deployment, rollback, backup/restore, retention, identity, storage, observability, support, and incident-response evidence is complete.
-- No prohibited autonomous clinical, coding, billing, claim, or medical-necessity behavior is enabled.
-- Launch signoff is documented in a release report.
+- **P6.5 — Build Rails Re-established:** required after `WO-033`.
+- **P7 — Durable Runtime Candidate:** required after `WO-034` through `WO-037`.
+- **P7.5 — Standalone Product Completion Candidate:** required after `WO-038` through `WO-039`.
+- **P8 — Production Platform Candidate:** required after `WO-041` through `WO-043`.
+- **P8.5 — Audio and Transcription Candidate:** required after `WO-040`.
+- **P9 — Integration and AI Candidate:** required after `WO-044` through `WO-047`.
+- **P10 — Launch Candidate:** required after `WO-048` through `WO-050`.
+- **P11 — Claim/Payer Decision Gate:** required after `WO-051`.
+
+Checkpoint reports must list completed work orders, evidence, tests, open risks, active and deferred `SPEC_GAP`s, and the next recommended batch.
+
+## WO-033 — Production Build Rails And Readiness Controls
+
+- **Objective:** Put the remainder of the build back on rails without implementing new product behavior.
+- **Why this exists:** The repo completed `WO-032`, but future work was still mostly planning-only and the readiness scripts treated synthetic readiness as the terminal state.
+- **Prerequisites:** `WO-000` through `WO-032` complete on `main`.
+- **In scope:** update `AGENTS.md`, `work_orders/README.md`, `repo_status.json`, `SPEC_GAPS.md`, `CHECKPOINT_REPORT.md`, `RUN_LOG.md`, this plan, and readiness scripts so future work orders are discoverable and synthetic readiness is separated from production-build readiness.
+- **Out of scope:** runtime product changes, production credentials, live vendor integrations, durable workflow expansion.
+- **UX requirements:** none beyond documenting UX coverage expectations for future work.
+- **Backend/API requirements:** add readiness-script guardrails only.
+- **Data model/persistence requirements:** no schema changes.
+- **Event/audit requirements:** no runtime events; document run-log evidence.
+- **RBAC/ABAC requirements:** preserve existing matrix and future enforcement requirements.
+- **Standalone-mode behavior:** unchanged.
+- **ClinicOS-integrated behavior:** unchanged.
+- **AI/PHI/security requirements:** preserve prohibitions and deferred production decisions.
+- **Testing requirements:** planning/readiness script tests plus current full gate.
+- **Required scripts/gates:** `pnpm production:readiness`, `pnpm acceptance:readiness`, default local gate.
+- **Definition of Done:** future work orders `WO-034` through `WO-051` are sequenced; `WO-034` is the next incomplete work order; scripts tolerate future planned/todo work without false production claims; `SPEC_GAPS.md` reflects post-`WO-032` state.
+- **Stop conditions:** script conflict that would break completed readiness evidence; safety/compliance conflict in future sequencing.
+- **Risks and deferred decisions:** future work depends on later security/privacy/vendor reviews and may create active `SPEC_GAP`s when implementation reaches live identity, AI, EHR, storage, or claim strategy.
+
+## WO-034 — Durable Visit Capture Runtime Persistence
+
+- **Objective:** Persist visit sessions, recording assets, transcripts, and transcript segments through Prisma/local PostgreSQL.
+- **Why this exists:** Timer, recording, and transcript scaffolds are browser/API-testable but not durable.
+- **Prerequisites:** `WO-033`; existing visit/session schema and local PostgreSQL evidence.
+- **In scope:** repository ports/adapters; start/pause/resume/stop persistence; recording exception persistence; transcript segment append/retrieval; transaction and error-path tests; tenant/site query tests; RLS for visit capture tables.
+- **Out of scope:** browser microphone capture, live transcription provider, production PHI storage, production deletion.
+- **UX requirements:** current timer/editor/transcript states continue to work after adapter recreation.
+- **Backend/API requirements:** persisted API harness for visit controls and transcript state; idempotent session writes where applicable.
+- **Data model/persistence requirements:** `VisitSession`, `RecordingAsset`, `Transcript`, `TranscriptSegment` durable repositories.
+- **Event/audit requirements:** durable metadata for visit and transcript state changes.
+- **RBAC/ABAC requirements:** treating clinician/admin access; transcript visibility remains role-limited.
+- **Standalone-mode behavior:** standalone owns visit capture records.
+- **ClinicOS-integrated behavior:** adapter-safe local records map to ClinicOS visit identifiers without permission bypass.
+- **AI/PHI/security requirements:** no raw PHI to external AI; logs redacted; transcript payloads remain local synthetic unless future approved.
+- **Testing requirements:** reload, transaction, cross-tenant/site denial, RLS read/write denial, browser regression.
+- **Required scripts/gates:** `pnpm persistence:visit-capture-adapter` plus default gate.
+- **Definition of Done:** visit capture state is locally durable and tenant/RLS-evidenced; current UX behavior unchanged.
+- **Stop conditions:** unresolved schema mismatch or PHI persistence ambiguity.
+- **Risks and deferred decisions:** production PHI database policy and live transcription remain deferred.
+
+## WO-035 — Durable Review Panels, Selections, Compliance, And Task Persistence
+
+- **Objective:** Persist Suggestions, Visit Selections, Compliance issues, History Gap questions, and blocker Tasks.
+- **Why this exists:** Review-panel workflow currently uses synthetic process state.
+- **Prerequisites:** `WO-034`; review-panel Prisma schema relations.
+- **In scope:** durable repositories, accept/remove/manual-add transactions, low-confidence override persistence, blocker task creation/adjudication, tenant/site tests, RLS.
+- **Out of scope:** live AI suggestion generation, autonomous diagnosis/coding/billing finalization.
+- **UX requirements:** panels preserve empty/loading/ready/blocked/permission-denied/demo states after reload.
+- **Backend/API requirements:** idempotent review actions, validation, permission gates.
+- **Data model/persistence requirements:** `Suggestion`, `VisitSelection`, `ComplianceIssue`, `HistoryGapQuestion`, `Task`.
+- **Event/audit requirements:** durable events for evaluated suggestions, selection changes, compliance issues, history-gap routing, blocker changes.
+- **RBAC/ABAC requirements:** MA task access minimum necessary; billing/coaching flags restricted.
+- **Standalone-mode behavior:** standalone owns review and task records.
+- **ClinicOS-integrated behavior:** tasks can map to M04 WorkOS through adapter boundaries.
+- **AI/PHI/security requirements:** suggestions remain draft/candidate; evidence is source-linked and PHI-safe.
+- **Testing requirements:** reload, low-confidence override, blocker signing denial, cross-tenant/site denial, RLS.
+- **Required scripts/gates:** `pnpm persistence:review-panel-adapter` plus default gate.
+- **Definition of Done:** review-panel state is locally durable with tenant/RLS evidence and no autonomy creep.
+- **Stop conditions:** unsafe ambiguity around diagnosis or medical-necessity language.
+- **Risks and deferred decisions:** production code/rules catalog still lands later.
+
+## WO-036 — Durable Finalization, Output Metadata, And Writeback Queue Persistence
+
+- **Objective:** Persist finalization runs, wizard decisions, note versions, patient summaries, billing attestations, draft claim previews, exports, and writeback queue metadata.
+- **Why this exists:** Finalization and output state must survive process restarts before production readiness can be claimed.
+- **Prerequisites:** `WO-035`.
+- **In scope:** durable finalization/output/writeback repositories; transaction boundaries; immutable signed-version metadata; tenant/site tests; RLS.
+- **Out of scope:** live EHR writeback, live claim submission, charge finalization.
+- **UX requirements:** finalized viewer and wizard reload read-only/signed states correctly.
+- **Backend/API requirements:** idempotent finalize/export/writeback-queue operations and safe failure states.
+- **Data model/persistence requirements:** `FinalizationRun`, `WizardStepDecision`, `EnhancedNoteVersion`, `PatientSummaryVersion`, `BillingAttestation`, `DraftClaimPreview`, `ExportArtifact`, `EhrWritebackJob`.
+- **Event/audit requirements:** durable finalization, export, billing, and writeback queue events.
+- **RBAC/ABAC requirements:** billing staff transcript access only when triggered; final-note access requires linkage.
+- **Standalone-mode behavior:** standalone owns final records and export metadata.
+- **ClinicOS-integrated behavior:** writeback queue uses EHR/ClinicOS adapters and keeps AURA Note permissions authoritative.
+- **AI/PHI/security requirements:** patient summary excludes internal billing/revenue/coaching/confidence details.
+- **Testing requirements:** reload, immutable signed outputs, claim preview `submittedClaim=false`, cross-tenant/site denial, RLS.
+- **Required scripts/gates:** `pnpm persistence:finalization-output-adapter` plus default gate.
+- **Definition of Done:** finalization/output/writeback metadata is locally durable without live writeback or claim submission.
+- **Stop conditions:** ambiguity around legal/billing attestation or claim behavior.
+- **Risks and deferred decisions:** clearinghouse/payer strategy deferred to `WO-051`.
+
+## WO-037 — Durable Audit, Events, Support, Configuration, Coaching, And Broad RLS Completion
+
+- **Objective:** Complete durable local runtime persistence and RLS coverage for remaining tenant-owned tables.
+- **Why this exists:** Production auditability requires durable events, support snapshots, flags, configuration, templates, and coaching evidence.
+- **Prerequisites:** `WO-036`.
+- **In scope:** audit/event repositories, support snapshots, feature flags, templates, dot phrases, coaching reports, integration connections, mode mappings, remaining tenant-owned RLS.
+- **Out of scope:** production observability sinks and production launch signoff.
+- **UX requirements:** support/coaching/settings surfaces reload durable metadata.
+- **Backend/API requirements:** durable audit/event writes for all implemented state changes.
+- **Data model/persistence requirements:** all remaining local runtime tables either durable or explicitly documented as intentionally in-memory.
+- **Event/audit requirements:** every state-changing operation has durable audit/event evidence.
+- **RBAC/ABAC requirements:** support, audit, coaching, and admin visibility remain restricted.
+- **Standalone-mode behavior:** standalone owns all local config and audit records.
+- **ClinicOS-integrated behavior:** mode mappings and outbound events are durable without bypassing permissions.
+- **AI/PHI/security requirements:** audit exports remain redacted unless later approved.
+- **Testing requirements:** broad RLS, tenant/site denial, durable audit query tests, support/coaching role-denial tests.
+- **Required scripts/gates:** `pnpm persistence:durable-runtime-readiness` plus default gate.
+- **Definition of Done:** P7 checkpoint can prove broad local durable runtime readiness.
+- **Stop conditions:** RLS policy gaps that cannot be safely resolved.
+- **Risks and deferred decisions:** production database roles/backups still require P8 controls.
+
+## WO-038 — Standalone Patient, Chart Context, And Schedule Completion
+
+- **Objective:** Complete standalone patient shell, chart context snapshot, and Schedule Builder production workflow coverage.
+- **Why this exists:** Standalone mode must not depend on ClinicOS for core v1 operation.
+- **Prerequisites:** P7 complete.
+- **In scope:** patient create/search/edit shell, safe identifiers, patient linkage, chart context snapshots, source freshness warnings, day/week schedule, appointment edit/cancel/no-show/check-in states.
+- **Out of scope:** live EHR patient merge, production MPI, full patient portal.
+- **UX requirements:** patient/search/schedule screens include empty/loading/ready/saving/blocked/failed/permission-denied/read-only/demo states.
+- **Backend/API requirements:** patient and schedule CRUD APIs with validation, tenant/site scope, idempotency where applicable.
+- **Data model/persistence requirements:** durable `Patient`, `PatientLinkage`, `ChartContextSnapshot`, and appointment status updates.
+- **Event/audit requirements:** patient shell and appointment lifecycle events.
+- **RBAC/ABAC requirements:** scheduler/front desk/clinician/admin boundaries; patient linkage enforced.
+- **Standalone-mode behavior:** standalone owns patient and schedule records.
+- **ClinicOS-integrated behavior:** external schedule/patient context maps in through adapters.
+- **AI/PHI/security requirements:** chart context source freshness and PHI boundaries preserved.
+- **Testing requirements:** patient/schedule API, browser flows, cross-tenant denial.
+- **Required scripts/gates:** `pnpm standalone:patient-schedule-readiness` plus default gate.
+- **Definition of Done:** standalone patients and schedule workflow are browser/API-testable and durable.
+- **Stop conditions:** missing safe patient identifier policy.
+- **Risks and deferred decisions:** production patient matching/merge remains deferred unless specified.
+
+## WO-039 — Standalone Worklists, Settings, Templates, Estimates, And Rules Catalog
+
+- **Objective:** Complete standalone operational areas needed for daily use.
+- **Why this exists:** Tasks, billing review, settings/admin, templates, dot phrases, estimate configuration, and code/rules catalog are required commercial product surfaces.
+- **Prerequisites:** `WO-038`.
+- **In scope:** task inbox/MA follow-up worklist, billing review queue, settings/admin/integrations center, templates, dot phrases with variables/smart phrases, estimate config/caveats, rules catalog for CPT/HCPCS/ICD-10/HCC/E/M/quality/visit-type/confidence/source evidence.
+- **Out of scope:** autonomous billing decisions, patient-facing revenue estimates by default.
+- **UX requirements:** role-specific worklists and settings screens with all required states.
+- **Backend/API requirements:** CRUD and review APIs with permission and audit gates.
+- **Data model/persistence requirements:** durable templates, dot phrases, rules/config, tasks, billing review records.
+- **Event/audit requirements:** template/dot phrase/rules/config/task/billing review events.
+- **RBAC/ABAC requirements:** clinicians/admins can create templates where allowed; billing queue role-limited.
+- **Standalone-mode behavior:** standalone owns settings and rules.
+- **ClinicOS-integrated behavior:** settings may delegate to ClinicOS modules via adapter mappings.
+- **AI/PHI/security requirements:** rules drive suggestions but do not finalize decisions.
+- **Testing requirements:** browser worklists/settings, rule validation, patient-facing exclusion tests.
+- **Required scripts/gates:** `pnpm standalone:operations-readiness` plus default gate.
+- **Definition of Done:** P7.5 checkpoint can prove standalone core product completion without ClinicOS dependency.
+- **Stop conditions:** ambiguity in estimate display or patient-facing revenue policy.
+- **Risks and deferred decisions:** payer-specific rules may require later legal/billing review.
+
+## WO-040 — Browser Audio Capture And Transcription Candidate
+
+- **Objective:** Implement timer-controlled browser recording, upload/transport scaffolding, transcription adapter, and transcript metadata workflow.
+- **Why this exists:** Recording/transcription is MVP-critical but currently mock-only.
+- **Prerequisites:** durable visit capture from `WO-034`.
+- **In scope:** browser microphone path, timer-controlled recording, approved exception path, chunk upload or equivalent transport, raw-audio object metadata, mock transcription provider, optional governed real-provider boundary, confidence/source metadata, correction/edit history, diarization placeholder.
+- **Out of scope:** production transcription credentials, guaranteed provider accuracy, autonomous clinical decisions.
+- **UX requirements:** permission prompts, unavailable mic, upload progress, recording paused/stopped, exception, transcript correction states.
+- **Backend/API requirements:** chunk/session APIs, storage metadata, transcription job APIs, provider adapter boundary.
+- **Data model/persistence requirements:** recording chunks/objects metadata, transcript confidence/source/correction records.
+- **Event/audit requirements:** recording/upload/transcription/correction events.
+- **RBAC/ABAC requirements:** transcript visibility by role/purpose; correction history audit-limited.
+- **Standalone-mode behavior:** standalone owns capture and transcription jobs.
+- **ClinicOS-integrated behavior:** transcript events can publish through ClinicOS adapters without permission bypass.
+- **AI/PHI/security requirements:** transcripts do not go to external AI unless scrubbed/governed.
+- **Testing requirements:** browser mock mic/transport tests, provider mock tests, retention tests, role denial.
+- **Required scripts/gates:** `pnpm audio:transcription-readiness` plus default gate.
+- **Definition of Done:** P8.5 checkpoint proves mock-provider audio/transcription workflow and governed live-provider boundary.
+- **Stop conditions:** browser permission/storage policy ambiguity that could expose PHI.
+- **Risks and deferred decisions:** live provider, BAA, and audio quality decisions remain deferred.
+
+## WO-041 — Production Identity, Tenant Administration, Secrets, Configuration, And Feature Flags
+
+- **Objective:** Implement production-shaped identity and configuration governance.
+- **Why this exists:** Header/local identity and loose config are not production controls.
+- **Prerequisites:** P7.5 or approved parallelization.
+- **In scope:** OIDC/SAML/ClinicOS identity adapters, session expiration, disabled user handling, purpose-of-use, tenant/site/user/role administration, typed config validation, secret-source placeholders, feature-flag governance.
+- **Out of scope:** real IdP credentials, production account recovery operations.
+- **UX requirements:** admin/user/session disabled and permission-denied states.
+- **Backend/API requirements:** identity middleware, admin APIs, fail-closed config validation.
+- **Data model/persistence requirements:** durable identity/session/admin/config/flag records where required.
+- **Event/audit requirements:** login/session/admin/flag/config events.
+- **RBAC/ABAC requirements:** tenant/site/user/role and purpose enforcement.
+- **Standalone-mode behavior:** standalone workforce identity works with configured IdP or local safe dev adapter.
+- **ClinicOS-integrated behavior:** ClinicOS delegated identity maps through adapter and cannot bypass AURA Note checks.
+- **AI/PHI/security requirements:** secrets never logged or committed; high-risk flags require approval evidence.
+- **Testing requirements:** disabled user, expired session, spoofed tenant, missing purpose, unsafe config tests.
+- **Required scripts/gates:** `pnpm identity:production-readiness`, `pnpm config:production-readiness`, default gate.
+- **Definition of Done:** production-shaped identity/config boundary is ready for security review.
+- **Stop conditions:** missing IdP decision blocks live integration; use fake adapter and document deferral.
+- **Risks and deferred decisions:** IdP vendor, MFA, and account recovery need founder/security review.
+
+## WO-042 — Azure Storage, Secure Downloads, Retention Deletion, Backup, And Restore Controls
+
+- **Objective:** Move storage delivery and retention deletion from readiness scaffolding to production-shaped executable boundaries with recovery evidence.
+- **Why this exists:** `WO-032` added metadata and fake storage, not production storage execution.
+- **Prerequisites:** `WO-041` config governance.
+- **In scope:** Azure SDK adapter boundary, emulator/optional live-safe path, server-mediated downloads, object ownership checks, raw-audio deletion job integration, approval/recovery/evidence persistence, soft-delete/versioning checks, backup/restore readiness.
+- **Out of scope:** PHI-bearing production payloads before security/privacy review.
+- **UX requirements:** download unavailable/expired/denied states and retention status visibility.
+- **Backend/API requirements:** secure download endpoint, storage adapter config, retention delete controls.
+- **Data model/persistence requirements:** object metadata, signed token metadata, deletion evidence, restore-readiness evidence.
+- **Event/audit requirements:** download requested/denied/delivered, object deleted/skipped/restored-readiness events.
+- **RBAC/ABAC requirements:** final-note/patient-summary/audit export permissions enforced before token/content access.
+- **Standalone-mode behavior:** standalone uses tenant storage config.
+- **ClinicOS-integrated behavior:** integration mode may map storage/evidence to ClinicOS/Integration Hub without bypass.
+- **AI/PHI/security requirements:** no public URLs; no production credentials committed; transcript purge remains zero.
+- **Testing requirements:** wrong tenant/site/role/token expiry, deletion approval, backup/restore metadata checks.
+- **Required scripts/gates:** `pnpm storage:secure-download-readiness`, `pnpm retention:production-readiness`, default gate.
+- **Definition of Done:** production-shaped storage and deletion controls are review-ready with no PHI-bearing launch claim.
+- **Stop conditions:** missing Azure credential/recovery policy; document and stop before live use.
+- **Risks and deferred decisions:** production Blob policies and restore drills require environment access.
+
+## WO-043 — Production Observability, Support Operations, And Status Views
+
+- **Objective:** Connect local observability and support scaffolds to production-shaped operational evidence.
+- **Why this exists:** Commercial operation requires redacted logs, metrics, traces, SIEM/APM boundaries, and support procedures.
+- **Prerequisites:** `WO-041`.
+- **In scope:** log/metric/trace/SIEM adapters, redaction enforcement, request/trace correlation, support status backed by durable evidence, alert taxonomy, support runbook hooks.
+- **Out of scope:** real vendor credentials unless configured.
+- **UX requirements:** support/admin operational status surfaces for degraded/failure/permission states.
+- **Backend/API requirements:** observability sink interfaces and support-status APIs.
+- **Data model/persistence requirements:** durable support snapshots and operational event metadata.
+- **Event/audit requirements:** support viewed, incident flag, sink failure, status snapshot events.
+- **RBAC/ABAC requirements:** support cannot access unauthorized PHI/transcript/billing/coaching details.
+- **Standalone-mode behavior:** standalone support status works without external vendors.
+- **ClinicOS-integrated behavior:** ClinicOS status can be mapped through adapters.
+- **AI/PHI/security requirements:** log payloads redacted and correlated.
+- **Testing requirements:** redaction, role denial, sink failure, support degraded-mode tests.
+- **Required scripts/gates:** `pnpm observability:production-readiness` plus default gate.
+- **Definition of Done:** P8 checkpoint can prove platform readiness for security/privacy review.
+- **Stop conditions:** observability vendor decision missing for live sink.
+- **Risks and deferred decisions:** vendor-specific SIEM/APM setup may remain deferred.
+
+## WO-044 — EHR Sandbox Integration And Writeback Queue Hardening
+
+- **Objective:** Harden athenahealth-first and generic EHR integration with sandbox-ready writeback controls.
+- **Why this exists:** Current EHR behavior is mock/sandbox scaffold only.
+- **Prerequisites:** durable output/writeback metadata and config governance.
+- **In scope:** athenahealth sandbox contract hardening, generic adapter preservation, idempotent writeback queue, retry/dead-letter/reconciliation, human approval before writeback, audit.
+- **Out of scope:** production EHR credentials and autonomous writeback.
+- **UX requirements:** writeback pending/approved/sent/failed/retry/dead-letter states.
+- **Backend/API requirements:** queue worker, approval API, adapter errors, reconciliation APIs.
+- **Data model/persistence requirements:** durable writeback attempts and reconciliation evidence.
+- **Event/audit requirements:** queued/approved/sent/failed/retried/dead-lettered/reconciled events.
+- **RBAC/ABAC requirements:** only permitted roles approve writeback; billing cannot bypass.
+- **Standalone-mode behavior:** EHR disabled/not-configured path remains safe.
+- **ClinicOS-integrated behavior:** can route through M25 Integration Hub while preserving AURA Note approval.
+- **AI/PHI/security requirements:** no raw EHR payload logs; no AI bypass.
+- **Testing requirements:** fake sandbox, idempotency, unauthorized approval denial, retry/dead-letter.
+- **Required scripts/gates:** `pnpm ehr:sandbox-readiness` plus default gate.
+- **Definition of Done:** EHR integration is sandbox-review-ready without live production writeback.
+- **Stop conditions:** missing vendor credentials for live sandbox; fake mode remains.
+- **Risks and deferred decisions:** athenahealth credentialing and production writeback review deferred.
+
+## WO-045 — ClinicOS Integration Hardening
+
+- **Objective:** Harden embedded-mode integration with AURA ClinicOS modules.
+- **Why this exists:** AURA Note must be one product that supports standalone and ClinicOS-integrated modes.
+- **Prerequisites:** durable events, identity, and config governance.
+- **In scope:** durable mode mappings, M03/M04/M17/M21/M23/M24/M25/M26 mapping validation, inbound/outbound idempotency, stale mapping/failure states, embedded-mode tests.
+- **Out of scope:** building ClinicOS modules inside AURA Note.
+- **UX requirements:** embedded-mode context, disabled/degraded integration states.
+- **Backend/API requirements:** adapter validation, outbox/inbox handling, reconciliation.
+- **Data model/persistence requirements:** `ModeMapping`, integration connection, and outbox records.
+- **Event/audit requirements:** mapping recorded, event published/skipped/failed, stale mapping events.
+- **RBAC/ABAC requirements:** ClinicOS service context never bypasses AURA Note permissions.
+- **Standalone-mode behavior:** standalone remains fully functional with ClinicOS disabled.
+- **ClinicOS-integrated behavior:** maps to M03 VisitGraph, M04 tasks, M17 cockpit, M21 charge, M23/M24 AI/governance, M25 integration, M26 data cloud.
+- **AI/PHI/security requirements:** ClinicOS AI/governance delegation still uses AURA Note PHI boundary.
+- **Testing requirements:** standalone/integrated parity, stale mapping, cross-tenant delegation denial.
+- **Required scripts/gates:** `pnpm clinicos:integration-readiness` plus default gate.
+- **Definition of Done:** ClinicOS integration is externally reviewable and permission-safe.
+- **Stop conditions:** missing ClinicOS contract detail blocks a mapping; add `SPEC_GAP`.
+- **Risks and deferred decisions:** live ClinicOS availability and module contracts may evolve.
+
+## WO-046 — AI Gateway Production Governance And Evaluation Harness
+
+- **Objective:** Prepare AI gateway for production review without enabling raw PHI to external AI.
+- **Why this exists:** AI safety requires prompt/model governance, evals, schema validation, and persistent governance events.
+- **Prerequisites:** durable audit/events and config governance.
+- **In scope:** prompt registry/versioning, model config records, evaluation harness, PHI scrubber/de-identification hardening, output schema validation, source-linked evidence, human-review gates, governance event persistence.
+- **Out of scope:** live external AI with PHI unless later governance approves.
+- **UX requirements:** AI unavailable, rejected, draft-only, source-evidence, confidence, and human-review states.
+- **Backend/API requirements:** provider boundary disabled by default, policy checks, eval commands.
+- **Data model/persistence requirements:** prompt/model/governance/eval metadata.
+- **Event/audit requirements:** request prepared, rejected, output recorded, eval failed, prompt/model changed.
+- **RBAC/ABAC requirements:** purpose-of-use and role checks before AI context assembly.
+- **Standalone-mode behavior:** standalone uses local governance config.
+- **ClinicOS-integrated behavior:** can delegate to M23/M24 via adapter without bypass.
+- **AI/PHI/security requirements:** regression tests prove no raw PHI to external AI and no autonomous finalization.
+- **Testing requirements:** unsafe-output refusal, PHI rejection/redaction, schema validation, source freshness.
+- **Required scripts/gates:** `pnpm ai:governance-readiness` plus default gate.
+- **Definition of Done:** AI pathway is governance-review-ready and still draft-only.
+- **Stop conditions:** PHI/model/BAA decision required for live provider use.
+- **Risks and deferred decisions:** private/BAA model path requires legal/security/vendor approval.
+
+## WO-047 — Security, Privacy, Compliance, And Threat-Model Remediation
+
+- **Objective:** Convert implementation evidence into security/privacy/compliance review artifacts and fix blocking findings.
+- **Why this exists:** Production launch requires formal risk review beyond passing tests.
+- **Prerequisites:** P8/P8.5/P9 implementation evidence.
+- **In scope:** threat model, RBAC/ABAC review, data retention review, vendor/BAA inventory, access review, remediation of high-priority gaps.
+- **Out of scope:** legal certification claims.
+- **UX requirements:** any compliance-required permission/warning states added to UI.
+- **Backend/API requirements:** remediate security findings in APIs/workers/adapters.
+- **Data model/persistence requirements:** review persistence/retention evidence.
+- **Event/audit requirements:** review/audit evidence package.
+- **RBAC/ABAC requirements:** matrix reconciled with implemented checks.
+- **Standalone-mode behavior:** standalone risks documented and remediated.
+- **ClinicOS-integrated behavior:** integrated-mode risks documented and remediated.
+- **AI/PHI/security requirements:** no unresolved compliance-critical PHI/AI gaps for launch candidate.
+- **Testing requirements:** security regression tests for remediations.
+- **Required scripts/gates:** `pnpm security:review-readiness` plus default gate.
+- **Definition of Done:** P9 checkpoint can document external-review readiness and blockers.
+- **Stop conditions:** compliance-critical unresolved gap.
+- **Risks and deferred decisions:** external counsel/security review may add blockers.
+
+## WO-048 — UX, Accessibility, Responsive, And Visual Regression Hardening
+
+- **Objective:** Harden production UX and accessibility across required role workflows.
+- **Why this exists:** Browser-testable scaffolds need production-quality flow correctness.
+- **Prerequisites:** P7.5 product surfaces.
+- **In scope:** route/state coverage, keyboard controls, accessible names, responsive hardening, visual regression, patient-facing exclusion review, clinician/MA/billing/admin/support workflows.
+- **Out of scope:** final design signoff if Figma is unavailable.
+- **UX requirements:** every required screen has empty/loading/ready/saving/blocked/failed/permission-denied/read-only/demo states.
+- **Backend/API requirements:** no new APIs unless needed for UX state fidelity.
+- **Data model/persistence requirements:** none unless state tracking is required.
+- **Event/audit requirements:** user actions retain existing audit coverage.
+- **RBAC/ABAC requirements:** role-denied UX tests for sensitive views.
+- **Standalone-mode behavior:** standalone workflows complete.
+- **ClinicOS-integrated behavior:** embedded workflows safely degrade.
+- **AI/PHI/security requirements:** no patient-facing internal billing/revenue/coaching/confidence details.
+- **Testing requirements:** Playwright accessibility/responsive/visual tests.
+- **Required scripts/gates:** `pnpm ux:production-readiness` plus default gate.
+- **Definition of Done:** UX/accessibility evidence is ready for launch review.
+- **Stop conditions:** design requirement conflict with safety/compliance.
+- **Risks and deferred decisions:** final Figma fidelity may require separate design review.
+
+## WO-049 — Deployment, Environment Promotion, Performance, Reliability, And Operational Drills
+
+- **Objective:** Add deployment and operational readiness evidence.
+- **Why this exists:** Commercial readiness requires deployment controls, load/failure evidence, runbooks, and incident drills.
+- **Prerequisites:** P9 review evidence.
+- **In scope:** local/staging/production environment matrix, deployment automation/runbooks, release controls, health checks, performance/load tests, reliability/failure drills, incident response, access review runbook, support playbooks.
+- **Out of scope:** production deployment without approvals.
+- **UX requirements:** health/status and support surfaces reflect degraded modes.
+- **Backend/API requirements:** smoke/health checks and operational endpoints.
+- **Data model/persistence requirements:** backup/restore and operational evidence checks.
+- **Event/audit requirements:** deployment/incident/access-review evidence events or docs.
+- **RBAC/ABAC requirements:** operational access is role-limited and audited.
+- **Standalone-mode behavior:** standalone deployment path documented.
+- **ClinicOS-integrated behavior:** embedded deployment dependencies documented.
+- **AI/PHI/security requirements:** load/failure tests use synthetic data only.
+- **Testing requirements:** deployment smoke, load/perf, failure drills.
+- **Required scripts/gates:** `pnpm deployment:readiness`, `pnpm performance:readiness`, `pnpm ops:tabletop-readiness`, default gate.
+- **Definition of Done:** launch operations evidence is complete enough for beta decision.
+- **Stop conditions:** missing production environment or secrets blocks live deployment; document as blocker.
+- **Risks and deferred decisions:** hosting platform and production SLOs may require founder decision.
+
+## WO-050 — Beta Pilot And Limited Production Launch Gate
+
+- **Objective:** Prepare beta and limited launch governance after technical/security readiness.
+- **Why this exists:** Launch requires onboarding, training, support, monitoring, rollback, and approval evidence.
+- **Prerequisites:** `WO-049`.
+- **In scope:** tenant onboarding/provisioning, pilot setup checklist, role training, disabled feature list, support escalation, launch checklist, first-week monitoring, rollback criteria, founder/clinical/compliance/security approvals.
+- **Out of scope:** unrestricted general availability.
+- **UX requirements:** onboarding and support paths clear for pilot users.
+- **Backend/API requirements:** tenant provisioning checks and launch smoke tests.
+- **Data model/persistence requirements:** launch tenant/config evidence.
+- **Event/audit requirements:** launch signoff and onboarding evidence.
+- **RBAC/ABAC requirements:** access review complete before launch.
+- **Standalone-mode behavior:** standalone pilot path ready.
+- **ClinicOS-integrated behavior:** integrated pilot path documented if used.
+- **AI/PHI/security requirements:** production PHI only if all prior approvals are complete.
+- **Testing requirements:** pilot smoke, rollback, monitoring validation.
+- **Required scripts/gates:** `pnpm pilot:readiness`, `pnpm launch:readiness`, default gate.
+- **Definition of Done:** P10 checkpoint can support limited launch decision without overclaiming readiness.
+- **Stop conditions:** missing founder/clinical/compliance/security approval.
+- **Risks and deferred decisions:** pilot scope and real tenant readiness must be approved.
 
 ## WO-051 — Claim Submission And Payer Integration Decision Gate
 
-**Objective:** Decide whether live claim submission or payer integration belongs in AURA Note v1. This is a decision and specification gate, not an implementation authorization.
+- **Objective:** Capture claim submission, clearinghouse, payer, denial, and payment strategy decisions without implementing autonomous submission.
+- **Why this exists:** v1 includes draft claim preview and billing review, not live claim submission.
+- **Prerequisites:** P10 launch evidence or founder request.
+- **In scope:** decision package, current boundary review, required legal/compliance/billing questions, future work-order criteria if live submission is approved later.
+- **Out of scope:** live claim submission, autonomous charge finalization, autonomous denial management.
+- **UX requirements:** preserve human-controlled draft-claim and billing-review language.
+- **Backend/API requirements:** no live payer API implementation.
+- **Data model/persistence requirements:** document any future data model needs only.
+- **Event/audit requirements:** decision evidence and any future audit requirements documented.
+- **RBAC/ABAC requirements:** billing and claim strategy roles documented.
+- **Standalone-mode behavior:** draft claim preview remains internal.
+- **ClinicOS-integrated behavior:** any future M21/clearinghouse integration remains adapter-scoped.
+- **AI/PHI/security requirements:** no AI medical-necessity or claim finalization.
+- **Testing requirements:** tests continue proving `submittedClaim=false`.
+- **Required scripts/gates:** `pnpm claim-decision:readiness` if added; otherwise docs/status gate.
+- **Definition of Done:** P11 checkpoint clearly records prohibited/deferred/approved future claim strategy.
+- **Stop conditions:** founder requests live claims without legal/compliance details; create blocking `SPEC_GAP`.
+- **Risks and deferred decisions:** clearinghouse/payer/denial automation is high-risk and must be separately authorized.
 
-**Scope:**
+## Overall production-launch criteria
 
-- Document current draft-claim-preview behavior and human-review boundaries.
-- Identify payer integration, claim submission, medical necessity, denial management, and charge finalization requirements if the founder wants them in a later release.
-- Produce legal/compliance/security/billing questions that must be answered before any implementation.
-- Create `SPEC_GAP` entries for missing decisions if live billing behavior is requested.
+AURA Note can be called production-launch-ready only when all of the following are true:
 
-**Completion criteria:**
-
-- The decision package clearly states whether live claim submission remains prohibited, deferred, or approved for a later separately scoped work order.
-- No live claim submission code is added by this work order.
-- Any approved future billing work has explicit human approval, audit, compliance, and rollback requirements before implementation.
-
-## Overall completion criteria
-
-AURA Note can be considered production-launch-ready only when all of the following are true:
-
-- All promoted work orders through the selected launch gate are complete, merged, and passing CI.
-- Local and staging gates prove durable persistence for every production runtime workflow.
-- Tenant/site isolation is enforced at API, repository, and database/RLS layers for every tenant-owned persisted table.
-- Production identity, session, role, purpose-of-use, and site-scope controls are implemented and tested.
-- Production storage delivery uses secure, permission-checked, non-public download paths with audit evidence.
-- Raw-audio deletion is approval-gated, recoverable within the documented window, audited, and backed by tested backup/restore procedures.
-- Transcripts retain indefinitely unless an approved tenant policy changes that behavior.
-- Audit events and domain events are durable, queryable by authorized roles, and redacted appropriately.
-- Observability, support, incident response, and runbooks are connected to production-ready evidence.
-- EHR and ClinicOS integrations are sandboxed or production-approved with disabled states, retry behavior, auditability, and human approval where required.
-- AI remains draft-only and human-review-required, with PHI, model governance, evaluation, and refusal controls in place.
-- Accessibility, responsive behavior, visual regression, and UX copy have production review evidence.
-- Security, privacy, compliance, backup/restore, vendor, and BAA requirements are reviewed and blockers are closed.
-- No autonomous diagnosis, coding finalization, charge finalization, medical-necessity determination, claim submission, or prohibited patient-facing financial conclusion is enabled.
-
-## Promotion instructions
-
-To begin implementation, promote only the next work order:
-
-1. Create `work_orders/WO-033_durable_visit_capture_persistence.md`.
-2. Add `WO-033` to `work_orders/README.md`.
-3. Add `WO-033: todo` to `repo_status.json` and set `next_work_order` to `WO-033`.
-4. Implement only `WO-033` until its completion criteria pass.
-5. Update `RUN_LOG.md`, `repo_status.json`, and relevant docs.
-6. Open a reviewable PR and merge only after local gates and GitHub Actions pass.
+- all work orders through the selected launch gate are complete, merged, and passing CI;
+- durable persistence covers every production runtime workflow;
+- tenant/site isolation is enforced at API, repository, and database/RLS layers for every tenant-owned persisted table;
+- standalone mode works without ClinicOS for core v1 workflows;
+- ClinicOS-integrated mode works through adapter boundaries without permission bypass;
+- production identity, session, purpose-of-use, role, and tenant/site admin controls are implemented and tested;
+- production storage uses secure server-mediated downloads and non-public object access;
+- retention deletion is approval-gated, auditable, recoverable within the documented window, and backed by tested backup/restore controls;
+- transcript retention remains indefinite unless an approved tenant policy changes it;
+- observability, support, incident response, and access review runbooks are backed by evidence;
+- EHR, ClinicOS, AI, and storage live paths are either disabled, sandbox-approved, or production-approved with documented controls;
+- AI remains draft/candidate/suggestion-only and never sends raw PHI to external AI;
+- patient-facing views exclude internal billing, revenue, confidence, coaching, and payer-optimization details unless explicitly approved by tenant policy and source data;
+- security/privacy/compliance review blockers are closed or formally waived;
+- no autonomous diagnosis, coding finalization, charge finalization, medical-necessity determination, claim submission, denial management, or patient financial conclusion is enabled by default.

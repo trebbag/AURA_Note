@@ -213,3 +213,47 @@ None discovered during CP-4.
 ## Next recommended batch
 
 Define the post-CP-4 productionization backlog: durable persistence and migrations, authenticated tenant/identity integration, design-system/Figma implementation, committed browser E2E suite, production observability sinks, deployment runbooks, and formal compliance/security review. Keep all live AI, EHR, writeback, analytics, and audit-file delivery disabled until production credentials, privacy controls, governance, and human approval gates are specified and tested.
+
+## P6.5 — Build rails re-established
+
+**Status:** Complete locally for `WO-033`; GitHub Actions must pass on the PR before merge.
+
+## Completed work orders
+
+- `WO-033` — Production build rails and readiness controls.
+
+## Acceptance evidence
+
+- `docs/PRODUCTION_BUILD_PLAN.md` now defines future work orders `WO-033` through `WO-051` with explicit objectives, scope, mode behavior, data/API/event/RBAC/AI/PHI/security requirements, testing requirements, stop conditions, and definitions of done.
+- `AGENTS.md` now includes post-`WO-032` checkpoint gates P6.5, P7, P7.5, P8, P8.5, P9, P10, and P11.
+- `work_orders/README.md` lists future work orders and explains how planned/todo work orders should be interpreted.
+- `repo_status.json` preserves `WO-000` through `WO-032` as done, marks `WO-033` done, sets `WO-034` as the next work order, and keeps later work orders planned.
+- `SPEC_GAPS.md` explicitly states there are no active gaps as of the post-`WO-032` re-rail review and lists deferred production decisions.
+- `scripts/acceptance-readiness.js` continues to prove synthetic/post-CP4 readiness without falsely requiring future planned production work to be complete.
+- `scripts/production-build-readiness.js` adds production-build control checks for future status semantics, plan coverage, active work-order file presence, and done-work-order evidence.
+
+## Validation commands
+
+- `pnpm production:readiness`
+- `pnpm acceptance:readiness`
+- `node scripts/status.js`
+- `git diff --check`
+- Full local gate recorded in `RUN_LOG.md` for `WO-033`.
+
+## Open risks
+
+- P6.5 is a control/checkpoint package, not product runtime implementation.
+- `WO-034` through `WO-051` remain unimplemented until promoted and completed sequentially.
+- AURA Note remains not production-ready; production identity, broad durable persistence, live audio/transcription, live storage, live EHR, live AI, production PHI storage, production deletion, and claim submission remain deferred.
+
+## Active SPEC_GAPs
+
+None as of the post-`WO-032` / production-build re-rail review.
+
+## Deferred production decisions
+
+Deferred decisions are tracked in `SPEC_GAPS.md` for production identity, production PHI persistence/database operations, Azure Blob storage/deletion, live transcription provider, external AI/provider governance, EHR writeback, ClinicOS live integration, revenue estimates, and claim/payer strategy.
+
+## Next recommended batch
+
+Begin P7 with `WO-034` through `WO-037`, starting with durable visit capture runtime persistence. Keep all production PHI, live vendor, autonomous clinical/coding/billing, live writeback, and claim-submission paths disabled unless later work orders and governance explicitly authorize them.

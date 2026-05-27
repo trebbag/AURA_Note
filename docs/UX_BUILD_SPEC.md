@@ -10,6 +10,10 @@ Visual polish will come later through Figma. Codex should implement the workflow
 
 `WO-019` adds initial design tokens in `packages/ui`, adopts those tokens in the current web shell CSS, adds a mobile overflow browser check for core shells, and records UX copy boundaries in `docs/UX_COPY_REVIEW.md`. It prepares the product surface for human review but does not claim final visual design, Figma fidelity, or compliance certification.
 
+## Post-WO-032 production build rails
+
+`WO-033` re-establishes the remaining build sequence. Future UX work is sequenced in `docs/PRODUCTION_BUILD_PLAN.md`: standalone patient/chart/schedule completion in `WO-038`, standalone worklists/settings/templates/rules catalog in `WO-039`, browser audio/transcription UX in `WO-040`, support/status UX in `WO-043`, final accessibility/responsive/visual regression hardening in `WO-048`, and launch/pilot UX evidence in `WO-050`. These future work orders are not production-complete until implemented, tested, and marked done.
+
 ## Navigation areas
 
 AURA Note v1 should include these core areas:

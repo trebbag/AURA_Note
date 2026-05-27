@@ -37,11 +37,8 @@ function waitForPostgres() {
 
   while (Date.now() < deadline) {
     try {
-      const status = dockerCompose(['ps', '--format', 'json', 'postgres']);
-      if (status.includes('"Health":"healthy"') || status.includes('"State":"running"')) {
-        return;
-      }
-      lastError = status;
+      dockerCompose(['exec', '-T', 'postgres', 'pg_isready', '-U', 'aura_note', '-d', 'aura_note_dev']);
+      return;
     } catch (error) {
       lastError = error.stderr?.toString() || error.message;
     }

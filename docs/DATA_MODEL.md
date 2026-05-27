@@ -463,3 +463,15 @@ This does not add RLS to the remaining workflow tables yet. The deferred model w
 - `RetentionJobResult` may include deletion evidence with object key, checksum/eTag, approval ID, deletion result, recovery-window status, trace ID, and `transcriptPurgeCount: 0`.
 
 These are metadata contracts and local fake-storage tests. They do not authorize production Azure credentials, PHI-bearing object payloads, or production backup/restore execution.
+
+## Post-WO-032 production data model rails
+
+`WO-033` does not change the Prisma schema. It re-sequences the remaining data-model implementation work:
+
+- `WO-034` persists visit capture runtime records: `VisitSession`, `RecordingAsset`, `Transcript`, and `TranscriptSegment`;
+- `WO-035` persists review-panel runtime records: `Suggestion`, `VisitSelection`, `ComplianceIssue`, `HistoryGapQuestion`, and `Task`;
+- `WO-036` persists finalization/output/writeback runtime records: `FinalizationRun`, `WizardStepDecision`, `EnhancedNoteVersion`, `PatientSummaryVersion`, `BillingAttestation`, `DraftClaimPreview`, `ExportArtifact`, and `EhrWritebackJob`;
+- `WO-037` completes durable audit/event/support/config/coaching/mode-mapping persistence and broad tenant-owned RLS coverage;
+- `WO-038` through `WO-039` complete standalone patient/chart/schedule/worklist/settings/template/estimate/rules-catalog records needed for daily product operation.
+
+No table should be treated as production-ready merely because it exists in the schema. Production readiness requires runtime adapter use, tenant/site repository tests, RLS or documented non-tenant rationale, audit evidence, backup/restore posture, and relevant UX/API tests.

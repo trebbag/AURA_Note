@@ -39,18 +39,18 @@ function capture(command: string, args: string[]): string {
 
 async function waitForPostgres(): Promise<void> {
   const startedAt = Date.now();
+  let lastError = '';
   while (Date.now() - startedAt < 30_000) {
     try {
-      const status = capture('docker', ['compose', 'ps', '--format', 'json', 'postgres']);
-      if (status.includes('"Health":"healthy"') || status.includes('"State":"running"')) {
-        return;
-      }
-    } catch {
+      capture('docker', ['compose', 'exec', '-T', 'postgres', 'pg_isready', '-U', 'aura_note', '-d', 'aura_note_dev']);
+      return;
+    } catch (error) {
       // The compose service can briefly be unavailable while Docker creates it.
+      lastError = error instanceof Error ? error.message : String(error);
     }
     await new Promise((resolve) => setTimeout(resolve, 1_000));
   }
-  throw new Error('local PostgreSQL service did not become healthy');
+  throw new Error(`local PostgreSQL service did not become healthy: ${lastError}`);
 }
 
 function applySchema(): void {
