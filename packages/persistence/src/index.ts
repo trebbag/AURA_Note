@@ -6,8 +6,10 @@ export type PersistenceAdapterKind = 'in_memory' | 'prisma';
 
 export type PersistenceAdapterReadiness =
   | 'enabled_local_synthetic'
+  | 'enabled_local_synthetic_prisma_schedule_adapter'
   | 'disabled_until_later_work_order'
   | 'blocked_missing_database_url'
+  | 'blocked_non_local_database_url'
   | 'blocked_production_phi_review';
 
 export interface PersistenceAdapterConfig {
@@ -20,7 +22,7 @@ export interface PersistenceAdapterPlan {
   selectedAdapter: PersistenceAdapterKind;
   readiness: PersistenceAdapterReadiness;
   runtimeEnabled: boolean;
-  liveDatabaseConnectionAllowed: false;
+  liveDatabaseConnectionAllowed: boolean;
   storesProductionPhi: false;
   reason: string;
   requiredEvidence: string[];
@@ -91,14 +93,26 @@ export function resolvePersistenceAdapterPlan(config: PersistenceAdapterConfig =
     };
   }
 
+  if (!isSyntheticLocalDatabaseUrl(config.databaseUrl)) {
+    return {
+      selectedAdapter,
+      readiness: 'blocked_non_local_database_url',
+      runtimeEnabled: false,
+      liveDatabaseConnectionAllowed: false,
+      storesProductionPhi: false,
+      reason: 'Prisma runtime adapter is blocked unless the database URL points to the synthetic local PostgreSQL database.',
+      requiredEvidence: ['synthetic local PostgreSQL URL', 'migration apply evidence', 'rollback evidence']
+    };
+  }
+
   return {
     selectedAdapter,
-    readiness: 'disabled_until_later_work_order',
-    runtimeEnabled: false,
-    liveDatabaseConnectionAllowed: false,
+    readiness: 'enabled_local_synthetic_prisma_schedule_adapter',
+    runtimeEnabled: true,
+    liveDatabaseConnectionAllowed: true,
     storesProductionPhi: false,
-    reason: 'Prisma adapter mapping is scaffolded, but runtime database writes remain disabled until a later work order wires and tests the adapter.',
-    requiredEvidence: ['Prisma adapter integration tests', 'migration apply evidence', 'rollback evidence', 'tenant-scope query tests']
+    reason: 'Prisma schedule/note adapter is enabled only for the synthetic local PostgreSQL database.',
+    requiredEvidence: ['Prisma schedule adapter integration tests', 'migration apply evidence', 'rollback evidence', 'tenant-scope query tests']
   };
 }
 
@@ -183,6 +197,7 @@ export function mapAppointmentNoteToPrismaProjection(
         visitType: appointment.visitType,
         modality: appointment.modality,
         sourceSystem: appointment.source,
+        sourceRef: appointment.appointmentId,
         state: appointment.state,
         reasonForVisit: appointment.reasonForVisit ?? null,
         updatedAt: generatedAt
@@ -199,6 +214,7 @@ export function mapAppointmentNoteToPrismaProjection(
         patientId: patientUuid,
         clinicianId: clinicianUuid,
         state: note.state,
+        sourceRef: note.noteId,
         updatedAt: generatedAt
       }
     }
@@ -211,6 +227,19 @@ export function mapAppointmentNoteToPrismaProjection(
     identifierStrategy: 'deterministic_uuid_scaffold',
     rows
   };
+}
+
+function isSyntheticLocalDatabaseUrl(databaseUrl: string): boolean {
+  try {
+    const url = new URL(databaseUrl);
+    return (
+      url.protocol === 'postgresql:' &&
+      ['localhost', '127.0.0.1', '::1'].includes(url.hostname) &&
+      url.pathname === '/aura_note_dev'
+    );
+  } catch {
+    return false;
+  }
 }
 
 export function toDeterministicPersistenceUuid(...parts: string[]): string {

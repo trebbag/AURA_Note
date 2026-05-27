@@ -388,3 +388,29 @@ Do not implement these tranches directly from this backlog. Promote one tranche 
 
 - This proves schema apply/rollback only. It does not replace the in-memory runtime adapter.
 - Tenant-scoped live query tests, row-level security, transaction/error-path behavior, and full Prisma-backed repository replacement remain later work.
+
+## Follow-on Tranche P6-11 — Prisma Schedule Runtime Adapter
+
+**Promotion status:** Promoted to `WO-030` as the first local Prisma-backed runtime adapter slice for schedule appointment and note shell state.
+
+**Objective:** Prove the schedule/note repository seam can use Prisma Client against the synthetic local PostgreSQL database before broad workflow runtime persistence is enabled.
+
+**Candidate scope:**
+
+- Add a Prisma-backed async schedule repository adapter.
+- Persist and retrieve standalone appointment and note shell rows through local PostgreSQL.
+- Preserve semantic synthetic appointment/note IDs through source-reference fields while using UUID primary keys.
+- Add durable tenant-scoped idempotency records.
+- Add local PostgreSQL integration tests for lookup, one-to-one remapping blocks, and idempotency replay behavior.
+- Keep the broad API runtime on the in-memory adapter until visit/session, transcript, review-panel, finalization, export, writeback, coaching, and audit state can be persisted together.
+
+**Acceptance evidence:**
+
+- `pnpm persistence:prisma-schedule-adapter` passes locally and in CI.
+- Prisma schema validation and runtime readiness checks pass.
+- The full local gate continues to pass.
+
+**Known risks:**
+
+- This is the first adapter slice, not a full application persistence switch.
+- Row-level security, production migration execution, transaction/error-path coverage, and broad workflow repository replacement remain later work.

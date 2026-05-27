@@ -48,11 +48,16 @@ const requiredForwardFragments = [
   ['CREATE TABLE "Tenant"', 'Tenant table creation'],
   ['CREATE TABLE "Appointment"', 'Appointment table creation'],
   ['CREATE TABLE "Note"', 'Note table creation'],
+  ['CREATE TABLE "IdempotencyRecord"', 'IdempotencyRecord table creation'],
   ['CREATE TABLE "VisitSession"', 'VisitSession table creation'],
   ['CREATE TABLE "Transcript"', 'Transcript table creation'],
   ['CREATE TABLE "AuditEvent"', 'AuditEvent table creation'],
   ['CREATE TABLE "DomainEvent"', 'DomainEvent table creation'],
   ['CREATE UNIQUE INDEX "Note_appointmentId_key" ON "Note"("appointmentId")', 'one appointment to one note unique index'],
+  [
+    'CREATE UNIQUE INDEX "IdempotencyRecord_tenantId_idempotencyKey_key"',
+    'tenant-scoped idempotency key unique index'
+  ],
   ['CREATE INDEX "Appointment_tenantId_siteId_startsAt_idx"', 'tenant/site schedule index'],
   ['CREATE INDEX "Note_tenantId_siteId_state_idx"', 'tenant/site note status index'],
   ['ALTER TABLE "Site" ADD CONSTRAINT "Site_tenantId_fkey"', 'Site tenant foreign key'],
@@ -62,6 +67,11 @@ const requiredForwardFragments = [
   ['ALTER TABLE "Note" ADD CONSTRAINT "Note_appointmentId_fkey"', 'Note appointment foreign key'],
   ['ALTER TABLE "Note" ADD CONSTRAINT "Note_patientId_fkey"', 'Note patient foreign key'],
   ['ALTER TABLE "Note" ADD CONSTRAINT "Note_clinicianId_fkey"', 'Note clinician foreign key'],
+  ['ALTER TABLE "IdempotencyRecord" ADD CONSTRAINT "IdempotencyRecord_tenantId_fkey"', 'IdempotencyRecord tenant foreign key'],
+  [
+    'ALTER TABLE "IdempotencyRecord" ADD CONSTRAINT "IdempotencyRecord_appointmentId_fkey"',
+    'IdempotencyRecord appointment foreign key'
+  ],
   ['ALTER TABLE "VisitSession" ADD CONSTRAINT "VisitSession_tenantId_fkey"', 'VisitSession tenant foreign key'],
   ['ALTER TABLE "VisitSession" ADD CONSTRAINT "VisitSession_siteId_fkey"', 'VisitSession site foreign key'],
   ['ALTER TABLE "VisitSession" ADD CONSTRAINT "VisitSession_noteId_fkey"', 'VisitSession note foreign key'],
@@ -218,7 +228,7 @@ for (const [fragment, label] of requiredForwardFragments) {
   assertContains(forwardSql, fragment, label);
 }
 
-for (const tableName of ['Tenant', 'Appointment', 'Note', 'VisitSession', 'Transcript', 'AuditEvent', 'DomainEvent']) {
+for (const tableName of ['Tenant', 'Appointment', 'Note', 'IdempotencyRecord', 'VisitSession', 'Transcript', 'AuditEvent', 'DomainEvent']) {
   assertContains(rollbackSql, `DROP TABLE "public"."${tableName}"`, `${tableName} rollback drop`);
 }
 

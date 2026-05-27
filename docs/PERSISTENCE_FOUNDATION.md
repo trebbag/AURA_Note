@@ -178,3 +178,15 @@ This is orchestration readiness only. It does not apply migrations, connect Pris
 - it verifies the rolled-back local database matches empty state and removes the synthetic volume.
 
 This is local schema evidence only. It does not connect Prisma Client at runtime, replace the in-memory repository adapter, enable row-level security, run tenant-scoped live query tests, store production PHI, or authorize production database use.
+
+## WO-030 Prisma schedule runtime adapter update
+
+`WO-030` adds the first Prisma-backed runtime adapter slice:
+
+- `apps/api/src/schedule/prisma-schedule.repository.ts` implements an async schedule repository adapter for appointment and note shell persistence;
+- `pnpm persistence:prisma-schedule-adapter` generates Prisma Client, starts the synthetic local PostgreSQL service, applies the current Prisma schema, and runs adapter integration tests;
+- the adapter persists `Tenant`, `Site`, `User`, `Patient`, `Appointment`, `Note`, and `IdempotencyRecord` rows with deterministic UUID primary keys;
+- `Appointment.sourceRef` and `Note.sourceRef` preserve the semantic synthetic IDs exposed by the existing API DTOs;
+- `IdempotencyRecord` stores tenant-scoped replay keys for appointment creation safety.
+
+This is the first local Prisma adapter slice only. The broad API runtime still defaults to in-memory state because visit sessions, transcript state, suggestions, selections, compliance, finalization, exports, writeback, coaching, and support state are not yet moved as one durable workflow. Row-level security, production database use, production PHI persistence, and live vendor integrations remain out of scope.
