@@ -350,3 +350,52 @@ Deferred production decisions remain tracked in `SPEC_GAPS.md`, including produc
 ## Next recommended batch
 
 Begin P8.5 with `WO-040` browser audio capture and transcription candidate. Keep browser microphone, recording transport, transcription providers, raw-audio retention, transcript retention, correction history, and live-provider governance behind synthetic/mock or explicit configuration boundaries.
+
+---
+
+# P8.5 — Audio And Transcription Candidate
+
+## Completed work orders
+
+- `WO-040` — Browser audio capture and transcription candidate.
+
+## Acceptance evidence
+
+- `WO-040` added explicit browser microphone permission states, permission-denied/unsupported handling, metadata-only recording chunk append behavior, deterministic mock transcription job processing, transcript confidence/source/speaker-label metadata, transcript correction history, one-week raw-audio retention metadata, and indefinite transcript retention.
+- API endpoints now cover microphone permission recording, metadata-only recording chunk append, recording retention retrieval, mock transcription provider status, mock transcription job processing, and transcript segment correction.
+- Worker coverage now includes deterministic mock transcription from metadata-only chunks with `liveProviderCalled = false`.
+- Security coverage now includes explicit recording/transcription/correction permissions and PHI-like transcript correction rejection.
+- The browser workspace exposes audio candidate controls and status evidence without implying live provider calls, raw PHI audio storage, external AI use, or production deletion.
+
+## Tests and gates
+
+- `pnpm --filter @aura-note/contracts test`
+- `pnpm --filter @aura-note/domain test`
+- `pnpm --filter @aura-note/security test`
+- `pnpm --filter @aura-note/api typecheck`
+- `pnpm --filter @aura-note/api test`
+- `pnpm --filter @aura-note/api test:e2e`
+- `pnpm --filter @aura-note/worker test`
+- `pnpm --filter @aura-note/worker typecheck`
+- `pnpm --filter @aura-note/web typecheck`
+- `pnpm --filter @aura-note/web test:e2e`
+- `pnpm audio:transcription-readiness`
+- Full local gate is recorded in `RUN_LOG.md` for `WO-040`.
+- GitHub Actions must pass before merge.
+
+## Open risks
+
+- P8.5 is synthetic/browser/API/worker-testable audio and transcription candidate evidence, not production audio capture approval.
+- Live transcription-provider selection, BAA/private pathway, production PHI audio storage, production object storage execution, production deletion, production backup/restore execution, production identity, live EHR/ClinicOS synchronization, live AI, medical-necessity determination, charge finalization, claim submission, and production launch approval remain future work.
+
+## Active SPEC_GAPs
+
+None active as of the post-`WO-040` P8.5 review.
+
+## Deferred production decisions
+
+Deferred production decisions remain tracked in `SPEC_GAPS.md`, including production identity, production PHI database posture, Azure backup/restore execution, live transcription provider and PHI-bearing audio transport, external AI governance, live EHR writeback, ClinicOS live integration, revenue estimate policy, production rules licensing/certification, and claim/payer strategy.
+
+## Next recommended batch
+
+Begin P8 with `WO-041` production identity, tenant administration, secrets, configuration, and feature flags. Keep production IdP credentials, production account recovery, live PHI storage, live transcription, live EHR/ClinicOS synchronization, live AI, autonomous clinical/coding/billing behavior, and claim submission disabled unless later review explicitly authorizes them.

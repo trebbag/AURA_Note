@@ -9,7 +9,8 @@ import {
   evaluateRetentionJobRun,
   evaluateRawAudioRetention,
   evaluateStorageBackedRetentionDeletion,
-  getWorkerStatus
+  getWorkerStatus,
+  processMockTranscriptionWorkerJob
 } from './main';
 import { InMemoryObjectStorageAdapter, buildStorageKey } from '@aura-note/storage';
 
@@ -21,6 +22,7 @@ describe('worker scaffold', () => {
     assert.equal(status.checkpoint, 'CP-4-in-progress');
     assert.equal(status.implementedJobs.includes('raw_audio_retention_candidate_scan'), true);
     assert.equal(status.implementedJobs.includes('transcript_retention_indefinite_scan'), true);
+    assert.equal(status.implementedJobs.includes('mock_transcription_job_processor'), true);
     assert.equal(status.implementedJobs.includes('ehr_writeback_queue_status_scan'), true);
     assert.equal(status.implementedJobs.includes('ehr_adapter_health_check_scan'), true);
     assert.equal(status.implementedJobs.includes('clinicos_mapping_outbox_scan'), true);
@@ -29,6 +31,36 @@ describe('worker scaffold', () => {
     assert.equal(status.implementedJobs.includes('audit_export_bundle_generation'), true);
     assert.equal(status.implementedJobs.includes('structured_log_redaction_probe'), true);
     assert.equal(status.jobsDeferredToWorkOrders.includes('destructive_storage_purge'), true);
+  });
+
+  it('processes deterministic mock transcription from metadata-only chunks without live provider calls', () => {
+    const result = processMockTranscriptionWorkerJob(
+      'note-worker-audio-001',
+      [
+        {
+          chunkId: 'chunk-worker-audio-001',
+          appointmentId: 'appt-worker-audio-001',
+          noteId: 'note-worker-audio-001',
+          visitSessionId: 'visit-session-worker-audio-001',
+          sequence: 1,
+          capturedAt: '2026-05-27T23:35:00.000Z',
+          durationMs: 15000,
+          contentLengthBytes: 0,
+          checksum: 'metadata-only-worker-001',
+          transportMode: 'metadata_only_synthetic',
+          rawPhiAudioStored: false,
+          accepted: true,
+          duplicate: false
+        }
+      ],
+      '2026-05-27T23:35:05.000Z'
+    );
+
+    assert.equal(result.status, 'processed');
+    assert.equal(result.liveProviderCalled, false);
+    assert.equal(result.transcript.retentionPolicy, 'indefinite');
+    assert.equal(result.transcript.segments[0]?.confidence, 0.91);
+    assert.equal(result.transcript.providerStatus?.liveProviderCallsEnabled, false);
   });
 
   it('marks raw audio records purge-eligible after the one-week retention window', () => {

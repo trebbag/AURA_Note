@@ -97,6 +97,18 @@ test.describe('AURA Note route accessibility smoke suite', () => {
     await page.getByRole('button', { name: 'Start Visit' }).click();
     await expect(editor).toContainText('Synthetic editor scaffold is available');
     await expect(page.getByRole('button', { name: 'Finalize Note' })).toBeEnabled();
+    await expect(page.getByRole('region', { name: 'Audio capture and transcription status' })).toContainText('metadata_only_synthetic');
+
+    await page.getByRole('button', { name: 'Demo Permission Denied' }).click();
+    await expect(page.getByRole('region', { name: 'Audio capture and transcription status' })).toContainText('denied');
+    await page.getByRole('button', { name: 'Append Metadata Chunk' }).click();
+    await expect(page.getByRole('region', { name: 'Audio capture and transcription status' })).toContainText('Chunks');
+    await expect(page.getByRole('region', { name: 'Audio capture and transcription status' })).toContainText('1');
+    await page.getByRole('button', { name: 'Process Mock Transcription' }).click();
+    await expect(page.getByRole('article', { name: 'Transcript segments' })).toContainText('Synthetic mock transcript from metadata-only chunk 1');
+    await expect(page.getByRole('article', { name: 'Transcript segments' })).toContainText('91%');
+    await page.getByRole('button', { name: 'Correct Transcript' }).click();
+    await expect(page.getByRole('article', { name: 'Transcript segments' })).toContainText('Synthetic corrected transcript segment');
 
     await page.getByRole('button', { name: 'Send to MA as Blocker' }).click();
     await expect(page.getByText('History Gap question sent to MA follow-up as a signing blocker.')).toBeVisible();

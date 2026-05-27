@@ -169,6 +169,20 @@ export interface BillingReviewTranscriptAccessInput {
   linkedToVisit: boolean;
 }
 
+export interface RecordingChunkMetadataInput {
+  sequence: number;
+  durationMs: number;
+  contentLengthBytes: number;
+  checksum?: string;
+  idempotencyKey?: string;
+}
+
+export interface TranscriptCorrectionInput {
+  previousText: string;
+  correctedText: string;
+  correctionReason: string;
+}
+
 export interface AppointmentLifecycle {
   appointmentId: string;
   noteId: string;
@@ -593,6 +607,48 @@ export function createTranscriptRetentionMetadata(
     noteId,
     retentionClass: 'transcript',
     retentionPolicy: 'indefinite'
+  };
+}
+
+export function validateRecordingChunkMetadata(input: RecordingChunkMetadataInput): string[] {
+  const errors: string[] = [];
+  if (!Number.isInteger(input.sequence) || input.sequence < 1) {
+    errors.push('recording chunk sequence must be a positive integer');
+  }
+  if (!Number.isFinite(input.durationMs) || input.durationMs <= 0 || input.durationMs > 120000) {
+    errors.push('recording chunk duration must be greater than zero and no more than two minutes');
+  }
+  if (!Number.isInteger(input.contentLengthBytes) || input.contentLengthBytes < 0) {
+    errors.push('recording chunk content length must be a non-negative integer');
+  }
+  if (input.contentLengthBytes > 0) {
+    errors.push('WO-040 accepts metadata-only synthetic chunks and must not persist raw audio bytes');
+  }
+  if (input.checksum !== undefined && !/^[a-zA-Z0-9:_-]{6,128}$/.test(input.checksum)) {
+    errors.push('recording chunk checksum must be an audit-safe synthetic identifier');
+  }
+  if (input.idempotencyKey !== undefined && !input.idempotencyKey.trim()) {
+    errors.push('recording chunk idempotency key must not be blank when provided');
+  }
+  return errors;
+}
+
+export function mockTranscriptionCanProcessChunk(input: RecordingChunkMetadataInput): boolean {
+  return validateRecordingChunkMetadata({ ...input, contentLengthBytes: 0 }).length === 0;
+}
+
+export function createTranscriptCorrection(input: TranscriptCorrectionInput): TranscriptCorrectionInput & { auditSafe: true } {
+  if (!input.previousText.trim() || !input.correctedText.trim() || !input.correctionReason.trim()) {
+    throw new Error('transcript correction requires previous text, corrected text, and correction reason');
+  }
+  if (input.correctedText.length > 500 || input.correctionReason.length > 240) {
+    throw new Error('transcript correction text exceeds synthetic audit-safe limits');
+  }
+  return {
+    previousText: input.previousText,
+    correctedText: input.correctedText,
+    correctionReason: input.correctionReason,
+    auditSafe: true
   };
 }
 

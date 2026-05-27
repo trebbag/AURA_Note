@@ -482,6 +482,19 @@ No table should be treated as production-ready merely because it exists in the s
 
 - `VisitSession`, `RecordingAsset`, `Transcript`, and `TranscriptSegment` now have a Prisma-backed repository adapter for synthetic local PostgreSQL;
 - persisted visit capture records preserve timer state, recording state, editor lock state, approved recording exceptions, raw-audio one-week retention metadata, transcript indefinite retention, and mock transcript segment ordering;
+
+## WO-040 audio/transcription candidate model notes
+
+The P8.5 audio candidate keeps raw audio payloads out of the repo/runtime while adding typed metadata needed for later production review:
+
+- `RecordingPermission` records browser support, permission state, explicit user gesture evidence, capture mode, `liveAudioCaptureEnabled = false`, and `rawPhiAudioStored = false`;
+- `RecordingChunkMetadata` records sequence, capture window, duration, checksum, synthetic storage key, retention class, source trace, and `transportMode = metadata_only_synthetic`;
+- `TranscriptionProviderStatus` records the deterministic mock provider as active and real providers as disabled/config-gated;
+- `TranscriptionJob` records queued/processed mock job state, source chunk linkage, provider name, and `liveProviderCalled = false`;
+- transcript segments may include confidence, source chunk, speaker-label placeholder, provider name, and correction state;
+- `TranscriptCorrection` records previous text, corrected text, reason, timestamp, actor, and audit-safe status.
+
+Transcript retention remains indefinite and raw-audio metadata remains one-week retention. Production PHI audio storage, live provider payloads, and production deletion execution remain outside the model's enabled runtime behavior.
 - tenant/site scoped repository and API-harness tests deny wrong-tenant and wrong-site access before DTO exposure;
 - `rls-visit-capture.sql` adds local PostgreSQL RLS policies for the visit capture tables using `app.current_tenant_id` and `WITH CHECK` write enforcement;
 - `pnpm persistence:visit-capture-adapter` is the durable evidence gate for this slice.

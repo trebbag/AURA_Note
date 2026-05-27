@@ -9,6 +9,7 @@ import {
   canViewFinalNote,
   canViewTranscript,
   containsForbiddenPhiKeys,
+  containsForbiddenPhiText,
   createMetricProbe,
   createSyntheticLocalSession,
   createStructuredLogEntry,
@@ -132,6 +133,40 @@ describe('role-limited transcript access', () => {
 
     assert.equal(canViewTranscript({ ...base, billingReviewTriggered: false }), false);
     assert.equal(canViewTranscript({ ...base, billingReviewTriggered: true }), true);
+  });
+});
+
+describe('audio capture and transcription permissions', () => {
+  it('limits recording, transcription, and correction actions to linked clinicians or authorized roles', () => {
+    const clinician = {
+      role: 'clinician' as const,
+      linkedToPatient: true,
+      linkedToVisit: true,
+      treatingClinician: true,
+      billingReviewTriggered: false,
+      authorizedAdmin: false
+    };
+    const billing = {
+      ...clinician,
+      role: 'billing_staff' as const,
+      treatingClinician: false,
+      billingReviewTriggered: true
+    };
+    const support = {
+      ...clinician,
+      role: 'support' as const,
+      treatingClinician: false,
+      linkedToPatient: false,
+      linkedToVisit: false
+    };
+
+    assert.equal(canPerform('recording:control', clinician), true);
+    assert.equal(canPerform('recording:chunk', clinician), true);
+    assert.equal(canPerform('transcription:process', clinician), true);
+    assert.equal(canPerform('transcript:correct', clinician), true);
+    assert.equal(canPerform('recording:control', billing), false);
+    assert.equal(canPerform('transcript:correct', billing), false);
+    assert.equal(canPerform('transcription_provider:view', support), false);
   });
 });
 
@@ -462,6 +497,7 @@ describe('PHI key guard', () => {
     });
 
     assert.equal(scan.containsForbiddenPhiText, true);
+    assert.equal(containsForbiddenPhiText({ note: 'MRN: SYNTHETIC-MRN' }), true);
     assert.deepEqual(scan.paths, ['contact', 'nested.note']);
     assert.deepEqual(
       redactForbiddenPhi({ contact: 'synthetic@example.invalid', nested: { patientName: 'Synthetic Person' } }),

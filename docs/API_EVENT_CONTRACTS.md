@@ -123,6 +123,8 @@ The CP-0 event scaffold covers the first state-transition families needed by `WO
 
 `WO-004` implements timer, recording-gate, raw-audio retention metadata, and mock transcript state changes. The CP-1 API emits `visit.paused.v1`, `visit.resumed.v1`, `visit.stopped.v1`, `recording.started.v1`, `recording.exception_approved.v1`, `recording.stopped.v1`, `raw_audio.retention_scheduled.v1`, and `transcript.segment_appended.v1` from the synthetic standalone implementation. These events are audit-safe metadata events and do not represent live audio capture or external transcription.
 
+`WO-040` extends the audio/transcription event surface for the P8.5 synthetic candidate. The API now emits `microphone.permission_recorded.v1`, `recording.chunk_received.v1`, `transcription.provider_status_checked.v1`, `transcription.job_queued.v1`, `transcription.job_processed.v1`, and `transcript.segment_corrected.v1` for browser permission, metadata-only recording chunk, mock provider status, deterministic mock transcription, and correction-history actions. These events remain audit-safe metadata; they do not carry raw audio payloads, invoke live transcription providers, send transcript content to external AI, or authorize production deletion.
+
 `WO-005` implements deterministic mock review-panel state changes. The CP-1 API emits `suggestions.evaluated.v1`, `suggestion.accepted.v1`, `suggestion.removed.v1`, `visit_selection.added.v1`, `compliance.evaluated.v1`, `history_gap.task_created.v1`, and `task.blocker_changed.v1`. These events represent draft/candidate workflow state only; they do not autonomously diagnose, code, bill, determine medical necessity, finalize charges, or submit claims.
 
 `WO-006` implements the first four Finalization Wizard steps over a frozen synthetic snapshot. The CP-2 API adds implemented endpoints for starting finalization, recording Step 1 selected-item decisions, completing Code Review, recording Step 2 final-pass suggestion decisions, completing Suggestion Review, running deterministic mock Compose, updating the Compare & Edit source note, Re-beautify, approving the final note, and approving the patient summary. It emits `finalization.started.v1`, `finalization.selection_decided.v1`, `finalization.suggestion_decided.v1`, `finalization.compose_requested.v1`, `finalization.compose_completed.v1`, `finalization.compare_edit_updated.v1`, `finalization.compose_rebeautified.v1`, `final_note.approved.v1`, `patient_summary.approved.v1`, and `finalization.step_completed.v1`. These events represent human-reviewed wizard state only; Billing & Attest, signing, dispatch, final records, export/PDF/copy, and EHR writeback remain contract seeds until `WO-007` and `WO-008`.
@@ -145,7 +147,7 @@ The CP-0 event scaffold covers the first state-transition families needed by `WO
 
 - `WO-034` through `WO-037` must add durable audit/event evidence for persisted workflow state changes;
 - `WO-038` through `WO-039` must add or harden standalone patient, chart, schedule, task, billing review, settings, template, estimate, and rules-catalog APIs;
-- `WO-040` must add recording transport and transcription adapter API/event evidence;
+- `WO-040` adds recording transport and transcription adapter API/event evidence as synthetic P8.5 readiness;
 - `WO-041` through `WO-043` must harden identity/config/storage/retention/observability/support APIs;
 - `WO-044` through `WO-046` must harden EHR, ClinicOS, and AI governance APIs/events;
 - `WO-051` remains a claim/payer decision gate and must not add live claim submission by default.

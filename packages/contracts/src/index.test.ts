@@ -13,6 +13,8 @@ import {
   type CoachingDashboardDto,
   type CoachingReportDto,
   type ComplianceReviewDto,
+  type RecordingChunkResponseDto,
+  type RecordingPermissionResponseDto,
   type DocumentationWorkspaceDto,
   type DraftNoteSummaryDto,
   type EhrChartContextPackageDto,
@@ -35,6 +37,7 @@ import {
   type TemplateManagementDto,
   type SuggestionDto,
   type TranscriptViewDto,
+  type TranscriptionJobResponseDto,
   type VisitSessionControlResponseDto,
   type ScheduleAppointmentDto,
   type TenantScopeDecisionDto
@@ -1248,6 +1251,102 @@ describe('timer and transcript contracts', () => {
 
     assert.equal(transcript.retentionPolicy, 'indefinite');
     assert.equal(transcript.segments[0]?.source, 'mock_transcription');
+  });
+});
+
+describe('audio capture and transcription contracts', () => {
+  it('represents microphone permission, metadata-only chunks, mock jobs, confidence metadata, and corrections', () => {
+    const permission: RecordingPermissionResponseDto['permission'] = {
+      appointmentId: 'appt-audio-001',
+      noteId: 'note-audio-001',
+      permissionState: 'granted',
+      userGestureConfirmed: true,
+      browserSupported: true,
+      liveAudioCaptureEnabled: false,
+      rawPhiAudioStored: false,
+      recordedAt: '2026-05-27T23:30:00.000Z'
+    };
+    const chunk: RecordingChunkResponseDto['recordingChunk'] = {
+      chunkId: 'chunk-audio-001',
+      appointmentId: 'appt-audio-001',
+      noteId: 'note-audio-001',
+      visitSessionId: 'visit-session-audio-001',
+      sequence: 1,
+      capturedAt: '2026-05-27T23:31:00.000Z',
+      durationMs: 15000,
+      contentLengthBytes: 0,
+      checksum: 'metadata-only-chunk-001',
+      transportMode: 'metadata_only_synthetic',
+      rawPhiAudioStored: false,
+      accepted: true,
+      duplicate: false,
+      storageProvider: 'in_memory',
+      storageKey: 'tenants/tenant-synthetic-primary/sites/site-synthetic-primary/raw-audio/recording-001/chunk-1.metadata.json'
+    };
+    const job: TranscriptionJobResponseDto['transcriptionJob'] = {
+      transcriptionJobId: 'transcription-job-audio-001',
+      appointmentId: 'appt-audio-001',
+      noteId: 'note-audio-001',
+      providerId: 'deterministic-mock-transcription',
+      providerMode: 'mock_only',
+      status: 'processed',
+      queuedAt: '2026-05-27T23:31:05.000Z',
+      processedAt: '2026-05-27T23:31:05.000Z',
+      sourceChunkIds: ['chunk-audio-001'],
+      segmentCount: 1,
+      liveProviderCalled: false
+    };
+    const transcript: TranscriptViewDto = {
+      noteId: 'note-audio-001',
+      transcriptId: 'transcript-audio-001',
+      retentionPolicy: 'indefinite',
+      providerStatus: {
+        providerId: 'deterministic-mock-transcription',
+        mode: 'mock_only',
+        configured: true,
+        liveProviderCallsEnabled: false,
+        baaRequiredBeforeLiveUse: true,
+        supportsDiarization: false,
+        speakerLabelMode: 'placeholder',
+        confidenceMetadataAvailable: true
+      },
+      segments: [
+        {
+          transcriptSegmentId: 'segment-audio-001',
+          noteId: 'note-audio-001',
+          sequence: 1,
+          speakerRole: 'clinician',
+          text: 'Synthetic mock transcript from metadata chunk 1',
+          source: 'mock_transcription',
+          sourceChunkId: 'chunk-audio-001',
+          confidence: 0.91,
+          speakerLabel: 'Speaker 1 placeholder',
+          providerName: 'deterministic_mock',
+          createdAt: '2026-05-27T23:31:05.000Z'
+        }
+      ],
+      corrections: [
+        {
+          correctionId: 'correction-audio-001',
+          transcriptSegmentId: 'segment-audio-001',
+          noteId: 'note-audio-001',
+          previousText: 'Synthetic mock transcript from metadata chunk 1',
+          correctedText: 'Synthetic corrected transcript segment',
+          correctionReason: 'Synthetic clinician correction',
+          correctedByUserId: 'synthetic-clinician',
+          correctedAt: '2026-05-27T23:32:00.000Z',
+          auditSafe: true
+        }
+      ]
+    };
+
+    assert.equal(permission.liveAudioCaptureEnabled, false);
+    assert.equal(chunk.transportMode, 'metadata_only_synthetic');
+    assert.equal(chunk.rawPhiAudioStored, false);
+    assert.equal(job.liveProviderCalled, false);
+    assert.equal(transcript.retentionPolicy, 'indefinite');
+    assert.equal(transcript.segments[0]?.confidence, 0.91);
+    assert.equal(transcript.corrections?.[0]?.auditSafe, true);
   });
 });
 

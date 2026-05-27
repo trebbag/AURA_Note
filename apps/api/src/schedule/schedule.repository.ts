@@ -13,9 +13,14 @@ import type {
   NoteDto,
   PatientSummaryRecordDto,
   RawAudioRetentionMetadataDto,
+  RecordingChunkMetadataDto,
+  RecordingPermissionDto,
   SuggestionDto,
   TaskDto,
   TranscriptViewDto,
+  TranscriptCorrectionDto,
+  TranscriptionJobDto,
+  TranscriptionProviderStatusDto,
   VisitSelectionDto,
   VisitSessionDto
 } from '@aura-note/contracts';
@@ -30,6 +35,11 @@ export interface StoredAppointment {
   lifecycle: AppointmentLifecycle;
   visitSession?: VisitSessionDto;
   rawAudioRetention?: RawAudioRetentionMetadataDto;
+  recordingPermission?: RecordingPermissionDto;
+  recordingChunks?: RecordingChunkMetadataDto[];
+  transcriptionJobs?: TranscriptionJobDto[];
+  transcriptCorrections?: TranscriptCorrectionDto[];
+  transcriptionProviderStatus?: TranscriptionProviderStatusDto;
   transcript?: TranscriptViewDto;
   suggestions?: SuggestionDto[];
   visitSelections?: VisitSelectionDto[];

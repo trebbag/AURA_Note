@@ -6,7 +6,9 @@ import {
   type AppointmentDto,
   type AppointmentActionResponseDto,
   type AppointmentStatusActionRequestDto,
+  type AppendRecordingChunkRequestDto,
   type AuditEventDto,
+  type CorrectTranscriptSegmentRequestDto,
   type CoreEventType,
   type CreateAppointmentRequestDto,
   type CreateAppointmentResponseDto,
@@ -33,6 +35,10 @@ import {
   type ExportArtifactDto,
   type FinalNoteRecordDto,
   type FinalizedNoteDetailDto,
+  type RecordMicrophonePermissionRequestDto,
+  type RawAudioRetentionMetadataDto,
+  type RecordingChunkMetadataDto,
+  type RecordingChunkResponseDto,
   type ScheduleAppointmentDto,
   type ScheduleViewDto,
   type StandaloneChartContextResponseDto,
@@ -55,15 +61,22 @@ import {
   type TaskDto,
   type HistoryGapQuestionDto,
   type StartVisitResponseDto,
+  type TranscriptCorrectionDto,
+  type TranscriptCorrectionResponseDto,
   type TranscriptSegmentDto,
   type TranscriptViewDto,
+  type TranscriptionJobDto,
+  type TranscriptionJobResponseDto,
+  type TranscriptionProviderStatusDto,
   type UnusedAuditItemDto,
   type UpdateAppointmentRequestDto,
   type UpdateStandalonePatientRequestDto,
   type VisitSelectionDto,
   type VisitSelectionsViewDto,
   type VisitSessionControlResponseDto,
-  type VisitSessionDto
+  type VisitSessionDto,
+  type RecordingPermissionResponseDto,
+  type RecordingRetentionResponseDto
 } from '@aura-note/contracts';
 import {
   approveRecordingException,
@@ -84,6 +97,7 @@ import {
   createAppointmentNoteInvariant,
   chartContextRequiresFreshnessWarning,
   createRawAudioRetentionMetadata,
+  createTranscriptCorrection,
   createTranscriptRetentionMetadata,
   pauseVisitGate,
   patientSummaryContainsInternalDetails,
@@ -91,6 +105,7 @@ import {
   resumeVisitGate,
   startVisitLifecycle,
   stopVisitGate,
+  validateRecordingChunkMetadata,
   validateAppointmentDraft,
   validateStandalonePatientDraft,
   type NoteState
@@ -98,6 +113,8 @@ import {
 import {
   canPerform,
   canViewTranscript,
+  containsForbiddenPhiKeys,
+  containsForbiddenPhiText,
   createSyntheticLocalSession,
   type AccessContext
 } from '@aura-note/security';
@@ -480,7 +497,19 @@ export class ScheduleService {
       startedAt,
       elapsedSeconds: 0
     };
-    const rawAudioRetention = createRawAudioRetentionMetadata(this.nextId('recording'), stored.note.noteId, startedAt);
+    const rawAudioRetention: RawAudioRetentionMetadataDto = {
+      ...createRawAudioRetentionMetadata(this.nextId('recording'), stored.note.noteId, startedAt),
+      storageProvider: 'in_memory',
+      storageKey: buildStorageKey({
+        tenantId: TENANT_ID,
+        siteId: SITE_ID,
+        recordClass: 'raw-audio',
+        recordId: stored.note.noteId,
+        fileName: 'metadata-only-audio-chunks.json'
+      }),
+      checksum: 'metadata-only-started',
+      contentLengthBytes: 0
+    };
     const transcriptRetention = createTranscriptRetentionMetadata(this.nextId('transcript'), stored.note.noteId);
     const transcript: TranscriptViewDto = {
       noteId: stored.note.noteId,
@@ -494,6 +523,7 @@ export class ScheduleService {
     stored.note = { ...stored.note, state: lifecycle.noteState };
     stored.visitSession = visitSession;
     stored.rawAudioRetention = rawAudioRetention;
+    stored.transcriptionProviderStatus = this.createTranscriptionProviderStatus();
     stored.transcript = transcript;
 
     return createApiEnvelope(
@@ -824,6 +854,347 @@ export class ScheduleService {
         transcriptId: 'transcript-not-started',
         retentionPolicy: 'indefinite',
         segments: []
+      },
+      this.createMeta(context)
+    );
+  }
+
+  recordMicrophonePermission(
+    appointmentId: string,
+    request: RecordMicrophonePermissionRequestDto,
+    context: RequestContext
+  ): ApiEnvelope<RecordingPermissionResponseDto> {
+    const stored = this.getStoredAppointment(appointmentId);
+    this.assertRecordingControlAllowed(context);
+    if (!request.userGestureConfirmed) {
+      throw new BadRequestException('microphone permission recording requires an explicit user action');
+    }
+    if (request.permissionState === 'granted' && !request.browserSupported) {
+      throw new BadRequestException('unsupported browsers cannot record granted microphone permission');
+    }
+
+    const permission = {
+      appointmentId,
+      noteId: stored.note.noteId,
+      permissionState: request.permissionState,
+      userGestureConfirmed: request.userGestureConfirmed,
+      browserSupported: request.browserSupported,
+      liveAudioCaptureEnabled: false,
+      rawPhiAudioStored: false,
+      recordedAt: new Date().toISOString()
+    } as const;
+    stored.recordingPermission = permission;
+    stored.transcriptionProviderStatus = this.createTranscriptionProviderStatus();
+
+    return createApiEnvelope(
+      {
+        permission,
+        providerStatus: stored.transcriptionProviderStatus,
+        auditEvent: this.createAuditEvent('microphone.permission_record', 'Appointment', appointmentId, context),
+        domainEvents: [
+          this.createDomainEventForAppointment(stored, context, 'microphone.permission_recorded.v1', {
+            permissionState: permission.permissionState,
+            browserSupported: permission.browserSupported,
+            liveAudioCaptureEnabled: false,
+            rawPhiAudioStored: false
+          })
+        ]
+      },
+      this.createMeta(context)
+    );
+  }
+
+  appendRecordingChunk(
+    appointmentId: string,
+    request: AppendRecordingChunkRequestDto,
+    context: RequestContext
+  ): ApiEnvelope<RecordingChunkResponseDto> {
+    const stored = this.getStartedAppointmentForControl(appointmentId, context);
+    this.assertRecordingChunkAllowed(context);
+    if (stored.visitSession.recordingState !== 'recording') {
+      throw new BadRequestException('recording chunks require normal recording and do not apply to approved exceptions');
+    }
+
+    const validationErrors = validateRecordingChunkMetadata({
+      ...request,
+      ...(context.idempotencyKey ? { idempotencyKey: context.idempotencyKey } : {})
+    });
+    if (validationErrors.length > 0) {
+      throw new BadRequestException({ code: 'INVALID_RECORDING_CHUNK_METADATA', validationErrors });
+    }
+
+    const chunks = stored.recordingChunks ?? [];
+    const duplicate = chunks.find((chunk) =>
+      context.idempotencyKey ? chunk.idempotencyKey === context.idempotencyKey : chunk.sequence === request.sequence
+    );
+    if (duplicate) {
+      return createApiEnvelope(
+        {
+          recordingChunk: { ...duplicate, duplicate: true },
+          rawAudioRetention: this.ensureRawAudioRetention(stored),
+          auditEvent: this.createAuditEvent('recording.chunk_replay', 'RecordingAsset', duplicate.chunkId, context),
+          domainEvents: [
+            this.createDomainEventForAppointment(stored, context, 'recording.chunk_received.v1', {
+              chunkId: duplicate.chunkId,
+              sequence: duplicate.sequence,
+              duplicate: true,
+              rawPhiAudioStored: false
+            })
+          ]
+        },
+        this.createMeta(context)
+      );
+    }
+
+    const rawAudioRetention = this.ensureRawAudioRetention(stored);
+    const chunkId = this.nextId('recording-chunk');
+    const chunk: RecordingChunkMetadataDto = {
+      chunkId,
+      appointmentId,
+      noteId: stored.note.noteId,
+      visitSessionId: stored.visitSession.visitSessionId,
+      sequence: request.sequence,
+      capturedAt: new Date().toISOString(),
+      durationMs: request.durationMs,
+      contentLengthBytes: 0,
+      checksum: request.checksum ?? `metadata-only-${appointmentId}-${request.sequence}`,
+      transportMode: 'metadata_only_synthetic',
+      rawPhiAudioStored: false,
+      accepted: true,
+      duplicate: false,
+      ...(context.idempotencyKey ? { idempotencyKey: context.idempotencyKey } : {}),
+      storageProvider: rawAudioRetention.storageProvider ?? 'in_memory',
+      storageKey: buildStorageKey({
+        tenantId: TENANT_ID,
+        siteId: SITE_ID,
+        recordClass: 'raw-audio',
+        recordId: rawAudioRetention.recordingId,
+        fileName: `chunk-${request.sequence}.metadata.json`
+      })
+    };
+    stored.recordingChunks = [...chunks, chunk];
+    stored.rawAudioRetention = {
+      ...rawAudioRetention,
+      checksum: chunk.checksum,
+      contentLengthBytes: (rawAudioRetention.contentLengthBytes ?? 0) + chunk.contentLengthBytes
+    };
+
+    return createApiEnvelope(
+      {
+        recordingChunk: chunk,
+        rawAudioRetention: stored.rawAudioRetention,
+        auditEvent: this.createAuditEvent('recording.chunk_receive', 'RecordingAsset', chunk.chunkId, context),
+        domainEvents: [
+          this.createDomainEventForAppointment(stored, context, 'recording.chunk_received.v1', {
+            chunkId: chunk.chunkId,
+            sequence: chunk.sequence,
+            transportMode: chunk.transportMode,
+            rawPhiAudioStored: false
+          })
+        ]
+      },
+      this.createMeta(context)
+    );
+  }
+
+  getRecordingRetention(
+    appointmentId: string,
+    context: RequestContext
+  ): ApiEnvelope<RecordingRetentionResponseDto> {
+    const stored = this.getStoredAppointment(appointmentId);
+    if (!canPerform('transcript:view', this.createLinkedVisitContext(context.access))) {
+      throw new ForbiddenException('role cannot view recording retention metadata');
+    }
+    return createApiEnvelope(
+      {
+        ...(stored.rawAudioRetention ? { rawAudioRetention: stored.rawAudioRetention } : {}),
+        recordingChunks: stored.recordingChunks ?? [],
+        transcriptRetentionPolicy: 'indefinite',
+        transcriptPurgeCount: 0,
+        rawAudioPayloadStored: false,
+        auditEvent: this.createAuditEvent('recording.retention_view', 'Appointment', appointmentId, context),
+        domainEvents: [
+          this.createDomainEventForAppointment(stored, context, 'raw_audio.retention_scheduled.v1', {
+            rawAudioPayloadStored: false,
+            transcriptPurgeCount: 0,
+            purgeAfter: stored.rawAudioRetention?.purgeAfter ?? null
+          })
+        ]
+      },
+      this.createMeta(context)
+    );
+  }
+
+  getTranscriptionProviderStatus(
+    appointmentId: string,
+    context: RequestContext
+  ): ApiEnvelope<{ providerStatus: TranscriptionProviderStatusDto; auditEvent: AuditEventDto; domainEvents: Array<ReturnType<typeof createEventEnvelope>> }> {
+    const stored = this.getStoredAppointment(appointmentId);
+    if (!canPerform('transcription_provider:view', this.createLinkedVisitContext(context.access))) {
+      throw new ForbiddenException('role cannot view transcription provider status');
+    }
+    const providerStatus = this.createTranscriptionProviderStatus();
+    stored.transcriptionProviderStatus = providerStatus;
+    return createApiEnvelope(
+      {
+        providerStatus,
+        auditEvent: this.createAuditEvent('transcription.provider_status_check', 'Appointment', appointmentId, context),
+        domainEvents: [
+          this.createDomainEventForAppointment(stored, context, 'transcription.provider_status_checked.v1', {
+            providerId: providerStatus.providerId,
+            mode: providerStatus.mode,
+            liveProviderCallsEnabled: false
+          })
+        ]
+      },
+      this.createMeta(context)
+    );
+  }
+
+  processMockTranscriptionJob(
+    appointmentId: string,
+    context: RequestContext
+  ): ApiEnvelope<TranscriptionJobResponseDto> {
+    const stored = this.getStartedAppointmentForControl(appointmentId, context);
+    if (!canPerform('transcription:process', this.createLinkedVisitContext(context.access))) {
+      throw new ForbiddenException('role cannot process transcription jobs');
+    }
+    const chunks = stored.recordingChunks ?? [];
+    if (chunks.length === 0) {
+      throw new BadRequestException('mock transcription requires at least one accepted metadata-only chunk');
+    }
+
+    const providerStatus = this.createTranscriptionProviderStatus();
+    const queuedAt = new Date().toISOString();
+    const job: TranscriptionJobDto = {
+      transcriptionJobId: this.nextId('transcription-job'),
+      appointmentId,
+      noteId: stored.note.noteId,
+      providerId: providerStatus.providerId,
+      providerMode: providerStatus.mode,
+      status: 'processed',
+      queuedAt,
+      processedAt: queuedAt,
+      sourceChunkIds: chunks.map((chunk) => chunk.chunkId),
+      segmentCount: chunks.length,
+      liveProviderCalled: false
+    };
+    const transcript = stored.transcript ?? {
+      noteId: stored.note.noteId,
+      transcriptId: this.nextId('transcript'),
+      retentionPolicy: 'indefinite' as const,
+      segments: []
+    };
+    const existingChunkIds = new Set(transcript.segments.map((segment) => segment.sourceChunkId).filter(Boolean));
+    const newSegments: TranscriptSegmentDto[] = chunks
+      .filter((chunk) => !existingChunkIds.has(chunk.chunkId))
+      .map((chunk, index) => ({
+        transcriptSegmentId: this.nextId('transcript-segment'),
+        noteId: stored.note.noteId,
+        sequence: transcript.segments.length + index + 1,
+        speakerRole: index % 2 === 0 ? 'clinician' : 'patient',
+        text: `Synthetic mock transcript from metadata chunk ${chunk.sequence}`,
+        source: 'mock_transcription',
+        sourceChunkId: chunk.chunkId,
+        confidence: 0.91,
+        speakerLabel: `Speaker ${index + 1} placeholder`,
+        providerName: 'deterministic_mock',
+        createdAt: queuedAt
+      }));
+    stored.transcriptionJobs = [...(stored.transcriptionJobs ?? []), job];
+    stored.transcriptionProviderStatus = providerStatus;
+    stored.transcript = {
+      ...transcript,
+      providerStatus,
+      corrections: stored.transcriptCorrections ?? transcript.corrections ?? [],
+      segments: [...transcript.segments, ...newSegments]
+    };
+
+    return createApiEnvelope(
+      {
+        transcriptionJob: { ...job, segmentCount: newSegments.length },
+        providerStatus,
+        transcript: stored.transcript,
+        auditEvent: this.createAuditEvent('transcription.mock_process', 'TranscriptionJob', job.transcriptionJobId, context),
+        domainEvents: [
+          this.createDomainEventForAppointment(stored, context, 'transcription.job_queued.v1', {
+            transcriptionJobId: job.transcriptionJobId,
+            providerMode: providerStatus.mode,
+            liveProviderCalled: false
+          }),
+          this.createDomainEventForAppointment(stored, context, 'transcription.job_processed.v1', {
+            transcriptionJobId: job.transcriptionJobId,
+            segmentCount: newSegments.length,
+            confidenceMetadataAvailable: true
+          }),
+          this.createDomainEventForAppointment(stored, context, 'transcript.segment_appended.v1', {
+            transcriptionJobId: job.transcriptionJobId,
+            segmentCount: newSegments.length,
+            transcriptRetentionPolicy: 'indefinite'
+          })
+        ]
+      },
+      this.createMeta(context)
+    );
+  }
+
+  correctTranscriptSegment(
+    appointmentId: string,
+    transcriptSegmentId: string,
+    request: CorrectTranscriptSegmentRequestDto,
+    context: RequestContext
+  ): ApiEnvelope<TranscriptCorrectionResponseDto> {
+    const stored = this.getStoredAppointment(appointmentId);
+    if (!canPerform('transcript:correct', this.createLinkedVisitContext(context.access))) {
+      throw new ForbiddenException('role cannot correct transcript segments');
+    }
+    if (containsForbiddenPhiKeys(request) || containsForbiddenPhiText(request)) {
+      throw new BadRequestException('transcript correction request contains forbidden PHI-like content');
+    }
+    const transcript = stored.transcript;
+    const segment = transcript?.segments.find((candidate) => candidate.transcriptSegmentId === transcriptSegmentId);
+    if (!transcript || !segment) {
+      throw new NotFoundException('transcript segment not found');
+    }
+    const correctionInput = createTranscriptCorrection({
+      previousText: segment.text,
+      correctedText: request.correctedText,
+      correctionReason: request.correctionReason
+    });
+    const correction: TranscriptCorrectionDto = {
+      correctionId: this.nextId('transcript-correction'),
+      transcriptSegmentId,
+      noteId: stored.note.noteId,
+      previousText: correctionInput.previousText,
+      correctedText: correctionInput.correctedText,
+      correctionReason: correctionInput.correctionReason,
+      correctedByUserId: context.actorUserId,
+      correctedAt: new Date().toISOString(),
+      auditSafe: true
+    };
+    stored.transcriptCorrections = [...(stored.transcriptCorrections ?? []), correction];
+    stored.transcript = {
+      ...transcript,
+      corrections: stored.transcriptCorrections,
+      segments: transcript.segments.map((candidate) =>
+        candidate.transcriptSegmentId === transcriptSegmentId
+          ? { ...candidate, text: request.correctedText, corrected: true }
+          : candidate
+      )
+    };
+
+    return createApiEnvelope(
+      {
+        transcript: stored.transcript,
+        correction,
+        auditEvent: this.createAuditEvent('transcript.segment_correct', 'TranscriptSegment', transcriptSegmentId, context),
+        domainEvents: [
+          this.createDomainEventForAppointment(stored, context, 'transcript.segment_corrected.v1', {
+            transcriptSegmentId,
+            correctionId: correction.correctionId,
+            auditSafe: true
+          })
+        ]
       },
       this.createMeta(context)
     );
@@ -2438,6 +2809,53 @@ export class ScheduleService {
     if (!canPerform('visit:start', this.createLinkedVisitContext(context.access))) {
       throw new ForbiddenException('role cannot control visit session');
     }
+  }
+
+  private assertRecordingControlAllowed(context: RequestContext): void {
+    if (!canPerform('recording:control', this.createLinkedVisitContext(context.access))) {
+      throw new ForbiddenException('role cannot control recording');
+    }
+  }
+
+  private assertRecordingChunkAllowed(context: RequestContext): void {
+    if (!canPerform('recording:chunk', this.createLinkedVisitContext(context.access))) {
+      throw new ForbiddenException('role cannot append recording chunk metadata');
+    }
+  }
+
+  private ensureRawAudioRetention(entry: StoredAppointment): RawAudioRetentionMetadataDto {
+    if (entry.rawAudioRetention) {
+      return entry.rawAudioRetention;
+    }
+    const capturedAt = entry.visitSession?.startedAt ?? new Date().toISOString();
+    entry.rawAudioRetention = {
+      ...createRawAudioRetentionMetadata(this.nextId('recording'), entry.note.noteId, capturedAt),
+      storageProvider: 'in_memory',
+      storageKey: buildStorageKey({
+        tenantId: TENANT_ID,
+        siteId: SITE_ID,
+        recordClass: 'raw-audio',
+        recordId: entry.note.noteId,
+        fileName: 'metadata-only-audio-chunks.json'
+      }),
+      checksum: 'metadata-only-retention',
+      contentLengthBytes: 0
+    };
+    return entry.rawAudioRetention;
+  }
+
+  private createTranscriptionProviderStatus(): TranscriptionProviderStatusDto {
+    return {
+      providerId: 'deterministic-mock-transcription',
+      mode: 'mock_only',
+      configured: true,
+      liveProviderCallsEnabled: false,
+      baaRequiredBeforeLiveUse: true,
+      supportsDiarization: false,
+      speakerLabelMode: 'placeholder',
+      confidenceMetadataAvailable: true,
+      disabledReason: 'Live transcription providers require later governance, BAA/private pathway, and production PHI storage approval.'
+    };
   }
 
   private toDocumentationWorkspace(entry: StoredAppointment, context: RequestContext): DocumentationWorkspaceDto {

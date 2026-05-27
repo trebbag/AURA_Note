@@ -246,6 +246,70 @@ describe('schedule appointment lifecycle API', () => {
     assert.equal(resumed.body.data.visitSession.timerState, 'running');
     assert.equal(resumed.body.data.visitSession.editorUnlocked, true);
 
+    const permission = await request(app.getHttpServer())
+      .post(`/api/v1/documentation-workspace/appointments/${created.body.data.appointment.appointmentId}/recording/permission`)
+      .set('x-aura-role', 'clinician')
+      .send({ permissionState: 'granted', userGestureConfirmed: true, browserSupported: true })
+      .expect(201);
+
+    assert.equal(permission.body.data.permission.liveAudioCaptureEnabled, false);
+    assert.equal(permission.body.data.providerStatus.mode, 'mock_only');
+
+    const chunk = await request(app.getHttpServer())
+      .post(`/api/v1/documentation-workspace/appointments/${created.body.data.appointment.appointmentId}/recording/chunks`)
+      .set('x-aura-role', 'clinician')
+      .set('idempotency-key', 'idem-e2e-audio-chunk-001')
+      .send({ sequence: 1, durationMs: 15000, contentLengthBytes: 0, checksum: 'metadata-only-e2e-001' })
+      .expect(201);
+
+    assert.equal(chunk.body.data.recordingChunk.rawPhiAudioStored, false);
+    assert.equal(chunk.body.data.recordingChunk.transportMode, 'metadata_only_synthetic');
+
+    const provider = await request(app.getHttpServer())
+      .get(`/api/v1/documentation-workspace/appointments/${created.body.data.appointment.appointmentId}/transcription/provider-status`)
+      .set('x-aura-role', 'clinician')
+      .expect(200);
+
+    assert.equal(provider.body.data.providerStatus.liveProviderCallsEnabled, false);
+
+    const mockJob = await request(app.getHttpServer())
+      .post(`/api/v1/documentation-workspace/appointments/${created.body.data.appointment.appointmentId}/transcription/jobs/mock`)
+      .set('x-aura-role', 'clinician')
+      .expect(201);
+
+    assert.equal(mockJob.body.data.transcriptionJob.liveProviderCalled, false);
+    assert.equal(mockJob.body.data.transcript.segments[0].confidence, 0.91);
+
+    const correction = await request(app.getHttpServer())
+      .post(
+        `/api/v1/documentation-workspace/appointments/${created.body.data.appointment.appointmentId}/transcript/segments/${mockJob.body.data.transcript.segments[0].transcriptSegmentId}/correction`
+      )
+      .set('x-aura-role', 'clinician')
+      .send({
+        correctedText: 'Synthetic corrected e2e transcript segment',
+        correctionReason: 'Synthetic clinician correction'
+      })
+      .expect(201);
+
+    assert.equal(correction.body.data.correction.auditSafe, true);
+
+    await request(app.getHttpServer())
+      .post(`/api/v1/documentation-workspace/appointments/${created.body.data.appointment.appointmentId}/transcript/segments/${mockJob.body.data.transcript.segments[0].transcriptSegmentId}/correction`)
+      .set('x-aura-role', 'support')
+      .send({
+        correctedText: 'Synthetic support correction denied',
+        correctionReason: 'Synthetic denied correction'
+      })
+      .expect(403);
+
+    const retention = await request(app.getHttpServer())
+      .get(`/api/v1/documentation-workspace/appointments/${created.body.data.appointment.appointmentId}/recording/retention`)
+      .set('x-aura-role', 'clinician')
+      .expect(200);
+
+    assert.equal(retention.body.data.transcriptPurgeCount, 0);
+    assert.equal(retention.body.data.rawAudioPayloadStored, false);
+
     const transcript = await request(app.getHttpServer())
       .post(`/api/v1/documentation-workspace/appointments/${created.body.data.appointment.appointmentId}/transcript/segments`)
       .set('x-aura-role', 'clinician')
@@ -253,7 +317,8 @@ describe('schedule appointment lifecycle API', () => {
       .expect(201);
 
     assert.equal(transcript.body.data.transcript.retentionPolicy, 'indefinite');
-    assert.equal(transcript.body.data.transcript.segments.length, 1);
+    assert.equal(transcript.body.data.transcript.segments.length, 2);
+    assert.equal(transcript.body.data.transcript.segments.at(-1).text, 'Synthetic mock transcript segment');
 
     const suggestions = await request(app.getHttpServer())
       .post(`/api/v1/notes/${created.body.data.note.noteId}/suggestions/evaluate`)

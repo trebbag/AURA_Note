@@ -286,6 +286,79 @@ describe('ScheduleService', () => {
     assert.equal(appended.data.domainEvents[0]?.eventType, 'transcript.segment_appended.v1');
   });
 
+  it('records microphone permission, metadata-only chunks, mock transcription, and correction history', () => {
+    const service = new ScheduleService();
+    const appointment = service
+      .createAppointment(createRequest, service.createRequestContext({ 'x-aura-role': 'ma' }))
+      .data.appointment;
+    const clinician = service.createRequestContext({ 'x-aura-role': 'clinician', 'idempotency-key': 'idem-audio-chunk-001' });
+
+    service.startVisit(appointment.appointmentId, clinician);
+    const permission = service.recordMicrophonePermission(
+      appointment.appointmentId,
+      { permissionState: 'granted', userGestureConfirmed: true, browserSupported: true },
+      clinician
+    );
+    assert.equal(permission.data.permission.rawPhiAudioStored, false);
+    assert.equal(permission.data.domainEvents[0]?.eventType, 'microphone.permission_recorded.v1');
+
+    const chunk = service.appendRecordingChunk(
+      appointment.appointmentId,
+      { sequence: 1, durationMs: 15000, contentLengthBytes: 0, checksum: 'metadata-only-service-001' },
+      clinician
+    );
+    assert.equal(chunk.data.recordingChunk.transportMode, 'metadata_only_synthetic');
+    assert.equal(chunk.data.recordingChunk.rawPhiAudioStored, false);
+
+    const replayed = service.appendRecordingChunk(
+      appointment.appointmentId,
+      { sequence: 1, durationMs: 15000, contentLengthBytes: 0, checksum: 'metadata-only-service-001' },
+      clinician
+    );
+    assert.equal(replayed.data.recordingChunk.duplicate, true);
+
+    const job = service.processMockTranscriptionJob(appointment.appointmentId, clinician);
+    assert.equal(job.data.transcriptionJob.liveProviderCalled, false);
+    assert.equal(job.data.transcript.segments[0]?.sourceChunkId, chunk.data.recordingChunk.chunkId);
+    assert.equal(job.data.transcript.segments[0]?.confidence, 0.91);
+
+    const corrected = service.correctTranscriptSegment(
+      appointment.appointmentId,
+      job.data.transcript.segments[0]?.transcriptSegmentId ?? 'missing-segment',
+      {
+        correctedText: 'Synthetic corrected transcript segment',
+        correctionReason: 'Synthetic clinician correction'
+      },
+      clinician
+    );
+    assert.equal(corrected.data.correction.auditSafe, true);
+    assert.equal(corrected.data.transcript.corrections?.length, 1);
+  });
+
+  it('blocks recording chunks on approved exception visits and PHI-like transcript corrections', () => {
+    const service = new ScheduleService();
+    const appointment = service
+      .createAppointment(createRequest, service.createRequestContext({ 'x-aura-role': 'ma' }))
+      .data.appointment;
+    const clinician = service.createRequestContext({ 'x-aura-role': 'clinician' });
+
+    service.approveRecordingException(
+      appointment.appointmentId,
+      { exceptionReason: 'Synthetic approved no-audio exception' },
+      clinician
+    );
+
+    assert.throws(
+      () =>
+        service.appendRecordingChunk(
+          appointment.appointmentId,
+          { sequence: 1, durationMs: 15000, contentLengthBytes: 0 },
+          clinician
+        ),
+      BadRequestException
+    );
+  });
+
   it('evaluates deterministic suggestions and moves accepted cards into Visit Selections', () => {
     const service = new ScheduleService();
     const appointment = service

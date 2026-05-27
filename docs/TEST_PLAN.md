@@ -334,4 +334,17 @@ CI now runs `pnpm persistence:review-panel-adapter` after visit-capture persiste
 - storage unit tests verify in-memory object writes, signed-token creation, wrong-tenant denial, expiry denial, and delete evidence;
 - worker tests verify destructive raw-audio deletion requires approval controls and transcript purge count remains zero.
 
+## WO-040 audio/transcription candidate tests
+
+`WO-040` adds the `pnpm audio:transcription-readiness` gate and extends package-level coverage:
+
+- contracts cover microphone permission, metadata-only recording chunks, mock transcription jobs, transcript confidence/source metadata, and correction history;
+- domain tests cover metadata-only chunk validation and transcript correction constraints;
+- security tests cover recording/transcription/correction permissions and forbidden PHI text checks;
+- API service and E2E tests cover permission recording, chunk append idempotency, approved-exception recording denial, mock provider processing, transcript correction, support-role denial, and transcript indefinite retention;
+- worker tests cover deterministic mock transcription from accepted metadata-only chunks with no live provider call;
+- browser tests cover audio candidate status, permission-denied demo state, chunk append, mock transcription display, confidence metadata, and correction state.
+
+These tests prove synthetic P8.5 readiness only. Live microphones with payload persistence, live transcription vendors, production object storage, production deletion execution, external AI transcript processing, and production PHI use remain outside the test scope until later work orders authorize them.
+
 CI runs these after the persistence gates and before acceptance readiness. Production Azure credentials, production backup/restore execution, and PHI-bearing object payload tests remain deferred.

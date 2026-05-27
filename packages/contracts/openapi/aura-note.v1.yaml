@@ -489,6 +489,98 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/VisitSessionControlResponse'
+  /documentation-workspace/appointments/{appointmentId}/recording/permission:
+    post:
+      operationId: recordMicrophonePermissionState
+      description: Record explicit browser microphone permission state as audit-safe metadata only; live audio storage remains disabled.
+      parameters:
+        - name: appointmentId
+          in: path
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RecordMicrophonePermissionRequest'
+      responses:
+        '201':
+          description: Microphone permission state recorded.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RecordingPermissionResponse'
+  /documentation-workspace/appointments/{appointmentId}/recording/chunks:
+    post:
+      operationId: appendRecordingChunkMetadata
+      description: Append metadata-only synthetic recording chunk evidence. Raw audio payload persistence is disabled.
+      parameters:
+        - name: appointmentId
+          in: path
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AppendRecordingChunkRequest'
+      responses:
+        '201':
+          description: Recording chunk metadata accepted.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RecordingChunkResponse'
+  /documentation-workspace/appointments/{appointmentId}/recording/retention:
+    get:
+      operationId: getRecordingRetentionMetadata
+      description: Return raw-audio one-week retention metadata and transcript indefinite-retention posture.
+      parameters:
+        - name: appointmentId
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: Recording retention metadata.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RecordingRetentionResponse'
+  /documentation-workspace/appointments/{appointmentId}/transcription/provider-status:
+    get:
+      operationId: getTranscriptionProviderStatus
+      description: Return mock-only transcription provider status and disabled live-provider governance posture.
+      parameters:
+        - name: appointmentId
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: Transcription provider status.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TranscriptionProviderStatusResponse'
+  /documentation-workspace/appointments/{appointmentId}/transcription/jobs/mock:
+    post:
+      operationId: processMockTranscriptionJob
+      description: Process deterministic mock transcription from metadata-only chunks without calling a live provider.
+      parameters:
+        - name: appointmentId
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        '201':
+          description: Mock transcription job processed.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TranscriptionJobResponse'
   /documentation-workspace/appointments/{appointmentId}/transcript:
     get:
       operationId: getMockTranscript
@@ -527,6 +619,32 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/VisitSessionControlResponse'
+  /documentation-workspace/appointments/{appointmentId}/transcript/segments/{transcriptSegmentId}/correction:
+    post:
+      operationId: correctTranscriptSegment
+      description: Record audit-safe transcript correction history for a mock transcript segment.
+      parameters:
+        - name: appointmentId
+          in: path
+          required: true
+          schema: { type: string }
+        - name: transcriptSegmentId
+          in: path
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CorrectTranscriptSegmentRequest'
+      responses:
+        '201':
+          description: Transcript segment correction recorded.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TranscriptCorrectionResponse'
   /notes/{noteId}:
     get:
       operationId: getNote
@@ -2102,6 +2220,144 @@ components:
         storageKey: { type: string }
         checksum: { type: string }
         contentLengthBytes: { type: integer, minimum: 0 }
+    RecordMicrophonePermissionRequest:
+      type: object
+      required: [permissionState, userGestureConfirmed, browserSupported]
+      properties:
+        permissionState: { type: string, enum: [prompt_required, granted, denied, unsupported] }
+        userGestureConfirmed: { type: boolean }
+        browserSupported: { type: boolean }
+    RecordingPermission:
+      type: object
+      required: [appointmentId, noteId, permissionState, userGestureConfirmed, browserSupported, liveAudioCaptureEnabled, rawPhiAudioStored, recordedAt]
+      properties:
+        appointmentId: { type: string }
+        noteId: { type: string }
+        permissionState: { type: string, enum: [prompt_required, granted, denied, unsupported] }
+        userGestureConfirmed: { type: boolean }
+        browserSupported: { type: boolean }
+        liveAudioCaptureEnabled: { type: boolean, enum: [false] }
+        rawPhiAudioStored: { type: boolean, enum: [false] }
+        recordedAt: { type: string, format: date-time }
+    RecordingPermissionResponse:
+      type: object
+      required: [data, meta]
+      properties:
+        data:
+          type: object
+          required: [permission, providerStatus, auditEvent, domainEvents]
+          properties:
+            permission: { $ref: '#/components/schemas/RecordingPermission' }
+            providerStatus: { $ref: '#/components/schemas/TranscriptionProviderStatus' }
+            auditEvent: { $ref: '#/components/schemas/AuditEvent' }
+            domainEvents:
+              type: array
+              items: { $ref: '#/components/schemas/AuraNoteEvent' }
+        meta: { $ref: '#/components/schemas/ApiMeta' }
+    AppendRecordingChunkRequest:
+      type: object
+      required: [sequence, durationMs, contentLengthBytes]
+      properties:
+        sequence: { type: integer, minimum: 1 }
+        durationMs: { type: integer, minimum: 1 }
+        contentLengthBytes: { type: integer, enum: [0] }
+        checksum: { type: string }
+    RecordingChunkMetadata:
+      type: object
+      required: [chunkId, appointmentId, noteId, visitSessionId, sequence, capturedAt, durationMs, contentLengthBytes, checksum, transportMode, rawPhiAudioStored, accepted, duplicate]
+      properties:
+        chunkId: { type: string }
+        appointmentId: { type: string }
+        noteId: { type: string }
+        visitSessionId: { type: string }
+        sequence: { type: integer, minimum: 1 }
+        capturedAt: { type: string, format: date-time }
+        durationMs: { type: integer, minimum: 1 }
+        contentLengthBytes: { type: integer, enum: [0] }
+        checksum: { type: string }
+        transportMode: { type: string, enum: [metadata_only_synthetic] }
+        rawPhiAudioStored: { type: boolean, enum: [false] }
+        accepted: { type: boolean }
+        duplicate: { type: boolean }
+        idempotencyKey: { type: string }
+        storageProvider: { type: string, enum: [azure_blob, in_memory] }
+        storageKey: { type: string }
+    RecordingChunkResponse:
+      type: object
+      required: [data, meta]
+      properties:
+        data:
+          type: object
+          required: [recordingChunk, rawAudioRetention, auditEvent, domainEvents]
+          properties:
+            recordingChunk: { $ref: '#/components/schemas/RecordingChunkMetadata' }
+            rawAudioRetention: { $ref: '#/components/schemas/RawAudioRetentionMetadata' }
+            auditEvent: { $ref: '#/components/schemas/AuditEvent' }
+            domainEvents:
+              type: array
+              items: { $ref: '#/components/schemas/AuraNoteEvent' }
+        meta: { $ref: '#/components/schemas/ApiMeta' }
+    TranscriptionProviderStatus:
+      type: object
+      required: [providerId, mode, configured, liveProviderCallsEnabled, baaRequiredBeforeLiveUse, supportsDiarization, speakerLabelMode, confidenceMetadataAvailable]
+      properties:
+        providerId: { type: string }
+        mode: { type: string, enum: [mock_only, external_disabled] }
+        configured: { type: boolean }
+        liveProviderCallsEnabled: { type: boolean, enum: [false] }
+        baaRequiredBeforeLiveUse: { type: boolean, enum: [true] }
+        supportsDiarization: { type: boolean, enum: [false] }
+        speakerLabelMode: { type: string, enum: [placeholder] }
+        confidenceMetadataAvailable: { type: boolean }
+        disabledReason: { type: string }
+    TranscriptionProviderStatusResponse:
+      type: object
+      required: [data, meta]
+      properties:
+        data:
+          type: object
+          required: [providerStatus, auditEvent, domainEvents]
+          properties:
+            providerStatus: { $ref: '#/components/schemas/TranscriptionProviderStatus' }
+            auditEvent: { $ref: '#/components/schemas/AuditEvent' }
+            domainEvents:
+              type: array
+              items: { $ref: '#/components/schemas/AuraNoteEvent' }
+        meta: { $ref: '#/components/schemas/ApiMeta' }
+    TranscriptionJob:
+      type: object
+      required: [transcriptionJobId, appointmentId, noteId, providerId, providerMode, status, queuedAt, sourceChunkIds, segmentCount, liveProviderCalled]
+      properties:
+        transcriptionJobId: { type: string }
+        appointmentId: { type: string }
+        noteId: { type: string }
+        providerId: { type: string }
+        providerMode: { type: string, enum: [mock_only, external_disabled] }
+        status: { type: string, enum: [queued, processed, failed] }
+        queuedAt: { type: string, format: date-time }
+        processedAt: { type: string, format: date-time }
+        failedReason: { type: string }
+        sourceChunkIds:
+          type: array
+          items: { type: string }
+        segmentCount: { type: integer, minimum: 0 }
+        liveProviderCalled: { type: boolean, enum: [false] }
+    TranscriptionJobResponse:
+      type: object
+      required: [data, meta]
+      properties:
+        data:
+          type: object
+          required: [transcriptionJob, providerStatus, transcript, auditEvent, domainEvents]
+          properties:
+            transcriptionJob: { $ref: '#/components/schemas/TranscriptionJob' }
+            providerStatus: { $ref: '#/components/schemas/TranscriptionProviderStatus' }
+            transcript: { $ref: '#/components/schemas/TranscriptView' }
+            auditEvent: { $ref: '#/components/schemas/AuditEvent' }
+            domainEvents:
+              type: array
+              items: { $ref: '#/components/schemas/AuraNoteEvent' }
+        meta: { $ref: '#/components/schemas/ApiMeta' }
     TranscriptSegment:
       type: object
       required: [transcriptSegmentId, noteId, sequence, speakerRole, text, source, createdAt]
@@ -2113,6 +2369,45 @@ components:
         text: { type: string }
         source: { type: string, enum: [mock_transcription] }
         createdAt: { type: string, format: date-time }
+        confidence: { type: number, minimum: 0, maximum: 1 }
+        sourceChunkId: { type: string }
+        speakerLabel: { type: string }
+        providerName: { type: string, enum: [deterministic_mock] }
+        corrected: { type: boolean }
+    TranscriptCorrection:
+      type: object
+      required: [correctionId, transcriptSegmentId, noteId, previousText, correctedText, correctionReason, correctedByUserId, correctedAt, auditSafe]
+      properties:
+        correctionId: { type: string }
+        transcriptSegmentId: { type: string }
+        noteId: { type: string }
+        previousText: { type: string }
+        correctedText: { type: string }
+        correctionReason: { type: string }
+        correctedByUserId: { type: string }
+        correctedAt: { type: string, format: date-time }
+        auditSafe: { type: boolean, enum: [true] }
+    CorrectTranscriptSegmentRequest:
+      type: object
+      required: [correctedText, correctionReason]
+      properties:
+        correctedText: { type: string }
+        correctionReason: { type: string }
+    TranscriptCorrectionResponse:
+      type: object
+      required: [data, meta]
+      properties:
+        data:
+          type: object
+          required: [transcript, correction, auditEvent, domainEvents]
+          properties:
+            transcript: { $ref: '#/components/schemas/TranscriptView' }
+            correction: { $ref: '#/components/schemas/TranscriptCorrection' }
+            auditEvent: { $ref: '#/components/schemas/AuditEvent' }
+            domainEvents:
+              type: array
+              items: { $ref: '#/components/schemas/AuraNoteEvent' }
+        meta: { $ref: '#/components/schemas/ApiMeta' }
     AppendTranscriptSegmentRequest:
       type: object
       required: [speakerRole, text]
@@ -2130,6 +2425,32 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/TranscriptSegment'
+        corrections:
+          type: array
+          items:
+            $ref: '#/components/schemas/TranscriptCorrection'
+        providerStatus:
+          $ref: '#/components/schemas/TranscriptionProviderStatus'
+    RecordingRetentionResponse:
+      type: object
+      required: [data, meta]
+      properties:
+        data:
+          type: object
+          required: [recordingChunks, transcriptRetentionPolicy, transcriptPurgeCount, rawAudioPayloadStored, auditEvent, domainEvents]
+          properties:
+            rawAudioRetention: { $ref: '#/components/schemas/RawAudioRetentionMetadata' }
+            recordingChunks:
+              type: array
+              items: { $ref: '#/components/schemas/RecordingChunkMetadata' }
+            transcriptRetentionPolicy: { type: string, enum: [indefinite] }
+            transcriptPurgeCount: { type: integer, enum: [0] }
+            rawAudioPayloadStored: { type: boolean, enum: [false] }
+            auditEvent: { $ref: '#/components/schemas/AuditEvent' }
+            domainEvents:
+              type: array
+              items: { $ref: '#/components/schemas/AuraNoteEvent' }
+        meta: { $ref: '#/components/schemas/ApiMeta' }
     VisitSelection:
       type: object
       required: [visitSelectionId, noteId, category, label, humanApproved]
@@ -3226,7 +3547,7 @@ components:
         eventId: { type: string }
         eventType:
           type: string
-          enum: [appointment.created.v1, note.shell_created.v1, visit.started.v1, visit.paused.v1, visit.resumed.v1, visit.stopped.v1, recording.started.v1, recording.exception_approved.v1, recording.stopped.v1, raw_audio.retention_scheduled.v1, transcript.segment_appended.v1, suggestions.evaluated.v1, suggestion.accepted.v1, suggestion.removed.v1, visit_selection.added.v1, compliance.evaluated.v1, history_gap.task_created.v1, task.blocker_changed.v1, low_confidence_diagnosis.override_recorded.v1, finalization.started.v1, finalization.selection_decided.v1, finalization.suggestion_decided.v1, finalization.compose_requested.v1, finalization.compose_completed.v1, finalization.compare_edit_updated.v1, finalization.compose_rebeautified.v1, finalization.step_completed.v1, final_note.approved.v1, patient_summary.approved.v1, billing_review.triggered.v1, draft_claim_preview.generated.v1, billing_attestation.completed.v1, final_note.created.v1, patient_summary.finalized.v1, note.signed.v1, note.dispatched.v1, export.generated.v1, ehr_writeback.queued.v1, ehr_writeback.failed.v1, ehr.adapter_status_checked.v1, ehr.patient_matched.v1, ehr.chart_context_loaded.v1, clinicos.mode_resolved.v1, clinicos.mapping_recorded.v1, clinicos.event_published.v1, clinicos.unavailable.v1, ai.request_prepared.v1, ai.context_scrubbed.v1, ai.phi_rejected.v1, ai.response_recorded.v1, ai.output_rejected.v1, coaching.signal_created.v1, coaching.report_generated.v1, coaching.dashboard_viewed.v1, retention.scan_completed.v1, audit.export_requested.v1, audit.event_recorded.v1]
+          enum: [appointment.created.v1, note.shell_created.v1, visit.started.v1, visit.paused.v1, visit.resumed.v1, visit.stopped.v1, recording.started.v1, microphone.permission_recorded.v1, recording.chunk_received.v1, recording.exception_approved.v1, recording.stopped.v1, raw_audio.retention_scheduled.v1, transcription.provider_status_checked.v1, transcription.job_queued.v1, transcription.job_processed.v1, transcription.job_failed.v1, transcript.segment_appended.v1, transcript.segment_corrected.v1, suggestions.evaluated.v1, suggestion.accepted.v1, suggestion.removed.v1, visit_selection.added.v1, compliance.evaluated.v1, history_gap.task_created.v1, task.blocker_changed.v1, low_confidence_diagnosis.override_recorded.v1, finalization.started.v1, finalization.selection_decided.v1, finalization.suggestion_decided.v1, finalization.compose_requested.v1, finalization.compose_completed.v1, finalization.compare_edit_updated.v1, finalization.compose_rebeautified.v1, finalization.step_completed.v1, final_note.approved.v1, patient_summary.approved.v1, billing_review.triggered.v1, draft_claim_preview.generated.v1, billing_attestation.completed.v1, final_note.created.v1, patient_summary.finalized.v1, note.signed.v1, note.dispatched.v1, export.generated.v1, ehr_writeback.queued.v1, ehr_writeback.failed.v1, ehr.adapter_status_checked.v1, ehr.patient_matched.v1, ehr.chart_context_loaded.v1, clinicos.mode_resolved.v1, clinicos.mapping_recorded.v1, clinicos.event_published.v1, clinicos.unavailable.v1, ai.request_prepared.v1, ai.context_scrubbed.v1, ai.phi_rejected.v1, ai.response_recorded.v1, ai.output_rejected.v1, coaching.signal_created.v1, coaching.report_generated.v1, coaching.dashboard_viewed.v1, retention.scan_completed.v1, audit.export_requested.v1, audit.event_recorded.v1]
         schemaVersion: { type: string, enum: [v1] }
         tenantId: { type: string }
         siteId: { type: string }
