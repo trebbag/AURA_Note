@@ -27,6 +27,7 @@ Codex must complete work orders sequentially unless a checkpoint or blocker stop
 - `WO-016` — Tenant identity and access foundation.
 - `WO-017` — Committed browser E2E and accessibility suite.
 - `WO-018` — Observability, deployment, and support runbooks.
+- `WO-019` — Design system, UX hardening, and compliance review package.
 
 ## Work order rules
 
@@ -48,3 +49,5 @@ Post-CP4 productionization candidates are documented in `docs/POST_CP4_PRODUCTIO
 `WO-017` promotes the third post-CP4 productionization tranche into a committed Playwright browser E2E and accessibility-oriented route regression suite. Visual regression and final design-system work remain out of scope until later numbered work orders.
 
 `WO-018` promotes the fourth post-CP4 productionization tranche into a local-first observability, deployment matrix, and support runbook foundation. Production observability vendors, deployment automation, audit export download delivery, and destructive retention deletion remain out of scope until later numbered work orders.
+
+`WO-019` promotes the fifth post-CP4 productionization tranche into an initial design-token, UX copy review, responsive browser hardening, and compliance/security/privacy review package. Final Figma fidelity, visual regression baselines, compliance certification, and production launch approval remain out of scope.

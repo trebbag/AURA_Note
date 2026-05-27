@@ -121,4 +121,16 @@ test.describe('AURA Note route accessibility smoke suite', () => {
     await expect(page.getByRole('region', { name: 'Audit and failure states' })).toContainText('metadata-only');
     await expect(page.getByRole('region', { name: 'Audit and failure states' })).toContainText('PHI');
   });
+
+  test('core shells remain responsive without horizontal overflow on mobile width', async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 844 });
+
+    for (const path of ['/aura-note/schedule', '/aura-note/workspace/appt-demo-001', '/aura-note/finalized/note-demo-finalized-001']) {
+      await page.goto(path);
+      await expect(page.getByRole('main')).toBeVisible();
+
+      const overflow = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
+      expect(overflow).toBeLessThanOrEqual(1);
+    }
+  });
 });

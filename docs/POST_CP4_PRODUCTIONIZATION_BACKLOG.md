@@ -119,6 +119,8 @@ All post-CP4 work must preserve the existing prohibitions:
 
 ## Tranche P5-05 — Design System, UX Hardening, And Compliance Review Package
 
+**Promotion status:** Promoted to `WO-019` as an initial design-token, responsive browser hardening, UX copy review, and compliance/security/privacy review package. Final Figma fidelity, visual regression baselines, compliance certification, and production launch approval remain deferred to later review work.
+
 **Objective:** Prepare AURA Note for human review as a commercial product surface without changing clinical authority boundaries.
 
 **Candidate scope:**

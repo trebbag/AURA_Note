@@ -8,7 +8,7 @@
     "lint": "tsc --noEmit -p tsconfig.json",
     "lint:phi": "node ../../scripts/lint-phi.js packages/ui",
     "typecheck": "tsc --noEmit -p tsconfig.json",
-    "test": "node -e \"console.log('ui scaffold verified by typecheck; component tests begin with UI work orders')\"",
+    "test": "node --import tsx --test src/index.test.ts",
     "test:unit": "pnpm test",
     "test:e2e": "node -e \"console.log('ui package e2e scaffold: no shared interactive components exist yet; verified by typecheck and build')\""
   },

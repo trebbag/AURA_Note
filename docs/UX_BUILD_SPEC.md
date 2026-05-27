@@ -6,6 +6,10 @@ Visual polish will come later through Figma. Codex should implement the workflow
 
 `WO-017` adds committed Playwright route checks for the current synthetic web shell. The suite verifies main landmarks, expected H1 headings, shared section navigation, accessible labels and button names, timer-gated editor disabled states, read-only finalized-note tabs, coaching permission states, and support degraded-mode states. It is not a visual-regression suite and does not claim final Figma fidelity.
 
+## WO-019 Design system and copy-review foundation
+
+`WO-019` adds initial design tokens in `packages/ui`, adopts those tokens in the current web shell CSS, adds a mobile overflow browser check for core shells, and records UX copy boundaries in `docs/UX_COPY_REVIEW.md`. It prepares the product surface for human review but does not claim final visual design, Figma fidelity, or compliance certification.
+
 ## Navigation areas
 
 AURA Note v1 should include these core areas:

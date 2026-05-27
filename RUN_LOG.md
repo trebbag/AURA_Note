@@ -255,3 +255,15 @@ Codex must append a dated entry after each work order or meaningful implementati
 - **Accepted risks:** The observability foundation is a local adapter/status contract, not a production observability platform. Production vendor, storage, transport, retention, incident-management, and secret-management decisions remain deferred.
 - **Open SPEC_GAPs:** None discovered for local-first observability/deployment runbook scaffolding.
 - **Next step:** Run narrow package/API/browser checks, then the full local gate, open the WO-018 PR, and confirm GitHub Actions.
+
+## 2026-05-27T01:58:38Z — WO-019 Design system, UX hardening, and compliance review package
+
+- **Work order:** `WO-019` Design System, UX Hardening, And Compliance Review Package.
+- **Summary of changes:** Promoted the fifth post-CP4 productionization tranche into an active work order and added initial UI design tokens, review-surface copy boundaries, tokenized CSS, mobile browser overflow coverage, UX copy review docs, and compliance/security/privacy review packaging.
+- **Review behavior:** The UI package now records patient-facing and internal-only boundaries for clinical documentation, billing, patient summaries, coaching, audit/support, and integration status. Browser tests cover core route responsiveness without horizontal overflow on mobile width.
+- **Files changed:** `packages/ui/src/index.ts`, `packages/ui/src/index.test.ts`, `packages/ui/package.json`, `apps/web/app/globals.css`, `apps/web/e2e/aura-note-routes.spec.ts`, `docs/DESIGN_SYSTEM_FOUNDATION.md`, `docs/UX_COPY_REVIEW.md`, `docs/COMPLIANCE_SECURITY_PRIVACY_REVIEW_PACKAGE.md`, `docs/POST_CP4_PRODUCTIONIZATION_BACKLOG.md`, `docs/TEST_PLAN.md`, `docs/UX_BUILD_SPEC.md`, `work_orders/WO-019_design_ux_compliance_review_package.md`, `work_orders/README.md`, `repo_status.json`, and `RUN_LOG.md`.
+- **Tests run:** `pnpm --filter @aura-note/ui test`; `pnpm --filter @aura-note/ui typecheck`; `pnpm --filter @aura-note/web typecheck`; `pnpm test:browser`; `pnpm install --frozen-lockfile`; `pnpm lint`; `pnpm lint:phi`; `pnpm typecheck`; `pnpm test`; `pnpm test:e2e`; `pnpm build`; `pnpm acceptance:readiness`; `pnpm persistence:foundation`; `node scripts/status.js`; `git diff --check`.
+- **Tests not run:** Final Figma fidelity, visual regression baselines, Storybook production documentation, compliance certification, legal review, security attestation, production launch approval, live PHI, live EHR/ClinicOS/AI/analytics integrations, and claim submission are intentionally not run.
+- **Accepted risks:** The review package prepares evidence for human review but does not certify compliance, security, privacy, clinical safety, billing compliance, or production readiness. Final design-system and brand decisions remain deferred.
+- **Open SPEC_GAPs:** None discovered for the design/UX/review packaging scope.
+- **Next step:** Open the WO-019 PR, confirm GitHub Actions, and merge when green before selecting the next post-CP4 tranche.
