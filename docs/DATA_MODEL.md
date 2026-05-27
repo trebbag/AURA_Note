@@ -308,3 +308,14 @@ This is not runtime persistence. The API still uses the existing synthetic proce
 - cross-tenant and cross-site requests are denied before API services perform clinical, billing, AI, integration, coaching, support, audit, or export behavior.
 
 This is not persistent identity management. User administration, SSO/MFA, account recovery, SCIM, ClinicOS identity delegation, and production identity-provider configuration remain deferred.
+
+## WO-020 persistence runtime readiness status
+
+`WO-020` adds the first runtime repository seam while preserving the synthetic in-memory runtime:
+
+- schedule/note state is accessed through a repository port with an in-memory adapter;
+- appointment-to-note one-to-one lookup is enforced at the repository boundary;
+- idempotency keys cannot be remapped to a different appointment;
+- Prisma forward and rollback SQL generation is verified by `pnpm persistence:runtime-readiness`.
+
+The data model is still not a live production store. Migrations are not applied to a database, PostgreSQL is not used by API requests, row-level security is not enabled, and no production PHI is stored.

@@ -15,7 +15,6 @@ import {
   type NoteDto,
   type AppendTranscriptSegmentRequestDto,
   type AddVisitSelectionRequestDto,
-  type RawAudioRetentionMetadataDto,
   type RecordingExceptionRequestDto,
   type ComplianceIssueDto,
   type ComplianceReviewDto,
@@ -80,7 +79,6 @@ import {
   startVisitLifecycle,
   stopVisitGate,
   validateAppointmentDraft,
-  type AppointmentLifecycle,
   type NoteState
 } from '@aura-note/domain';
 import {
@@ -89,25 +87,11 @@ import {
   createSyntheticLocalSession,
   type AccessContext
 } from '@aura-note/security';
+import { createInMemoryScheduleStateRepository, type StoredAppointment } from './schedule.repository';
 
 const TENANT_ID = 'tenant-synthetic-primary';
 const SITE_ID = 'site-synthetic-primary';
 const APP_MODE = 'standalone' as const;
-
-interface StoredAppointment {
-  appointment: AppointmentDto;
-  note: NoteDto;
-  lifecycle: AppointmentLifecycle;
-  visitSession?: VisitSessionDto;
-  rawAudioRetention?: RawAudioRetentionMetadataDto;
-  transcript?: TranscriptViewDto;
-  suggestions?: SuggestionDto[];
-  visitSelections?: VisitSelectionDto[];
-  complianceIssues?: ComplianceIssueDto[];
-  historyGaps?: HistoryGapQuestionDto[];
-  tasks?: TaskDto[];
-  finalization?: FinalizationSessionDto;
-}
 
 interface RequestContext {
   requestId: string;
@@ -120,9 +104,7 @@ interface RequestContext {
 @Injectable()
 export class ScheduleService {
   private sequence = 1;
-  private readonly appointments = new Map<string, StoredAppointment>();
-  private readonly noteByAppointment = new Map<string, string>();
-  private readonly idempotencyIndex = new Map<string, string>();
+  private readonly repository = createInMemoryScheduleStateRepository();
 
   listAppointments(context: RequestContext): ApiEnvelope<ScheduleViewDto> {
     if (!canPerform('schedule:view', context.access)) {
@@ -131,7 +113,7 @@ export class ScheduleService {
 
     return createApiEnvelope(
       {
-        appointments: [...this.appointments.values()].map((entry) => this.toScheduleCard(entry)),
+        appointments: this.repository.listAppointments().map((entry) => this.toScheduleCard(entry)),
         ehrSchedulingEnabled: false,
         clinicOsSchedulingEnabled: false
       },
@@ -147,7 +129,9 @@ export class ScheduleService {
       throw new ForbiddenException('role cannot create appointments');
     }
 
-    const existingAppointmentId = context.idempotencyKey ? this.idempotencyIndex.get(context.idempotencyKey) : undefined;
+    const existingAppointmentId = context.idempotencyKey
+      ? this.repository.getIdempotentAppointmentId(context.idempotencyKey)
+      : undefined;
     if (existingAppointmentId) {
       const existing = this.getStoredAppointment(existingAppointmentId);
       return createApiEnvelope(this.toCreateResponse(existing, context, true), this.createMeta(context));
@@ -174,7 +158,7 @@ export class ScheduleService {
     }
 
     const lifecycle = createAppointmentLifecycle(appointmentId, noteId, draft);
-    if (this.noteByAppointment.has(appointmentId)) {
+    if (this.repository.hasNoteForAppointment(appointmentId)) {
       throw new BadRequestException('duplicate note shell creation is blocked');
     }
 
@@ -211,10 +195,9 @@ export class ScheduleService {
       { appointmentId: note.appointmentId, noteId: note.noteId }
     );
 
-    this.appointments.set(appointmentId, { appointment, note, lifecycle });
-    this.noteByAppointment.set(appointmentId, noteId);
+    this.repository.saveAppointment({ appointment, note, lifecycle });
     if (context.idempotencyKey) {
-      this.idempotencyIndex.set(context.idempotencyKey, appointmentId);
+      this.repository.saveIdempotencyKey(context.idempotencyKey, appointmentId);
     }
 
     const stored = this.getStoredAppointment(appointmentId);
@@ -337,7 +320,8 @@ export class ScheduleService {
       throw new ForbiddenException('role cannot view draft notes');
     }
 
-    const notes = [...this.appointments.values()]
+    const notes = this.repository
+      .listAppointments()
       .filter((entry) => entry.lifecycle.noteVisibleInDrafts && entry.note.state !== 'finalized')
       .map((entry) => {
         const gate = entry.visitSession ?? {
@@ -377,7 +361,8 @@ export class ScheduleService {
       throw new ForbiddenException('role cannot view finalized notes');
     }
 
-    const notes = [...this.appointments.values()]
+    const notes = this.repository
+      .listAppointments()
       .filter((entry) => entry.note.state === 'finalized')
       .map((entry) => this.toFinalizedNoteSummary(entry, context.access));
 
@@ -2371,7 +2356,7 @@ export class ScheduleService {
   }
 
   private getStoredAppointment(appointmentId: string): StoredAppointment {
-    const stored = this.appointments.get(appointmentId);
+    const stored = this.repository.getAppointment(appointmentId);
     if (!stored) {
       throw new NotFoundException('appointment not found');
     }
@@ -2379,7 +2364,7 @@ export class ScheduleService {
   }
 
   private getStoredByNoteId(noteId: string): StoredAppointment {
-    const stored = [...this.appointments.values()].find((entry) => entry.note.noteId === noteId);
+    const stored = this.repository.getByNoteId(noteId);
     if (!stored) {
       throw new NotFoundException('note not found');
     }

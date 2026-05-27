@@ -267,3 +267,16 @@ Codex must append a dated entry after each work order or meaningful implementati
 - **Accepted risks:** The review package prepares evidence for human review but does not certify compliance, security, privacy, clinical safety, billing compliance, or production readiness. Final design-system and brand decisions remain deferred.
 - **Open SPEC_GAPs:** None discovered for the design/UX/review packaging scope.
 - **Next step:** Open the WO-019 PR, confirm GitHub Actions, and merge when green before selecting the next post-CP4 tranche.
+
+## 2026-05-27T02:10:37Z — WO-020 Persistence runtime readiness
+
+- **Work order:** `WO-020` Persistence Runtime Readiness.
+- **Summary of changes:** Promoted the next persistence follow-on into an active work order and added a runtime repository seam plus deterministic Prisma migration SQL readiness evidence.
+- **Persistence behavior:** Schedule/note process-local state now sits behind an explicit repository port with an in-memory adapter as the only enabled runtime adapter. Repository tests cover one appointment to one note, duplicate note remapping rejection, and idempotency-key remapping rejection.
+- **Migration evidence:** Added `pnpm persistence:runtime-readiness` to validate the Prisma datamodel, generate forward SQL, generate rollback SQL, and assert key CP-4 tables plus the `Note.appointmentId` unique index without connecting to a live database.
+- **Files changed:** `.github/workflows/ci.yml`, `package.json`, `apps/api/package.json`, `apps/api/src/schedule/schedule.repository.ts`, `apps/api/src/schedule/schedule.repository.test.ts`, `apps/api/src/schedule/schedule.service.ts`, `scripts/validate-persistence-runtime-readiness.js`, `scripts/acceptance-readiness.js`, `docs/PERSISTENCE_FOUNDATION.md`, `docs/BACKEND_BUILD_SPEC.md`, `docs/DATA_MODEL.md`, `docs/POST_CP4_PRODUCTIONIZATION_BACKLOG.md`, `docs/TEST_PLAN.md`, `work_orders/WO-020_persistence_runtime_readiness.md`, `work_orders/README.md`, `repo_status.json`, and `RUN_LOG.md`.
+- **Tests run:** `pnpm --filter @aura-note/api test`; `pnpm --filter @aura-note/api typecheck`; `pnpm persistence:runtime-readiness`; `pnpm install --frozen-lockfile`; `pnpm lint`; `pnpm lint:phi`; `pnpm typecheck`; `pnpm test`; `pnpm test:e2e`; `pnpm test:browser`; `pnpm build`; `pnpm acceptance:readiness`; `pnpm persistence:foundation`; `node scripts/status.js`; `git diff --check`.
+- **Tests not run:** Live database migration apply/rollback, production PostgreSQL, row-level security, PHI-bearing persistence, full Prisma-backed repository replacement, production credentials, live AI, live EHR/ClinicOS/analytics integrations, audit export delivery, storage deletion, and claim submission are intentionally not run.
+- **Accepted risks:** The runtime adapter remains in-memory and synthetic. The migration readiness verifier proves datamodel SQL generation only; it does not prove production database operability, backup/restore, row-level security, or PHI-safe storage.
+- **Open SPEC_GAPs:** None discovered for repository-seam and SQL-generation readiness.
+- **Next step:** Open the WO-020 PR, confirm GitHub Actions, and merge when green before selecting the next post-CP4 tranche.
