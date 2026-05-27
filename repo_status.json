@@ -34,9 +34,10 @@
     "WO-027": "done",
     "WO-028": "done",
     "WO-029": "done",
-    "WO-030": "done"
+    "WO-030": "done",
+    "WO-031": "done"
   },
-  "last_updated_by": "Codex WO-030 Prisma schedule runtime adapter",
-  "last_updated_at": "2026-05-27T14:40:05Z",
-  "notes": "WO-030 post-CP4 Prisma schedule runtime adapter is complete as the first local synthetic PostgreSQL-backed repository slice for appointment/note shell persistence and durable idempotency records. The broad API runtime still defaults to in-memory synthetic repositories until remaining workflow state is migrated safely; row-level security, production PHI persistence, production credentials, live EHR writeback, and full Prisma-backed repository replacement remain deferred."
+  "last_updated_by": "Codex WO-031 tenant isolation and core RLS evidence",
+  "last_updated_at": "2026-05-27T15:25:00Z",
+  "notes": "WO-031 post-CP4 tenant isolation and core RLS evidence is complete for the current persisted schedule/note slice. Local synthetic PostgreSQL tests prove tenant/site-scoped Prisma repository queries, idempotency isolation, API access-context denial before DTO exposure, and core RLS policies for Tenant, Site, User, Patient, Appointment, Note, and IdempotencyRecord. Broader workflow persistence, broader-table RLS, production PHI persistence, production credentials, live EHR/AI/storage integrations, charge finalization, and claim submission remain deferred."
 }

@@ -36,3 +36,4 @@ jobs:
       - run: pnpm persistence:local-db-readiness
       - run: pnpm persistence:local-db:migrate-evidence
       - run: pnpm persistence:prisma-schedule-adapter
+      - run: pnpm persistence:tenant-isolation

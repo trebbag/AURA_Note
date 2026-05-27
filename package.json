@@ -23,6 +23,7 @@
     "persistence:local-db-readiness": "node scripts/validate-local-database-readiness.js",
     "persistence:local-db:migrate-evidence": "node scripts/verify-local-postgres-migration.js",
     "persistence:prisma-schedule-adapter": "pnpm db:client:generate && pnpm --filter @aura-note/api test:prisma-schedule-adapter",
+    "persistence:tenant-isolation": "node scripts/verify-tenant-isolation.js",
     "storybook": "pnpm --filter @aura-note/web storybook",
     "status": "node scripts/status.js"
   },

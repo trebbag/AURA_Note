@@ -234,3 +234,18 @@ Codex should add tests as implementation proceeds.
 - CI runs the adapter test after local DB readiness and migration apply/rollback evidence.
 
 Broad workflow database tests, row-level security tests, production migration tests, and PHI-bearing persistence tests remain deferred.
+
+## Post-CP4 tenant isolation and core RLS evidence
+
+`WO-031` adds `pnpm persistence:tenant-isolation`:
+
+- generates Prisma Client and starts the synthetic local PostgreSQL service;
+- applies generated Prisma SQL to a fresh local database;
+- runs `apps/api/src/schedule/prisma-schedule.tenant-isolation.integration.test.ts`;
+- verifies same semantic appointment/note/idempotency keys can be persisted independently for two synthetic tenants;
+- verifies tenant-scoped appointment lookup, note lookup, list, and idempotency replay do not expose another tenant's records;
+- verifies site-scoped repository/API harness access denies another site inside the same tenant;
+- applies `packages/contracts/prisma/rls-core-schedule.sql`;
+- verifies RLS tenant-session reads, missing-session denial, cross-tenant insert denial, cross-tenant update denial, and missing-session idempotency write denial.
+
+CI runs the tenant-isolation evidence after the existing local PostgreSQL migration and Prisma schedule adapter gates. Broader workflow RLS and production PHI-bearing persistence tests remain deferred until those repository slices become durable.

@@ -192,6 +192,15 @@ Workers must support:
 
 `WO-030` adds the first Prisma Client-backed repository adapter slice for schedule appointment and note shell state. It is local synthetic PostgreSQL only and covers appointment/note persistence, reverse lookup, one-to-one remapping blocks, and durable idempotency replay records. The broad `ScheduleService` runtime remains on the in-memory adapter until the remaining workflow state can be moved without partial persistence loss.
 
+`WO-031` adds live tenant/site enforcement evidence and core RLS for the same persisted schedule/note slice:
+
+- Prisma schedule repository reads require tenant scope and optionally enforce site scope;
+- a test-only API access-context harness reads through the Prisma adapter before DTO exposure, proving wrong-tenant and wrong-site contexts receive no persisted record;
+- PostgreSQL RLS policies are committed for `Tenant`, `Site`, `User`, `Patient`, `Appointment`, `Note`, and `IdempotencyRecord`;
+- policy checks use `app.current_tenant_id`, `FORCE ROW LEVEL SECURITY`, and `WITH CHECK` write protection in local evidence.
+
+The broader API runtime remains in-memory for workflow state that is not yet safely durable. RLS expansion to remaining workflow tables is deferred until those tables have repository-level runtime tests.
+
 `WO-016` adds the first tenant identity and access foundation:
 
 - API request contexts use a shared local synthetic session parser from `packages/security`.

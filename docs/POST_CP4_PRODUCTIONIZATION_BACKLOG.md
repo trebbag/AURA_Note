@@ -414,3 +414,28 @@ Do not implement these tranches directly from this backlog. Promote one tranche 
 
 - This is the first adapter slice, not a full application persistence switch.
 - Row-level security, production migration execution, transaction/error-path coverage, and broad workflow repository replacement remain later work.
+
+## Follow-on Tranche P6-12 — Tenant Isolation And Core RLS Evidence
+
+**Promotion status:** Promoted to `WO-031` as live local PostgreSQL tenant/site query evidence and core RLS policy evidence for the persisted schedule/note slice.
+
+**Objective:** Prove the current Prisma schedule adapter enforces tenant and site boundaries against persisted rows, and add committed PostgreSQL RLS policies for the core persisted tables currently exercised by that adapter.
+
+**Candidate scope:**
+
+- Extend the Prisma schedule adapter to accept optional site scope.
+- Add persisted-record tests for same semantic IDs across tenants, cross-tenant denial, cross-site denial, idempotency isolation, and API access-context denial before DTO exposure.
+- Add a core RLS SQL artifact for `Tenant`, `Site`, `User`, `Patient`, `Appointment`, `Note`, and `IdempotencyRecord`.
+- Add a tenant-isolation verifier command and run it in CI after Prisma schedule adapter evidence.
+- Keep broad workflow runtime persistence and broader-table RLS deferred.
+
+**Acceptance evidence:**
+
+- `pnpm persistence:tenant-isolation` passes locally and in CI.
+- Existing Prisma schedule adapter, local database migration evidence, acceptance readiness, browser, test, and build gates continue to pass.
+- No production database URL, secret, PHI-bearing fixture, live EHR/AI/storage integration, charge finalization, or claim submission is introduced.
+
+**Known risks:**
+
+- RLS coverage is intentionally limited to the current persisted schedule/note slice.
+- Remaining workflow tables still require RLS and repository evidence as they are migrated to durable persistence.
