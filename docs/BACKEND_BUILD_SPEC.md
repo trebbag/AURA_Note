@@ -201,6 +201,16 @@ Workers must support:
 
 The broader API runtime remains in-memory for workflow state that is not yet safely durable. RLS expansion to remaining workflow tables is deferred until those tables have repository-level runtime tests.
 
+`WO-032` adds the storage delivery boundary:
+
+- final-note, patient-summary, copy, structured export, and audit export responses can include storage-backed delivery metadata when synthetic storage flags are enabled;
+- signed downloads are represented as short-lived permission-checked tokens, not public URLs;
+- audit exports remain compliance/privacy/admin-only and continue rejecting `includePhi`;
+- raw-audio storage deletion is worker-owned and requires both destructive deletion enablement and approval evidence;
+- transcript retention remains indefinite, with transcript purge count fixed at zero in readiness evidence.
+
+Production Azure Blob use requires soft delete, versioning, private containers, managed identity or workload identity, database backup alignment, restore-readiness drills, and security/privacy review before any PHI-bearing payload or production credential is allowed.
+
 `WO-016` adds the first tenant identity and access foundation:
 
 - API request contexts use a shared local synthetic session parser from `packages/security`.

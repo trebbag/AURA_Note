@@ -87,6 +87,7 @@ import {
   createSyntheticLocalSession,
   type AccessContext
 } from '@aura-note/security';
+import { InMemoryObjectStorageAdapter, buildStorageKey } from '@aura-note/storage';
 import { createInMemoryScheduleStateRepository, type StoredAppointment } from './schedule.repository';
 
 const TENANT_ID = 'tenant-synthetic-primary';
@@ -1409,10 +1410,23 @@ export class ScheduleService {
     }
 
     const generatedAt = new Date().toISOString();
+    const exportArtifactId = this.nextId('export');
     const fileName = this.exportFileName(entry, artifactType);
     const content = this.exportArtifactContent(entry, artifactType, generatedAt);
+    const checksum = this.syntheticChecksum(content);
+    const storageDelivery = this.createExportStorageDelivery({
+      entry,
+      exportArtifactId,
+      artifactType,
+      fileName,
+      content,
+      checksum,
+      generatedAt,
+      context
+    });
+
     return {
-      exportArtifactId: this.nextId('export'),
+      exportArtifactId,
       noteId: entry.note.noteId,
       artifactType,
       status: 'generated',
@@ -1426,7 +1440,70 @@ export class ScheduleService {
         ? { patientSummaryInternalDetailsExcluded: true as const }
         : {}),
       content,
-      checksum: this.syntheticChecksum(content)
+      checksum,
+      ...storageDelivery
+    };
+  }
+
+  private createExportStorageDelivery(input: {
+    entry: StoredAppointment & { finalization: FinalizationSessionDto };
+    exportArtifactId: string;
+    artifactType: ExportArtifactDto['artifactType'];
+    fileName: string;
+    content: string;
+    checksum: string;
+    generatedAt: string;
+    context: RequestContext;
+  }): Partial<ExportArtifactDto> {
+    const retentionClass = input.artifactType === 'structured_export' ? 'audit' : 'standard';
+    if (process.env.AURA_ENABLE_STORAGE_BACKED_EXPORTS !== 'true') {
+      return {
+        retentionClass,
+        deliveryMode: 'inline_synthetic',
+        contentLengthBytes: Buffer.byteLength(input.content, 'utf8'),
+        signedDownloadAvailable: false
+      };
+    }
+
+    const storage = new InMemoryObjectStorageAdapter(() => input.generatedAt);
+    const storageKey = buildStorageKey({
+      tenantId: TENANT_ID,
+      siteId: SITE_ID,
+      recordClass: 'exports',
+      recordId: input.exportArtifactId,
+      fileName: input.fileName
+    });
+    const stored = storage.putObject({
+      tenantId: TENANT_ID,
+      siteId: SITE_ID,
+      storageKey,
+      body: input.content,
+      contentType: input.artifactType.endsWith('_pdf') ? 'application/pdf' : input.artifactType === 'structured_export' ? 'application/json' : 'text/plain',
+      retentionClass,
+      traceId: input.context.traceId
+    });
+    const signed = storage.createSignedDownload({
+      tenantId: TENANT_ID,
+      siteId: SITE_ID,
+      storageKey,
+      requestedByUserId: input.context.actorUserId,
+      permission:
+        input.artifactType === 'patient_summary_pdf' || input.artifactType === 'patient_summary_copy'
+          ? 'patient_summary:export'
+          : 'final_note:export',
+      expiresAt: new Date(new Date(input.generatedAt).getTime() + 15 * 60_000).toISOString(),
+      traceId: input.context.traceId
+    });
+
+    return {
+      retentionClass,
+      deliveryMode: 'storage_backed',
+      storageProvider: 'azure_blob',
+      storageKey: stored.storageKey,
+      contentLengthBytes: stored.contentLengthBytes,
+      signedDownloadAvailable: true,
+      signedDownloadToken: signed.signedDownloadToken,
+      signedDownloadExpiresAt: signed.signedDownloadExpiresAt
     };
   }
 

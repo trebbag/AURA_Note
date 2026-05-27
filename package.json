@@ -24,6 +24,8 @@
     "persistence:local-db:migrate-evidence": "node scripts/verify-local-postgres-migration.js",
     "persistence:prisma-schedule-adapter": "pnpm db:client:generate && pnpm --filter @aura-note/api test:prisma-schedule-adapter",
     "persistence:tenant-isolation": "node scripts/verify-tenant-isolation.js",
+    "storage:azure-adapter-readiness": "pnpm --filter @aura-note/storage test && pnpm --filter @aura-note/storage typecheck && node scripts/validate-azure-storage-adapter-readiness.js",
+    "retention:storage-deletion-readiness": "pnpm --filter @aura-note/worker test && node scripts/validate-storage-retention-readiness.js",
     "storybook": "pnpm --filter @aura-note/web storybook",
     "status": "node scripts/status.js"
   },

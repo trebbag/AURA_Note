@@ -37,7 +37,7 @@ const runLog = readText('RUN_LOG.md');
 const specGaps = readText('SPEC_GAPS.md');
 const openApi = readText('packages/contracts/openapi/aura-note.v1.yaml');
 
-const requiredWorkOrders = Array.from({ length: 32 }, (_, index) => `WO-${String(index).padStart(3, '0')}`);
+const requiredWorkOrders = Array.from({ length: 33 }, (_, index) => `WO-${String(index).padStart(3, '0')}`);
 const incompleteWorkOrders = requiredWorkOrders.filter((workOrder) => repoStatus.work_orders?.[workOrder] !== 'done');
 const incompleteRecordedWorkOrders = Object.entries(repoStatus.work_orders ?? {})
   .filter(([, status]) => status !== 'done')
@@ -103,7 +103,10 @@ check(
   ['test.prisma-schedule-adapter', 'apps/api/src/schedule/prisma-schedule.repository.integration.test.ts', 'Prisma schedule adapter integration coverage exists'],
   ['test.tenant-isolation', 'apps/api/src/schedule/prisma-schedule.tenant-isolation.integration.test.ts', 'Tenant/site live query and RLS integration coverage exists'],
   ['test.tenant-isolation-verifier', 'scripts/verify-tenant-isolation.js', 'Tenant isolation verifier exists'],
-  ['test.core-rls-sql', 'packages/contracts/prisma/rls-core-schedule.sql', 'Core schedule RLS SQL artifact exists']
+  ['test.core-rls-sql', 'packages/contracts/prisma/rls-core-schedule.sql', 'Core schedule RLS SQL artifact exists'],
+  ['test.storage-adapter', 'packages/storage/src/index.test.ts', 'Object storage adapter tests exist'],
+  ['test.storage-readiness', 'scripts/validate-azure-storage-adapter-readiness.js', 'Azure storage adapter readiness verifier exists'],
+  ['test.retention-storage-deletion', 'scripts/validate-storage-retention-readiness.js', 'Raw-audio storage deletion readiness verifier exists']
 ].forEach(([id, relativePath, description]) => checkFile(id, relativePath, description));
 
 [

@@ -249,3 +249,15 @@ Broad workflow database tests, row-level security tests, production migration te
 - verifies RLS tenant-session reads, missing-session denial, cross-tenant insert denial, cross-tenant update denial, and missing-session idempotency write denial.
 
 CI runs the tenant-isolation evidence after the existing local PostgreSQL migration and Prisma schedule adapter gates. Broader workflow RLS and production PHI-bearing persistence tests remain deferred until those repository slices become durable.
+
+## Post-CP4 Azure storage and retention deletion readiness
+
+`WO-032` adds storage and retention gates:
+
+- `pnpm storage:azure-adapter-readiness` runs `@aura-note/storage` unit tests, storage package typecheck, and a static verifier for Azure config names and no-live-Azure posture;
+- `pnpm retention:storage-deletion-readiness` runs worker tests and verifies approval-gated raw-audio object deletion readiness;
+- API unit tests verify storage-backed final-note and patient-summary export metadata, patient-summary internal-detail exclusion, and storage-backed audit export metadata;
+- storage unit tests verify in-memory object writes, signed-token creation, wrong-tenant denial, expiry denial, and delete evidence;
+- worker tests verify destructive raw-audio deletion requires approval controls and transcript purge count remains zero.
+
+CI runs these after the persistence gates and before acceptance readiness. Production Azure credentials, production backup/restore execution, and PHI-bearing object payload tests remain deferred.

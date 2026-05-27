@@ -23,6 +23,7 @@ import {
   type LocalAuthSessionDto,
   type EhrWritebackActionResponseDto,
   type ReviewActionResponseDto,
+  type RetentionJobResultDto,
   type SupportStatusDto,
   type SuggestionDto,
   type TranscriptViewDto,
@@ -1088,5 +1089,97 @@ describe('timer and transcript contracts', () => {
 
     assert.equal(transcript.retentionPolicy, 'indefinite');
     assert.equal(transcript.segments[0]?.source, 'mock_transcription');
+  });
+});
+
+describe('storage-backed delivery contracts', () => {
+  it('represents storage-backed export and audit delivery metadata without public URLs', () => {
+    const exportResponse: ExportActionResponseDto['artifact'] = {
+      exportArtifactId: 'export-001',
+      noteId: 'note-001',
+      artifactType: 'final_note_pdf',
+      status: 'generated',
+      mimeType: 'application/pdf',
+      fileName: 'note.pdf',
+      generatedAt: '2026-05-27T16:00:00.000Z',
+      generatedByUserId: 'user-clinician-synthetic-001',
+      sourceFinalizedAt: '2026-05-27T15:45:00.000Z',
+      signedVersionLocked: true,
+      content: '%PDF-1.4 synthetic',
+      checksum: 'synthetic-checksum',
+      retentionClass: 'standard',
+      deliveryMode: 'storage_backed',
+      storageProvider: 'azure_blob',
+      storageKey: 'tenants/tenant-synthetic-primary/sites/site-synthetic-primary/exports/export-001/note.pdf',
+      contentLengthBytes: 18,
+      signedDownloadAvailable: true,
+      signedDownloadToken: 'dl-synthetic',
+      signedDownloadExpiresAt: '2026-05-27T16:15:00.000Z'
+    };
+    const auditResponse: AuditExportResponseDto['auditExport'] = {
+      auditExportId: 'audit-export-001',
+      status: 'ready_synthetic',
+      requestedByUserId: 'user-compliance-synthetic-001',
+      requestedAt: '2026-05-27T16:00:00.000Z',
+      traceId: 'trace-audit-001',
+      format: 'jsonl',
+      includePhi: false,
+      redacted: true,
+      downloadEnabled: true,
+      retentionClass: 'audit',
+      recordCount: 0,
+      records: [],
+      deliveryMode: 'storage_backed',
+      storageProvider: 'azure_blob',
+      storageKey: 'tenants/tenant-synthetic-primary/sites/site-synthetic-primary/audit-exports/audit-export-001/audit-export-001.jsonl',
+      contentLengthBytes: 0,
+      checksum: 'synthetic-checksum',
+      signedDownloadAvailable: true,
+      signedDownloadToken: 'dl-audit-synthetic',
+      signedDownloadExpiresAt: '2026-05-27T16:15:00.000Z'
+    };
+
+    assert.equal(exportResponse.deliveryMode, 'storage_backed');
+    assert.equal(auditResponse.includePhi, false);
+    assert.equal(auditResponse.signedDownloadAvailable, true);
+  });
+
+  it('represents raw-audio deletion evidence while transcript purge count remains zero', () => {
+    const result: RetentionJobResultDto = {
+      jobRunId: 'retention-job-001',
+      status: 'completed',
+      evaluatedAt: '2026-06-02T16:00:00.000Z',
+      policies: [],
+      transcriptPurgeCount: 0,
+      deletionResults: [
+        {
+          storageProvider: 'azure_blob',
+          storageKey: 'tenants/tenant-synthetic-primary/sites/site-synthetic-primary/raw-audio/recording-001/raw-audio.bin',
+          deleted: true,
+          deletionResult: 'deleted',
+          checksum: 'synthetic-checksum',
+          eTag: 'etag-synthetic',
+          approvalId: 'approval-retention-synthetic-001',
+          recoveryWindowStatus: 'recoverable',
+          traceId: 'trace-retention-001',
+          deletedAt: '2026-06-02T16:00:00.000Z'
+        }
+      ],
+      auditEvent: {
+        auditEventId: 'audit-retention-001',
+        tenantId: 'tenant-synthetic-primary',
+        siteId: 'site-synthetic-primary',
+        actorUserId: 'aura-note-worker',
+        action: 'retention.scan_completed',
+        entityType: 'RetentionJob',
+        entityId: 'retention-job-001',
+        traceId: 'trace-retention-001',
+        createdAt: '2026-06-02T16:00:00.000Z'
+      },
+      domainEvents: []
+    };
+
+    assert.equal(result.deletionResults?.[0]?.deleted, true);
+    assert.equal(result.transcriptPurgeCount, 0);
   });
 });

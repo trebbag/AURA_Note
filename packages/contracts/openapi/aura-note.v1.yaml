@@ -1013,6 +1013,14 @@ components:
         patientSummaryInternalDetailsExcluded: { type: boolean, const: true }
         content: { type: string }
         checksum: { type: string }
+        retentionClass: { type: string, enum: [standard, audit, transcript, audio_ephemeral] }
+        deliveryMode: { type: string, enum: [inline_synthetic, storage_backed] }
+        storageProvider: { type: string, enum: [azure_blob, in_memory] }
+        storageKey: { type: string }
+        contentLengthBytes: { type: integer, minimum: 0 }
+        signedDownloadAvailable: { type: boolean }
+        signedDownloadToken: { type: string }
+        signedDownloadExpiresAt: { type: string, format: date-time }
     EhrWritebackQueue:
       type: object
       required: [writebackJobId, noteId, target, vendor, status, configured, humanApproved, retryable]
@@ -1623,6 +1631,10 @@ components:
         capturedAt: { type: string, format: date-time }
         purgeAfter: { type: string, format: date-time }
         purgeEligible: { type: boolean }
+        storageProvider: { type: string, enum: [azure_blob, in_memory] }
+        storageKey: { type: string }
+        checksum: { type: string }
+        contentLengthBytes: { type: integer, minimum: 0 }
     TranscriptSegment:
       type: object
       required: [transcriptSegmentId, noteId, sequence, speakerRole, text, source, createdAt]
@@ -2322,7 +2334,7 @@ components:
         lastEvaluatedAt: { type: string, format: date-time }
         candidateCount: { type: integer, minimum: 0 }
         purgeEligibleCount: { type: integer, minimum: 0 }
-        destructivePurgeEnabled: { type: boolean, const: false }
+        destructivePurgeEnabled: { type: boolean }
     SupportFailureState:
       type: object
       required: [component, status, operatorMessage, safeDegradedMode]
@@ -2374,7 +2386,7 @@ components:
           required: [enabled, downloadEnabled, format, redactedByDefault]
           properties:
             enabled: { type: boolean }
-            downloadEnabled: { type: boolean, const: false }
+            downloadEnabled: { type: boolean }
             format: { type: string, enum: [jsonl] }
             redactedByDefault: { type: boolean, const: true }
         failureStates:
@@ -2423,13 +2435,21 @@ components:
         format: { type: string, enum: [jsonl] }
         includePhi: { type: boolean, const: false }
         redacted: { type: boolean, const: true }
-        downloadEnabled: { type: boolean, const: false }
+        downloadEnabled: { type: boolean }
         retentionClass: { type: string, enum: [audit] }
         recordCount: { type: integer, minimum: 0 }
         records:
           type: array
           items:
             $ref: '#/components/schemas/AuditExportRecord'
+        deliveryMode: { type: string, enum: [inline_synthetic, storage_backed] }
+        storageProvider: { type: string, enum: [azure_blob, in_memory] }
+        storageKey: { type: string }
+        contentLengthBytes: { type: integer, minimum: 0 }
+        checksum: { type: string }
+        signedDownloadAvailable: { type: boolean }
+        signedDownloadToken: { type: string }
+        signedDownloadExpiresAt: { type: string, format: date-time }
     SupportStatusResponse:
       allOf:
         - type: object

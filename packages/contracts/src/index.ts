@@ -20,6 +20,8 @@ import type {
 
 export type Sensitivity = 'non_phi' | 'phi_reference' | 'restricted';
 export type RetentionClass = 'standard' | 'audit' | 'transcript' | 'audio_ephemeral';
+export type StorageProviderDto = 'azure_blob' | 'in_memory';
+export type StorageDeliveryModeDto = 'inline_synthetic' | 'storage_backed';
 
 export type CoreEventType =
   | 'appointment.created.v1'
@@ -181,6 +183,10 @@ export interface RawAudioRetentionMetadataDto {
   capturedAt: string;
   purgeAfter: string;
   purgeEligible: boolean;
+  storageProvider?: StorageProviderDto;
+  storageKey?: string;
+  checksum?: string;
+  contentLengthBytes?: number;
 }
 
 export interface TranscriptSegmentDto {
@@ -442,6 +448,14 @@ export interface ExportArtifactDto {
   patientSummaryInternalDetailsExcluded?: true;
   content: string;
   checksum: string;
+  retentionClass?: RetentionClass;
+  deliveryMode?: StorageDeliveryModeDto;
+  storageProvider?: StorageProviderDto;
+  storageKey?: string;
+  contentLengthBytes?: number;
+  signedDownloadAvailable?: boolean;
+  signedDownloadToken?: string;
+  signedDownloadExpiresAt?: string;
 }
 
 export type EhrWritebackTarget = 'final_note' | 'patient_summary' | 'both';
@@ -967,7 +981,7 @@ export interface RetentionPolicyStatusDto {
   lastEvaluatedAt: string;
   candidateCount: number;
   purgeEligibleCount: number;
-  destructivePurgeEnabled: false;
+  destructivePurgeEnabled: boolean;
 }
 
 export interface RetentionJobResultDto {
@@ -975,8 +989,23 @@ export interface RetentionJobResultDto {
   status: 'completed';
   evaluatedAt: string;
   policies: RetentionPolicyStatusDto[];
+  deletionResults?: StorageDeletionEvidenceDto[];
+  transcriptPurgeCount?: 0;
   auditEvent: AuditEventDto;
   domainEvents: Array<AuraNoteEvent<Record<string, unknown>>>;
+}
+
+export interface StorageDeletionEvidenceDto {
+  storageProvider: StorageProviderDto;
+  storageKey: string;
+  deleted: boolean;
+  deletionResult: 'deleted' | 'not_found' | 'blocked_missing_approval' | 'blocked_recovery_window' | 'skipped_not_enabled';
+  checksum?: string;
+  eTag?: string;
+  approvalId?: string;
+  recoveryWindowStatus: 'recoverable' | 'not_configured' | 'expired';
+  traceId: string;
+  deletedAt?: string;
 }
 
 export interface SupportFailureStateDto {
@@ -1012,7 +1041,7 @@ export interface SupportStatusDto {
   retention: RetentionPolicyStatusDto[];
   auditExport: {
     enabled: true;
-    downloadEnabled: false;
+    downloadEnabled: boolean;
     format: 'jsonl';
     redactedByDefault: true;
   };
@@ -1049,10 +1078,18 @@ export interface AuditExportDto {
   format: 'jsonl';
   includePhi: false;
   redacted: true;
-  downloadEnabled: false;
+  downloadEnabled: boolean;
   retentionClass: 'audit';
   recordCount: number;
   records: AuditExportRecordDto[];
+  deliveryMode?: StorageDeliveryModeDto;
+  storageProvider?: StorageProviderDto;
+  storageKey?: string;
+  contentLengthBytes?: number;
+  checksum?: string;
+  signedDownloadAvailable?: boolean;
+  signedDownloadToken?: string;
+  signedDownloadExpiresAt?: string;
 }
 
 export interface SupportStatusResponseDto {

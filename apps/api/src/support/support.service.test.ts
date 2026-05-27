@@ -81,6 +81,35 @@ describe('SupportService', () => {
     assert.equal(response.data.domainEvents[0]?.idempotencyKey, 'idem-audit-export-001');
   });
 
+  it('writes redacted audit export delivery metadata through storage when enabled', () => {
+    const previous = process.env.AURA_ENABLE_AUDIT_EXPORT_DOWNLOAD;
+    process.env.AURA_ENABLE_AUDIT_EXPORT_DOWNLOAD = 'true';
+    try {
+      const service = new SupportService();
+      const response = service.requestAuditExport(complianceHeaders, {
+        startAt: '2026-05-26T00:00:00.000Z',
+        endAt: '2026-05-26T23:59:59.000Z',
+        format: 'jsonl',
+        includePhi: false
+      });
+
+      assert.equal(response.data.auditExport.includePhi, false);
+      assert.equal(response.data.auditExport.downloadEnabled, true);
+      assert.equal(response.data.auditExport.deliveryMode, 'storage_backed');
+      assert.equal(response.data.auditExport.storageProvider, 'azure_blob');
+      assert.equal(response.data.auditExport.storageKey?.includes('/audit-exports/'), true);
+      assert.equal(response.data.auditExport.signedDownloadAvailable, true);
+      assert.equal(response.data.auditExport.signedDownloadToken?.startsWith('dl-'), true);
+      assert.equal(response.data.domainEvents[0]?.payload.deliveryMode, 'storage_backed');
+    } finally {
+      if (previous === undefined) {
+        delete process.env.AURA_ENABLE_AUDIT_EXPORT_DOWNLOAD;
+      } else {
+        process.env.AURA_ENABLE_AUDIT_EXPORT_DOWNLOAD = previous;
+      }
+    }
+  });
+
   it('denies audit export to support users and rejects PHI-including requests', () => {
     const service = new SupportService();
 

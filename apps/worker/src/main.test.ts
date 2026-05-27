@@ -8,8 +8,10 @@ import {
   evaluateEhrWritebackQueue,
   evaluateRetentionJobRun,
   evaluateRawAudioRetention,
+  evaluateStorageBackedRetentionDeletion,
   getWorkerStatus
 } from './main';
+import { InMemoryObjectStorageAdapter, buildStorageKey } from '@aura-note/storage';
 
 describe('worker scaffold', () => {
   it('reports the CP-4 hardening scaffold', () => {
@@ -75,6 +77,97 @@ describe('worker scaffold', () => {
     assert.equal(result.policies.find((policy) => policy.recordClass === 'transcript')?.retentionRule, 'indefinite');
     assert.equal(result.policies.every((policy) => policy.destructivePurgeEnabled === false), true);
     assert.equal(result.domainEvents[0]?.eventType, 'retention.scan_completed.v1');
+    assert.equal(result.transcriptPurgeCount, 0);
+  });
+
+  it('deletes purge-eligible raw-audio storage objects only with approval controls', () => {
+    const storage = new InMemoryObjectStorageAdapter(() => '2026-06-02T15:00:00.000Z');
+    const storageKey = buildStorageKey({
+      tenantId: 'tenant-synthetic-primary',
+      siteId: 'site-synthetic-primary',
+      recordClass: 'raw-audio',
+      recordId: 'recording-001',
+      fileName: 'raw-audio.bin'
+    });
+    const stored = storage.putObject({
+      tenantId: 'tenant-synthetic-primary',
+      siteId: 'site-synthetic-primary',
+      storageKey,
+      body: 'synthetic raw audio bytes',
+      contentType: 'application/octet-stream',
+      retentionClass: 'audio_ephemeral',
+      traceId: 'trace-retention-worker-002'
+    });
+
+    const blocked = evaluateStorageBackedRetentionDeletion(
+      [
+        {
+          recordingId: 'recording-001',
+          noteId: 'note-001',
+          retentionClass: 'audio_ephemeral',
+          capturedAt: '2026-05-26T15:00:00.000Z',
+          purgeAfter: '2026-06-02T15:00:00.000Z',
+          purgeEligible: false,
+          storageProvider: 'in_memory',
+          storageKey,
+          checksum: stored.checksum,
+          contentLengthBytes: stored.contentLengthBytes
+        }
+      ],
+      [
+        {
+          noteId: 'note-001',
+          transcriptId: 'transcript-001',
+          retentionPolicy: 'indefinite',
+          segments: []
+        }
+      ],
+      '2026-06-02T15:00:00.000Z',
+      storage,
+      { destructiveDeletionEnabled: true, traceId: 'trace-retention-worker-002' }
+    );
+
+    assert.equal(blocked.deletionResults?.[0]?.deletionResult, 'skipped_not_enabled');
+    assert.notEqual(storage.headObject(storageKey), undefined);
+
+    const deleted = evaluateStorageBackedRetentionDeletion(
+      [
+        {
+          recordingId: 'recording-001',
+          noteId: 'note-001',
+          retentionClass: 'audio_ephemeral',
+          capturedAt: '2026-05-26T15:00:00.000Z',
+          purgeAfter: '2026-06-02T15:00:00.000Z',
+          purgeEligible: false,
+          storageProvider: 'in_memory',
+          storageKey,
+          checksum: stored.checksum,
+          contentLengthBytes: stored.contentLengthBytes
+        }
+      ],
+      [
+        {
+          noteId: 'note-001',
+          transcriptId: 'transcript-001',
+          retentionPolicy: 'indefinite',
+          segments: []
+        }
+      ],
+      '2026-06-02T15:00:00.000Z',
+      storage,
+      {
+        destructiveDeletionEnabled: true,
+        approvalToken: 'approval-token-synthetic',
+        approvalId: 'approval-retention-synthetic-001',
+        traceId: 'trace-retention-worker-002'
+      }
+    );
+
+    assert.equal(deleted.deletionResults?.[0]?.deleted, true);
+    assert.equal(deleted.deletionResults?.[0]?.approvalId, 'approval-retention-synthetic-001');
+    assert.equal(deleted.transcriptPurgeCount, 0);
+    assert.equal(storage.headObject(storageKey), undefined);
+    assert.equal(deleted.domainEvents[0]?.payload.transcriptPurgeCount, 0);
   });
 
   it('preserves writeback failure and disabled queue states for UI/support review', () => {
