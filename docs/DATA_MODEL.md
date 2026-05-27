@@ -487,3 +487,17 @@ No table should be treated as production-ready merely because it exists in the s
 - `pnpm persistence:visit-capture-adapter` is the durable evidence gate for this slice.
 
 This is not full durable application runtime and is not production PHI database approval. Review panels, finalization/output/writeback, audit/event/support/config/coaching, standalone patient/settings/rules catalog, live transcription, browser recording transport, production storage/deletion, live EHR/ClinicOS, live AI, and claim submission remain future work.
+
+## WO-035 durable review-panel runtime status
+
+`WO-035` moves the review-panel slice from schema readiness to local durable runtime evidence:
+
+- `Suggestion`, `VisitSelection`, `ComplianceIssue`, `HistoryGapQuestion`, and `Task` now have a Prisma-backed repository adapter for synthetic local PostgreSQL;
+- review-panel records preserve semantic DTO IDs in `sourceRef` columns while database IDs remain deterministic UUIDs;
+- `Suggestion.rationale`, `VisitSelection.overrideReason`, `HistoryGapQuestion.supportsItem`, and `HistoryGapQuestion.confidenceImpact` are persisted so synthetic review-panel DTOs can round-trip without losing evidence or low-confidence override context;
+- persisted review-panel records preserve accepted/removed suggestion status, selected/manual Visit Selection status, compliance hard-block state, History Gap status, linked MA blocker tasks, and task adjudication state;
+- tenant/site scoped repository and API-harness tests deny wrong-tenant and wrong-site access before DTO exposure;
+- `rls-review-panel.sql` adds local PostgreSQL RLS policies for review-panel tables using `app.current_tenant_id` and `WITH CHECK` write enforcement;
+- `pnpm persistence:review-panel-adapter` is the durable evidence gate for this slice.
+
+This is not full durable application runtime and is not production PHI database approval. Finalization/output/writeback, audit/event/support/config/coaching, broad tenant-owned RLS completion, standalone patient/settings/rules catalog, live AI suggestion generation, live EHR/ClinicOS task synchronization, production code/rules catalogs, production storage/deletion, medical-necessity determination, charge finalization, and claim submission remain future work.
