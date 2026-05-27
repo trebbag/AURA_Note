@@ -10,8 +10,14 @@ export type Role =
   | 'service_account';
 
 export type Permission =
+  | 'patient:view'
+  | 'patient:create'
+  | 'patient:update'
+  | 'chart_context:view'
   | 'schedule:view'
   | 'appointment:create'
+  | 'appointment:update'
+  | 'appointment:status'
   | 'visit:start'
   | 'draft_note:view'
   | 'finalization:manage'
@@ -413,9 +419,27 @@ export function canViewCoaching(ctx: AccessContext): boolean {
 
 export function canPerform(permission: Permission, ctx: AccessContext): boolean {
   switch (permission) {
+    case 'patient:view':
+      return (
+        ctx.authorizedAdmin ||
+        ((ctx.linkedToPatient || ctx.role === 'ma') && ['clinician', 'ma', 'admin', 'clinic_manager'].includes(ctx.role))
+      );
+    case 'patient:create':
+      return ctx.authorizedAdmin || ['clinician', 'ma', 'admin', 'clinic_manager'].includes(ctx.role);
+    case 'patient:update':
+      return ctx.authorizedAdmin || ['ma', 'admin', 'clinic_manager'].includes(ctx.role);
+    case 'chart_context:view':
+      return (
+        ctx.authorizedAdmin ||
+        ((ctx.linkedToPatient || ctx.linkedToVisit) && ['clinician', 'ma', 'admin', 'clinic_manager'].includes(ctx.role))
+      );
     case 'schedule:view':
       return ctx.authorizedAdmin || ['clinician', 'ma', 'admin', 'clinic_manager'].includes(ctx.role);
     case 'appointment:create':
+      return ctx.authorizedAdmin || ['clinician', 'ma', 'admin', 'clinic_manager'].includes(ctx.role);
+    case 'appointment:update':
+      return ctx.authorizedAdmin || ['clinician', 'ma', 'admin', 'clinic_manager'].includes(ctx.role);
+    case 'appointment:status':
       return ctx.authorizedAdmin || ['clinician', 'ma', 'admin', 'clinic_manager'].includes(ctx.role);
     case 'visit:start':
       return ctx.authorizedAdmin || (ctx.role === 'clinician' && ctx.linkedToVisit);

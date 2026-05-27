@@ -24,6 +24,9 @@ import {
   type EhrWritebackActionResponseDto,
   type ReviewActionResponseDto,
   type RetentionJobResultDto,
+  type StandaloneChartContextSnapshotDto,
+  type StandalonePatientDto,
+  type StandalonePatientLinkageDto,
   type SupportStatusDto,
   type SuggestionDto,
   type TranscriptViewDto,
@@ -107,6 +110,58 @@ describe('event envelope', () => {
     assert.equal(isStateChangingEvent('audit.export_requested.v1'), true);
     assert.equal(isStateChangingEvent('retention.scan_completed.v1'), true);
     assert.equal(isStateChangingEvent('audit.event_recorded.v1'), false);
+  });
+});
+
+describe('standalone patient and chart-context contracts', () => {
+  it('represents safe patient shells, linkages, and synthetic chart-context snapshots', () => {
+    const patient: StandalonePatientDto = {
+      patientId: 'patient-synthetic-001',
+      tenantId: 'tenant-synthetic-primary',
+      siteId: 'site-synthetic-primary',
+      safePatientId: 'safe-patient-synthetic-001',
+      status: 'active',
+      displayLabel: 'Standalone safe-patient-synthetic-001',
+      createdAt: '2026-05-27T14:00:00.000Z',
+      updatedAt: '2026-05-27T14:00:00.000Z',
+      mode: 'standalone'
+    };
+    const linkage: StandalonePatientLinkageDto = {
+      patientLinkageId: 'patient-linkage-synthetic-001',
+      tenantId: patient.tenantId,
+      siteId: patient.siteId,
+      safePatientId: patient.safePatientId,
+      appointmentId: 'appt-synthetic-001',
+      noteId: 'note-synthetic-001',
+      linkedObjectType: 'chart_context',
+      linkedObjectId: 'chart-context-synthetic-001',
+      purpose: 'documentation',
+      active: true,
+      createdAt: '2026-05-27T14:00:00.000Z'
+    };
+    const snapshot: StandaloneChartContextSnapshotDto = {
+      chartContextSnapshotId: 'chart-context-synthetic-001',
+      tenantId: patient.tenantId,
+      siteId: patient.siteId,
+      safePatientId: patient.safePatientId,
+      appointmentId: 'appt-synthetic-001',
+      noteId: 'note-synthetic-001',
+      sourceSystem: 'standalone_local',
+      sourceFreshness: 'recent',
+      staleWarning: false,
+      slices: [],
+      warnings: ['Synthetic standalone chart context only; live EHR completeness is not implied.'],
+      aiPackagingAllowed: false,
+      productionPhiStorageApproved: false,
+      createdAt: '2026-05-27T14:00:00.000Z',
+      mode: 'standalone'
+    };
+
+    assert.equal(patient.safePatientId.startsWith('safe-patient-'), true);
+    assert.equal(linkage.active, true);
+    assert.equal(snapshot.sourceSystem, 'standalone_local');
+    assert.equal(snapshot.productionPhiStorageApproved, false);
+    assert.equal(snapshot.aiPackagingAllowed, false);
   });
 });
 

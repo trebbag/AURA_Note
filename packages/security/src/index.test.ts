@@ -272,6 +272,35 @@ describe('schedule lifecycle permissions', () => {
     assert.equal(canPerform('appointment:create', { ...base, role: 'billing_staff' }), false);
   });
 
+  it('allows standalone patient and appointment lifecycle actions without granting billing chart access', () => {
+    const linkedMa = {
+      role: 'ma' as const,
+      linkedToPatient: true,
+      linkedToVisit: false,
+      treatingClinician: false,
+      billingReviewTriggered: false,
+      authorizedAdmin: false
+    };
+    const linkedClinician = {
+      ...linkedMa,
+      role: 'clinician' as const,
+      treatingClinician: true
+    };
+    const billingOnly = {
+      ...linkedMa,
+      role: 'billing_staff' as const,
+      billingReviewTriggered: true
+    };
+
+    assert.equal(canPerform('patient:create', linkedMa), true);
+    assert.equal(canPerform('patient:update', linkedMa), true);
+    assert.equal(canPerform('appointment:update', linkedClinician), true);
+    assert.equal(canPerform('appointment:status', linkedMa), true);
+    assert.equal(canPerform('chart_context:view', linkedClinician), true);
+    assert.equal(canPerform('patient:view', billingOnly), false);
+    assert.equal(canPerform('chart_context:view', billingOnly), false);
+  });
+
   it('allows Start Visit only for linked clinicians or authorized admins', () => {
     assert.equal(
       canPerform('visit:start', {

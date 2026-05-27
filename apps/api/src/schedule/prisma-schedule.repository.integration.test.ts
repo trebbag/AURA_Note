@@ -6,7 +6,7 @@ import path from 'node:path';
 import { after, before, describe, it } from 'node:test';
 import { PrismaClient } from '@prisma/client';
 import { createAppointmentLifecycle } from '@aura-note/domain';
-import type { StoredAppointment } from './schedule.repository';
+import { createStandalonePatientScheduleScaffold, type StoredAppointment } from './schedule.repository';
 import { createPrismaScheduleStateRepository, type AsyncScheduleStateRepository } from './prisma-schedule.repository';
 
 const repoRoot = path.resolve(__dirname, '../../../..');
@@ -89,8 +89,7 @@ function createStoredAppointment(appointmentId: string, noteId: string): StoredA
     reasonForVisit: 'Synthetic Prisma adapter appointment'
   });
 
-  return {
-    appointment: {
+  const appointment: StoredAppointment['appointment'] = {
       appointmentId,
       tenantId,
       siteId: 'site-synthetic-primary',
@@ -105,8 +104,8 @@ function createStoredAppointment(appointmentId: string, noteId: string): StoredA
       source: 'standalone',
       reasonForVisit: 'Synthetic Prisma adapter appointment',
       mode: 'standalone'
-    },
-    note: {
+  };
+  const note: StoredAppointment['note'] = {
       noteId,
       appointmentId,
       tenantId,
@@ -115,7 +114,12 @@ function createStoredAppointment(appointmentId: string, noteId: string): StoredA
       clinicianId: 'clinician-synthetic-prisma-001',
       state: lifecycle.noteState,
       mode: 'standalone'
-    },
+  };
+
+  return {
+    appointment,
+    note,
+    ...createStandalonePatientScheduleScaffold(appointment, note),
     lifecycle
   };
 }

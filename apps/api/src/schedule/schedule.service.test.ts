@@ -86,12 +86,21 @@ describe('ScheduleService', () => {
 
     assert.equal(response.data.appointment.noteId, response.data.note.noteId);
     assert.equal(response.data.note.state, 'shell_created');
-    assert.equal(response.data.domainEvents.map((event) => event.eventType).join(','), 'appointment.created.v1,note.shell_created.v1');
+    assert.deepEqual(response.data.domainEvents.map((event) => event.eventType), [
+      'appointment.created.v1',
+      'note.shell_created.v1',
+      'patient.shell_created.v1',
+      'patient.linkage_recorded.v1',
+      'chart_context.snapshot_created.v1'
+    ]);
+    assert.equal(response.data.patient.safePatientId, createRequest.safePatientId);
+    assert.equal(response.data.chartContextSnapshot.productionPhiStorageApproved, false);
 
     const list = service.listAppointments(context);
     assert.equal(list.data.appointments.length, 1);
     assert.equal(list.data.appointments[0]?.noteStatus, 'shell_created');
     assert.equal(list.data.appointments[0]?.noteVisibleInDrafts, false);
+    assert.equal(list.data.appointments[0]?.chartContextFreshness, 'recent');
   });
 
   it('replays idempotent appointment creation without creating a duplicate note shell', () => {

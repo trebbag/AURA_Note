@@ -7,7 +7,7 @@ const routeExpectations = [
   },
   {
     path: '/aura-note/schedule',
-    heading: 'Standalone Appointment-to-Note Lifecycle',
+    heading: 'Standalone Patient And Schedule Workspace',
     nav: true
   },
   {
@@ -64,14 +64,22 @@ test.describe('AURA Note route accessibility smoke suite', () => {
   test('schedule form has accessible controls and creates a note shell visibly', async ({ page }) => {
     await page.goto('/aura-note/schedule');
 
+    await expect(page.getByRole('heading', { level: 2, name: 'Patient Shell' })).toBeVisible();
+    await expect(page.getByLabel('Selected patient context')).toContainText('Chart freshness: recent');
     await expect(page.getByRole('heading', { level: 2, name: 'New Appointment' })).toBeVisible();
     await expect(page.getByLabel('Safe Patient ID')).toHaveValue('safe-patient-new-002');
     await expect(page.getByLabel('Visit Type')).toHaveValue('AWV plus problem');
 
     await page.getByRole('button', { name: 'Create Appointment + Note Shell' }).click();
 
-    await expect(page.getByText('Created appt-demo-002 with one linked inactive note shell note-demo-002.')).toBeVisible();
-    await expect(page.getByRole('region', { name: 'Daily schedule' })).toContainText('safe-patient-new-002');
+    await expect(page.getByText('Created appt-demo-002 with one linked inactive note shell note-demo-002 and standalone patient linkage.')).toBeVisible();
+    await expect(page.getByRole('region', { name: 'day schedule' })).toContainText('safe-patient-new-002');
+    await page.getByRole('button', { name: 'Week' }).click();
+    await expect(page.getByRole('region', { name: 'week schedule' })).toContainText('safe-patient-new-002');
+    await page.getByRole('button', { name: 'Check In' }).last().click();
+    await expect(page.getByRole('region', { name: 'week schedule' })).toContainText('checked_in');
+    await page.getByRole('button', { name: 'No Show' }).last().click();
+    await expect(page.getByRole('region', { name: 'week schedule' })).toContainText('no_show');
   });
 
   test('workspace exposes timer-gated editor states and blocker behavior', async ({ page }) => {

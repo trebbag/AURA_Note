@@ -9,7 +9,7 @@ import type { DraftClaimPreviewDto, FinalizationSessionDto } from '@aura-note/co
 import { createAppointmentLifecycle } from '@aura-note/domain';
 import { toDeterministicPersistenceUuid } from '@aura-note/persistence';
 import type { AccessContext } from '@aura-note/security';
-import type { StoredAppointment } from './schedule.repository';
+import { createStandalonePatientScheduleScaffold, type StoredAppointment } from './schedule.repository';
 import { createPrismaScheduleStateRepository, type AsyncScheduleStateRepository } from './prisma-schedule.repository';
 import {
   createPrismaFinalizationOutputRepository,
@@ -105,8 +105,7 @@ function createStoredAppointment(
     reasonForVisit: 'Synthetic durable finalization output'
   });
 
-  return {
-    appointment: {
+  const appointment: StoredAppointment['appointment'] = {
       appointmentId,
       tenantId,
       siteId,
@@ -121,8 +120,8 @@ function createStoredAppointment(
       source: 'standalone',
       reasonForVisit: 'Synthetic durable finalization output',
       mode: 'standalone'
-    },
-    note: {
+  };
+  const note: StoredAppointment['note'] = {
       noteId,
       appointmentId,
       tenantId,
@@ -131,7 +130,12 @@ function createStoredAppointment(
       clinicianId: `clinician-${tenantId}-${siteId}`,
       state: 'finalized',
       mode: 'standalone'
-    },
+  };
+
+  return {
+    appointment,
+    note,
+    ...createStandalonePatientScheduleScaffold(appointment, note),
     lifecycle: {
       ...lifecycle,
       appointmentState: 'finalized',

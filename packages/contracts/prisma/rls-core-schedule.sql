@@ -49,3 +49,17 @@ DROP POLICY IF EXISTS aura_note_tenant_isolation ON "IdempotencyRecord";
 CREATE POLICY aura_note_tenant_isolation ON "IdempotencyRecord"
   USING ("tenantId" = NULLIF(current_setting('app.current_tenant_id', true), '')::uuid)
   WITH CHECK ("tenantId" = NULLIF(current_setting('app.current_tenant_id', true), '')::uuid);
+
+ALTER TABLE "PatientLinkage" ENABLE ROW LEVEL SECURITY;
+ALTER TABLE "PatientLinkage" FORCE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS aura_note_tenant_isolation ON "PatientLinkage";
+CREATE POLICY aura_note_tenant_isolation ON "PatientLinkage"
+  USING ("tenantId" = NULLIF(current_setting('app.current_tenant_id', true), '')::uuid)
+  WITH CHECK ("tenantId" = NULLIF(current_setting('app.current_tenant_id', true), '')::uuid);
+
+ALTER TABLE "ChartContextSnapshot" ENABLE ROW LEVEL SECURITY;
+ALTER TABLE "ChartContextSnapshot" FORCE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS aura_note_tenant_isolation ON "ChartContextSnapshot";
+CREATE POLICY aura_note_tenant_isolation ON "ChartContextSnapshot"
+  USING ("tenantId" = NULLIF(current_setting('app.current_tenant_id', true), '')::uuid)
+  WITH CHECK ("tenantId" = NULLIF(current_setting('app.current_tenant_id', true), '')::uuid);

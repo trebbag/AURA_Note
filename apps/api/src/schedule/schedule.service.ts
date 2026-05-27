@@ -4,10 +4,13 @@ import {
   createEventEnvelope,
   type ApiEnvelope,
   type AppointmentDto,
+  type AppointmentActionResponseDto,
+  type AppointmentStatusActionRequestDto,
   type AuditEventDto,
   type CoreEventType,
   type CreateAppointmentRequestDto,
   type CreateAppointmentResponseDto,
+  type CreateStandalonePatientRequestDto,
   type DocumentationWorkspaceDto,
   type DraftNotesViewDto,
   type FinalizedNoteSummaryDto,
@@ -32,6 +35,12 @@ import {
   type FinalizedNoteDetailDto,
   type ScheduleAppointmentDto,
   type ScheduleViewDto,
+  type StandaloneChartContextResponseDto,
+  type StandaloneChartContextSnapshotDto,
+  type StandalonePatientDto,
+  type StandalonePatientLinkageDto,
+  type StandalonePatientResponseDto,
+  type StandalonePatientSearchViewDto,
   type FinalizationActionResponseDto,
   type FinalizationComposeOutputDto,
   type FinalizationSelectionDecisionRequestDto,
@@ -49,6 +58,8 @@ import {
   type TranscriptSegmentDto,
   type TranscriptViewDto,
   type UnusedAuditItemDto,
+  type UpdateAppointmentRequestDto,
+  type UpdateStandalonePatientRequestDto,
   type VisitSelectionDto,
   type VisitSelectionsViewDto,
   type VisitSessionControlResponseDto,
@@ -56,6 +67,7 @@ import {
 } from '@aura-note/contracts';
 import {
   approveRecordingException,
+  assertPatientLinkage,
   canEditNote,
   canCompleteCodeReview,
   canCompleteCompareEdit,
@@ -70,6 +82,7 @@ import {
   canStartVisit,
   createAppointmentLifecycle,
   createAppointmentNoteInvariant,
+  chartContextRequiresFreshnessWarning,
   createRawAudioRetentionMetadata,
   createTranscriptRetentionMetadata,
   pauseVisitGate,
@@ -79,6 +92,7 @@ import {
   startVisitLifecycle,
   stopVisitGate,
   validateAppointmentDraft,
+  validateStandalonePatientDraft,
   type NoteState
 } from '@aura-note/domain';
 import {
@@ -122,6 +136,91 @@ export class ScheduleService {
     );
   }
 
+  searchPatients(
+    query: { safePatientId?: string; status?: StandalonePatientDto['status'] },
+    context: RequestContext
+  ): ApiEnvelope<StandalonePatientSearchViewDto> {
+    if (!canPerform('patient:view', context.access)) {
+      throw new ForbiddenException('role cannot search standalone patients');
+    }
+
+    const patients = this.repository
+      .listPatients()
+      .filter((patient) => !query.safePatientId || patient.safePatientId.includes(query.safePatientId))
+      .filter((patient) => !query.status || patient.status === query.status);
+
+    return createApiEnvelope(
+      {
+        patients,
+        demoFixtureState: true,
+        realPhiExcluded: true
+      },
+      this.createMeta(context)
+    );
+  }
+
+  createPatient(
+    request: CreateStandalonePatientRequestDto,
+    context: RequestContext
+  ): ApiEnvelope<StandalonePatientResponseDto> {
+    if (!canPerform('patient:create', context.access)) {
+      throw new ForbiddenException('role cannot create standalone patients');
+    }
+
+    const existing = this.repository.getPatient(request.safePatientId);
+    if (existing) {
+      return createApiEnvelope(
+        this.toPatientResponse(existing, [], context, 'patient.shell_reused', []),
+        this.createMeta(context)
+      );
+    }
+
+    const patient = this.createStandalonePatient(request.safePatientId, request.displayLabel, request.preferredModality);
+    const validationErrors = validateStandalonePatientDraft(patient);
+    if (validationErrors.length > 0) {
+      throw new BadRequestException({ code: 'INVALID_STANDALONE_PATIENT', validationErrors });
+    }
+
+    this.repository.savePatient(patient);
+    return createApiEnvelope(
+      this.toPatientResponse(patient, [], context, 'patient.shell_create', ['patient.shell_created.v1']),
+      this.createMeta(context)
+    );
+  }
+
+  updatePatient(
+    safePatientId: string,
+    request: UpdateStandalonePatientRequestDto,
+    context: RequestContext
+  ): ApiEnvelope<StandalonePatientResponseDto> {
+    if (!canPerform('patient:update', context.access)) {
+      throw new ForbiddenException('role cannot update standalone patients');
+    }
+
+    const existing = this.repository.getPatient(safePatientId);
+    if (!existing) {
+      throw new NotFoundException('standalone patient not found');
+    }
+
+    const updated: StandalonePatientDto = {
+      ...existing,
+      ...(request.displayLabel ? { displayLabel: request.displayLabel } : {}),
+      ...(request.status ? { status: request.status } : {}),
+      ...(request.preferredModality ? { preferredModality: request.preferredModality } : {}),
+      updatedAt: new Date().toISOString()
+    };
+    const validationErrors = validateStandalonePatientDraft(updated);
+    if (validationErrors.length > 0) {
+      throw new BadRequestException({ code: 'INVALID_STANDALONE_PATIENT', validationErrors });
+    }
+
+    this.repository.savePatient(updated);
+    return createApiEnvelope(
+      this.toPatientResponse(updated, [], context, 'patient.shell_update', ['patient.updated.v1']),
+      this.createMeta(context)
+    );
+  }
+
   createAppointment(
     request: CreateAppointmentRequestDto,
     context: RequestContext
@@ -156,6 +255,12 @@ export class ScheduleService {
     const validationErrors = validateAppointmentDraft(draft);
     if (validationErrors.length > 0) {
       throw new BadRequestException({ code: 'INVALID_APPOINTMENT', validationErrors });
+    }
+
+    const patient = this.ensureStandalonePatient(request.safePatientId, request.modality);
+    const patientValidationErrors = validateStandalonePatientDraft(patient);
+    if (patientValidationErrors.length > 0) {
+      throw new BadRequestException({ code: 'INVALID_STANDALONE_PATIENT', validationErrors: patientValidationErrors });
     }
 
     const lifecycle = createAppointmentLifecycle(appointmentId, noteId, draft);
@@ -196,13 +301,155 @@ export class ScheduleService {
       { appointmentId: note.appointmentId, noteId: note.noteId }
     );
 
-    this.repository.saveAppointment({ appointment, note, lifecycle });
+    const linkages = this.createAppointmentPatientLinkages(appointment, note);
+    const chartContextSnapshot = this.createChartContextSnapshot(patient, appointment, note);
+
+    this.repository.saveAppointment({ appointment, note, patient, linkages, chartContextSnapshot, lifecycle });
     if (context.idempotencyKey) {
       this.repository.saveIdempotencyKey(context.idempotencyKey, appointmentId);
     }
 
     const stored = this.getStoredAppointment(appointmentId);
     return createApiEnvelope(this.toCreateResponse(stored, context, false), this.createMeta(context));
+  }
+
+  updateAppointment(
+    appointmentId: string,
+    request: UpdateAppointmentRequestDto,
+    context: RequestContext
+  ): ApiEnvelope<AppointmentActionResponseDto> {
+    if (!canPerform('appointment:update', context.access)) {
+      throw new ForbiddenException('role cannot update appointments');
+    }
+
+    const stored = this.getStoredAppointment(appointmentId);
+    if (stored.appointment.state === 'cancelled' || stored.appointment.state === 'no_show') {
+      throw new BadRequestException('cancelled or no-show appointments cannot be edited in this scaffold');
+    }
+
+    const updatedAppointment: AppointmentDto = {
+      ...stored.appointment,
+      ...(request.clinicianId ? { clinicianId: request.clinicianId } : {}),
+      ...(request.visitType ? { visitType: request.visitType } : {}),
+      ...(request.startsAt ? { startsAt: request.startsAt } : {}),
+      ...(request.durationMinutes ? { durationMinutes: request.durationMinutes } : {}),
+      ...(request.modality ? { modality: request.modality } : {}),
+      ...(request.reasonForVisit !== undefined ? { reasonForVisit: request.reasonForVisit } : {})
+    };
+    const validationErrors = validateAppointmentDraft({
+      tenantId: updatedAppointment.tenantId,
+      siteId: updatedAppointment.siteId,
+      safePatientId: updatedAppointment.safePatientId,
+      clinicianId: updatedAppointment.clinicianId,
+      visitType: updatedAppointment.visitType,
+      startsAt: updatedAppointment.startsAt,
+      durationMinutes: updatedAppointment.durationMinutes,
+      modality: updatedAppointment.modality,
+      source: updatedAppointment.source,
+      ...(updatedAppointment.reasonForVisit ? { reasonForVisit: updatedAppointment.reasonForVisit } : {})
+    });
+    if (validationErrors.length > 0) {
+      throw new BadRequestException({ code: 'INVALID_APPOINTMENT', validationErrors });
+    }
+
+    stored.appointment = updatedAppointment;
+    stored.note = { ...stored.note, clinicianId: updatedAppointment.clinicianId };
+    stored.chartContextSnapshot = this.createChartContextSnapshot(stored.patient, stored.appointment, stored.note);
+    this.repository.saveAppointment(stored);
+
+    return createApiEnvelope(
+      this.toAppointmentActionResponse(stored, context, 'appointment.update', ['appointment.updated.v1']),
+      this.createMeta(context)
+    );
+  }
+
+  updateAppointmentStatus(
+    appointmentId: string,
+    request: AppointmentStatusActionRequestDto,
+    context: RequestContext
+  ): ApiEnvelope<AppointmentActionResponseDto> {
+    if (!canPerform('appointment:status', context.access)) {
+      throw new ForbiddenException('role cannot update appointment status');
+    }
+
+    const stored = this.getStoredAppointment(appointmentId);
+    if (stored.appointment.state === 'visit_started' || stored.appointment.state === 'finalized') {
+      throw new BadRequestException('appointment status cannot be changed after visit start or finalization');
+    }
+
+    const nextStateByAction = {
+      check_in: 'checked_in',
+      cancel: 'cancelled',
+      mark_no_show: 'no_show'
+    } as const;
+    const eventByAction = {
+      check_in: 'appointment.checked_in.v1',
+      cancel: 'appointment.cancelled.v1',
+      mark_no_show: 'appointment.no_show_marked.v1'
+    } as const;
+    const auditActionByAction = {
+      check_in: 'appointment.check_in',
+      cancel: 'appointment.cancel',
+      mark_no_show: 'appointment.mark_no_show'
+    } as const;
+
+    stored.appointment = {
+      ...stored.appointment,
+      state: nextStateByAction[request.action],
+      ...(request.reason ? { reasonForVisit: `${stored.appointment.reasonForVisit ?? 'Synthetic appointment'}; status note: ${request.reason}` } : {})
+    };
+    stored.lifecycle = {
+      ...stored.lifecycle,
+      appointmentState: stored.appointment.state
+    };
+    this.repository.saveAppointment(stored);
+
+    return createApiEnvelope(
+      this.toAppointmentActionResponse(stored, context, auditActionByAction[request.action], [eventByAction[request.action]]),
+      this.createMeta(context)
+    );
+  }
+
+  getChartContextSnapshot(
+    appointmentId: string,
+    context: RequestContext
+  ): ApiEnvelope<StandaloneChartContextResponseDto> {
+    const stored = this.getStoredAppointment(appointmentId);
+    const linkedContext = {
+      ...context.access,
+      linkedToPatient: true,
+      linkedToVisit: context.access.role === 'clinician' ? true : context.access.linkedToVisit,
+      treatingClinician: context.access.role === 'clinician'
+    };
+
+    if (!canPerform('chart_context:view', linkedContext)) {
+      throw new ForbiddenException('role cannot view chart context snapshots');
+    }
+
+    const activeChartLink = stored.linkages.find(
+      (linkage) => linkage.linkedObjectType === 'chart_context' && linkage.linkedObjectId === stored.chartContextSnapshot.chartContextSnapshotId
+    );
+    assertPatientLinkage({
+      safePatientId: stored.appointment.safePatientId,
+      linkedObjectType: 'chart_context',
+      linkedObjectId: stored.chartContextSnapshot.chartContextSnapshotId,
+      active: Boolean(activeChartLink?.active)
+    });
+
+    return createApiEnvelope(
+      {
+        chartContextSnapshot: stored.chartContextSnapshot,
+        auditEvent: this.createAuditEvent('chart_context.snapshot_view', 'ChartContextSnapshot', stored.chartContextSnapshot.chartContextSnapshotId, context),
+        domainEvents: [
+          this.createDomainEventForAppointment(stored, context, 'chart_context.snapshot_viewed.v1', {
+            safePatientId: stored.appointment.safePatientId,
+            sourceFreshness: stored.chartContextSnapshot.sourceFreshness,
+            staleWarning: stored.chartContextSnapshot.staleWarning
+          })
+        ]
+      },
+      this.createMeta(context)
+    );
   }
 
   startVisit(appointmentId: string, context: RequestContext): ApiEnvelope<StartVisitResponseDto> {
@@ -1253,7 +1500,10 @@ export class ScheduleService {
       noteVisibleInDrafts: entry.lifecycle.noteVisibleInDrafts,
       startVisitEnabled: canStartVisit(entry.appointment.state, entry.note.state),
       ehrSchedulingEnabled: false,
-      clinicOsSchedulingEnabled: false
+      clinicOsSchedulingEnabled: false,
+      patientDisplayLabel: entry.patient.displayLabel,
+      chartContextFreshness: entry.chartContextSnapshot.sourceFreshness,
+      chartContextWarnings: entry.chartContextSnapshot.warnings
     };
   }
 
@@ -1984,6 +2234,28 @@ export class ScheduleService {
     });
   }
 
+  private createDomainEventForAppointment(
+    entry: StoredAppointment,
+    context: RequestContext,
+    eventType: CoreEventType,
+    payload: Record<string, unknown>
+  ) {
+    return createEventEnvelope({
+      eventId: this.nextId('evt'),
+      eventType,
+      tenantId: TENANT_ID,
+      siteId: SITE_ID,
+      appointmentId: entry.appointment.appointmentId,
+      noteId: entry.note.noteId,
+      producer: 'aura-note-api',
+      traceId: context.traceId,
+      idempotencyKey: context.idempotencyKey ?? this.nextId('idem'),
+      sensitivity: 'phi_reference',
+      retentionClass: 'audit',
+      payload
+    });
+  }
+
   private createDeterministicSuggestions(entry: StoredAppointment): SuggestionDto[] {
     return [
       {
@@ -2362,6 +2634,9 @@ export class ScheduleService {
     return {
       appointment: entry.appointment,
       note: entry.note,
+      patient: entry.patient,
+      linkages: entry.linkages,
+      chartContextSnapshot: entry.chartContextSnapshot,
       auditEvent: this.createAuditEvent(
         replayed ? 'appointment.create.idempotent_replay' : 'appointment.create',
         'Appointment',
@@ -2404,8 +2679,267 @@ export class ScheduleService {
                 noteState: entry.note.state,
                 noteVisibleInDrafts: entry.lifecycle.noteVisibleInDrafts
               }
+            }),
+            createEventEnvelope({
+              eventId: this.nextId('evt'),
+              eventType: 'patient.shell_created.v1',
+              tenantId: TENANT_ID,
+              siteId: SITE_ID,
+              appointmentId: entry.appointment.appointmentId,
+              noteId: entry.note.noteId,
+              producer: 'aura-note-api',
+              traceId: context.traceId,
+              idempotencyKey,
+              sensitivity: 'phi_reference',
+              retentionClass: 'audit',
+              payload: {
+                safePatientId: entry.patient.safePatientId,
+                status: entry.patient.status
+              }
+            }),
+            createEventEnvelope({
+              eventId: this.nextId('evt'),
+              eventType: 'patient.linkage_recorded.v1',
+              tenantId: TENANT_ID,
+              siteId: SITE_ID,
+              appointmentId: entry.appointment.appointmentId,
+              noteId: entry.note.noteId,
+              producer: 'aura-note-api',
+              traceId: context.traceId,
+              idempotencyKey,
+              sensitivity: 'phi_reference',
+              retentionClass: 'audit',
+              payload: {
+                linkageCount: entry.linkages.length,
+                linkedObjectTypes: entry.linkages.map((linkage) => linkage.linkedObjectType)
+              }
+            }),
+            createEventEnvelope({
+              eventId: this.nextId('evt'),
+              eventType: 'chart_context.snapshot_created.v1',
+              tenantId: TENANT_ID,
+              siteId: SITE_ID,
+              appointmentId: entry.appointment.appointmentId,
+              noteId: entry.note.noteId,
+              producer: 'aura-note-api',
+              traceId: context.traceId,
+              idempotencyKey,
+              sensitivity: 'phi_reference',
+              retentionClass: 'audit',
+              payload: {
+                sourceSystem: entry.chartContextSnapshot.sourceSystem,
+                sourceFreshness: entry.chartContextSnapshot.sourceFreshness,
+                staleWarning: entry.chartContextSnapshot.staleWarning
+              }
             })
           ]
+    };
+  }
+
+  private toAppointmentActionResponse(
+    entry: StoredAppointment,
+    context: RequestContext,
+    auditAction: string,
+    eventTypes: CoreEventType[]
+  ): AppointmentActionResponseDto {
+    return {
+      appointment: entry.appointment,
+      note: entry.note,
+      patient: entry.patient,
+      linkages: entry.linkages,
+      chartContextSnapshot: entry.chartContextSnapshot,
+      auditEvent: this.createAuditEvent(auditAction, 'Appointment', entry.appointment.appointmentId, context),
+      domainEvents: eventTypes.map((eventType) =>
+        this.createDomainEventForAppointment(entry, context, eventType, {
+          appointmentState: entry.appointment.state,
+          noteState: entry.note.state,
+          source: entry.appointment.source,
+          safePatientId: entry.appointment.safePatientId
+        })
+      )
+    };
+  }
+
+  private toPatientResponse(
+    patient: StandalonePatientDto,
+    linkages: StandalonePatientLinkageDto[],
+    context: RequestContext,
+    auditAction: string,
+    eventTypes: CoreEventType[]
+  ): StandalonePatientResponseDto {
+    return {
+      patient,
+      linkages,
+      auditEvent: this.createAuditEvent(auditAction, 'Patient', patient.patientId, context),
+      domainEvents: eventTypes.map((eventType) =>
+        createEventEnvelope({
+          eventId: this.nextId('evt'),
+          eventType,
+          tenantId: TENANT_ID,
+          siteId: SITE_ID,
+          producer: 'aura-note-api',
+          traceId: context.traceId,
+          idempotencyKey: context.idempotencyKey ?? this.nextId('idem'),
+          sensitivity: 'phi_reference',
+          retentionClass: 'audit',
+          payload: {
+            safePatientId: patient.safePatientId,
+            status: patient.status,
+            linkageCount: linkages.length
+          }
+        })
+      )
+    };
+  }
+
+  private ensureStandalonePatient(safePatientId: string, preferredModality?: StandalonePatientDto['preferredModality']): StandalonePatientDto {
+    const existing = this.repository.getPatient(safePatientId);
+    if (existing) {
+      return existing;
+    }
+    const patient = this.createStandalonePatient(safePatientId, undefined, preferredModality);
+    this.repository.savePatient(patient);
+    return patient;
+  }
+
+  private createStandalonePatient(
+    safePatientId: string,
+    displayLabel?: string,
+    preferredModality?: StandalonePatientDto['preferredModality']
+  ): StandalonePatientDto {
+    const now = new Date().toISOString();
+    const patient: StandalonePatientDto = {
+      patientId: this.nextId('patient'),
+      tenantId: TENANT_ID,
+      siteId: SITE_ID,
+      safePatientId,
+      status: 'active',
+      displayLabel: displayLabel ?? `Standalone ${safePatientId}`,
+      createdAt: now,
+      updatedAt: now,
+      mode: APP_MODE
+    };
+    if (preferredModality) {
+      patient.preferredModality = preferredModality;
+    }
+    return patient;
+  }
+
+  private createAppointmentPatientLinkages(appointment: AppointmentDto, note: NoteDto): StandalonePatientLinkageDto[] {
+    const createdAt = new Date().toISOString();
+    const base = {
+      tenantId: TENANT_ID,
+      siteId: SITE_ID,
+      safePatientId: appointment.safePatientId,
+      appointmentId: appointment.appointmentId,
+      noteId: note.noteId,
+      purpose: 'treatment' as const,
+      active: true,
+      createdAt
+    };
+
+    const linkages: StandalonePatientLinkageDto[] = [
+      {
+        ...base,
+        patientLinkageId: this.nextId('patient-linkage'),
+        linkedObjectType: 'appointment',
+        linkedObjectId: appointment.appointmentId
+      },
+      {
+        ...base,
+        patientLinkageId: this.nextId('patient-linkage'),
+        linkedObjectType: 'note',
+        linkedObjectId: note.noteId,
+        purpose: 'documentation'
+      },
+      {
+        ...base,
+        patientLinkageId: this.nextId('patient-linkage'),
+        linkedObjectType: 'chart_context',
+        linkedObjectId: `chart-context-${appointment.appointmentId}`
+      },
+      {
+        ...base,
+        patientLinkageId: this.nextId('patient-linkage'),
+        linkedObjectType: 'finalization',
+        linkedObjectId: note.noteId,
+        purpose: 'documentation'
+      }
+    ];
+
+    return linkages.map((linkage) => {
+      assertPatientLinkage(linkage);
+      return linkage;
+    });
+  }
+
+  private createChartContextSnapshot(
+    patient: StandalonePatientDto,
+    appointment?: AppointmentDto,
+    note?: NoteDto
+  ): StandaloneChartContextSnapshotDto {
+    const now = new Date().toISOString();
+    const slices: StandaloneChartContextSnapshotDto['slices'] = [
+      {
+        sliceType: 'demographics' as const,
+        sourceSystem: 'standalone_local' as const,
+        sourceRecordRef: patient.safePatientId,
+        value: {
+          safePatientId: patient.safePatientId,
+          displayLabel: patient.displayLabel,
+          status: patient.status
+        },
+        effectiveAt: now,
+        freshness: 'recent' as const,
+        sourceQuality: 'medium' as const,
+        phiClassification: 'phi_reference' as const,
+        allowedPurposes: ['care', 'documentation', 'ai_context_packaging'],
+        evidenceIds: [`patient-shell:${patient.safePatientId}`]
+      },
+      {
+        sliceType: 'appointment' as const,
+        sourceSystem: 'standalone_local' as const,
+        sourceRecordRef: appointment?.appointmentId ?? patient.safePatientId,
+        value: appointment
+          ? {
+              appointmentId: appointment.appointmentId,
+              visitType: appointment.visitType,
+              modality: appointment.modality,
+              state: appointment.state
+            }
+          : {
+              appointmentId: 'not-linked-yet',
+              state: 'empty'
+            },
+        effectiveAt: appointment?.startsAt ?? now,
+        freshness: appointment ? ('current_visit' as const) : ('unknown' as const),
+        sourceQuality: appointment ? ('high' as const) : ('low' as const),
+        phiClassification: 'phi_reference' as const,
+        allowedPurposes: ['care', 'documentation', 'ai_context_packaging'],
+        evidenceIds: appointment ? [`appointment:${appointment.appointmentId}`] : []
+      }
+    ];
+    const sourceFreshness = appointment ? ('recent' as const) : ('unknown' as const);
+    const staleWarning = chartContextRequiresFreshnessWarning({ sourceFreshness, sliceCount: slices.length });
+    return {
+      chartContextSnapshotId: `chart-context-${appointment?.appointmentId ?? patient.safePatientId}`,
+      tenantId: TENANT_ID,
+      siteId: SITE_ID,
+      safePatientId: patient.safePatientId,
+      ...(appointment ? { appointmentId: appointment.appointmentId } : {}),
+      ...(note ? { noteId: note.noteId } : {}),
+      sourceSystem: 'standalone_local',
+      sourceFreshness,
+      staleWarning,
+      slices,
+      warnings: [
+        'Synthetic standalone chart context only; live EHR completeness is not implied.',
+        ...(staleWarning ? ['Some chart context slices require source freshness review.'] : [])
+      ],
+      aiPackagingAllowed: false,
+      productionPhiStorageApproved: false,
+      createdAt: now,
+      mode: APP_MODE
     };
   }
 

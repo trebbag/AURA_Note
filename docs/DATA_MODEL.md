@@ -520,6 +520,18 @@ This is not full durable application runtime and is not production PHI database 
 
 This is not full durable application runtime and is not production PHI database approval. Durable audit/event/support/config/coaching and broad tenant-owned RLS completion land in `WO-037`; standalone patient/settings/rules catalog, live EHR writeback, live claim submission, clearinghouse/payer integration, medical-necessity determination, charge finalization, and claim submission remain future work.
 
+## WO-038 standalone patient/chart/schedule status
+
+`WO-038` makes the existing standalone patient and schedule data model browser/API-testable:
+
+- `Patient` is represented through safe synthetic `safePatientId` shells only. No real patient names, MRNs, DOBs, insurance IDs, contact data, addresses, production patient identifiers, or production PHI are introduced.
+- `PatientLinkage` is represented in the API/domain scaffold for appointment, note, chart-context, task, and finalization linkage boundaries. Linkage must be active before chart context or note-detail exposure.
+- `Appointment` supports edit, check-in, cancel, and no-show status transitions while preserving the one appointment to one note invariant.
+- `ChartContextSnapshot` carries synthetic/local source metadata, source freshness, warnings, and explicit `productionPhiStorageApproved=false` and `aiPackagingAllowed=false` flags for this tranche.
+- Core schedule RLS evidence now includes `PatientLinkage` and `ChartContextSnapshot` policies alongside `Tenant`, `Site`, `User`, `Patient`, `Appointment`, `Note`, and `IdempotencyRecord`.
+
+The in-memory runtime remains the broad API default for browser workflow coverage. The Prisma schedule adapter persists the current schedule/note/patient/chart-context slice for local PostgreSQL evidence. Live EHR patient matching, production MPI, merge/unmerge, live insurance eligibility, production PHI database approval, patient portal behavior, live ClinicOS synchronization, medical-necessity determination, charge finalization, and claim submission remain deferred.
+
 ## WO-037 durable runtime metadata and broad RLS status
 
 `WO-037` moves the remaining P7 tenant-owned runtime metadata slice to local durable runtime evidence:

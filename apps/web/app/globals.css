@@ -165,6 +165,7 @@ dd {
 .schedule-list {
   display: grid;
   gap: 14px;
+  grid-column: 1 / -1;
 }
 
 .appointment-form {
@@ -205,7 +206,7 @@ textarea {
 }
 
 .appointment-row {
-  grid-template-columns: minmax(220px, 1fr) minmax(260px, 360px) 132px 148px;
+  grid-template-columns: minmax(220px, 1fr) minmax(260px, 360px) minmax(180px, 240px);
   align-items: center;
   padding: 14px;
   border: 1px solid var(--aura-color-border);
@@ -224,6 +225,45 @@ textarea {
 .state-grid {
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 10px;
+}
+
+.compact-list,
+.patient-context,
+.action-row,
+.list-toolbar {
+  display: grid;
+  gap: 10px;
+}
+
+.patient-context {
+  border-top: 1px solid var(--aura-color-border);
+  padding-top: 12px;
+}
+
+.patient-context small {
+  color: var(--aura-color-text-muted);
+}
+
+.list-toolbar {
+  grid-template-columns: minmax(0, 1fr) minmax(180px, 240px);
+  align-items: center;
+}
+
+.action-row {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.text-row,
+.selected-row {
+  min-height: 38px;
+  border: 1px solid var(--aura-color-border-strong);
+  background: #fff;
+  color: var(--aura-color-text-primary);
+}
+
+.selected-row {
+  background: var(--aura-color-action-primary);
+  color: #fff;
 }
 
 .note-list,

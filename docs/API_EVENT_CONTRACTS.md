@@ -205,3 +205,18 @@ The new `pnpm persistence:finalization-output-adapter` evidence proves the backi
 - current disabled/mock integration status metadata.
 
 The new `pnpm persistence:durable-runtime-readiness` evidence proves the backing `AuditEvent`, `DomainEvent`, `SupportStatusSnapshot`, `FeatureFlag`, `Template`, `DotPhrase`, `CoachingReport`, `IntegrationConnection`, and `ModeMapping` state can be persisted and reloaded locally with tenant/site denial, role-denial harnesses, and broad RLS checks. Event payloads remain audit-safe synthetic metadata; production observability sinks, live vendor sync, production analytics, live AI, charge finalization, medical-necessity determination, and claim submission remain deferred.
+
+## WO-038 standalone patient, chart context, and schedule event evidence
+
+`WO-038` adds implemented synthetic/local API behavior for the standalone patient and Schedule Builder tranche:
+
+- `GET /api/v1/standalone/patients`
+- `POST /api/v1/standalone/patients`
+- `PATCH /api/v1/standalone/patients/{safePatientId}`
+- `PATCH /api/v1/schedule/appointments/{appointmentId}`
+- `POST /api/v1/schedule/appointments/{appointmentId}/status`
+- `GET /api/v1/schedule/appointments/{appointmentId}/chart-context`
+
+The implemented event family now includes `patient.shell_created.v1`, `patient.updated.v1`, `patient.linkage_recorded.v1`, `appointment.updated.v1`, `appointment.checked_in.v1`, `appointment.cancelled.v1`, `appointment.no_show_marked.v1`, `chart_context.snapshot_created.v1`, and `chart_context.snapshot_viewed.v1`.
+
+These events are synthetic/local, metadata-safe evidence for standalone patient shell, patient linkage, chart freshness, and appointment lifecycle behavior. Chart context uses safe patient identifiers and source freshness warnings only; it does not represent live EHR completeness, production patient matching, production PHI storage approval, live ClinicOS synchronization, claim submission, charge finalization, or autonomous clinical/coding/billing behavior.

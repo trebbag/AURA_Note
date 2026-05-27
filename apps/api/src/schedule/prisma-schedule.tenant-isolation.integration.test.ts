@@ -8,7 +8,7 @@ import { PrismaClient } from '@prisma/client';
 import { createAppointmentLifecycle } from '@aura-note/domain';
 import { toDeterministicPersistenceUuid } from '@aura-note/persistence';
 import type { AccessContext } from '@aura-note/security';
-import type { StoredAppointment } from './schedule.repository';
+import { createStandalonePatientScheduleScaffold, type StoredAppointment } from './schedule.repository';
 import {
   createPrismaScheduleStateRepository,
   getPersistedAppointmentForAccessContext,
@@ -103,8 +103,7 @@ function createStoredAppointment(
     reasonForVisit: 'Synthetic tenant isolation visit'
   });
 
-  return {
-    appointment: {
+  const appointment: StoredAppointment['appointment'] = {
       appointmentId,
       tenantId,
       siteId,
@@ -119,8 +118,8 @@ function createStoredAppointment(
       source: 'standalone',
       reasonForVisit: 'Synthetic tenant isolation visit',
       mode: 'standalone'
-    },
-    note: {
+  };
+  const note: StoredAppointment['note'] = {
       noteId,
       appointmentId,
       tenantId,
@@ -129,7 +128,12 @@ function createStoredAppointment(
       clinicianId: `clinician-${tenantId}-${siteId}`,
       state: lifecycle.noteState,
       mode: 'standalone'
-    },
+  };
+
+  return {
+    appointment,
+    note,
+    ...createStandalonePatientScheduleScaffold(appointment, note),
     lifecycle
   };
 }
@@ -266,10 +270,14 @@ describe('Prisma schedule tenant isolation and core RLS evidence', () => {
       const sameTenantCount = await countAppointmentsForTenantSession(rlsPrisma, tenantAUuid);
       const otherTenantCount = await countAppointmentsForTenantSession(rlsPrisma, tenantBUuid);
       const missingTenantCount = await countAppointmentsWithoutTenantSession(rlsPrisma);
+      const sameTenantChartContextCount = await countChartContextForTenantSession(rlsPrisma, tenantAUuid);
+      const missingTenantChartContextCount = await countChartContextWithoutTenantSession(rlsPrisma);
 
       assert.equal(sameTenantCount >= 2, true);
       assert.equal(otherTenantCount, 1);
       assert.equal(missingTenantCount, 0);
+      assert.equal(sameTenantChartContextCount >= 2, true);
+      assert.equal(missingTenantChartContextCount, 0);
       await assert.rejects(
         () =>
           rlsPrisma.$transaction(async (tx) => {
@@ -290,6 +298,27 @@ describe('Prisma schedule tenant isolation and core RLS evidence', () => {
                 'in_person',
                 'standalone',
                 'appt-rls-denied'
+              )
+            `;
+          }),
+        /row-level security|violates/
+      );
+      await assert.rejects(
+        () =>
+          rlsPrisma.$transaction(async (tx) => {
+            await tx.$executeRaw`SELECT set_config('app.current_tenant_id', ${tenantAUuid}, true)`;
+            await tx.$executeRaw`
+              INSERT INTO "ChartContextSnapshot" (
+                "id", "tenantId", "siteId", "patientId", "appointmentId", "sourceSystem", "freshness", "snapshotJson"
+              ) VALUES (
+                CAST(${toDeterministicPersistenceUuid('chart-context', tenantB, 'chart-context-rls-denied')} AS uuid),
+                CAST(${tenantBUuid} AS uuid),
+                CAST(${siteBUuid} AS uuid),
+                CAST(${patientBUuid} AS uuid),
+                CAST(${toDeterministicPersistenceUuid('appointment', tenantB, 'appt-shared')} AS uuid),
+                'standalone_local',
+                'recent',
+                '{"synthetic":true}'::jsonb
               )
             `;
           }),
@@ -356,6 +385,19 @@ async function countAppointmentsForTenantSession(prisma: PrismaClient, tenantUui
 
 async function countAppointmentsWithoutTenantSession(prisma: PrismaClient): Promise<number> {
   const rows = await prisma.$queryRaw<Array<{ count: bigint }>>`SELECT COUNT(*)::bigint AS count FROM "Appointment"`;
+  return Number(rows[0]?.count ?? 0n);
+}
+
+async function countChartContextForTenantSession(prisma: PrismaClient, tenantUuid: string): Promise<number> {
+  const rows = await prisma.$transaction(async (tx) => {
+    await tx.$executeRaw`SELECT set_config('app.current_tenant_id', ${tenantUuid}, true)`;
+    return tx.$queryRaw<Array<{ count: bigint }>>`SELECT COUNT(*)::bigint AS count FROM "ChartContextSnapshot"`;
+  });
+  return Number(rows[0]?.count ?? 0n);
+}
+
+async function countChartContextWithoutTenantSession(prisma: PrismaClient): Promise<number> {
+  const rows = await prisma.$queryRaw<Array<{ count: bigint }>>`SELECT COUNT(*)::bigint AS count FROM "ChartContextSnapshot"`;
   return Number(rows[0]?.count ?? 0n);
 }
 

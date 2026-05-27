@@ -159,6 +159,18 @@ Codex should add tests as implementation proceeds.
 
 ## Post-CP4 core Prisma relationship readiness
 
+## P7.5 standalone patient and schedule readiness
+
+`WO-038` adds standalone patient, chart-context, and schedule completion checks:
+
+- `apps/api/src/schedule/schedule.e2e.test.ts` covers standalone patient shell create/search/edit, billing-only denial, chart-context snapshot access, appointment edit, check-in, cancel, and no-show status transitions.
+- `apps/web/e2e/aura-note-routes.spec.ts` covers the patient shell, chart freshness warning, day/week schedule views, and visible appointment status behavior on `/aura-note/schedule`.
+- `packages/contracts/prisma/rls-core-schedule.sql` now applies core RLS to `PatientLinkage` and `ChartContextSnapshot`.
+- `apps/api/src/schedule/prisma-schedule.tenant-isolation.integration.test.ts` verifies `ChartContextSnapshot` RLS read/write behavior with local synthetic PostgreSQL.
+- `pnpm standalone:patient-schedule-readiness` checks that the WO-038 contracts, permissions, routes, browser shell, RLS artifact, and test hooks are present.
+
+The gate remains synthetic/local evidence only. It does not approve production PHI storage, live EHR patient matching, live ClinicOS synchronization, patient portal behavior, charge finalization, medical-necessity determination, or claim submission.
+
 `WO-023` extends schema SQL-generation checks:
 
 - `pnpm db:schema:validate` proves the Prisma relation fields are valid;

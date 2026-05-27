@@ -200,7 +200,7 @@ This is the first local Prisma adapter slice only. The broad API runtime still d
 - save operations reject entries whose appointment or note tenant/site does not match the scoped repository;
 - idempotency replay remains tenant-scoped and does not expose records across tenants;
 - `pnpm persistence:tenant-isolation` starts the local synthetic PostgreSQL service, applies generated Prisma SQL, seeds two synthetic tenants, verifies same semantic appointment/note/idempotency keys can exist across tenants, verifies cross-tenant and cross-site denial through repository/API harness paths, applies `packages/contracts/prisma/rls-core-schedule.sql`, and verifies RLS read/write denial behavior;
-- `rls-core-schedule.sql` enables and forces RLS on `Tenant`, `Site`, `User`, `Patient`, `Appointment`, `Note`, and `IdempotencyRecord` using the `app.current_tenant_id` session setting plus `WITH CHECK` write policies.
+- `rls-core-schedule.sql` enables and forces RLS on `Tenant`, `Site`, `User`, `Patient`, `Appointment`, `Note`, `IdempotencyRecord`, `PatientLinkage`, and `ChartContextSnapshot` using the `app.current_tenant_id` session setting plus `WITH CHECK` write policies.
 
 RLS expansion is intentionally limited to the tables currently exercised by the Prisma schedule adapter. Suggestions, finalization, export artifacts, writeback jobs, coaching, support status, audit/event rows, and production PHI persistence remain deferred until their runtime repository slices are moved safely.
 
@@ -255,6 +255,19 @@ This remains local synthetic persistence. It does not introduce live EHR writeba
 - `pnpm persistence:durable-runtime-readiness` is the broad P7 evidence gate.
 
 This remains local synthetic persistence. It does not introduce production observability sinks, production database role approval, production PHI persistence, live EHR/ClinicOS synchronization, live AI, live transcription, production analytics, medical-necessity determination, charge finalization, or claim submission. P7.5 begins standalone patient/chart/schedule product completion.
+
+## WO-038 standalone patient/chart/schedule persistence update
+
+`WO-038` extends the existing schedule/note persistence evidence for the standalone patient and chart-context slice:
+
+- the in-memory schedule repository now carries patient shell, patient linkage, and chart-context snapshot metadata alongside the appointment/note lifecycle used by the broad API runtime;
+- the Prisma schedule adapter persists the current `Patient`, `Appointment`, `Note`, and `ChartContextSnapshot` slice for local PostgreSQL evidence while preserving the semantic synthetic source identifiers;
+- appointment edit, check-in, cancel, and no-show transitions continue to preserve the one appointment to one note invariant;
+- `packages/contracts/prisma/rls-core-schedule.sql` now includes `PatientLinkage` and `ChartContextSnapshot` policies with `app.current_tenant_id` and `WITH CHECK` enforcement;
+- `apps/api/src/schedule/prisma-schedule.tenant-isolation.integration.test.ts` adds chart-context RLS read/write evidence;
+- `pnpm standalone:patient-schedule-readiness` validates the WO-038 contracts, permissions, routes, browser shell, RLS artifact, and tests are in place.
+
+This remains synthetic/local readiness evidence. It is not production PHI database approval and does not implement production patient matching, MPI merge/unmerge, patient portal, live EHR chart merge, live ClinicOS synchronization, medical-necessity determination, charge finalization, or claim submission.
 
 ## WO-032 storage delivery and retention deletion update
 
