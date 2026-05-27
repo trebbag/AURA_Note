@@ -1,7 +1,7 @@
 {
   "project": "AURA Note v1",
-  "mode": "cp4_complete",
-  "current_checkpoint": "CP-4",
+  "mode": "post_cp4_in_progress",
+  "current_checkpoint": "P5",
   "next_work_order": null,
   "work_orders": {
     "WO-000": "done",
@@ -18,9 +18,10 @@
     "WO-011": "done",
     "WO-012": "done",
     "WO-013": "done",
-    "WO-014": "done"
+    "WO-014": "done",
+    "WO-015": "done"
   },
-  "last_updated_by": "Codex WO-014 acceptance readiness",
-  "last_updated_at": "2026-05-26T19:43:32Z",
-  "notes": "All defined work orders WO-000 through WO-014 are marked done for the synthetic local-first AURA Note v1 package. CP-4 readiness evidence, route sweep, full local gate, and acceptance readiness validator are complete locally; GitHub Actions must pass on the WO-014 PR before merge."
+  "last_updated_by": "Codex WO-015 persistence foundation",
+  "last_updated_at": "2026-05-27T01:07:50Z",
+  "notes": "WO-015 post-CP4 persistence migration foundation is complete as schema/tooling only. Runtime repository replacement, live migration apply/rollback, row-level security policies, production credentials, and PHI-bearing persistence remain deferred to later numbered work orders."
 }

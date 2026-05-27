@@ -39,13 +39,20 @@ const openApi = readText('packages/contracts/openapi/aura-note.v1.yaml');
 
 const requiredWorkOrders = Array.from({ length: 15 }, (_, index) => `WO-${String(index).padStart(3, '0')}`);
 const incompleteWorkOrders = requiredWorkOrders.filter((workOrder) => repoStatus.work_orders?.[workOrder] !== 'done');
+const incompleteRecordedWorkOrders = Object.entries(repoStatus.work_orders ?? {})
+  .filter(([, status]) => status !== 'done')
+  .map(([workOrder]) => workOrder);
+const allowedModes = ['cp4_complete', 'post_cp4_in_progress'];
 
 check('status.all-work-orders-done', 'All defined work orders are marked done', incompleteWorkOrders.length === 0, {
   requiredWorkOrders,
   incompleteWorkOrders
 });
-check('status.cp4-complete', 'Repository mode records CP-4 complete readiness', repoStatus.mode === 'cp4_complete', repoStatus.mode);
-check('status.no-next-work-order', 'No further local work order remains in the v1 package', repoStatus.next_work_order === null, {
+check('status.cp4-complete', 'Repository mode records CP-4 or post-CP4 readiness', allowedModes.includes(repoStatus.mode), repoStatus.mode);
+check('status.all-recorded-work-orders-done', 'All recorded work orders are marked done', incompleteRecordedWorkOrders.length === 0, {
+  incompleteRecordedWorkOrders
+});
+check('status.no-next-work-order', 'No further active local work order remains', repoStatus.next_work_order === null, {
   nextWorkOrder: repoStatus.next_work_order
 });
 

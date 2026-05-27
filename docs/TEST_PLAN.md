@@ -79,3 +79,12 @@ Codex should add tests as implementation proceeds.
 - package-level unit tests exist for domain, contracts, security, AI gateway, EHR adapter, ClinicOS adapter, worker, and fixtures;
 - OpenAPI paths and audit/event names exist for CP-1 through CP-4 behaviors;
 - `CHECKPOINT_REPORT.md`, `RUN_LOG.md`, and `docs/CP4_ACCEPTANCE_READINESS.md` contain the CP-4 evidence needed for review.
+
+## Post-CP4 persistence foundation
+
+`WO-015` adds schema/tooling checks for the first durable persistence foundation:
+
+- `pnpm db:schema:validate` validates the PostgreSQL Prisma schema using a synthetic local `DATABASE_URL` value;
+- `pnpm db:migration:diff` generates PostgreSQL SQL from the Prisma datamodel without connecting to a live database;
+- `pnpm persistence:foundation` runs schema validation plus `scripts/validate-persistence-foundation.js`;
+- runtime repository replacement and database-backed e2e tests are deferred to a later numbered work order.

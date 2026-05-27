@@ -7,96 +7,626 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+enum AppointmentState {
+  scheduled
+  checked_in
+  in_room
+  visit_started
+  visit_paused
+  visit_completed
+  finalization_in_progress
+  finalized
+  cancelled
+  no_show
+}
+
+enum NoteState {
+  shell_created
+  draft_not_started
+  visit_active
+  visit_paused
+  documentation_in_progress
+  ready_to_finalize
+  finalization_code_review
+  finalization_suggestion_review
+  finalization_compose
+  finalization_compare_edit
+  finalization_billing_attest
+  finalization_sign_dispatch
+  blocked_compliance
+  blocked_history_gap
+  blocked_billing_review
+  finalized
+  exported
+  writeback_pending
+  writeback_complete
+  writeback_failed
+}
+
+enum RetentionClass {
+  standard
+  audit
+  transcript
+  audio_ephemeral
+}
+
+enum IntegrationKind {
+  ai_gateway
+  ehr
+  clinicos
+  storage
+  analytics
+  audit_export
+}
+
 model Tenant {
-  id        String   @id @default(uuid())
+  id        String   @id @default(uuid()) @db.Uuid
   name      String
+  mode      String   @default("standalone")
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
-  sites     Site[]
+
+  @@index([mode])
 }
 
 model Site {
-  id        String   @id @default(uuid())
-  tenantId  String
+  id        String   @id @default(uuid()) @db.Uuid
+  tenantId  String   @db.Uuid
   name      String
+  timezone  String   @default("America/New_York")
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
-  tenant    Tenant   @relation(fields: [tenantId], references: [id])
+
+  @@index([tenantId])
+}
+
+model User {
+  id            String   @id @default(uuid()) @db.Uuid
+  tenantId      String   @db.Uuid
+  email         String
+  displayName   String
+  status        String   @default("active")
+  externalRef   String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@unique([tenantId, email])
+  @@index([tenantId, status])
+}
+
+model RoleAssignment {
+  id        String   @id @default(uuid()) @db.Uuid
+  tenantId  String   @db.Uuid
+  siteId    String?  @db.Uuid
+  userId    String   @db.Uuid
+  role      String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([tenantId, siteId, userId, role])
+  @@index([tenantId, userId])
+}
+
+model Patient {
+  id            String   @id @default(uuid()) @db.Uuid
+  tenantId      String   @db.Uuid
+  siteId        String   @db.Uuid
+  safePatientId String
+  status        String   @default("active")
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@unique([tenantId, safePatientId])
+  @@index([tenantId, siteId])
+}
+
+model PatientLinkage {
+  id        String   @id @default(uuid()) @db.Uuid
+  tenantId  String   @db.Uuid
+  siteId    String   @db.Uuid
+  patientId String   @db.Uuid
+  userId    String   @db.Uuid
+  purpose   String
+  active    Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([tenantId, patientId, userId, purpose])
+  @@index([tenantId, userId, active])
 }
 
 model Appointment {
-  id          String   @id @default(uuid())
-  tenantId    String
-  siteId      String
-  patientId   String
-  clinicianId String
-  visitType   String
-  state       String
-  startsAt    DateTime
-  endsAt      DateTime?
-  sourceSystem String @default("standalone")
-  sourceRef   String?
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-  note        Note?
+  id             String           @id @default(uuid()) @db.Uuid
+  tenantId       String           @db.Uuid
+  siteId         String           @db.Uuid
+  patientId      String           @db.Uuid
+  clinicianId    String           @db.Uuid
+  visitType      String
+  state          AppointmentState @default(scheduled)
+  startsAt       DateTime
+  endsAt         DateTime?
+  modality       String           @default("in_person")
+  reasonForVisit String?
+  sourceSystem   String           @default("standalone")
+  sourceRef      String?
+  createdById    String?          @db.Uuid
+  createdAt      DateTime         @default(now())
+  updatedAt      DateTime         @updatedAt
+
+  @@index([tenantId, siteId, startsAt])
+  @@index([tenantId, patientId])
+  @@index([tenantId, clinicianId])
 }
 
 model Note {
-  id            String   @id @default(uuid())
-  tenantId      String
-  siteId        String
-  appointmentId String   @unique
-  patientId     String
-  clinicianId   String
-  state         String
-  draftText     String   @default("")
-  finalText     String?
+  id                 String    @id @default(uuid()) @db.Uuid
+  tenantId           String    @db.Uuid
+  siteId             String    @db.Uuid
+  appointmentId      String    @unique @db.Uuid
+  patientId          String    @db.Uuid
+  clinicianId        String    @db.Uuid
+  state              NoteState @default(shell_created)
+  draftText          String    @default("")
+  finalText          String?
   patientSummaryText String?
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
-  appointment   Appointment @relation(fields: [appointmentId], references: [id])
+  signedAt           DateTime?
+  dispatchedAt       DateTime?
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
+
+  @@index([tenantId, siteId, state])
+  @@index([tenantId, patientId])
+  @@index([tenantId, clinicianId])
 }
 
 model VisitSession {
-  id          String   @id @default(uuid())
-  tenantId    String
-  siteId      String
-  noteId      String
-  timerState  String
-  recordingState String
-  startedAt   DateTime?
-  pausedAt    DateTime?
-  stoppedAt   DateTime?
-  exceptionReason String?
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id                 String   @id @default(uuid()) @db.Uuid
+  tenantId           String   @db.Uuid
+  siteId             String   @db.Uuid
+  noteId             String   @db.Uuid
+  timerState         String
+  recordingState     String
+  editorUnlocked     Boolean  @default(false)
+  startedAt          DateTime?
+  pausedAt           DateTime?
+  stoppedAt          DateTime?
+  exceptionApproved  Boolean  @default(false)
+  exceptionReason    String?
+  exceptionApprovedById String? @db.Uuid
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+
+  @@index([tenantId, noteId])
+  @@index([tenantId, siteId])
+}
+
+model RecordingAsset {
+  id             String         @id @default(uuid()) @db.Uuid
+  tenantId       String         @db.Uuid
+  siteId         String         @db.Uuid
+  noteId         String         @db.Uuid
+  visitSessionId String         @db.Uuid
+  storageKey     String?
+  status         String
+  retentionClass RetentionClass @default(audio_ephemeral)
+  capturedAt     DateTime
+  purgeAfter     DateTime
+  purgedAt       DateTime?
+  metadataJson   Json?
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
+
+  @@index([tenantId, noteId])
+  @@index([retentionClass, purgeAfter])
+}
+
+model Transcript {
+  id              String         @id @default(uuid()) @db.Uuid
+  tenantId        String         @db.Uuid
+  siteId          String         @db.Uuid
+  noteId          String         @db.Uuid
+  visitSessionId  String         @db.Uuid
+  status          String
+  retentionClass  RetentionClass @default(transcript)
+  retentionPolicy String         @default("indefinite")
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+
+  @@unique([tenantId, noteId])
+  @@index([tenantId, siteId])
+}
+
+model TranscriptSegment {
+  id           String   @id @default(uuid()) @db.Uuid
+  tenantId     String   @db.Uuid
+  siteId       String   @db.Uuid
+  transcriptId String   @db.Uuid
+  noteId       String   @db.Uuid
+  sequence     Int
+  speakerRole  String
+  text         String
+  source       String   @default("mock_transcription")
+  confidence   Float?
+  createdAt    DateTime @default(now())
+
+  @@unique([transcriptId, sequence])
+  @@index([tenantId, noteId])
+}
+
+model ChartContextSnapshot {
+  id             String   @id @default(uuid()) @db.Uuid
+  tenantId       String   @db.Uuid
+  siteId         String   @db.Uuid
+  patientId      String   @db.Uuid
+  appointmentId  String?  @db.Uuid
+  sourceSystem   String
+  freshness      String
+  snapshotJson   Json
+  createdAt      DateTime @default(now())
+
+  @@index([tenantId, patientId])
+  @@index([tenantId, appointmentId])
+}
+
+model Suggestion {
+  id                          String   @id @default(uuid()) @db.Uuid
+  tenantId                    String   @db.Uuid
+  siteId                      String   @db.Uuid
+  noteId                      String   @db.Uuid
+  category                    String
+  label                       String
+  confidence                  Float
+  status                      String
+  lowConfidenceOverrideRequired Boolean @default(false)
+  draftOnly                   Boolean  @default(true)
+  supportingEvidenceJson      Json?
+  missingEvidenceJson         Json?
+  overrideMetadataJson        Json?
+  createdAt                   DateTime @default(now())
+  updatedAt                   DateTime @updatedAt
+
+  @@index([tenantId, noteId, category])
+  @@index([tenantId, status])
+}
+
+model VisitSelection {
+  id                 String   @id @default(uuid()) @db.Uuid
+  tenantId           String   @db.Uuid
+  siteId             String   @db.Uuid
+  noteId             String   @db.Uuid
+  sourceSuggestionId String?  @db.Uuid
+  category           String
+  label              String
+  status             String
+  confidence         Float?
+  createdById        String?  @db.Uuid
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+
+  @@index([tenantId, noteId, category])
+}
+
+model ComplianceIssue {
+  id           String   @id @default(uuid()) @db.Uuid
+  tenantId     String   @db.Uuid
+  siteId       String   @db.Uuid
+  noteId       String   @db.Uuid
+  severity     String
+  status       String
+  title        String
+  detail       String
+  blocksAction Boolean  @default(false)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@index([tenantId, noteId, severity])
+}
+
+model HistoryGapQuestion {
+  id                  String   @id @default(uuid()) @db.Uuid
+  tenantId            String   @db.Uuid
+  siteId              String   @db.Uuid
+  noteId              String   @db.Uuid
+  question            String
+  category            String
+  status              String
+  blockerEligible     Boolean  @default(false)
+  linkedTaskId        String?  @db.Uuid
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+
+  @@index([tenantId, noteId, status])
 }
 
 model Task {
-  id          String   @id @default(uuid())
-  tenantId    String
-  siteId      String
-  noteId      String?
-  patientId   String?
-  title       String
-  status      String
-  blocksSigning Boolean @default(false)
-  adjudicationStatus String @default("open")
-  ownerRole   String?
-  ownerUserId String?
+  id                 String   @id @default(uuid()) @db.Uuid
+  tenantId           String   @db.Uuid
+  siteId             String   @db.Uuid
+  noteId             String?  @db.Uuid
+  patientId          String?  @db.Uuid
+  title              String
+  status             String
+  blocksSigning      Boolean  @default(false)
+  adjudicationStatus String   @default("open")
+  ownerRole          String?
+  ownerUserId        String?  @db.Uuid
+  dueAt              DateTime?
+  resolutionReason   String?
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+
+  @@index([tenantId, noteId, blocksSigning])
+  @@index([tenantId, ownerUserId, status])
+}
+
+model FinalizationRun {
+  id                 String   @id @default(uuid()) @db.Uuid
+  tenantId           String   @db.Uuid
+  siteId             String   @db.Uuid
+  noteId             String   @db.Uuid
+  currentStep        String
+  completedStepsJson Json?
+  frozenSnapshotJson Json
+  readyForBillingAttest Boolean @default(false)
+  billingAttested    Boolean  @default(false)
+  signedAndDispatched Boolean @default(false)
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+
+  @@index([tenantId, noteId])
+}
+
+model WizardStepDecision {
+  id                String   @id @default(uuid()) @db.Uuid
+  tenantId          String   @db.Uuid
+  siteId            String   @db.Uuid
+  finalizationRunId String   @db.Uuid
+  noteId            String   @db.Uuid
+  step              String
+  targetType        String
+  targetId          String
+  decision          String
+  reason            String?
+  actorUserId       String?  @db.Uuid
+  createdAt         DateTime @default(now())
+
+  @@index([tenantId, finalizationRunId, step])
+}
+
+model EnhancedNoteVersion {
+  id                String   @id @default(uuid()) @db.Uuid
+  tenantId          String   @db.Uuid
+  siteId            String   @db.Uuid
+  noteId            String   @db.Uuid
+  finalizationRunId String   @db.Uuid
+  version           Int
+  text              String
+  approved          Boolean  @default(false)
+  approvedById      String?  @db.Uuid
+  approvedAt        DateTime?
+  createdAt         DateTime @default(now())
+
+  @@unique([finalizationRunId, version])
+  @@index([tenantId, noteId])
+}
+
+model PatientSummaryVersion {
+  id                          String   @id @default(uuid()) @db.Uuid
+  tenantId                    String   @db.Uuid
+  siteId                      String   @db.Uuid
+  noteId                      String   @db.Uuid
+  finalizationRunId           String   @db.Uuid
+  version                     Int
+  text                        String
+  patientFacing               Boolean  @default(true)
+  internalDetailsExcluded     Boolean  @default(true)
+  approved                    Boolean  @default(false)
+  approvedById                String?  @db.Uuid
+  approvedAt                  DateTime?
+  createdAt                   DateTime @default(now())
+
+  @@unique([finalizationRunId, version])
+  @@index([tenantId, noteId])
+}
+
+model BillingAttestation {
+  id                    String   @id @default(uuid()) @db.Uuid
+  tenantId              String   @db.Uuid
+  siteId                String   @db.Uuid
+  noteId                String   @db.Uuid
+  finalizationRunId     String   @db.Uuid
+  acceptedStatementsJson Json
+  estimateCaveatAcknowledged Boolean @default(false)
+  routeToBillingReview Boolean @default(false)
+  attestedById         String?  @db.Uuid
+  attestedAt           DateTime @default(now())
+
+  @@index([tenantId, noteId])
+}
+
+model DraftClaimPreview {
+  id                 String   @id @default(uuid()) @db.Uuid
+  tenantId           String   @db.Uuid
+  siteId             String   @db.Uuid
+  noteId             String   @db.Uuid
+  finalizationRunId  String   @db.Uuid
+  status             String
+  submittedClaim     Boolean  @default(false)
+  payloadJson        Json
+  generatedById      String?  @db.Uuid
+  generatedAt        DateTime @default(now())
+
+  @@index([tenantId, noteId])
+}
+
+model ExportArtifact {
+  id                  String         @id @default(uuid()) @db.Uuid
+  tenantId            String         @db.Uuid
+  siteId              String         @db.Uuid
+  noteId              String         @db.Uuid
+  artifactType        String
+  status              String
+  mimeType            String
+  fileName            String
+  storageKey          String?
+  signedVersionLocked Boolean        @default(true)
+  retentionClass      RetentionClass @default(standard)
+  generatedById       String?        @db.Uuid
+  generatedAt         DateTime       @default(now())
+  metadataJson        Json?
+
+  @@index([tenantId, noteId, artifactType])
+}
+
+model EhrWritebackJob {
+  id             String   @id @default(uuid()) @db.Uuid
+  tenantId       String   @db.Uuid
+  siteId         String   @db.Uuid
+  noteId         String   @db.Uuid
+  target         String
+  vendor         String
+  status         String
+  humanApproved  Boolean  @default(false)
+  externalJobId  String?
+  failureReason  String?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  @@index([tenantId, noteId, status])
+}
+
+model Template {
+  id          String   @id @default(uuid()) @db.Uuid
+  tenantId    String   @db.Uuid
+  siteId      String?  @db.Uuid
+  name        String
+  visitType   String
+  specialty   String?
+  body        String
+  status      String   @default("draft")
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
+
+  @@unique([tenantId, siteId, name])
+}
+
+model DotPhrase {
+  id          String   @id @default(uuid()) @db.Uuid
+  tenantId    String   @db.Uuid
+  siteId      String?  @db.Uuid
+  phrase      String
+  body        String
+  status      String   @default("active")
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@unique([tenantId, siteId, phrase])
+}
+
+model CoachingReport {
+  id                String   @id @default(uuid()) @db.Uuid
+  tenantId          String   @db.Uuid
+  siteId            String   @db.Uuid
+  clinicianId       String   @db.Uuid
+  noteId            String?  @db.Uuid
+  privacyLabel      String
+  aggregateOnly     Boolean  @default(false)
+  patientFacingExcluded Boolean @default(true)
+  reportJson        Json
+  generatedAt       DateTime @default(now())
+
+  @@index([tenantId, clinicianId])
+  @@index([tenantId, aggregateOnly])
 }
 
 model AuditEvent {
-  id          String   @id @default(uuid())
-  tenantId    String
-  siteId      String?
-  actorUserId String?
-  action      String
-  entityType  String
-  entityId    String
-  traceId     String?
-  metadataJson Json?
-  createdAt   DateTime @default(now())
+  id             String         @id @default(uuid()) @db.Uuid
+  tenantId       String         @db.Uuid
+  siteId         String?        @db.Uuid
+  actorUserId    String?        @db.Uuid
+  action         String
+  entityType     String
+  entityId       String
+  requestId      String?
+  traceId        String?
+  retentionClass RetentionClass @default(audit)
+  metadataJson   Json?
+  createdAt      DateTime       @default(now())
+
+  @@index([tenantId, action])
+  @@index([tenantId, entityType, entityId])
+  @@index([traceId])
+}
+
+model DomainEvent {
+  id             String   @id @default(uuid()) @db.Uuid
+  tenantId       String   @db.Uuid
+  siteId         String?  @db.Uuid
+  eventType      String
+  aggregateType  String
+  aggregateId    String
+  payloadJson    Json
+  publishedAt    DateTime?
+  createdAt      DateTime @default(now())
+
+  @@index([tenantId, eventType])
+  @@index([tenantId, aggregateType, aggregateId])
+}
+
+model IntegrationConnection {
+  id             String          @id @default(uuid()) @db.Uuid
+  tenantId       String          @db.Uuid
+  siteId         String?         @db.Uuid
+  kind           IntegrationKind
+  vendor         String
+  mode           String
+  enabled        Boolean         @default(false)
+  status         String          @default("disabled")
+  configJson     Json?
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+
+  @@unique([tenantId, siteId, kind, vendor])
+}
+
+model ModeMapping {
+  id                  String   @id @default(uuid()) @db.Uuid
+  tenantId            String   @db.Uuid
+  siteId              String?  @db.Uuid
+  localObjectType     String
+  localObjectId       String
+  externalSystem      String
+  externalObjectType  String
+  externalObjectId    String
+  sourceOfTruth       String
+  status              String
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+
+  @@unique([tenantId, localObjectType, localObjectId, externalSystem])
+  @@index([tenantId, externalSystem, externalObjectId])
+}
+
+model FeatureFlag {
+  id             String   @id @default(uuid()) @db.Uuid
+  tenantId       String   @db.Uuid
+  siteId         String?  @db.Uuid
+  flagKey        String
+  enabled        Boolean  @default(false)
+  disabledReason String?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  @@unique([tenantId, siteId, flagKey])
+}
+
+model SupportStatusSnapshot {
+  id           String   @id @default(uuid()) @db.Uuid
+  tenantId     String   @db.Uuid
+  siteId       String?  @db.Uuid
+  status       String
+  snapshotJson Json
+  createdAt    DateTime @default(now())
+
+  @@index([tenantId, createdAt])
 }

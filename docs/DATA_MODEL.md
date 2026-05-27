@@ -280,3 +280,18 @@ The scaffold does not perform live AI coaching analysis, punitive productivity s
 - `AuditExport` represents a redacted metadata-only JSONL bundle with `includePhi = false`, `redacted = true`, `downloadEnabled = false`, and audit-retained records.
 
 The worker now has a tested retention job summary for raw-audio purge eligibility and transcript indefinite retention. The support API and browser support status page expose current scaffold health and safe degraded states. `WO-013` does not enable live audit file delivery, destructive deletion from object storage, production logging sinks, production analytics warehousing, live AI, live EHR writeback, or PHI-bearing support payloads.
+
+## WO-015 persistence migration foundation status
+
+`WO-015` promotes the first post-CP4 productionization tranche into schema and migration-tooling work:
+
+- PostgreSQL is the durable database target, matching `docs/BACKEND_BUILD_SPEC.md`;
+- Prisma is the migration/schema validation tool for the first foundation pass;
+- `packages/contracts/prisma/schema.prisma` now represents the core data-model families from this document;
+- `Note.appointmentId` is unique to preserve the one appointment to one note invariant at the persistence layer;
+- raw audio, transcript, audit, and export metadata carry explicit retention classes;
+- draft claim previews default to `submittedClaim = false`;
+- coaching reports default to `patientFacingExcluded = true`;
+- integration connections and feature flags default to disabled.
+
+This is not runtime persistence. The API still uses the existing synthetic process-local repositories until a later work order introduces Prisma-backed repository adapters and runs the existing e2e flows against a local database.

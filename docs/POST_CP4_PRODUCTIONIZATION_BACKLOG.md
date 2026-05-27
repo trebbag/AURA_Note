@@ -20,6 +20,8 @@ All post-CP4 work must preserve the existing prohibitions:
 
 ## Tranche P5-01 — Durable Persistence And Migration Foundation
 
+**Promotion status:** Promoted to `WO-015` as a schema/tooling-only persistence foundation. Runtime repository replacement remains deferred to a later numbered work order.
+
 **Objective:** Move the current process-local synthetic repositories toward durable, tenant-scoped persistence without changing clinical behavior.
 
 **Candidate scope:**

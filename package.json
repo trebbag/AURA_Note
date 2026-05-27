@@ -13,13 +13,20 @@
     "lint:phi": "turbo lint:phi",
     "typecheck": "turbo typecheck",
     "acceptance:readiness": "node scripts/acceptance-readiness.js",
+    "db:schema:validate": "DATABASE_URL=postgresql://aura_note:aura_note@localhost:5432/aura_note_dev prisma validate --schema packages/contracts/prisma/schema.prisma",
+    "db:migration:diff": "DATABASE_URL=postgresql://aura_note:aura_note@localhost:5432/aura_note_dev prisma migrate diff --from-empty --to-schema-datamodel packages/contracts/prisma/schema.prisma --script",
+    "persistence:foundation": "pnpm db:schema:validate && node scripts/validate-persistence-foundation.js",
     "storybook": "pnpm --filter @aura-note/web storybook",
     "status": "node scripts/status.js"
   },
   "devDependencies": {
     "@types/node": "^20.14.0",
+    "prisma": "^6.0.0",
     "tsx": "^4.19.0",
     "turbo": "^2.1.0",
     "typescript": "^5.6.0"
+  },
+  "dependencies": {
+    "@prisma/client": "^6.0.0"
   }
 }

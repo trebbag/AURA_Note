@@ -207,3 +207,15 @@ Codex must append a dated entry after each work order or meaningful implementati
 - **Accepted risks:** New post-CP4 tranches are planning candidates only. `repo_status.json` remains `cp4_complete` with `next_work_order` set to `null` until a tranche is deliberately promoted into a numbered work order.
 - **Open SPEC_GAPs:** None discovered.
 - **Next step:** Promote one post-CP4 tranche into `work_orders/WO-015_*.md` and update `repo_status.json` only when founder review is ready to start implementation.
+
+## 2026-05-27T01:07:50Z — WO-015 Persistence migration foundation
+
+- **Work order:** `WO-015` Persistence Migration Foundation.
+- **Summary of changes:** Promoted the first post-CP4 productionization tranche into an active work order and implemented schema/tooling-only PostgreSQL persistence foundation using Prisma.
+- **Persistence behavior:** Expanded `packages/contracts/prisma/schema.prisma` to cover core platform, identity, patient, schedule, note, visit-session, recording, transcript, chart context, review panel, finalization, output, writeback, template, coaching, audit, event, integration, feature-flag, and support status records. Added root commands for schema validation, SQL diff generation, and persistence-foundation verification.
+- **Files changed:** `.github/workflows/ci.yml`, `package.json`, `pnpm-lock.yaml`, `packages/contracts/prisma/schema.prisma`, `scripts/validate-persistence-foundation.js`, `work_orders/WO-015_persistence_migration_foundation.md`, `work_orders/README.md`, `docs/PERSISTENCE_FOUNDATION.md`, `docs/BACKEND_BUILD_SPEC.md`, `docs/DATA_MODEL.md`, `docs/TEST_PLAN.md`, `docs/POST_CP4_PRODUCTIONIZATION_BACKLOG.md`, `scripts/acceptance-readiness.js`, `repo_status.json`, and `RUN_LOG.md`.
+- **Tests run:** `pnpm install --frozen-lockfile`; `pnpm lint`; `pnpm lint:phi`; `pnpm typecheck`; `pnpm test`; `pnpm test:e2e`; `pnpm build`; `pnpm db:schema:validate`; `pnpm db:migration:diff`; `pnpm persistence:foundation`; `pnpm acceptance:readiness`; `node scripts/status.js`; `git diff --check`.
+- **Tests not run:** Runtime repository e2e tests were not run against Prisma because repository replacement is explicitly out of scope for this foundation work order. No live database migration was applied.
+- **Accepted risks:** This is not runtime persistence. No live database migration was applied, no row-level security policy was enabled, no production credential was introduced, and no API/worker/web code now writes PHI or clinical data to a database.
+- **Open SPEC_GAPs:** None discovered for the schema/tooling foundation.
+- **Next step:** Run the full local gate, open the WO-015 PR, confirm GitHub Actions, then define a later work order for Prisma-backed repository adapters and local migration apply/rollback evidence.
