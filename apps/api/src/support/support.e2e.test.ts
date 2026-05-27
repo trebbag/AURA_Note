@@ -22,6 +22,15 @@ describe('Support hardening API e2e', () => {
       assert.equal(allowed.body.data.status.checkpoint, 'CP-4');
       assert.equal(allowed.body.data.status.auditExport.downloadEnabled, false);
       assert.equal(allowed.body.data.status.logging.sample.requestId, 'req-support-e2e-001');
+      assert.equal(allowed.body.data.status.observability.sinks.some((sink: { kind: string }) => sink.kind === 'metric'), true);
+      assert.equal(
+        allowed.body.data.status.deployment.some(
+          (environment: { environment: string; productionDataAllowed: boolean }) =>
+            environment.environment === 'production' && environment.productionDataAllowed === false
+        ),
+        true
+      );
+      assert.equal(allowed.body.data.status.runbooks.some((runbook: { runbookId: string }) => runbook.runbookId === 'WO-018'), true);
 
       await request(app.getHttpServer()).get('/api/v1/support/status').set('x-aura-role', 'clinician').expect(403);
     } finally {

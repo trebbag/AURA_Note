@@ -109,3 +109,13 @@ Codex should add tests as implementation proceeds.
 - route checks cover Status, Schedule, Draft Notes, Documentation Workspace, Finalization, Finalized Notes, finalized viewer, Coaching, and Support hardening;
 - semantic checks cover main landmarks, H1 headings, section navigation, accessible form labels, accessible button names, named regions, blocked/disabled workspace states, read-only finalized-note tabs, coaching permission states, and support degraded-mode states;
 - visual regression and screenshot baselines remain deferred until design-system work lands.
+
+## Post-CP4 observability and deployment runbook foundation
+
+`WO-018` adds local-first operational readiness checks:
+
+- `packages/security/src/index.test.ts` covers PHI-safe metric and trace probes plus disabled production sink status;
+- `apps/api/src/support/support.service.test.ts` covers support status observability sinks, deployment matrix, and runbook index evidence;
+- `apps/api/src/support/support.e2e.test.ts` covers the expanded `GET /api/v1/support/status` contract through HTTP;
+- `pnpm test:browser` checks that the support route exposes observability, deployment, and runbook states;
+- production observability vendors, deployment automation, audit export download delivery, destructive retention purge, and live external integrations remain deferred.

@@ -2223,6 +2223,94 @@ components:
           type: array
           items: { type: string }
         phiSafe: { type: boolean, const: true }
+    ObservabilitySinkStatus:
+      type: object
+      required: [sinkId, kind, adapter, status, redacted, requestCorrelated, delivery]
+      properties:
+        sinkId: { type: string }
+        kind: { type: string, enum: [log, metric, trace, audit_export] }
+        adapter: { type: string, enum: [local_development, disabled_production_placeholder] }
+        status: { type: string, enum: [ready_local, disabled_until_configured] }
+        redacted: { type: boolean, const: true }
+        requestCorrelated: { type: boolean, const: true }
+        delivery: { type: string, enum: [console, in_memory, metadata_only, not_configured] }
+        disabledReason: { type: string }
+    MetricProbe:
+      type: object
+      required: [metricName, kind, value, unit, labels, timestamp, phiSafe]
+      properties:
+        metricName: { type: string }
+        kind: { type: string, enum: [counter, gauge, histogram] }
+        value: { type: number }
+        unit: { type: string, enum: [count, milliseconds, items] }
+        labels:
+          type: object
+          additionalProperties: { type: string }
+        timestamp: { type: string, format: date-time }
+        phiSafe: { type: boolean, const: true }
+    TraceProbe:
+      type: object
+      required: [traceId, spanId, service, name, startedAt, endedAt, durationMs, status, attributes, phiSafe]
+      properties:
+        traceId: { type: string }
+        spanId: { type: string }
+        service: { type: string }
+        name: { type: string }
+        startedAt: { type: string, format: date-time }
+        endedAt: { type: string, format: date-time }
+        durationMs: { type: number, minimum: 0 }
+        status: { type: string, enum: [ok, error] }
+        attributes:
+          type: object
+          additionalProperties: { type: string }
+        phiSafe: { type: boolean, const: true }
+    ObservabilityStatus:
+      type: object
+      required: [sinks, metricProbes, traceProbes]
+      properties:
+        sinks:
+          type: array
+          items:
+            $ref: '#/components/schemas/ObservabilitySinkStatus'
+        metricProbes:
+          type: array
+          items:
+            $ref: '#/components/schemas/MetricProbe'
+        traceProbes:
+          type: array
+          items:
+            $ref: '#/components/schemas/TraceProbe'
+    DeploymentEnvironment:
+      type: object
+      required: [environment, mode, readiness, nodeVersion, pnpmVersion, secretsRequired, externalIntegrations, productionDataAllowed]
+      properties:
+        environment: { type: string, enum: [local, preview, staging, production] }
+        mode: { type: string, enum: [standalone, clinicos_integrated] }
+        readiness: { type: string, enum: [ready_local, configuration_required, blocked_until_security_review] }
+        nodeVersion: { type: string, enum: ['20'] }
+        pnpmVersion: { type: string, enum: ['9.12.0'] }
+        secretsRequired:
+          type: array
+          items: { type: string }
+        externalIntegrations:
+          type: array
+          items:
+            type: string
+            enum: [external_ai, ehr_writeback, clinicos_sync, production_analytics, audit_export_download]
+        productionDataAllowed: { type: boolean, const: false }
+    RunbookIndexItem:
+      type: object
+      required: [runbookId, title, path, covers, productionApprovalRequired]
+      properties:
+        runbookId: { type: string }
+        title: { type: string }
+        path: { type: string }
+        covers:
+          type: array
+          items:
+            type: string
+            enum: [deploy, rollback, incident_triage, audit_export, retention_review, disabled_integrations]
+        productionApprovalRequired: { type: boolean }
     RetentionPolicyStatus:
       type: object
       required: [policyId, recordClass, retentionRule, enforcedByJob, lastEvaluatedAt, candidateCount, purgeEligibleCount, destructivePurgeEnabled]
@@ -2247,7 +2335,7 @@ components:
         safeDegradedMode: { type: string }
     SupportStatus:
       type: object
-      required: [service, checkpoint, mode, generatedAt, overallHealth, featureFlags, logging, retention, auditExport, failureStates, ciRuntime]
+      required: [service, checkpoint, mode, generatedAt, overallHealth, featureFlags, logging, observability, deployment, runbooks, retention, auditExport, failureStates, ciRuntime]
       properties:
         service: { type: string, enum: [aura-note] }
         checkpoint: { type: string, enum: [CP-4] }
@@ -2267,6 +2355,16 @@ components:
             phiRedaction: { type: string, enum: [forbidden_keys_and_obvious_text] }
             sample:
               $ref: '#/components/schemas/StructuredLogEntry'
+        observability:
+          $ref: '#/components/schemas/ObservabilityStatus'
+        deployment:
+          type: array
+          items:
+            $ref: '#/components/schemas/DeploymentEnvironment'
+        runbooks:
+          type: array
+          items:
+            $ref: '#/components/schemas/RunbookIndexItem'
         retention:
           type: array
           items:

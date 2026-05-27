@@ -95,6 +95,8 @@ All post-CP4 work must preserve the existing prohibitions:
 
 ## Tranche P5-04 — Observability, Deployment, And Support Runbooks
 
+**Promotion status:** Promoted to `WO-018` as a local-first observability, deployment matrix, and support runbook foundation. Production log/SIEM/APM vendors, production deployment automation, production audit download delivery, and destructive retention deletion remain deferred to later numbered work orders.
+
 **Objective:** Prepare deployable operational scaffolding without connecting production sinks or vendors prematurely.
 
 **Candidate scope:**

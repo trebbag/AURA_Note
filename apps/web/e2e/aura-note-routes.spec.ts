@@ -113,6 +113,10 @@ test.describe('AURA Note route accessibility smoke suite', () => {
 
     await page.goto('/aura-note/support/status');
 
+    await expect(page.getByRole('region', { name: 'Observability and deployment' })).toContainText('Production SIEM');
+    await expect(page.getByRole('region', { name: 'Observability and deployment' })).toContainText('blocked until review');
+    await expect(page.getByRole('region', { name: 'Operational runbooks' })).toContainText('Incident triage');
+    await expect(page.getByRole('region', { name: 'Operational runbooks' })).toContainText('not configured');
     await expect(page.getByRole('region', { name: 'Feature flags and retention' })).toContainText('External AI');
     await expect(page.getByRole('region', { name: 'Audit and failure states' })).toContainText('metadata-only');
     await expect(page.getByRole('region', { name: 'Audit and failure states' })).toContainText('PHI');
