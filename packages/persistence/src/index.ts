@@ -1,3 +1,4 @@
+import { createHash } from 'node:crypto';
 import type { AppointmentDto, NoteDto } from '@aura-note/contracts';
 import { scanForForbiddenPhiKeys } from '@aura-note/security';
 
@@ -35,6 +36,7 @@ export interface PrismaRowProjection {
   table:
     | 'Tenant'
     | 'Site'
+    | 'User'
     | 'Patient'
     | 'Appointment'
     | 'Note';
@@ -46,6 +48,7 @@ export interface AppointmentNotePrismaProjection {
   adapterKind: 'prisma';
   syntheticOnly: true;
   liveDatabaseConnectionAllowed: false;
+  identifierStrategy: 'deterministic_uuid_scaffold';
   rows: PrismaRowProjection[];
 }
 
@@ -105,12 +108,20 @@ export function mapAppointmentNoteToPrismaProjection(
   assertAppointmentNotePersistenceInput(input);
 
   const { appointment, note, generatedAt } = input;
+  const tenantUuid = toDeterministicPersistenceUuid('tenant', appointment.tenantId);
+  const siteUuid = toDeterministicPersistenceUuid('site', appointment.tenantId, appointment.siteId);
+  const clinicianUuid = toDeterministicPersistenceUuid('user', appointment.tenantId, appointment.clinicianId);
+  const patientUuid = toDeterministicPersistenceUuid('patient', appointment.tenantId, appointment.safePatientId);
+  const appointmentUuid = toDeterministicPersistenceUuid('appointment', appointment.tenantId, appointment.appointmentId);
+  const noteUuid = toDeterministicPersistenceUuid('note', appointment.tenantId, note.noteId);
+  const endsAt = new Date(new Date(appointment.startsAt).getTime() + appointment.durationMinutes * 60_000).toISOString();
+
   const rows: PrismaRowProjection[] = [
     {
       table: 'Tenant',
       naturalKey: { id: appointment.tenantId },
       data: {
-        id: appointment.tenantId,
+        id: tenantUuid,
         name: appointment.tenantId,
         mode: appointment.mode,
         updatedAt: generatedAt
@@ -120,10 +131,26 @@ export function mapAppointmentNoteToPrismaProjection(
       table: 'Site',
       naturalKey: { id: appointment.siteId },
       data: {
-        id: appointment.siteId,
-        tenantId: appointment.tenantId,
+        id: siteUuid,
+        tenantId: tenantUuid,
         name: appointment.siteId,
         timezone: 'America/New_York',
+        updatedAt: generatedAt
+      }
+    },
+    {
+      table: 'User',
+      naturalKey: {
+        tenantId: appointment.tenantId,
+        clinicianId: appointment.clinicianId
+      },
+      data: {
+        id: clinicianUuid,
+        tenantId: tenantUuid,
+        email: `${appointment.clinicianId}@synthetic.local`,
+        displayName: appointment.clinicianId,
+        status: 'synthetic_active',
+        externalRef: appointment.clinicianId,
         updatedAt: generatedAt
       }
     },
@@ -134,9 +161,9 @@ export function mapAppointmentNoteToPrismaProjection(
         safePatientId: appointment.safePatientId
       },
       data: {
-        id: `${appointment.tenantId}:${appointment.safePatientId}`,
-        tenantId: appointment.tenantId,
-        siteId: appointment.siteId,
+        id: patientUuid,
+        tenantId: tenantUuid,
+        siteId: siteUuid,
         safePatientId: appointment.safePatientId,
         status: 'synthetic_active',
         updatedAt: generatedAt
@@ -146,17 +173,16 @@ export function mapAppointmentNoteToPrismaProjection(
       table: 'Appointment',
       naturalKey: { id: appointment.appointmentId },
       data: {
-        id: appointment.appointmentId,
-        tenantId: appointment.tenantId,
-        siteId: appointment.siteId,
-        patientSafeRef: appointment.safePatientId,
-        clinicianId: appointment.clinicianId,
-        noteId: appointment.noteId,
+        id: appointmentUuid,
+        tenantId: tenantUuid,
+        siteId: siteUuid,
+        patientId: patientUuid,
+        clinicianId: clinicianUuid,
         startsAt: appointment.startsAt,
-        durationMinutes: appointment.durationMinutes,
+        endsAt,
         visitType: appointment.visitType,
         modality: appointment.modality,
-        source: appointment.source,
+        sourceSystem: appointment.source,
         state: appointment.state,
         reasonForVisit: appointment.reasonForVisit ?? null,
         updatedAt: generatedAt
@@ -166,14 +192,13 @@ export function mapAppointmentNoteToPrismaProjection(
       table: 'Note',
       naturalKey: { id: note.noteId },
       data: {
-        id: note.noteId,
-        tenantId: note.tenantId,
-        siteId: note.siteId,
-        appointmentId: note.appointmentId,
-        patientSafeRef: note.safePatientId,
-        clinicianId: note.clinicianId,
+        id: noteUuid,
+        tenantId: tenantUuid,
+        siteId: siteUuid,
+        appointmentId: appointmentUuid,
+        patientId: patientUuid,
+        clinicianId: clinicianUuid,
         state: note.state,
-        mode: note.mode,
         updatedAt: generatedAt
       }
     }
@@ -183,8 +208,28 @@ export function mapAppointmentNoteToPrismaProjection(
     adapterKind: 'prisma',
     syntheticOnly: true,
     liveDatabaseConnectionAllowed: false,
+    identifierStrategy: 'deterministic_uuid_scaffold',
     rows
   };
+}
+
+export function toDeterministicPersistenceUuid(...parts: string[]): string {
+  const hash = createHash('sha256')
+    .update(parts.join('\u001f'))
+    .digest('hex')
+    .slice(0, 32)
+    .split('');
+
+  hash[12] = '5';
+  hash[16] = ((Number.parseInt(hash[16] ?? '0', 16) & 0x3) | 0x8).toString(16);
+
+  return [
+    hash.slice(0, 8).join(''),
+    hash.slice(8, 12).join(''),
+    hash.slice(12, 16).join(''),
+    hash.slice(16, 20).join(''),
+    hash.slice(20, 32).join('')
+  ].join('-');
 }
 
 function assertAppointmentNotePersistenceInput(input: AppointmentNotePersistenceInput): void {

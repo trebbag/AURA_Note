@@ -80,3 +80,15 @@ This is still not production persistence. It does not apply migrations, connect 
 - projection rejects mismatched appointment-note identity and forbidden PHI key material before persistence mapping.
 
 This package does not use Prisma Client, connect to PostgreSQL, apply migrations, enable row-level security, or store production PHI.
+
+## WO-022 UUID projection readiness update
+
+`WO-022` hardens the disabled projection so row IDs and schema reference fields are database-shape-safe before a later adapter can attempt local writes:
+
+- synthetic semantic IDs remain natural keys and safe references rather than direct `@db.Uuid` values;
+- tenant, site, clinician user, patient, appointment, and note row IDs are deterministic UUID-shaped projections;
+- appointment rows reference projected patient and clinician UUIDs;
+- note rows reference projected appointment, patient, and clinician UUIDs;
+- the projection emits a synthetic clinician `User` row because the Prisma schema stores appointment and note clinician references as UUIDs.
+
+Runtime database writes remain disabled. This still does not use Prisma Client, connect to PostgreSQL, apply migrations, enable row-level security, or store production PHI.
