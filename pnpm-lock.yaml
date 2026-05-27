@@ -156,6 +156,19 @@ importers:
         specifier: ^5.6.0
         version: 5.9.3
 
+  packages/persistence:
+    dependencies:
+      '@aura-note/contracts':
+        specifier: workspace:*
+        version: link:../contracts
+      '@aura-note/security':
+        specifier: workspace:*
+        version: link:../security
+    devDependencies:
+      typescript:
+        specifier: ^5.6.0
+        version: 5.9.3
+
   packages/security:
     devDependencies:
       typescript:

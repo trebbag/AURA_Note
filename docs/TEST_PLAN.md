@@ -138,3 +138,11 @@ Codex should add tests as implementation proceeds.
 - existing schedule service and API e2e tests continue to exercise runtime behavior through the in-memory repository adapter;
 - `pnpm persistence:runtime-readiness` validates the Prisma schema and checks generated forward plus rollback SQL for key tables, tenant/site indexes, and the `Note.appointmentId` unique index;
 - live database apply/rollback, row-level security tests, PHI-bearing persistence, and full Prisma-backed adapter replacement remain deferred.
+
+## Post-CP4 Prisma adapter scaffold
+
+`WO-021` adds disabled adapter and mapping checks:
+
+- `pnpm --filter @aura-note/persistence test` covers in-memory/default adapter planning, disabled Prisma mode, production PHI persistence blocking, appointment/note projection, one-to-one mismatch rejection, and forbidden PHI key rejection;
+- `pnpm persistence:adapter-readiness` runs persistence package tests plus typecheck locally and in CI;
+- database-backed repository integration tests remain deferred until a later work order introduces local database orchestration.

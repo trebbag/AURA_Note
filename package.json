@@ -18,6 +18,7 @@
     "db:migration:diff": "DATABASE_URL=postgresql://aura_note:aura_note@localhost:5432/aura_note_dev prisma migrate diff --from-empty --to-schema-datamodel packages/contracts/prisma/schema.prisma --script",
     "persistence:foundation": "pnpm db:schema:validate && node scripts/validate-persistence-foundation.js",
     "persistence:runtime-readiness": "node scripts/validate-persistence-runtime-readiness.js",
+    "persistence:adapter-readiness": "pnpm --filter @aura-note/persistence test && pnpm --filter @aura-note/persistence typecheck",
     "storybook": "pnpm --filter @aura-note/web storybook",
     "status": "node scripts/status.js"
   },

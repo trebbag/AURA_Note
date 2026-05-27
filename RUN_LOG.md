@@ -280,3 +280,16 @@ Codex must append a dated entry after each work order or meaningful implementati
 - **Accepted risks:** The runtime adapter remains in-memory and synthetic. The migration readiness verifier proves datamodel SQL generation only; it does not prove production database operability, backup/restore, row-level security, or PHI-safe storage.
 - **Open SPEC_GAPs:** None discovered for repository-seam and SQL-generation readiness.
 - **Next step:** Open the WO-020 PR, confirm GitHub Actions, and merge when green before selecting the next post-CP4 tranche.
+
+## 2026-05-27T02:20:50Z — WO-021 Prisma adapter scaffold
+
+- **Work order:** `WO-021` Prisma Adapter Scaffold.
+- **Summary of changes:** Promoted the next persistence follow-on into an active work order and added `@aura-note/persistence` as a disabled Prisma adapter and schedule/note projection scaffold.
+- **Persistence behavior:** The new package keeps `in_memory` as the only enabled runtime adapter, represents Prisma mode as disabled until later database integration evidence exists, and maps appointment/note DTOs into synthetic Prisma row projections without using Prisma Client or connecting to PostgreSQL.
+- **Safety behavior:** Projection tests reject mismatched appointment-note identity and forbidden PHI key material before row projection. Runtime database writes, production PHI persistence, row-level security, live credentials, and full Prisma-backed repository replacement remain out of scope.
+- **Files changed:** `.github/workflows/ci.yml`, `package.json`, `pnpm-lock.yaml`, `tsconfig.base.json`, `packages/persistence/*`, `scripts/acceptance-readiness.js`, `docs/PERSISTENCE_FOUNDATION.md`, `docs/BACKEND_BUILD_SPEC.md`, `docs/DATA_MODEL.md`, `docs/POST_CP4_PRODUCTIONIZATION_BACKLOG.md`, `docs/TEST_PLAN.md`, `work_orders/WO-021_prisma_adapter_scaffold.md`, `work_orders/README.md`, `repo_status.json`, and `RUN_LOG.md`.
+- **Tests run:** `pnpm install --lockfile-only`; `pnpm --filter @aura-note/persistence test`; `pnpm --filter @aura-note/persistence typecheck`; `pnpm persistence:adapter-readiness`; `pnpm install --frozen-lockfile`; `pnpm lint`; `pnpm lint:phi`; `pnpm typecheck`; `pnpm test`; `pnpm test:e2e`; `pnpm test:browser`; `pnpm build`; `pnpm acceptance:readiness`; `pnpm persistence:foundation`; `pnpm persistence:runtime-readiness`; `node scripts/status.js`; `git diff --check`.
+- **Tests not run:** Prisma Client runtime usage, live database migration apply/rollback, production PostgreSQL, row-level security, backup/restore, PHI-bearing persistence, full Prisma-backed repository replacement, production credentials, live AI, live EHR/ClinicOS/analytics integrations, audit export delivery, storage deletion, and claim submission are intentionally not run.
+- **Accepted risks:** Row projection tests are not database integration tests. The next persistence tranche still needs local database orchestration, transaction behavior, tenant-scope query tests, and error-path coverage before runtime persistence can be claimed.
+- **Open SPEC_GAPs:** None discovered for disabled Prisma adapter scaffolding.
+- **Next step:** Open the WO-021 PR, confirm GitHub Actions, and merge when green before selecting the next post-CP4 tranche.

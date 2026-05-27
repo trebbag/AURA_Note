@@ -29,6 +29,7 @@ Codex must complete work orders sequentially unless a checkpoint or blocker stop
 - `WO-018` — Observability, deployment, and support runbooks.
 - `WO-019` — Design system, UX hardening, and compliance review package.
 - `WO-020` — Persistence runtime readiness.
+- `WO-021` — Prisma adapter scaffold.
 
 ## Work order rules
 
@@ -54,3 +55,5 @@ Post-CP4 productionization candidates are documented in `docs/POST_CP4_PRODUCTIO
 `WO-019` promotes the fifth post-CP4 productionization tranche into an initial design-token, UX copy review, responsive browser hardening, and compliance/security/privacy review package. Final Figma fidelity, visual regression baselines, compliance certification, and production launch approval remain out of scope.
 
 `WO-020` promotes the next persistence follow-on into a repository-seam and migration-readiness tranche. Runtime still defaults to the in-memory adapter; live database connection, production PHI storage, and full Prisma-backed repository replacement remain out of scope until later numbered work orders.
+
+`WO-021` promotes a disabled Prisma adapter scaffold into a package-level persistence boundary. It maps schedule/note DTOs into synthetic row projections and keeps runtime database writes disabled until later local database integration evidence exists.

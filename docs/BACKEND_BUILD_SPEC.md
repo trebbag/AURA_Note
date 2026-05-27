@@ -184,6 +184,8 @@ Workers must support:
 
 `WO-020` adds the first runtime repository seam for schedule/note state and a migration SQL readiness verifier. It does not change the default runtime adapter from in-memory to PostgreSQL, does not apply migrations to a live database, and does not authorize PHI-bearing persistence.
 
+`WO-021` adds a package-level persistence adapter scaffold and Prisma row projection tests. The scaffold is intentionally disabled for runtime database writes and exists to prepare a later local database adapter work order.
+
 `WO-016` adds the first tenant identity and access foundation:
 
 - API request contexts use a shared local synthetic session parser from `packages/security`.
