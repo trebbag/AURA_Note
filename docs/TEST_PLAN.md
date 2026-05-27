@@ -195,3 +195,13 @@ Codex should add tests as implementation proceeds.
 - `pnpm persistence:runtime-readiness` now checks generated forward SQL includes foreign-key constraints for finalization relationships;
 - `pnpm persistence:adapter-readiness` confirms the runtime adapter remains disabled for Prisma writes;
 - full runtime database tests, row-level security tests, transaction tests, tenant-scoped query tests, claim-submission tests, and complete 35-model relation coverage remain deferred.
+
+## Post-CP4 output and writeback Prisma relationship readiness
+
+`WO-027` extends schema SQL-generation checks:
+
+- `pnpm db:schema:validate` proves the export artifact and EHR writeback job Prisma relation fields are valid;
+- `pnpm persistence:foundation` continues to verify the schema foundation;
+- `pnpm persistence:runtime-readiness` now checks generated forward SQL includes foreign-key constraints for output and writeback relationships;
+- `pnpm persistence:adapter-readiness` confirms the runtime adapter remains disabled for Prisma writes;
+- full runtime database tests, row-level security tests, transaction tests, tenant-scoped query tests, production storage/PDF delivery tests, live EHR writeback tests, and complete 35-model relation coverage remain deferred.

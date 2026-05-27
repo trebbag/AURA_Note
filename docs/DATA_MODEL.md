@@ -395,3 +395,14 @@ This is still not runtime database persistence. It does not apply migrations, co
 - draft-claim previews remain internal candidate/readiness objects with `submittedClaim = false` by default.
 
 This is still not runtime database persistence. It does not apply migrations, connect Prisma Client, enable row-level security, store production PHI, submit claims, finalize charges, finalize codes, determine medical necessity, or replace the in-memory synthetic repositories.
+
+## WO-027 output and writeback Prisma relationship readiness status
+
+`WO-027` adds schema-level relation coverage for signed output artifacts and EHR writeback queue records:
+
+- `ExportArtifact` now relates to `Tenant`, `Site`, `Note`, and optional generating `User`;
+- `EhrWritebackJob` now relates to `Tenant`, `Site`, and `Note`;
+- generated migration SQL includes foreign-key constraints for those output and writeback relationships;
+- export artifacts remain signed-version-locked metadata records, and writeback jobs remain conservative queue/status records.
+
+This is still not runtime database persistence. It does not apply migrations, connect Prisma Client, enable row-level security, store production PHI, deliver PDFs from production object storage, perform live EHR writeback, submit claims, or replace the in-memory synthetic repositories.

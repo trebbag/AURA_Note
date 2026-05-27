@@ -30,9 +30,10 @@
     "WO-023": "done",
     "WO-024": "done",
     "WO-025": "done",
-    "WO-026": "done"
+    "WO-026": "done",
+    "WO-027": "done"
   },
-  "last_updated_by": "Codex WO-026 finalization Prisma relationship readiness",
-  "last_updated_at": "2026-05-27T03:02:32Z",
-  "notes": "WO-026 post-CP4 finalization Prisma relationship readiness is complete as schema-level relation and generated foreign-key SQL evidence for FinalizationRun, WizardStepDecision, EnhancedNoteVersion, PatientSummaryVersion, BillingAttestation, and DraftClaimPreview links to tenant/site/note/finalization/user records. Runtime still defaults to in-memory synthetic repositories; Prisma Client runtime usage, live database connection, row-level security, production PHI persistence, production credentials, full relation graph completion, and full Prisma-backed repository replacement remain deferred."
+  "last_updated_by": "Codex WO-027 output writeback Prisma relationship readiness",
+  "last_updated_at": "2026-05-27T13:03:02Z",
+  "notes": "WO-027 post-CP4 output and writeback Prisma relationship readiness is complete as schema-level relation and generated foreign-key SQL evidence for ExportArtifact and EhrWritebackJob links to tenant/site/note/user records. Runtime still defaults to in-memory synthetic repositories; Prisma Client runtime usage, live database connection, row-level security, production PHI persistence, production credentials, production storage delivery, live EHR writeback, full relation graph completion, and full Prisma-backed repository replacement remain deferred."
 }

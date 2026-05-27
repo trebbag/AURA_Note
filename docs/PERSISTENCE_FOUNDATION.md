@@ -142,3 +142,14 @@ Runtime database writes remain disabled. This still does not use Prisma Client, 
 - `DraftClaimPreview` relates to `Tenant`, `Site`, `Note`, `FinalizationRun`, and optional generating `User`.
 
 `pnpm persistence:runtime-readiness` now verifies generated forward SQL includes those finalization foreign-key constraints. This remains SQL-generation evidence only: migrations are not applied, Prisma Client is not used at runtime, row-level security is not enabled, production PHI is not stored, and claim submission remains prohibited.
+
+## WO-027 output and writeback relationship readiness update
+
+`WO-027` extends Prisma relation fields into the signed-output and writeback graph:
+
+- `ExportArtifact` relates to `Tenant`, `Site`, `Note`, and optional generating `User`;
+- `EhrWritebackJob` relates to `Tenant`, `Site`, and `Note`;
+- `Tenant`, `Site`, and `Note` expose inverse relation arrays for export artifacts and writeback jobs;
+- `User` exposes an inverse relation array for generated export artifacts.
+
+`pnpm persistence:runtime-readiness` now verifies generated forward SQL includes those output and writeback foreign-key constraints. This remains SQL-generation evidence only: migrations are not applied, Prisma Client is not used at runtime, row-level security is not enabled, production PHI is not stored, production storage delivery is not enabled, and live EHR writeback remains disabled.
