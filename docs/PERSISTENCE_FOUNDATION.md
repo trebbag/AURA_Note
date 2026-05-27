@@ -202,7 +202,19 @@ This is the first local Prisma adapter slice only. The broad API runtime still d
 - `pnpm persistence:tenant-isolation` starts the local synthetic PostgreSQL service, applies generated Prisma SQL, seeds two synthetic tenants, verifies same semantic appointment/note/idempotency keys can exist across tenants, verifies cross-tenant and cross-site denial through repository/API harness paths, applies `packages/contracts/prisma/rls-core-schedule.sql`, and verifies RLS read/write denial behavior;
 - `rls-core-schedule.sql` enables and forces RLS on `Tenant`, `Site`, `User`, `Patient`, `Appointment`, `Note`, and `IdempotencyRecord` using the `app.current_tenant_id` session setting plus `WITH CHECK` write policies.
 
-RLS expansion is intentionally limited to the tables currently exercised by the Prisma schedule adapter. Visit sessions, transcripts, suggestions, finalization, export artifacts, writeback jobs, coaching, support status, audit/event rows, and production PHI persistence remain deferred until their runtime repository slices are moved safely.
+RLS expansion is intentionally limited to the tables currently exercised by the Prisma schedule adapter. Suggestions, finalization, export artifacts, writeback jobs, coaching, support status, audit/event rows, and production PHI persistence remain deferred until their runtime repository slices are moved safely.
+
+## WO-034 durable visit capture runtime update
+
+`WO-034` adds the first durable workflow runtime slice beyond schedule/note:
+
+- `PrismaVisitCaptureRepository` persists and reloads `VisitSession`, `RecordingAsset`, `Transcript`, and `TranscriptSegment` records against the synthetic local PostgreSQL database;
+- persisted start, pause, resume, stop, approved recording exception, raw-audio retention metadata, and mock transcript segment state is covered by `pnpm persistence:visit-capture-adapter`;
+- tenant and optional site scope are enforced on repository reads/writes, and a persisted-record API harness denies wrong-tenant and wrong-site access before DTO exposure;
+- transaction/error-path coverage blocks transcript segment sequence remapping;
+- `packages/contracts/prisma/rls-visit-capture.sql` enables and forces RLS on `VisitSession`, `RecordingAsset`, `Transcript`, and `TranscriptSegment` with `app.current_tenant_id` policies and `WITH CHECK` write protection.
+
+This does not switch the full application runtime to Prisma. Review panels, finalization, exports, writeback, coaching, support, audit/event rows, production PHI persistence, live transcription, browser recording transport, live EHR/ClinicOS, live AI, and claim submission remain deferred to later work orders.
 
 ## WO-032 storage delivery and retention deletion update
 

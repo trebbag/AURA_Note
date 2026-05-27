@@ -250,6 +250,21 @@ Broad workflow database tests, row-level security tests, production migration te
 
 CI runs the tenant-isolation evidence after the existing local PostgreSQL migration and Prisma schedule adapter gates. Broader workflow RLS and production PHI-bearing persistence tests remain deferred until those repository slices become durable.
 
+## Post-WO-032 durable visit capture runtime evidence
+
+`WO-034` adds `pnpm persistence:visit-capture-adapter`:
+
+- generates Prisma Client for the synthetic local database;
+- starts the local PostgreSQL compose service through the integration test;
+- applies generated Prisma SQL;
+- seeds synthetic schedule/note records through the existing Prisma schedule adapter;
+- persists and reloads visit start, pause, resume, stop, approved recording exception, raw-audio retention metadata, transcript records, and mock transcript segments;
+- verifies wrong-tenant and wrong-site repository/API-harness reads do not expose persisted DTO data;
+- verifies transcript segment sequence remapping is blocked transactionally;
+- applies core schedule RLS plus `rls-visit-capture.sql` and verifies read, insert, and update denial behavior for visit capture tables.
+
+CI now runs `pnpm persistence:visit-capture-adapter` after tenant-isolation evidence. Review-panel persistence, finalization/output/writeback persistence, durable audit/event repositories, production PHI storage approval, live transcription, live EHR/ClinicOS, live AI, and claim submission remain deferred.
+
 ## Post-CP4 Azure storage and retention deletion readiness
 
 `WO-032` adds storage and retention gates:

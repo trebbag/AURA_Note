@@ -151,3 +151,14 @@ The CP-0 event scaffold covers the first state-transition families needed by `WO
 - `WO-051` remains a claim/payer decision gate and must not add live claim submission by default.
 
 Every future state-changing API remains subject to validation, tenant/site scoping, permission checks, audit events, idempotency where applicable, PHI-safe logging, and standalone/ClinicOS mode boundaries.
+
+## WO-034 durable visit capture event evidence
+
+`WO-034` does not add new public clinical behavior beyond the existing CP-1 timer/recording/transcript API surface. It adds durable local persistence evidence for the existing visit capture event family:
+
+- `visit.started.v1`, `visit.paused.v1`, `visit.resumed.v1`, and `visit.stopped.v1`;
+- `recording.started.v1`, `recording.exception_approved.v1`, and `recording.stopped.v1`;
+- `raw_audio.retention_scheduled.v1`;
+- `transcript.segment_appended.v1`.
+
+The new `pnpm persistence:visit-capture-adapter` evidence proves the backing `VisitSession`, `RecordingAsset`, `Transcript`, and `TranscriptSegment` state can be persisted and reloaded locally with tenant/site denial and RLS checks. Event payloads remain audit-safe metadata in this work order; live audio capture and external transcription remain deferred.

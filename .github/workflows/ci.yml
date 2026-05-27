@@ -36,6 +36,8 @@ jobs:
       - run: pnpm persistence:local-db:migrate-evidence
       - run: pnpm persistence:prisma-schedule-adapter
       - run: pnpm persistence:tenant-isolation
+      - run: pnpm persistence:visit-capture-adapter
       - run: pnpm storage:azure-adapter-readiness
       - run: pnpm retention:storage-deletion-readiness
+      - run: pnpm production:readiness
       - run: pnpm acceptance:readiness

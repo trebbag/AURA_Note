@@ -213,6 +213,8 @@ Production Azure Blob use requires soft delete, versioning, private containers, 
 
 `WO-033` re-establishes the production build rails after `WO-032`. Backend implementation resumes with `WO-034` through `WO-037` for durable workflow persistence and RLS expansion, `WO-041` through `WO-043` for production identity/config/storage/observability controls, `WO-044` through `WO-046` for EHR/ClinicOS/AI hardening, and `WO-049` through `WO-050` for deployment, operational, beta, and launch readiness. `acceptance:readiness` remains a synthetic/post-CP4 readiness gate; production-build readiness is checked separately with `pnpm production:readiness`.
 
+`WO-034` adds the Prisma-backed visit capture adapter for local synthetic PostgreSQL. It persists `VisitSession`, `RecordingAsset`, `Transcript`, and `TranscriptSegment` rows, covers start/pause/resume/stop, approved recording exceptions, raw-audio one-week metadata, transcript indefinite retention, mock transcript append/reload, tenant/site denial, transaction error paths, and visit-capture RLS evidence through `pnpm persistence:visit-capture-adapter`. The broad API runtime still is not fully durable; review panels, finalization/output/writeback, audit/event/support/config/coaching, live transcription, browser recording transport, production PHI storage, live EHR/ClinicOS, live AI, and claim submission remain deferred.
+
 `WO-016` adds the first tenant identity and access foundation:
 
 - API request contexts use a shared local synthetic session parser from `packages/security`.
