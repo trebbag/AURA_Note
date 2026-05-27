@@ -257,3 +257,45 @@ Deferred decisions are tracked in `SPEC_GAPS.md` for production identity, produc
 ## Next recommended batch
 
 Continue P7 with `WO-037` durable audit/event/support/config/coaching persistence and broad RLS completion. Keep all production PHI, live vendor, autonomous clinical/coding/billing, live writeback, and claim-submission paths disabled unless later work orders and governance explicitly authorize them.
+
+---
+
+# P7 — Durable Runtime Candidate
+
+## Completed work orders
+
+- `WO-034` — Durable visit capture runtime persistence for `VisitSession`, `RecordingAsset`, `Transcript`, and `TranscriptSegment`.
+- `WO-035` — Durable review panel persistence for `Suggestion`, `VisitSelection`, `ComplianceIssue`, `HistoryGapQuestion`, and `Task`.
+- `WO-036` — Durable finalization/output/writeback persistence for `FinalizationRun`, `WizardStepDecision`, `EnhancedNoteVersion`, `PatientSummaryVersion`, `BillingAttestation`, `DraftClaimPreview`, `ExportArtifact`, and `EhrWritebackJob`.
+- `WO-037` — Durable audit/event/support/config/coaching/mode metadata persistence and broad remaining tenant-owned RLS coverage.
+
+## Acceptance evidence
+
+- `pnpm persistence:visit-capture-adapter` passed with live local PostgreSQL adapter and RLS evidence.
+- `pnpm persistence:review-panel-adapter` passed with live local PostgreSQL adapter and RLS evidence.
+- `pnpm persistence:finalization-output-adapter` passed with live local PostgreSQL adapter and RLS evidence.
+- `pnpm persistence:durable-runtime-readiness` passed with live local PostgreSQL adapter and broad RLS evidence for `AuditEvent`, `DomainEvent`, `SupportStatusSnapshot`, `FeatureFlag`, `Template`, `DotPhrase`, `CoachingReport`, `IntegrationConnection`, and `ModeMapping`.
+
+## Tests and gates
+
+- Narrow P7 gate passed through `pnpm persistence:durable-runtime-readiness`.
+- Full local gate passed and is recorded in `RUN_LOG.md` before the `WO-037` PR.
+- GitHub Actions must pass before merge.
+
+## Open risks
+
+- P7 is local synthetic durable runtime evidence, not production database approval.
+- Production identity, production PHI storage, production backup/restore, production object storage execution, live transcription, live EHR/ClinicOS synchronization, live AI, medical-necessity determination, charge finalization, and claim submission remain future work.
+- Standalone patient/search/schedule completeness is still P7.5 work.
+
+## Active SPEC_GAPs
+
+None discovered for the P7 durable runtime scope.
+
+## Deferred production decisions
+
+Deferred production decisions remain tracked in `SPEC_GAPS.md`, including production identity, production PHI database posture, Azure backup/restore execution, live transcription provider, external AI governance, live EHR writeback, ClinicOS live integration, revenue estimate policy, and claim/payer strategy.
+
+## Next recommended batch
+
+Begin P7.5 with `WO-038` standalone patient, chart context, and schedule completion. Keep standalone-first and ClinicOS-embeddable behavior in one app through adapter boundaries.

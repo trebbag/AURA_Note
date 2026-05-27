@@ -217,6 +217,17 @@ Codex should add tests as implementation proceeds.
 
 This test evidence remains synthetic/local. It does not test live EHR writeback, live claim submission, clearinghouse/payer integration, production PHI database approval, production storage credentials, charge finalization, or medical-necessity determination.
 
+## WO-037 durable runtime metadata and broad RLS persistence
+
+`WO-037` adds live local PostgreSQL adapter evidence for the remaining P7 tenant-owned metadata:
+
+- `pnpm persistence:durable-runtime-readiness` generates Prisma Client, starts the synthetic PostgreSQL service through the integration test, applies generated schema SQL, and executes `apps/api/src/schedule/prisma-runtime-metadata.repository.integration.test.ts`;
+- positive coverage proves persisted reload for audit events, domain events, support status snapshots, feature flags, templates, dot phrases, coaching reports, integration connections, and mode mappings;
+- negative coverage proves wrong-tenant/wrong-site repository/API-harness reads return no DTO data and support/audit/coaching/admin metadata access respects role permissions;
+- broad RLS coverage applies `packages/contracts/prisma/rls-runtime-metadata.sql` and proves tenant-scoped reads, missing tenant-session denial, cross-tenant insert denial, and cross-tenant update denial for the remaining metadata slice.
+
+This closes P7 as synthetic/local durable runtime evidence. It does not test production observability sinks, production database role approval, production PHI storage, live EHR/ClinicOS synchronization, live AI, live transcription, production analytics, charge finalization, or claim submission.
+
 ## Post-CP4 local database orchestration readiness
 
 `WO-028` adds static local database orchestration checks:

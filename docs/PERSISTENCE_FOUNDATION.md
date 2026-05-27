@@ -244,6 +244,18 @@ This remains local synthetic persistence. It does not introduce live AI suggesti
 
 This remains local synthetic persistence. It does not introduce live EHR writeback, live claim submission, clearinghouse/payer integration, charge finalization, medical-necessity determination, production PHI persistence, or production object-storage execution. Durable audit/event repositories, support/config/coaching state, and broad RLS completion remain deferred to `WO-037`.
 
+## WO-037 durable runtime metadata and broad RLS update
+
+`WO-037` closes the P7 durable runtime candidate with the remaining tenant-owned runtime metadata slice:
+
+- `PrismaRuntimeMetadataRepository` persists and reloads `AuditEvent`, `DomainEvent`, `SupportStatusSnapshot`, `FeatureFlag`, `Template`, `DotPhrase`, `CoachingReport`, `IntegrationConnection`, and `ModeMapping` records against the synthetic local PostgreSQL database;
+- persisted metadata preserves audit-safe event records, support status snapshots, disabled feature flags, template/dot phrase metadata, own-clinician coaching report payloads, disabled/mock integration connections, and ClinicOS mode mappings;
+- tenant and site scope are enforced on repository reads/writes, and a persisted-record API harness denies wrong-role, wrong-tenant, and wrong-site access before DTO exposure;
+- `packages/contracts/prisma/rls-runtime-metadata.sql` enables and forces RLS on the remaining tenant-owned P7 metadata tables with `app.current_tenant_id` policies and `WITH CHECK` write protection;
+- `pnpm persistence:durable-runtime-readiness` is the broad P7 evidence gate.
+
+This remains local synthetic persistence. It does not introduce production observability sinks, production database role approval, production PHI persistence, live EHR/ClinicOS synchronization, live AI, live transcription, production analytics, medical-necessity determination, charge finalization, or claim submission. P7.5 begins standalone patient/chart/schedule product completion.
+
 ## WO-032 storage delivery and retention deletion update
 
 `WO-032` adds production-oriented storage boundaries without enabling real production storage:

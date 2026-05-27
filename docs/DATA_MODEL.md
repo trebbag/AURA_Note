@@ -518,4 +518,16 @@ This is not full durable application runtime and is not production PHI database 
 - `rls-finalization-output.sql` adds local PostgreSQL RLS policies for finalization/output/writeback tables using `app.current_tenant_id` and `WITH CHECK` write enforcement;
 - `pnpm persistence:finalization-output-adapter` is the durable evidence gate for this slice.
 
-This is not full durable application runtime and is not production PHI database approval. Durable audit/event/support/config/coaching, broad tenant-owned RLS completion, standalone patient/settings/rules catalog, live EHR writeback, live claim submission, clearinghouse/payer integration, medical-necessity determination, charge finalization, and claim submission remain future work.
+This is not full durable application runtime and is not production PHI database approval. Durable audit/event/support/config/coaching and broad tenant-owned RLS completion land in `WO-037`; standalone patient/settings/rules catalog, live EHR writeback, live claim submission, clearinghouse/payer integration, medical-necessity determination, charge finalization, and claim submission remain future work.
+
+## WO-037 durable runtime metadata and broad RLS status
+
+`WO-037` moves the remaining P7 tenant-owned runtime metadata slice to local durable runtime evidence:
+
+- `AuditEvent`, `DomainEvent`, `SupportStatusSnapshot`, `FeatureFlag`, `Template`, `DotPhrase`, `CoachingReport`, `IntegrationConnection`, and `ModeMapping` now have a Prisma-backed repository adapter for synthetic local PostgreSQL evidence;
+- persisted rows preserve audit-safe event metadata, support snapshot payloads, disabled feature flag decisions, template and dot phrase metadata, own-clinician coaching report payloads, disabled/mock integration connection metadata, and ClinicOS mode mappings;
+- tenant/site scoped repository and API-harness tests deny wrong-tenant, wrong-site, and wrong-role access before DTO exposure;
+- `rls-runtime-metadata.sql` adds local PostgreSQL RLS policies for the remaining P7 metadata tables using `app.current_tenant_id` and `WITH CHECK` write enforcement;
+- `pnpm persistence:durable-runtime-readiness` is the broad durable runtime evidence gate.
+
+P7 is now complete as local synthetic durable runtime evidence. This is not production database approval and does not enable production PHI storage, live vendor synchronization, live AI, medical-necessity determination, charge finalization, or claim submission.
