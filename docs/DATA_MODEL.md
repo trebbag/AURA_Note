@@ -440,3 +440,15 @@ This remains schema evidence. It does not use Prisma Client at runtime, replace 
 - integration tests verify appointment-to-note lookup in both directions and reject appointment-note/idempotency remapping.
 
 This is not a full durable application switch. Visit sessions, recording/transcript state, suggestions, Visit Selections, compliance review, History Gap tasks, finalization, exports, writeback, coaching, support status, and audit export state still require later repository migration before the in-memory runtime can be retired.
+
+## WO-031 tenant isolation and RLS status
+
+`WO-031` adds live enforcement evidence around the current persisted core graph:
+
+- repository queries now scope `Appointment` reads by tenant and optional site;
+- appointment lookup, note lookup, list, and idempotency replay tests use persisted records for two synthetic tenants;
+- tenant A and tenant B can reuse the same synthetic appointment ID, note ID, and idempotency key because persisted UUIDs and unique indexes are tenant-scoped;
+- same-tenant cross-site reads are denied when the repository/API access context carries a site scope;
+- core RLS SQL covers `Tenant`, `Site`, `User`, `Patient`, `Appointment`, `Note`, and `IdempotencyRecord` with `app.current_tenant_id` policies and `WITH CHECK` write protection.
+
+This does not add RLS to the remaining workflow tables yet. The deferred model work is to add equivalent policy artifacts and persisted-record evidence as each workflow slice moves from in-memory state to Prisma-backed repositories.

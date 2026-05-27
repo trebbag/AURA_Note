@@ -2,6 +2,7 @@ import type { Prisma, PrismaClient } from '@prisma/client';
 import type { AppointmentDto, NoteDto } from '@aura-note/contracts';
 import { createAppointmentLifecycle } from '@aura-note/domain';
 import { mapAppointmentNoteToPrismaProjection, toDeterministicPersistenceUuid } from '@aura-note/persistence';
+import type { AccessContext } from '@aura-note/security';
 import type { StoredAppointment } from './schedule.repository';
 
 type AppointmentWithLinks = Prisma.AppointmentGetPayload<{
@@ -26,6 +27,7 @@ export interface AsyncScheduleStateRepository {
 
 export interface PrismaScheduleStateRepositoryOptions {
   tenantId: string;
+  siteId?: string;
   generatedAt?: () => string;
 }
 
@@ -38,17 +40,19 @@ export function createPrismaScheduleStateRepository(
 
 export class PrismaScheduleStateRepository implements AsyncScheduleStateRepository {
   private readonly tenantUuid: string;
+  private readonly siteUuid: string | undefined;
 
   constructor(
     private readonly prisma: PrismaClient,
     private readonly options: PrismaScheduleStateRepositoryOptions
   ) {
     this.tenantUuid = toDeterministicPersistenceUuid('tenant', options.tenantId);
+    this.siteUuid = options.siteId ? toDeterministicPersistenceUuid('site', options.tenantId, options.siteId) : undefined;
   }
 
   async listAppointments(): Promise<StoredAppointment[]> {
     const appointments = await this.prisma.appointment.findMany({
-      where: { tenantId: this.tenantUuid },
+      where: this.scopedAppointmentWhere(),
       include: this.includeAppointmentLinks(),
       orderBy: { startsAt: 'asc' }
     });
@@ -60,7 +64,7 @@ export class PrismaScheduleStateRepository implements AsyncScheduleStateReposito
     const appointmentUuid = this.toAppointmentUuid(appointmentId);
     const appointment = await this.prisma.appointment.findFirst({
       where: {
-        tenantId: this.tenantUuid,
+        ...this.scopedAppointmentWhere(),
         OR: [{ id: appointmentUuid }, { sourceRef: appointmentId }]
       },
       include: this.includeAppointmentLinks()
@@ -73,7 +77,7 @@ export class PrismaScheduleStateRepository implements AsyncScheduleStateReposito
     const noteUuid = this.toNoteUuid(noteId);
     const appointment = await this.prisma.appointment.findFirst({
       where: {
-        tenantId: this.tenantUuid,
+        ...this.scopedAppointmentWhere(),
         note: {
           is: {
             OR: [{ id: noteUuid }, { sourceRef: noteId }]
@@ -91,6 +95,7 @@ export class PrismaScheduleStateRepository implements AsyncScheduleStateReposito
   }
 
   async saveAppointment(entry: StoredAppointment): Promise<void> {
+    this.assertScopeMatchesEntry(entry);
     const generatedAt = this.options.generatedAt?.() ?? new Date().toISOString();
     const projection = mapAppointmentNoteToPrismaProjection({
       appointment: entry.appointment,
@@ -367,6 +372,23 @@ export class PrismaScheduleStateRepository implements AsyncScheduleStateReposito
     return isUuid(noteId) ? noteId : toDeterministicPersistenceUuid('note', this.options.tenantId, noteId);
   }
 
+  private scopedAppointmentWhere(): Prisma.AppointmentWhereInput {
+    return {
+      tenantId: this.tenantUuid,
+      ...(this.siteUuid ? { siteId: this.siteUuid } : {})
+    };
+  }
+
+  private assertScopeMatchesEntry(entry: StoredAppointment): void {
+    if (entry.appointment.tenantId !== this.options.tenantId || entry.note.tenantId !== this.options.tenantId) {
+      throw new Error('repository blocks cross-tenant persistence through scoped Prisma adapter');
+    }
+
+    if (this.options.siteId && (entry.appointment.siteId !== this.options.siteId || entry.note.siteId !== this.options.siteId)) {
+      throw new Error('repository blocks cross-site persistence through scoped Prisma adapter');
+    }
+  }
+
   private includeAppointmentLinks() {
     return {
       tenant: true,
@@ -417,4 +439,20 @@ function toModality(value: string): AppointmentDto['modality'] {
 
 function toMode(value: string): AppointmentDto['mode'] {
   return value === 'clinicos_integrated' ? value : 'standalone';
+}
+
+export async function getPersistedAppointmentForAccessContext(
+  prisma: PrismaClient,
+  access: AccessContext,
+  appointmentId: string
+): Promise<StoredAppointment | undefined> {
+  if (!access.tenantId || !access.siteId) {
+    throw new Error('persisted schedule access requires tenant and site scope');
+  }
+
+  const repository = createPrismaScheduleStateRepository(prisma, {
+    tenantId: access.tenantId,
+    siteId: access.siteId
+  });
+  return repository.getAppointment(appointmentId);
 }

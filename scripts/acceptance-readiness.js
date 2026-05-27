@@ -37,7 +37,7 @@ const runLog = readText('RUN_LOG.md');
 const specGaps = readText('SPEC_GAPS.md');
 const openApi = readText('packages/contracts/openapi/aura-note.v1.yaml');
 
-const requiredWorkOrders = Array.from({ length: 31 }, (_, index) => `WO-${String(index).padStart(3, '0')}`);
+const requiredWorkOrders = Array.from({ length: 32 }, (_, index) => `WO-${String(index).padStart(3, '0')}`);
 const incompleteWorkOrders = requiredWorkOrders.filter((workOrder) => repoStatus.work_orders?.[workOrder] !== 'done');
 const incompleteRecordedWorkOrders = Object.entries(repoStatus.work_orders ?? {})
   .filter(([, status]) => status !== 'done')
@@ -100,7 +100,10 @@ check(
   ['test.persistence-adapter', 'packages/persistence/src/index.test.ts', 'Persistence adapter scaffold unit coverage exists'],
   ['test.local-db-readiness', 'scripts/validate-local-database-readiness.js', 'Local database orchestration readiness verifier exists'],
   ['test.local-db-migration-evidence', 'scripts/verify-local-postgres-migration.js', 'Local PostgreSQL migration apply/rollback verifier exists'],
-  ['test.prisma-schedule-adapter', 'apps/api/src/schedule/prisma-schedule.repository.integration.test.ts', 'Prisma schedule adapter integration coverage exists']
+  ['test.prisma-schedule-adapter', 'apps/api/src/schedule/prisma-schedule.repository.integration.test.ts', 'Prisma schedule adapter integration coverage exists'],
+  ['test.tenant-isolation', 'apps/api/src/schedule/prisma-schedule.tenant-isolation.integration.test.ts', 'Tenant/site live query and RLS integration coverage exists'],
+  ['test.tenant-isolation-verifier', 'scripts/verify-tenant-isolation.js', 'Tenant isolation verifier exists'],
+  ['test.core-rls-sql', 'packages/contracts/prisma/rls-core-schedule.sql', 'Core schedule RLS SQL artifact exists']
 ].forEach(([id, relativePath, description]) => checkFile(id, relativePath, description));
 
 [

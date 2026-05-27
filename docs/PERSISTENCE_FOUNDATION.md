@@ -190,3 +190,16 @@ This is local schema evidence only. It does not connect Prisma Client at runtime
 - `IdempotencyRecord` stores tenant-scoped replay keys for appointment creation safety.
 
 This is the first local Prisma adapter slice only. The broad API runtime still defaults to in-memory state because visit sessions, transcript state, suggestions, selections, compliance, finalization, exports, writeback, coaching, and support state are not yet moved as one durable workflow. Row-level security, production database use, production PHI persistence, and live vendor integrations remain out of scope.
+
+## WO-031 tenant isolation and core RLS update
+
+`WO-031` adds live tenant/site enforcement evidence for the current Prisma schedule adapter and adopts core RLS for the persisted schedule/note slice only:
+
+- `PrismaScheduleStateRepository` now accepts an optional `siteId` scope in addition to `tenantId`;
+- list and point lookups filter by tenant and, when provided, site;
+- save operations reject entries whose appointment or note tenant/site does not match the scoped repository;
+- idempotency replay remains tenant-scoped and does not expose records across tenants;
+- `pnpm persistence:tenant-isolation` starts the local synthetic PostgreSQL service, applies generated Prisma SQL, seeds two synthetic tenants, verifies same semantic appointment/note/idempotency keys can exist across tenants, verifies cross-tenant and cross-site denial through repository/API harness paths, applies `packages/contracts/prisma/rls-core-schedule.sql`, and verifies RLS read/write denial behavior;
+- `rls-core-schedule.sql` enables and forces RLS on `Tenant`, `Site`, `User`, `Patient`, `Appointment`, `Note`, and `IdempotencyRecord` using the `app.current_tenant_id` session setting plus `WITH CHECK` write policies.
+
+RLS expansion is intentionally limited to the tables currently exercised by the Prisma schedule adapter. Visit sessions, transcripts, suggestions, finalization, export artifacts, writeback jobs, coaching, support status, audit/event rows, and production PHI persistence remain deferred until their runtime repository slices are moved safely.
