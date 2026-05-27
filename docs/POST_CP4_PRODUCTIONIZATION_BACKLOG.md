@@ -168,3 +168,27 @@ Do not implement these tranches directly from this backlog. Promote one tranche 
 
 - This does not yet persist runtime data.
 - Full Prisma-backed adapter replacement will touch broad API workflows and should remain a later, reviewable work order.
+
+## Follow-on Tranche P6-02 — Prisma Adapter Scaffold
+
+**Promotion status:** Promoted to `WO-021` as a disabled Prisma adapter and mapper scaffold. Runtime database writes remain disabled.
+
+**Objective:** Prove the schedule/note DTO boundary can be projected into Prisma-compatible synthetic row shapes before replacing any runtime repository.
+
+**Candidate scope:**
+
+- Add a persistence package for adapter readiness planning.
+- Keep in-memory runtime as the only enabled adapter.
+- Keep future Prisma mode disabled until database, migration, rollback, tenant-scope, and PHI-storage evidence exists.
+- Add appointment/note projection tests and PHI-key rejection tests.
+
+**Acceptance evidence:**
+
+- Persistence package tests pass in CI.
+- Full repo gates still pass.
+- Docs preserve the distinction between scaffold mapping and live persistence.
+
+**Known risks:**
+
+- Projection tests are not database integration tests.
+- The next database-backed work order will still need local database orchestration and transaction/error-path coverage.

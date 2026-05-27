@@ -319,3 +319,14 @@ This is not persistent identity management. User administration, SSO/MFA, accoun
 - Prisma forward and rollback SQL generation is verified by `pnpm persistence:runtime-readiness`.
 
 The data model is still not a live production store. Migrations are not applied to a database, PostgreSQL is not used by API requests, row-level security is not enabled, and no production PHI is stored.
+
+## WO-021 Prisma adapter scaffold status
+
+`WO-021` adds `@aura-note/persistence` to represent the next persistence boundary:
+
+- adapter planning distinguishes the enabled local in-memory adapter from disabled future Prisma mode;
+- schedule/note DTOs can be projected into synthetic rows for `Tenant`, `Site`, `Patient`, `Appointment`, and `Note`;
+- projection keeps patient identity at `safePatientId` level and rejects forbidden PHI key material;
+- mismatched appointment/note references are rejected before any persistence row projection is created.
+
+The package does not connect to PostgreSQL, generate Prisma Client, apply migrations, or replace API runtime storage.

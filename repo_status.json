@@ -24,9 +24,10 @@
     "WO-017": "done",
     "WO-018": "done",
     "WO-019": "done",
-    "WO-020": "done"
+    "WO-020": "done",
+    "WO-021": "done"
   },
-  "last_updated_by": "Codex WO-020 persistence runtime readiness",
-  "last_updated_at": "2026-05-27T02:10:37Z",
-  "notes": "WO-020 post-CP4 persistence runtime readiness is complete as a repository-seam and migration SQL evidence tranche. Runtime still defaults to in-memory synthetic repositories; live database connection, row-level security, production PHI persistence, production credentials, and full Prisma-backed repository replacement remain deferred."
+  "last_updated_by": "Codex WO-021 Prisma adapter scaffold",
+  "last_updated_at": "2026-05-27T02:20:50Z",
+  "notes": "WO-021 post-CP4 Prisma adapter scaffold is complete as disabled package-level mapping and adapter-readiness evidence. Runtime still defaults to in-memory synthetic repositories; Prisma Client runtime usage, live database connection, row-level security, production PHI persistence, production credentials, and full Prisma-backed repository replacement remain deferred."
 }

@@ -69,3 +69,14 @@ A later work order should introduce repository adapters that run the existing ap
 - `pnpm persistence:runtime-readiness` validates the Prisma schema and generates forward plus rollback SQL from the datamodel without touching a live database.
 
 This is still not production persistence. It does not apply migrations, connect API routes to PostgreSQL, enable row-level security, store PHI, or replace every process-local repository with Prisma-backed adapters.
+
+## WO-021 Prisma adapter scaffold update
+
+`WO-021` adds `@aura-note/persistence` as a disabled adapter scaffold:
+
+- `in_memory` remains the only enabled runtime adapter;
+- future `prisma` mode is represented as disabled until a later work order adds database integration evidence;
+- appointment and note DTOs can be mapped into deterministic synthetic Prisma row projections;
+- projection rejects mismatched appointment-note identity and forbidden PHI key material before persistence mapping.
+
+This package does not use Prisma Client, connect to PostgreSQL, apply migrations, enable row-level security, or store production PHI.
