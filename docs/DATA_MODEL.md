@@ -380,3 +380,18 @@ This is still not runtime database persistence. It does not apply migrations, co
 - draft-only suggestion, low-confidence override, hard-block, and blocker-task semantics remain enforced by the existing domain/API scaffolds rather than by this schema-only tranche.
 
 This is still not runtime database persistence. It does not apply migrations, connect Prisma Client, enable row-level security, store production PHI, autonomously finalize diagnoses/codes/billing, or replace the in-memory synthetic repositories.
+
+## WO-026 finalization Prisma relationship readiness status
+
+`WO-026` adds schema-level relation coverage for the finalization wizard and draft claim preview graph:
+
+- `FinalizationRun` now relates to `Tenant`, `Site`, `Note`, wizard decisions, enhanced note versions, patient summary versions, billing attestations, and draft claim previews;
+- `WizardStepDecision` now relates to `Tenant`, `Site`, `FinalizationRun`, `Note`, and optional actor `User`;
+- `EnhancedNoteVersion` now relates to `Tenant`, `Site`, `Note`, `FinalizationRun`, and optional approving `User`;
+- `PatientSummaryVersion` now relates to `Tenant`, `Site`, `Note`, `FinalizationRun`, and optional approving `User`;
+- `BillingAttestation` now relates to `Tenant`, `Site`, `Note`, `FinalizationRun`, and optional attesting `User`;
+- `DraftClaimPreview` now relates to `Tenant`, `Site`, `Note`, `FinalizationRun`, and optional generating `User`;
+- generated migration SQL includes foreign-key constraints for those finalization relationships;
+- draft-claim previews remain internal candidate/readiness objects with `submittedClaim = false` by default.
+
+This is still not runtime database persistence. It does not apply migrations, connect Prisma Client, enable row-level security, store production PHI, submit claims, finalize charges, finalize codes, determine medical necessity, or replace the in-memory synthetic repositories.
