@@ -218,3 +218,27 @@ Do not implement these tranches directly from this backlog. Promote one tranche 
 
 - Deterministic UUID projection is readiness scaffolding, not final production ID policy.
 - Local database orchestration, transaction behavior, row-level security, foreign-key enforcement, and full Prisma-backed repository replacement remain later work.
+
+## Follow-on Tranche P6-04 — Core Prisma Relationship Readiness
+
+**Promotion status:** Promoted to `WO-023` as core Prisma relation and generated foreign-key SQL evidence. Runtime database writes remain disabled.
+
+**Objective:** Add schema-level relationship constraints for the core schedule/note graph before enabling any local database adapter.
+
+**Candidate scope:**
+
+- Add Prisma relation fields for `Tenant`, `Site`, `User`, `Patient`, `Appointment`, and `Note`.
+- Preserve one appointment to one note uniqueness.
+- Extend SQL-generation readiness checks for core foreign-key fragments.
+- Keep in-memory runtime as the only enabled adapter.
+
+**Acceptance evidence:**
+
+- Prisma schema validation passes.
+- Persistence runtime readiness checks generated forward SQL for core foreign keys.
+- Existing repository, browser, acceptance, and persistence adapter gates continue to pass.
+
+**Known risks:**
+
+- This is core relationship readiness, not full 35-model relationship completion.
+- Local database orchestration, row-level security, transaction/error-path behavior, and full Prisma-backed repository replacement remain later work.

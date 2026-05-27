@@ -66,6 +66,12 @@ model Tenant {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
+  sites        Site[]
+  users        User[]
+  patients     Patient[]
+  appointments Appointment[]
+  notes        Note[]
+
   @@index([mode])
 }
 
@@ -76,6 +82,11 @@ model Site {
   timezone  String   @default("America/New_York")
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  tenant      Tenant        @relation(fields: [tenantId], references: [id])
+  patients    Patient[]
+  appointments Appointment[]
+  notes       Note[]
 
   @@index([tenantId])
 }
@@ -89,6 +100,10 @@ model User {
   externalRef   String?
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
+
+  tenant                 Tenant        @relation(fields: [tenantId], references: [id])
+  clinicianAppointments Appointment[] @relation("AppointmentClinician")
+  clinicianNotes        Note[]        @relation("NoteClinician")
 
   @@unique([tenantId, email])
   @@index([tenantId, status])
@@ -115,6 +130,11 @@ model Patient {
   status        String   @default("active")
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
+
+  tenant       Tenant        @relation(fields: [tenantId], references: [id])
+  site         Site          @relation(fields: [siteId], references: [id])
+  appointments Appointment[]
+  notes        Note[]
 
   @@unique([tenantId, safePatientId])
   @@index([tenantId, siteId])
@@ -153,6 +173,12 @@ model Appointment {
   createdAt      DateTime         @default(now())
   updatedAt      DateTime         @updatedAt
 
+  tenant    Tenant  @relation(fields: [tenantId], references: [id])
+  site      Site    @relation(fields: [siteId], references: [id])
+  patient   Patient @relation(fields: [patientId], references: [id])
+  clinician User    @relation("AppointmentClinician", fields: [clinicianId], references: [id])
+  note      Note?
+
   @@index([tenantId, siteId, startsAt])
   @@index([tenantId, patientId])
   @@index([tenantId, clinicianId])
@@ -173,6 +199,12 @@ model Note {
   dispatchedAt       DateTime?
   createdAt          DateTime  @default(now())
   updatedAt          DateTime  @updatedAt
+
+  tenant      Tenant      @relation(fields: [tenantId], references: [id])
+  site        Site        @relation(fields: [siteId], references: [id])
+  appointment Appointment @relation(fields: [appointmentId], references: [id])
+  patient     Patient     @relation(fields: [patientId], references: [id])
+  clinician   User        @relation("NoteClinician", fields: [clinicianId], references: [id])
 
   @@index([tenantId, siteId, state])
   @@index([tenantId, patientId])

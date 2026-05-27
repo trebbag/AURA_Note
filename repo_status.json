@@ -26,9 +26,10 @@
     "WO-019": "done",
     "WO-020": "done",
     "WO-021": "done",
-    "WO-022": "done"
+    "WO-022": "done",
+    "WO-023": "done"
   },
-  "last_updated_by": "Codex WO-022 persistence UUID projection readiness",
-  "last_updated_at": "2026-05-27T02:29:18Z",
-  "notes": "WO-022 post-CP4 persistence UUID projection readiness is complete as deterministic UUID-shaped mapping evidence for the disabled Prisma adapter scaffold. Runtime still defaults to in-memory synthetic repositories; Prisma Client runtime usage, live database connection, row-level security, production PHI persistence, production credentials, production ID policy, and full Prisma-backed repository replacement remain deferred."
+  "last_updated_by": "Codex WO-023 core Prisma relationship readiness",
+  "last_updated_at": "2026-05-27T02:38:10Z",
+  "notes": "WO-023 post-CP4 core Prisma relationship readiness is complete as schema-level relation and generated foreign-key SQL evidence for Tenant, Site, User, Patient, Appointment, and Note. Runtime still defaults to in-memory synthetic repositories; Prisma Client runtime usage, live database connection, row-level security, production PHI persistence, production credentials, full relation graph completion, and full Prisma-backed repository replacement remain deferred."
 }
