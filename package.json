@@ -9,6 +9,7 @@
     "test": "turbo test",
     "test:unit": "turbo test:unit",
     "test:e2e": "turbo test:e2e",
+    "test:browser": "playwright test",
     "lint": "turbo lint",
     "lint:phi": "turbo lint:phi",
     "typecheck": "turbo typecheck",
@@ -20,6 +21,7 @@
     "status": "node scripts/status.js"
   },
   "devDependencies": {
+    "@playwright/test": "^1.60.0",
     "@types/node": "^20.14.0",
     "prisma": "^6.0.0",
     "tsx": "^4.19.0",

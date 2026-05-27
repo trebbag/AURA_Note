@@ -71,6 +71,8 @@ All post-CP4 work must preserve the existing prohibitions:
 
 ## Tranche P5-03 — Committed Browser E2E And Accessibility Suite
 
+**Promotion status:** Promoted to `WO-017` as a committed Playwright Chromium browser E2E and accessibility-oriented route regression suite. Visual regression and final design-system fidelity remain deferred to later numbered work orders.
+
 **Objective:** Convert manual/browser route-sweep evidence into committed browser regression tests with accessibility checks.
 
 **Candidate scope:**

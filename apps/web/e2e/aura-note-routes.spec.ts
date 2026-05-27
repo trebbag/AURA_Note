@@ -1,0 +1,120 @@
+import { expect, test } from '@playwright/test';
+
+const routeExpectations = [
+  {
+    path: '/status',
+    heading: 'Status'
+  },
+  {
+    path: '/aura-note/schedule',
+    heading: 'Standalone Appointment-to-Note Lifecycle',
+    nav: true
+  },
+  {
+    path: '/aura-note/drafts',
+    heading: 'Active Documentation Work',
+    nav: true
+  },
+  {
+    path: '/aura-note/workspace/appt-demo-001',
+    heading: 'Workspace Shell',
+    nav: true
+  },
+  {
+    path: '/aura-note/finalization/note-demo-001',
+    heading: 'Finalization Steps 1-6',
+    nav: true
+  },
+  {
+    path: '/aura-note/finalized',
+    heading: 'Finalized Notes',
+    nav: true
+  },
+  {
+    path: '/aura-note/finalized/note-demo-finalized-001',
+    heading: 'Read-Only Final Note',
+    nav: true
+  },
+  {
+    path: '/aura-note/coaching',
+    heading: 'Coaching and Analytics',
+    nav: true
+  },
+  {
+    path: '/aura-note/support/status',
+    heading: 'Production Hardening Status',
+    nav: true
+  }
+];
+
+test.describe('AURA Note route accessibility smoke suite', () => {
+  for (const route of routeExpectations) {
+    test(`${route.path} exposes main content and expected heading`, async ({ page }) => {
+      await page.goto(route.path);
+
+      await expect(page.getByRole('main')).toBeVisible();
+      await expect(page.getByRole('heading', { level: 1, name: route.heading })).toBeVisible();
+
+      if (route.nav) {
+        await expect(page.getByRole('navigation', { name: 'AURA Note sections' })).toBeVisible();
+      }
+    });
+  }
+
+  test('schedule form has accessible controls and creates a note shell visibly', async ({ page }) => {
+    await page.goto('/aura-note/schedule');
+
+    await expect(page.getByRole('heading', { level: 2, name: 'New Appointment' })).toBeVisible();
+    await expect(page.getByLabel('Safe Patient ID')).toHaveValue('safe-patient-new-002');
+    await expect(page.getByLabel('Visit Type')).toHaveValue('AWV plus problem');
+
+    await page.getByRole('button', { name: 'Create Appointment + Note Shell' }).click();
+
+    await expect(page.getByText('Created appt-demo-002 with one linked inactive note shell note-demo-002.')).toBeVisible();
+    await expect(page.getByRole('region', { name: 'Daily schedule' })).toContainText('safe-patient-new-002');
+  });
+
+  test('workspace exposes timer-gated editor states and blocker behavior', async ({ page }) => {
+    await page.goto('/aura-note/workspace/appt-demo-001');
+
+    const editor = page.getByLabel('Documentation editor');
+    await expect(editor).toContainText('Editor locked until Start Visit runs the timer');
+    await expect(page.getByRole('button', { name: 'Finalize Note' })).toBeDisabled();
+
+    await page.getByRole('button', { name: 'Start Visit' }).click();
+    await expect(editor).toContainText('Synthetic editor scaffold is available');
+    await expect(page.getByRole('button', { name: 'Finalize Note' })).toBeEnabled();
+
+    await page.getByRole('button', { name: 'Send to MA as Blocker' }).click();
+    await expect(page.getByText('History Gap question sent to MA follow-up as a signing blocker.')).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Finalize Note' })).toBeDisabled();
+    await expect(page.getByLabel('Workspace panels')).toContainText('MA blocker task is open.');
+  });
+
+  test('finalized viewer actions remain role-labeled and read-only', async ({ page }) => {
+    await page.goto('/aura-note/finalized/note-demo-finalized-001');
+
+    await expect(page.getByRole('tablist', { name: 'Final artifact tabs' })).toBeVisible();
+    await expect(page.getByRole('tab', { name: 'Final Note' })).toHaveAttribute('aria-selected', 'true');
+    await expect(page.getByLabel('Signed finalized artifact')).toContainText('This viewer cannot reopen the active editor.');
+
+    await page.getByRole('button', { name: 'Copy Patient Summary' }).click();
+    await expect(page.getByText('Patient summary copy-safe artifact prepared without internal revenue or coding logic.')).toBeVisible();
+    await expect(page.getByLabel('Artifact statuses')).toContainText('Summary Copy');
+    await expect(page.getByLabel('Artifact statuses')).toContainText('generated');
+  });
+
+  test('support and coaching routes expose permission and degraded-mode states', async ({ page }) => {
+    await page.goto('/aura-note/coaching');
+
+    await expect(page.getByRole('region', { name: 'Coaching views' })).toContainText('Own Coaching Report');
+    await expect(page.getByRole('region', { name: 'Permission states' })).toContainText('coaching denied');
+    await expect(page.getByRole('region', { name: 'Permission states' })).toContainText('never shown');
+
+    await page.goto('/aura-note/support/status');
+
+    await expect(page.getByRole('region', { name: 'Feature flags and retention' })).toContainText('External AI');
+    await expect(page.getByRole('region', { name: 'Audit and failure states' })).toContainText('metadata-only');
+    await expect(page.getByRole('region', { name: 'Audit and failure states' })).toContainText('PHI');
+  });
+});

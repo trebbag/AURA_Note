@@ -2,6 +2,10 @@
 
 Visual polish will come later through Figma. Codex should implement the workflow, states, gates, accessibility, and information architecture.
 
+## WO-017 Browser E2E and accessibility coverage
+
+`WO-017` adds committed Playwright route checks for the current synthetic web shell. The suite verifies main landmarks, expected H1 headings, shared section navigation, accessible labels and button names, timer-gated editor disabled states, read-only finalized-note tabs, coaching permission states, and support degraded-mode states. It is not a visual-regression suite and does not claim final Figma fidelity.
+
 ## Navigation areas
 
 AURA Note v1 should include these core areas:

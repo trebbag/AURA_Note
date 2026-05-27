@@ -98,3 +98,14 @@ Codex should add tests as implementation proceeds.
 - `pnpm --filter @aura-note/api test` covers cross-tenant denial for schedule, AI Gateway, EHR adapter, coaching, and support service paths, plus disabled delegated identity mode for ClinicOS;
 - `pnpm --filter @aura-note/api test:e2e` covers cross-tenant schedule denial through the HTTP boundary;
 - production SSO/MFA/provider tests are deferred because production identity integration is intentionally out of scope.
+
+## Post-CP4 browser E2E and accessibility foundation
+
+`WO-017` adds committed Playwright route and accessibility-oriented checks:
+
+- `pnpm test:browser` runs the root Chromium browser suite;
+- `pnpm --filter @aura-note/web test:e2e` runs the same suite through the web package and Turbo;
+- CI installs Chromium before running `pnpm test:browser`;
+- route checks cover Status, Schedule, Draft Notes, Documentation Workspace, Finalization, Finalized Notes, finalized viewer, Coaching, and Support hardening;
+- semantic checks cover main landmarks, H1 headings, section navigation, accessible form labels, accessible button names, named regions, blocked/disabled workspace states, read-only finalized-note tabs, coaching permission states, and support degraded-mode states;
+- visual regression and screenshot baselines remain deferred until design-system work lands.
