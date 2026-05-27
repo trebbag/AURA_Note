@@ -71,6 +71,10 @@ model Tenant {
   patients     Patient[]
   appointments Appointment[]
   notes        Note[]
+  visitSessions VisitSession[]
+  recordingAssets RecordingAsset[]
+  transcripts Transcript[]
+  transcriptSegments TranscriptSegment[]
 
   @@index([mode])
 }
@@ -87,6 +91,10 @@ model Site {
   patients    Patient[]
   appointments Appointment[]
   notes       Note[]
+  visitSessions VisitSession[]
+  recordingAssets RecordingAsset[]
+  transcripts Transcript[]
+  transcriptSegments TranscriptSegment[]
 
   @@index([tenantId])
 }
@@ -205,6 +213,10 @@ model Note {
   appointment Appointment @relation(fields: [appointmentId], references: [id])
   patient     Patient     @relation(fields: [patientId], references: [id])
   clinician   User        @relation("NoteClinician", fields: [clinicianId], references: [id])
+  visitSessions VisitSession[]
+  recordingAssets RecordingAsset[]
+  transcripts Transcript[]
+  transcriptSegments TranscriptSegment[]
 
   @@index([tenantId, siteId, state])
   @@index([tenantId, patientId])
@@ -228,6 +240,12 @@ model VisitSession {
   createdAt          DateTime @default(now())
   updatedAt          DateTime @updatedAt
 
+  tenant          Tenant           @relation(fields: [tenantId], references: [id])
+  site            Site             @relation(fields: [siteId], references: [id])
+  note            Note             @relation(fields: [noteId], references: [id])
+  recordingAssets RecordingAsset[]
+  transcripts     Transcript[]
+
   @@index([tenantId, noteId])
   @@index([tenantId, siteId])
 }
@@ -248,6 +266,11 @@ model RecordingAsset {
   createdAt      DateTime       @default(now())
   updatedAt      DateTime       @updatedAt
 
+  tenant       Tenant       @relation(fields: [tenantId], references: [id])
+  site         Site         @relation(fields: [siteId], references: [id])
+  note         Note         @relation(fields: [noteId], references: [id])
+  visitSession VisitSession @relation(fields: [visitSessionId], references: [id])
+
   @@index([tenantId, noteId])
   @@index([retentionClass, purgeAfter])
 }
@@ -263,6 +286,12 @@ model Transcript {
   retentionPolicy String         @default("indefinite")
   createdAt       DateTime       @default(now())
   updatedAt       DateTime       @updatedAt
+
+  tenant       Tenant              @relation(fields: [tenantId], references: [id])
+  site         Site                @relation(fields: [siteId], references: [id])
+  note         Note                @relation(fields: [noteId], references: [id])
+  visitSession VisitSession        @relation(fields: [visitSessionId], references: [id])
+  segments     TranscriptSegment[]
 
   @@unique([tenantId, noteId])
   @@index([tenantId, siteId])
@@ -280,6 +309,11 @@ model TranscriptSegment {
   source       String   @default("mock_transcription")
   confidence   Float?
   createdAt    DateTime @default(now())
+
+  tenant     Tenant     @relation(fields: [tenantId], references: [id])
+  site       Site       @relation(fields: [siteId], references: [id])
+  transcript Transcript @relation(fields: [transcriptId], references: [id])
+  note       Note       @relation(fields: [noteId], references: [id])
 
   @@unique([transcriptId, sequence])
   @@index([tenantId, noteId])

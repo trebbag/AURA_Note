@@ -105,3 +105,15 @@ Runtime database writes remain disabled. This still does not use Prisma Client, 
 - `Note` relates to tenant, site, appointment, patient, and clinician user.
 
 `pnpm persistence:runtime-readiness` now verifies generated forward SQL includes the core foreign-key constraints for those relationships. This is still SQL-generation evidence only: migrations are not applied, Prisma Client is not used at runtime, row-level security is not enabled, and production PHI is not stored.
+
+## WO-024 visit, recording, and transcript relationship readiness update
+
+`WO-024` extends Prisma relation fields into the visit documentation capture graph:
+
+- `VisitSession` relates to `Tenant`, `Site`, and `Note`;
+- `RecordingAsset` relates to `Tenant`, `Site`, `Note`, and `VisitSession`;
+- `Transcript` relates to `Tenant`, `Site`, `Note`, `VisitSession`, and its `TranscriptSegment` rows;
+- `TranscriptSegment` relates to `Tenant`, `Site`, `Transcript`, and `Note`;
+- `Tenant`, `Site`, and `Note` expose inverse relation arrays for the visit, recording, transcript, and transcript-segment records.
+
+`pnpm persistence:runtime-readiness` now verifies generated forward SQL includes the visit-session, recording-asset, transcript, and transcript-segment foreign-key constraints. This remains SQL-generation evidence only: migrations are not applied, Prisma Client is not used at runtime, row-level security is not enabled, and production PHI is not stored.
