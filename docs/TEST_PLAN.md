@@ -265,6 +265,22 @@ CI runs the tenant-isolation evidence after the existing local PostgreSQL migrat
 
 CI now runs `pnpm persistence:visit-capture-adapter` after tenant-isolation evidence. Review-panel persistence, finalization/output/writeback persistence, durable audit/event repositories, production PHI storage approval, live transcription, live EHR/ClinicOS, live AI, and claim submission remain deferred.
 
+## Post-WO-034 durable review-panel runtime evidence
+
+`WO-035` adds `pnpm persistence:review-panel-adapter`:
+
+- generates Prisma Client for the synthetic local database;
+- starts the local PostgreSQL compose service through the integration test;
+- applies generated Prisma SQL;
+- seeds synthetic schedule/note records through the Prisma schedule adapter;
+- persists and reloads suggestions, accepted and removed suggestion status, Visit Selections, manual additions, compliance hard blocks, History Gap questions, and MA-owned blocker tasks;
+- verifies accepted low-confidence diagnosis suggestions are rejected when persisted override evidence is missing;
+- verifies blocker-task adjudication and compliance hard-block state round-trip through durable records;
+- verifies wrong-tenant and wrong-site repository/API-harness reads do not expose persisted DTO data;
+- applies `rls-review-panel.sql` and verifies read, insert, and update denial behavior for review-panel tables.
+
+CI now runs `pnpm persistence:review-panel-adapter` after visit-capture persistence evidence. Finalization/output/writeback persistence, durable audit/event repositories, production PHI storage approval, live AI suggestion generation, live EHR/ClinicOS task synchronization, medical-necessity determination, charge finalization, and claim submission remain deferred.
+
 ## Post-CP4 Azure storage and retention deletion readiness
 
 `WO-032` adds storage and retention gates:

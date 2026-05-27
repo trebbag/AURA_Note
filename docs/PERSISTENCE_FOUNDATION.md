@@ -216,6 +216,20 @@ RLS expansion is intentionally limited to the tables currently exercised by the 
 
 This does not switch the full application runtime to Prisma. Review panels, finalization, exports, writeback, coaching, support, audit/event rows, production PHI persistence, live transcription, browser recording transport, live EHR/ClinicOS, live AI, and claim submission remain deferred to later work orders.
 
+## WO-035 durable review-panel runtime update
+
+`WO-035` adds the next durable workflow runtime slice:
+
+- `PrismaReviewPanelRepository` persists and reloads `Suggestion`, `VisitSelection`, `ComplianceIssue`, `HistoryGapQuestion`, and `Task` records against the synthetic local PostgreSQL database;
+- persisted review-panel state preserves accepted and removed suggestions, manually added Visit Selections, low-confidence diagnosis override evidence, compliance hard blocks, History Gap routing, MA-owned blocker tasks, and blocker adjudication status;
+- `Suggestion`, `VisitSelection`, `ComplianceIssue`, `HistoryGapQuestion`, and `Task` now preserve semantic synthetic DTO identifiers in `sourceRef` fields while keeping deterministic UUID primary keys for database relations;
+- `Suggestion.rationale`, `VisitSelection.overrideReason`, `HistoryGapQuestion.supportsItem`, and `HistoryGapQuestion.confidenceImpact` were added so the DTOs can round-trip through durable persistence without losing review evidence;
+- tenant and optional site scope are enforced on repository reads/writes, and a persisted-record API harness denies wrong-tenant and wrong-site access before DTO exposure;
+- transaction/error-path coverage blocks accepted low-confidence diagnosis suggestions when persisted override evidence is missing;
+- `packages/contracts/prisma/rls-review-panel.sql` enables and forces RLS on `Suggestion`, `VisitSelection`, `ComplianceIssue`, `HistoryGapQuestion`, and `Task` with `app.current_tenant_id` policies and `WITH CHECK` write protection.
+
+This remains local synthetic persistence. It does not introduce live AI suggestion generation, production PHI persistence, production code/rules catalogs, live EHR/ClinicOS task synchronization, autonomous diagnosis/coding/billing/medical-necessity behavior, charge finalization, or claim submission. Finalization/output/writeback, durable audit/event repositories, support/config/coaching state, and broad RLS completion remain deferred to `WO-036` and `WO-037`.
+
 ## WO-032 storage delivery and retention deletion update
 
 `WO-032` adds production-oriented storage boundaries without enabling real production storage:

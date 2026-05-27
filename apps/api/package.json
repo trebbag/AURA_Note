@@ -13,7 +13,8 @@
     "test:e2e": "node --import tsx --test src/schedule/schedule.e2e.test.ts src/ai/ai.e2e.test.ts src/integrations/ehr.e2e.test.ts src/integrations/clinicos.e2e.test.ts src/coaching/coaching.e2e.test.ts src/support/support.e2e.test.ts",
     "test:prisma-schedule-adapter": "node --import tsx --test src/schedule/prisma-schedule.repository.integration.test.ts",
     "test:tenant-isolation": "node --import tsx --test src/schedule/prisma-schedule.tenant-isolation.integration.test.ts",
-    "test:visit-capture-adapter": "node --import tsx --test src/schedule/prisma-visit-capture.repository.integration.test.ts"
+    "test:visit-capture-adapter": "node --import tsx --test src/schedule/prisma-visit-capture.repository.integration.test.ts",
+    "test:review-panel-adapter": "node --import tsx --test src/schedule/prisma-review-panel.repository.integration.test.ts"
   },
   "dependencies": {
     "@aura-note/contracts": "workspace:^",

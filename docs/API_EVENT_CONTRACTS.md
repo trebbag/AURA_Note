@@ -162,3 +162,17 @@ Every future state-changing API remains subject to validation, tenant/site scopi
 - `transcript.segment_appended.v1`.
 
 The new `pnpm persistence:visit-capture-adapter` evidence proves the backing `VisitSession`, `RecordingAsset`, `Transcript`, and `TranscriptSegment` state can be persisted and reloaded locally with tenant/site denial and RLS checks. Event payloads remain audit-safe metadata in this work order; live audio capture and external transcription remain deferred.
+
+## WO-035 durable review-panel event evidence
+
+`WO-035` does not add new public clinical behavior beyond the existing CP-1 review-panel API surface. It adds durable local persistence evidence for the existing review-panel event family:
+
+- `suggestions.evaluated.v1`;
+- `suggestion.accepted.v1`;
+- `suggestion.removed.v1`;
+- `visit_selection.added.v1`;
+- `compliance.evaluated.v1`;
+- `history_gap.task_created.v1`;
+- `task.blocker_changed.v1`.
+
+The new `pnpm persistence:review-panel-adapter` evidence proves the backing `Suggestion`, `VisitSelection`, `ComplianceIssue`, `HistoryGapQuestion`, and `Task` state can be persisted and reloaded locally with tenant/site denial and RLS checks. Low-confidence diagnosis suggestions remain draft/candidate-only and cannot be persisted as accepted without override evidence. Event payloads remain audit-safe workflow metadata in this work order; live AI suggestion generation, autonomous coding/billing, medical-necessity determination, charge finalization, claim submission, and live EHR/ClinicOS task sync remain deferred.

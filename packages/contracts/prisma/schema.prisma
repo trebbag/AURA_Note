@@ -406,9 +406,11 @@ model Suggestion {
   tenantId                    String   @db.Uuid
   siteId                      String   @db.Uuid
   noteId                      String   @db.Uuid
+  sourceRef                   String
   category                    String
   label                       String
   confidence                  Float
+  rationale                   String
   status                      String
   lowConfidenceOverrideRequired Boolean @default(false)
   draftOnly                   Boolean  @default(true)
@@ -423,6 +425,7 @@ model Suggestion {
   note            Note             @relation(fields: [noteId], references: [id])
   visitSelections VisitSelection[] @relation("SuggestionVisitSelections")
 
+  @@unique([tenantId, sourceRef])
   @@index([tenantId, noteId, category])
   @@index([tenantId, status])
 }
@@ -432,11 +435,13 @@ model VisitSelection {
   tenantId           String   @db.Uuid
   siteId             String   @db.Uuid
   noteId             String   @db.Uuid
+  sourceRef          String
   sourceSuggestionId String?  @db.Uuid
   category           String
   label              String
   status             String
   confidence         Float?
+  overrideReason     String?
   createdById        String?  @db.Uuid
   createdAt          DateTime @default(now())
   updatedAt          DateTime @updatedAt
@@ -446,6 +451,7 @@ model VisitSelection {
   note             Note        @relation(fields: [noteId], references: [id])
   sourceSuggestion Suggestion? @relation("SuggestionVisitSelections", fields: [sourceSuggestionId], references: [id])
 
+  @@unique([tenantId, sourceRef])
   @@index([tenantId, noteId, category])
 }
 
@@ -454,6 +460,7 @@ model ComplianceIssue {
   tenantId     String   @db.Uuid
   siteId       String   @db.Uuid
   noteId       String   @db.Uuid
+  sourceRef    String
   severity     String
   status       String
   title        String
@@ -466,6 +473,7 @@ model ComplianceIssue {
   site   Site   @relation(fields: [siteId], references: [id])
   note   Note   @relation(fields: [noteId], references: [id])
 
+  @@unique([tenantId, sourceRef])
   @@index([tenantId, noteId, severity])
 }
 
@@ -474,8 +482,11 @@ model HistoryGapQuestion {
   tenantId            String   @db.Uuid
   siteId              String   @db.Uuid
   noteId              String   @db.Uuid
+  sourceRef           String
   question            String
+  supportsItem        String
   category            String
+  confidenceImpact    String
   status              String
   blockerEligible     Boolean  @default(false)
   linkedTaskId        String?  @db.Uuid
@@ -487,6 +498,7 @@ model HistoryGapQuestion {
   note       Note   @relation(fields: [noteId], references: [id])
   linkedTask Task?  @relation("HistoryGapLinkedTask", fields: [linkedTaskId], references: [id])
 
+  @@unique([tenantId, sourceRef])
   @@index([tenantId, noteId, status])
 }
 
@@ -496,6 +508,7 @@ model Task {
   siteId             String   @db.Uuid
   noteId             String?  @db.Uuid
   patientId          String?  @db.Uuid
+  sourceRef          String
   title              String
   status             String
   blocksSigning      Boolean  @default(false)
@@ -514,6 +527,7 @@ model Task {
   owner               User?                @relation("TaskOwner", fields: [ownerUserId], references: [id])
   historyGapQuestions HistoryGapQuestion[] @relation("HistoryGapLinkedTask")
 
+  @@unique([tenantId, sourceRef])
   @@index([tenantId, noteId, blocksSigning])
   @@index([tenantId, ownerUserId, status])
 }
