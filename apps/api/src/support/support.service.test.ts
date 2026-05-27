@@ -29,6 +29,15 @@ describe('SupportService', () => {
     assert.equal(response.data.status.retention.some((policy) => policy.retentionRule === 'indefinite'), true);
     assert.equal(response.data.status.featureFlags.every((flag) => flag.defaultValue === false), true);
     assert.equal(response.data.status.featureFlags.every((flag) => flag.enabled === false), true);
+    assert.equal(response.data.status.observability.sinks.some((sink) => sink.kind === 'trace'), true);
+    assert.equal(response.data.status.observability.sinks.some((sink) => sink.status === 'disabled_until_configured'), true);
+    assert.equal(response.data.status.observability.metricProbes.every((probe) => probe.phiSafe), true);
+    assert.equal(response.data.status.deployment.some((environment) => environment.environment === 'production'), true);
+    assert.equal(
+      response.data.status.deployment.find((environment) => environment.environment === 'production')?.readiness,
+      'blocked_until_security_review'
+    );
+    assert.equal(response.data.status.runbooks.some((runbook) => runbook.runbookId === 'WO-018'), true);
     assert.equal(response.data.status.auditExport.downloadEnabled, false);
   });
 

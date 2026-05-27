@@ -2,14 +2,17 @@ import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
 import {
   buildExternalIntegrationFeatureFlags,
+  buildLocalObservabilitySnapshot,
   authorizeTenantScope,
   canPerform,
   canViewCoaching,
   canViewFinalNote,
   canViewTranscript,
   containsForbiddenPhiKeys,
+  createMetricProbe,
   createSyntheticLocalSession,
   createStructuredLogEntry,
+  createTraceProbe,
   redactForStructuredLog,
   redactForbiddenPhi,
   redactForbiddenPhiKeys,
@@ -432,5 +435,46 @@ describe('structured log redaction and feature flags', () => {
     assert.equal(flags.every((flag) => flag.enabled === false), true);
     assert.equal(flags.some((flag) => flag.governs === 'external_ai'), true);
     assert.equal(flags.some((flag) => flag.governs === 'ehr_writeback'), true);
+  });
+
+  it('creates local observability probes without PHI-bearing labels or attributes', () => {
+    const metric = createMetricProbe({
+      metricName: 'api.latency',
+      kind: 'histogram',
+      value: 24,
+      unit: 'milliseconds',
+      timestamp: '2026-05-27T01:45:00.000Z',
+      labels: {
+        route: 'GET /api/v1/support/status',
+        patientName: 'Synthetic Person'
+      }
+    });
+    const trace = createTraceProbe({
+      traceId: 'trace-obs-001',
+      spanId: 'span-obs-001',
+      service: 'aura-note-api',
+      name: 'support.status',
+      startedAt: '2026-05-27T01:45:00.000Z',
+      endedAt: '2026-05-27T01:45:00.000Z',
+      durationMs: 24,
+      status: 'ok',
+      attributes: {
+        patientName: 'Synthetic Person',
+        mode: 'standalone'
+      }
+    });
+    const snapshot = buildLocalObservabilitySnapshot({
+      requestId: 'req-obs-001',
+      traceId: 'trace-obs-001',
+      timestamp: '2026-05-27T01:45:00.000Z'
+    });
+
+    assert.equal(metric.phiSafe, true);
+    assert.equal(trace.phiSafe, true);
+    assert.equal(scanForForbiddenPhiKeys(metric.labels).containsForbiddenPhi, false);
+    assert.equal(scanForForbiddenPhiKeys(trace.attributes).containsForbiddenPhi, false);
+    assert.equal(snapshot.sinks.some((sink) => sink.status === 'disabled_until_configured'), true);
+    assert.equal(snapshot.metricProbes.every((probe) => probe.phiSafe), true);
+    assert.equal(snapshot.traceProbes.every((probe) => probe.phiSafe), true);
   });
 });

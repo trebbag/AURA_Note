@@ -318,6 +318,85 @@ export function createSyntheticSupportStatus(overrides: Partial<SupportStatusRes
           phiSafe: true
         }
       },
+      observability: {
+        sinks: [
+          {
+            sinkId: 'structured-log-console-local',
+            kind: 'log',
+            adapter: 'local_development',
+            status: 'ready_local',
+            redacted: true,
+            requestCorrelated: true,
+            delivery: 'console'
+          },
+          {
+            sinkId: 'production-siem-placeholder',
+            kind: 'log',
+            adapter: 'disabled_production_placeholder',
+            status: 'disabled_until_configured',
+            redacted: true,
+            requestCorrelated: true,
+            delivery: 'not_configured',
+            disabledReason: 'Production log/SIEM vendor is not selected.'
+          }
+        ],
+        metricProbes: [
+          {
+            metricName: 'api.support_status.latency',
+            kind: 'histogram',
+            value: 12,
+            unit: 'milliseconds',
+            labels: { route: 'GET /api/v1/support/status' },
+            timestamp: '2026-05-26T19:30:00.000Z',
+            phiSafe: true
+          }
+        ],
+        traceProbes: [
+          {
+            traceId: 'trace-support-synthetic-001',
+            spanId: 'span-support-status-local',
+            service: 'aura-note-api',
+            name: 'support.status',
+            startedAt: '2026-05-26T19:30:00.000Z',
+            endedAt: '2026-05-26T19:30:00.000Z',
+            durationMs: 12,
+            status: 'ok',
+            attributes: { route: 'GET /api/v1/support/status' },
+            phiSafe: true
+          }
+        ]
+      },
+      deployment: [
+        {
+          environment: 'local',
+          mode: 'standalone',
+          readiness: 'ready_local',
+          nodeVersion: '20',
+          pnpmVersion: '9.12.0',
+          secretsRequired: [],
+          externalIntegrations: [],
+          productionDataAllowed: false
+        },
+        {
+          environment: 'production',
+          mode: 'standalone',
+          readiness: 'blocked_until_security_review',
+          nodeVersion: '20',
+          pnpmVersion: '9.12.0',
+          secretsRequired: ['DATABASE_URL', 'SESSION_SIGNING_KEY', 'SIEM_EXPORTER_URL'],
+          externalIntegrations: ['external_ai', 'ehr_writeback', 'clinicos_sync', 'production_analytics'],
+          productionDataAllowed: false
+        }
+      ],
+      runbooks: [
+        {
+          runbookId: 'WO-018',
+          title: 'Observability Deployment Runbook',
+          path: 'docs/runbooks/WO-018_OBSERVABILITY_DEPLOYMENT_RUNBOOK.md',
+          covers: ['deploy', 'rollback', 'incident_triage', 'audit_export', 'retention_review', 'disabled_integrations'],
+          productionApprovalRequired: true
+        }
+      ],
       retention: [
         {
           policyId: 'raw-audio-one-week',

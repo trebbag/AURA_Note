@@ -154,6 +154,67 @@ export interface FeatureFlagDecision {
   disabledReason?: string;
 }
 
+export interface ObservabilitySinkStatus {
+  sinkId: string;
+  kind: 'log' | 'metric' | 'trace' | 'audit_export';
+  adapter: 'local_development' | 'disabled_production_placeholder';
+  status: 'ready_local' | 'disabled_until_configured';
+  redacted: true;
+  requestCorrelated: true;
+  delivery: 'console' | 'in_memory' | 'metadata_only' | 'not_configured';
+  disabledReason?: string;
+}
+
+export interface MetricProbeInput {
+  metricName: string;
+  kind: 'counter' | 'gauge' | 'histogram';
+  value: number;
+  unit: 'count' | 'milliseconds' | 'items';
+  labels?: Record<string, string>;
+  timestamp: string;
+}
+
+export interface MetricProbe {
+  metricName: string;
+  kind: 'counter' | 'gauge' | 'histogram';
+  value: number;
+  unit: 'count' | 'milliseconds' | 'items';
+  labels: Record<string, string>;
+  timestamp: string;
+  phiSafe: true;
+}
+
+export interface TraceProbeInput {
+  traceId: string;
+  spanId: string;
+  service: string;
+  name: string;
+  startedAt: string;
+  endedAt: string;
+  durationMs: number;
+  status: 'ok' | 'error';
+  attributes?: Record<string, string>;
+}
+
+export interface TraceProbe {
+  traceId: string;
+  spanId: string;
+  service: string;
+  name: string;
+  startedAt: string;
+  endedAt: string;
+  durationMs: number;
+  status: 'ok' | 'error';
+  attributes: Record<string, string>;
+  phiSafe: true;
+}
+
+export interface LocalObservabilitySnapshot {
+  sinks: ObservabilitySinkStatus[];
+  metricProbes: MetricProbe[];
+  traceProbes: TraceProbe[];
+}
+
 export const FORBIDDEN_PHI_KEYS = [
   'patientName',
   'mrn',
@@ -556,6 +617,142 @@ export function createStructuredLogEntry(input: StructuredLogInput): StructuredL
     payload: redacted.value,
     redactedPaths: redacted.redactedPaths,
     phiSafe: true
+  };
+}
+
+function redactStringRecord(input: Record<string, string> = {}): { value: Record<string, string>; redactedPaths: string[] } {
+  const redacted = redactForStructuredLog(input);
+  return {
+    value: redacted.value as Record<string, string>,
+    redactedPaths: redacted.redactedPaths
+  };
+}
+
+export function createMetricProbe(input: MetricProbeInput): MetricProbe {
+  const redactedLabels = redactStringRecord(input.labels ?? {});
+  return {
+    metricName: input.metricName,
+    kind: input.kind,
+    value: input.value,
+    unit: input.unit,
+    labels: redactedLabels.value,
+    timestamp: input.timestamp,
+    phiSafe: true
+  };
+}
+
+export function createTraceProbe(input: TraceProbeInput): TraceProbe {
+  const redactedAttributes = redactStringRecord(input.attributes ?? {});
+  return {
+    traceId: input.traceId,
+    spanId: input.spanId,
+    service: input.service,
+    name: input.name,
+    startedAt: input.startedAt,
+    endedAt: input.endedAt,
+    durationMs: input.durationMs,
+    status: input.status,
+    attributes: redactedAttributes.value,
+    phiSafe: true
+  };
+}
+
+export function buildLocalObservabilitySnapshot(options: {
+  requestId: string;
+  traceId: string;
+  timestamp: string;
+}): LocalObservabilitySnapshot {
+  return {
+    sinks: [
+      {
+        sinkId: 'structured-log-console-local',
+        kind: 'log',
+        adapter: 'local_development',
+        status: 'ready_local',
+        redacted: true,
+        requestCorrelated: true,
+        delivery: 'console'
+      },
+      {
+        sinkId: 'metric-memory-local',
+        kind: 'metric',
+        adapter: 'local_development',
+        status: 'ready_local',
+        redacted: true,
+        requestCorrelated: true,
+        delivery: 'in_memory'
+      },
+      {
+        sinkId: 'trace-memory-local',
+        kind: 'trace',
+        adapter: 'local_development',
+        status: 'ready_local',
+        redacted: true,
+        requestCorrelated: true,
+        delivery: 'in_memory'
+      },
+      {
+        sinkId: 'audit-export-metadata-local',
+        kind: 'audit_export',
+        adapter: 'local_development',
+        status: 'ready_local',
+        redacted: true,
+        requestCorrelated: true,
+        delivery: 'metadata_only'
+      },
+      {
+        sinkId: 'production-siem-placeholder',
+        kind: 'log',
+        adapter: 'disabled_production_placeholder',
+        status: 'disabled_until_configured',
+        redacted: true,
+        requestCorrelated: true,
+        delivery: 'not_configured',
+        disabledReason: 'Production log/SIEM vendor is not selected and no credentials are committed.'
+      }
+    ],
+    metricProbes: [
+      createMetricProbe({
+        metricName: 'api.support_status.latency',
+        kind: 'histogram',
+        value: 12,
+        unit: 'milliseconds',
+        timestamp: options.timestamp,
+        labels: {
+          route: 'GET /api/v1/support/status',
+          requestId: options.requestId,
+          tenantScope: 'synthetic'
+        }
+      }),
+      createMetricProbe({
+        metricName: 'worker.queue_depth',
+        kind: 'gauge',
+        value: 0,
+        unit: 'items',
+        timestamp: options.timestamp,
+        labels: {
+          queue: 'local-synthetic',
+          traceId: options.traceId
+        }
+      })
+    ],
+    traceProbes: [
+      createTraceProbe({
+        traceId: options.traceId,
+        spanId: 'span-support-status-local',
+        service: 'aura-note-api',
+        name: 'support.status',
+        startedAt: options.timestamp,
+        endedAt: options.timestamp,
+        durationMs: 12,
+        status: 'ok',
+        attributes: {
+          route: 'GET /api/v1/support/status',
+          mode: 'standalone',
+          patientName: 'Synthetic Patient'
+        }
+      })
+    ]
   };
 }
 

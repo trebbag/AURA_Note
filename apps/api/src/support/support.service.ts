@@ -7,13 +7,17 @@ import {
   type AuditEventDto,
   type AuditExportRequestDto,
   type AuditExportResponseDto,
+  type DeploymentEnvironmentDto,
   type FeatureFlagDecisionDto,
+  type ObservabilityStatusDto,
   type RetentionPolicyStatusDto,
+  type RunbookIndexItemDto,
   type SupportFailureStateDto,
   type SupportStatusResponseDto,
   type StructuredLogEntryDto
 } from '@aura-note/contracts';
 import {
+  buildLocalObservabilitySnapshot,
   buildExternalIntegrationFeatureFlags,
   canPerform,
   createSyntheticLocalSession,
@@ -78,6 +82,9 @@ export class SupportService {
             phiRedaction: 'forbidden_keys_and_obvious_text',
             sample: sampleLog
           },
+          observability: this.observability(generatedAt, context),
+          deployment: this.deploymentEnvironments(),
+          runbooks: this.runbooks(),
           retention,
           auditExport: {
             enabled: true,
@@ -220,6 +227,96 @@ export class SupportService {
         candidateCount: 1,
         purgeEligibleCount: 0,
         destructivePurgeEnabled: false
+      }
+    ];
+  }
+
+  private observability(evaluatedAt: string, context: RequestContext): ObservabilityStatusDto {
+    const snapshot = buildLocalObservabilitySnapshot({
+      requestId: context.requestId,
+      traceId: context.traceId,
+      timestamp: evaluatedAt
+    });
+    return {
+      sinks: snapshot.sinks,
+      metricProbes: snapshot.metricProbes,
+      traceProbes: snapshot.traceProbes
+    };
+  }
+
+  private deploymentEnvironments(): DeploymentEnvironmentDto[] {
+    return [
+      {
+        environment: 'local',
+        mode: APP_MODE,
+        readiness: 'ready_local',
+        nodeVersion: '20',
+        pnpmVersion: '9.12.0',
+        secretsRequired: [],
+        externalIntegrations: [],
+        productionDataAllowed: false
+      },
+      {
+        environment: 'preview',
+        mode: APP_MODE,
+        readiness: 'configuration_required',
+        nodeVersion: '20',
+        pnpmVersion: '9.12.0',
+        secretsRequired: ['DATABASE_URL', 'SESSION_SIGNING_KEY', 'AUDIT_LOG_SALT'],
+        externalIntegrations: ['audit_export_download'],
+        productionDataAllowed: false
+      },
+      {
+        environment: 'staging',
+        mode: APP_MODE,
+        readiness: 'configuration_required',
+        nodeVersion: '20',
+        pnpmVersion: '9.12.0',
+        secretsRequired: ['DATABASE_URL', 'SESSION_SIGNING_KEY', 'OBJECT_STORAGE_BUCKET', 'OBSERVABILITY_EXPORTER_URL'],
+        externalIntegrations: ['ehr_writeback', 'clinicos_sync', 'production_analytics', 'audit_export_download'],
+        productionDataAllowed: false
+      },
+      {
+        environment: 'production',
+        mode: APP_MODE,
+        readiness: 'blocked_until_security_review',
+        nodeVersion: '20',
+        pnpmVersion: '9.12.0',
+        secretsRequired: [
+          'DATABASE_URL',
+          'SESSION_SIGNING_KEY',
+          'OBJECT_STORAGE_BUCKET',
+          'OBSERVABILITY_EXPORTER_URL',
+          'SIEM_EXPORTER_URL',
+          'KMS_KEY_ID'
+        ],
+        externalIntegrations: [
+          'external_ai',
+          'ehr_writeback',
+          'clinicos_sync',
+          'production_analytics',
+          'audit_export_download'
+        ],
+        productionDataAllowed: false
+      }
+    ];
+  }
+
+  private runbooks(): RunbookIndexItemDto[] {
+    return [
+      {
+        runbookId: 'WO-013',
+        title: 'Support Hardening Runbook',
+        path: 'docs/runbooks/WO-013_SUPPORT_HARDENING_RUNBOOK.md',
+        covers: ['audit_export', 'retention_review', 'disabled_integrations', 'incident_triage'],
+        productionApprovalRequired: true
+      },
+      {
+        runbookId: 'WO-018',
+        title: 'Observability Deployment Runbook',
+        path: 'docs/runbooks/WO-018_OBSERVABILITY_DEPLOYMENT_RUNBOOK.md',
+        covers: ['deploy', 'rollback', 'incident_triage', 'audit_export', 'retention_review', 'disabled_integrations'],
+        productionApprovalRequired: true
       }
     ];
   }

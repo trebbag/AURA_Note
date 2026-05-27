@@ -900,6 +900,65 @@ export interface StructuredLogEntryDto {
   phiSafe: true;
 }
 
+export interface ObservabilitySinkStatusDto {
+  sinkId: string;
+  kind: 'log' | 'metric' | 'trace' | 'audit_export';
+  adapter: 'local_development' | 'disabled_production_placeholder';
+  status: 'ready_local' | 'disabled_until_configured';
+  redacted: true;
+  requestCorrelated: true;
+  delivery: 'console' | 'in_memory' | 'metadata_only' | 'not_configured';
+  disabledReason?: string;
+}
+
+export interface MetricProbeDto {
+  metricName: string;
+  kind: 'counter' | 'gauge' | 'histogram';
+  value: number;
+  unit: 'count' | 'milliseconds' | 'items';
+  labels: Record<string, string>;
+  timestamp: string;
+  phiSafe: true;
+}
+
+export interface TraceProbeDto {
+  traceId: string;
+  spanId: string;
+  service: string;
+  name: string;
+  startedAt: string;
+  endedAt: string;
+  durationMs: number;
+  status: 'ok' | 'error';
+  attributes: Record<string, string>;
+  phiSafe: true;
+}
+
+export interface ObservabilityStatusDto {
+  sinks: ObservabilitySinkStatusDto[];
+  metricProbes: MetricProbeDto[];
+  traceProbes: TraceProbeDto[];
+}
+
+export interface DeploymentEnvironmentDto {
+  environment: 'local' | 'preview' | 'staging' | 'production';
+  mode: AppMode;
+  readiness: 'ready_local' | 'configuration_required' | 'blocked_until_security_review';
+  nodeVersion: '20';
+  pnpmVersion: '9.12.0';
+  secretsRequired: string[];
+  externalIntegrations: Array<'external_ai' | 'ehr_writeback' | 'clinicos_sync' | 'production_analytics' | 'audit_export_download'>;
+  productionDataAllowed: false;
+}
+
+export interface RunbookIndexItemDto {
+  runbookId: string;
+  title: string;
+  path: string;
+  covers: Array<'deploy' | 'rollback' | 'incident_triage' | 'audit_export' | 'retention_review' | 'disabled_integrations'>;
+  productionApprovalRequired: boolean;
+}
+
 export interface RetentionPolicyStatusDto {
   policyId: string;
   recordClass: RetentionClass;
@@ -947,6 +1006,9 @@ export interface SupportStatusDto {
     phiRedaction: 'forbidden_keys_and_obvious_text';
     sample: StructuredLogEntryDto;
   };
+  observability: ObservabilityStatusDto;
+  deployment: DeploymentEnvironmentDto[];
+  runbooks: RunbookIndexItemDto[];
   retention: RetentionPolicyStatusDto[];
   auditExport: {
     enabled: true;

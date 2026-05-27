@@ -16,6 +16,8 @@ AURA Note must be built as a production-oriented backend even before external in
 - Feature flags.
 - OpenTelemetry-style structured logging/tracing.
 
+`WO-018` defines the first local observability adapter boundary: structured log, metric, trace, and audit-export sink status are visible through support status with production sinks disabled until vendor, secret, retention, and security review decisions are made.
+
 ## Core bounded contexts
 
 1. Platform / tenant / settings.

@@ -87,6 +87,9 @@ describe('synthetic CP-0 fixtures', () => {
 
     assert.equal(status.status.featureFlags[0]?.enabled, false);
     assert.equal(status.status.logging.sample.phiSafe, true);
+    assert.equal(status.status.observability.sinks.some((sink) => sink.status === 'disabled_until_configured'), true);
+    assert.equal(status.status.deployment.some((environment) => environment.environment === 'production'), true);
+    assert.equal(status.status.runbooks.some((runbook) => runbook.runbookId === 'WO-018'), true);
     assert.equal(status.status.auditExport.downloadEnabled, false);
     assert.equal(auditExport.auditExport.includePhi, false);
     assert.equal(auditExport.auditExport.redacted, true);

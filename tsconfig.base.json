@@ -19,5 +19,6 @@
       "@aura-note/clinicos-adapter": ["packages/clinicos-adapter/src/index.ts"],
       "@aura-note/testing": ["packages/testing/src/index.ts"]
     }
-  }
+  },
+  "exclude": ["**/* 2.ts", "**/* 2.tsx"]
 }

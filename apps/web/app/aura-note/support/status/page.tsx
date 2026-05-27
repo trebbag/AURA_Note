@@ -34,6 +34,27 @@ const failureStates = [
   { component: 'Audit export', state: 'ready_synthetic', mode: 'Redacted JSONL metadata response' }
 ];
 
+const observabilitySinks = [
+  { label: 'Structured logs', state: 'ready local', mode: 'console, redacted, request-correlated' },
+  { label: 'Metrics', state: 'ready local', mode: 'in-memory latency and queue probes' },
+  { label: 'Traces', state: 'ready local', mode: 'in-memory span probes with redacted attributes' },
+  { label: 'Production SIEM', state: 'disabled', mode: 'vendor and credentials not configured' }
+];
+
+const deploymentEnvironments = [
+  { label: 'Local', state: 'ready local', mode: 'synthetic data only' },
+  { label: 'Preview', state: 'configuration required', mode: 'database and session secrets required' },
+  { label: 'Staging', state: 'configuration required', mode: 'storage and observability exporters required' },
+  { label: 'Production', state: 'blocked until review', mode: 'security approval and sink selection required' }
+];
+
+const runbooks = [
+  { label: 'Deploy and rollback', state: 'documented', mode: 'environment matrix and release rollback steps' },
+  { label: 'Incident triage', state: 'documented', mode: 'severity, containment, and evidence capture' },
+  { label: 'Audit and retention', state: 'documented', mode: 'metadata export and non-destructive review' },
+  { label: 'Disabled integrations', state: 'documented', mode: 'AI, EHR, ClinicOS, analytics, and download checks' }
+];
+
 export default function SupportStatusPage() {
   return (
     <main className="support-shell">
@@ -65,6 +86,68 @@ export default function SupportStatusPage() {
             <dd>redacted</dd>
           </div>
         </dl>
+      </section>
+
+      <section className="support-grid" aria-label="Observability and deployment">
+        <section className="support-panel">
+          <h2>Observability Sinks</h2>
+          <div className="analytics-list">
+            {observabilitySinks.map((sink) => (
+              <div key={sink.label}>
+                <span>{sink.label}</span>
+                <strong>{sink.state}</strong>
+                <small>{sink.mode}</small>
+              </div>
+            ))}
+          </div>
+        </section>
+
+        <section className="support-panel">
+          <h2>Deployment Matrix</h2>
+          <div className="analytics-list">
+            {deploymentEnvironments.map((environment) => (
+              <div key={environment.label}>
+                <span>{environment.label}</span>
+                <strong>{environment.state}</strong>
+                <small>{environment.mode}</small>
+              </div>
+            ))}
+          </div>
+        </section>
+      </section>
+
+      <section className="support-grid" aria-label="Operational runbooks">
+        <section className="support-panel">
+          <h2>Runbook Coverage</h2>
+          <div className="analytics-list">
+            {runbooks.map((runbook) => (
+              <div key={runbook.label}>
+                <span>{runbook.label}</span>
+                <strong>{runbook.state}</strong>
+                <small>{runbook.mode}</small>
+              </div>
+            ))}
+          </div>
+        </section>
+
+        <section className="support-panel">
+          <h2>Production Boundary</h2>
+          <dl className="state-grid">
+            <div>
+              <dt>Live PHI</dt>
+              <dd>not allowed</dd>
+            </div>
+            <div>
+              <dt>Vendor sinks</dt>
+              <dd>not configured</dd>
+            </div>
+            <div>
+              <dt>Retention purge</dt>
+              <dd>disabled</dd>
+            </div>
+          </dl>
+          <p>Production deployment remains blocked until security, privacy, secret management, and observability vendor decisions are reviewed.</p>
+        </section>
       </section>
 
       <section className="support-grid" aria-label="Feature flags and retention">

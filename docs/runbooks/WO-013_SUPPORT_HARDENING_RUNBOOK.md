@@ -59,6 +59,8 @@ Audit:
 
 ## Incident Handling
 
+`WO-018` adds the expanded deployment, rollback, incident severity, audit export, retention review, and disabled integration runbook at `docs/runbooks/WO-018_OBSERVABILITY_DEPLOYMENT_RUNBOOK.md`.
+
 If a hardening test fails:
 
 1. Confirm the failing package and exact command.
