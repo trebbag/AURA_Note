@@ -36,6 +36,7 @@ Codex must complete work orders sequentially unless a checkpoint or blocker stop
 - `WO-025` — Review panel Prisma relationship readiness.
 - `WO-026` — Finalization Prisma relationship readiness.
 - `WO-027` — Output and writeback Prisma relationship readiness.
+- `WO-028` — Local database orchestration readiness.
 
 ## Work order rules
 
@@ -75,3 +76,5 @@ Post-CP4 productionization candidates are documented in `docs/POST_CP4_PRODUCTIO
 `WO-026` adds Prisma relation fields and migration SQL checks for finalization runs, wizard decisions, enhanced note versions, patient summary versions, billing attestations, and draft claim previews. Runtime database writes remain disabled.
 
 `WO-027` adds Prisma relation fields and migration SQL checks for export artifacts and EHR writeback jobs. Runtime database writes and live writeback remain disabled.
+
+`WO-028` adds a local PostgreSQL compose contract and static readiness verifier. Runtime database writes, live migration apply/rollback, Prisma Client runtime usage, row-level security, and production PHI persistence remain disabled.

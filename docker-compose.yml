@@ -1,0 +1,23 @@
+name: aura-note-local
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: aura-note-postgres
+    environment:
+      POSTGRES_DB: aura_note_dev
+      POSTGRES_USER: aura_note
+      POSTGRES_PASSWORD: aura_note
+    ports:
+      - "5432:5432"
+    volumes:
+      - aura_note_postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U aura_note -d aura_note_dev"]
+      interval: 5s
+      timeout: 5s
+      retries: 12
+      start_period: 5s
+
+volumes:
+  aura_note_postgres_data:

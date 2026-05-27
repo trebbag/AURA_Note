@@ -31,9 +31,10 @@
     "WO-024": "done",
     "WO-025": "done",
     "WO-026": "done",
-    "WO-027": "done"
+    "WO-027": "done",
+    "WO-028": "done"
   },
-  "last_updated_by": "Codex WO-027 output writeback Prisma relationship readiness",
-  "last_updated_at": "2026-05-27T13:03:02Z",
-  "notes": "WO-027 post-CP4 output and writeback Prisma relationship readiness is complete as schema-level relation and generated foreign-key SQL evidence for ExportArtifact and EhrWritebackJob links to tenant/site/note/user records. Runtime still defaults to in-memory synthetic repositories; Prisma Client runtime usage, live database connection, row-level security, production PHI persistence, production credentials, production storage delivery, live EHR writeback, full relation graph completion, and full Prisma-backed repository replacement remain deferred."
+  "last_updated_by": "Codex WO-028 local database orchestration readiness",
+  "last_updated_at": "2026-05-27T13:53:39Z",
+  "notes": "WO-028 post-CP4 local database orchestration readiness is complete as a local PostgreSQL compose contract and static verifier. Runtime still defaults to in-memory synthetic repositories; Docker startup, live database connection, migration apply/rollback, Prisma Client runtime usage, row-level security, tenant-scoped live query tests, production PHI persistence, production credentials, live EHR writeback, and full Prisma-backed repository replacement remain deferred."
 }
