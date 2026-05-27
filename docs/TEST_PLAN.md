@@ -165,3 +165,13 @@ Codex should add tests as implementation proceeds.
 - `pnpm persistence:foundation` continues to verify the schema foundation;
 - `pnpm persistence:runtime-readiness` now checks generated forward SQL includes core foreign-key constraints for Site, Patient, Appointment, and Note relationships;
 - full runtime database tests, row-level security tests, transaction tests, and complete 35-model relation coverage remain deferred.
+
+## Post-CP4 visit, recording, and transcript Prisma relationship readiness
+
+`WO-024` extends schema SQL-generation checks:
+
+- `pnpm db:schema:validate` proves the visit, recording, transcript, and transcript-segment Prisma relation fields are valid;
+- `pnpm persistence:foundation` continues to verify the schema foundation;
+- `pnpm persistence:runtime-readiness` now checks generated forward SQL includes foreign-key constraints for `VisitSession`, `RecordingAsset`, `Transcript`, and `TranscriptSegment` relationships;
+- `pnpm persistence:adapter-readiness` confirms the runtime adapter remains disabled for Prisma writes;
+- full runtime database tests, row-level security tests, transaction tests, retention deletion against durable storage, and complete 35-model relation coverage remain deferred.

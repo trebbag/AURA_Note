@@ -242,3 +242,27 @@ Do not implement these tranches directly from this backlog. Promote one tranche 
 
 - This is core relationship readiness, not full 35-model relationship completion.
 - Local database orchestration, row-level security, transaction/error-path behavior, and full Prisma-backed repository replacement remain later work.
+
+## Follow-on Tranche P6-05 — Visit, Recording, And Transcript Prisma Relationship Readiness
+
+**Promotion status:** Promoted to `WO-024` as visit documentation capture relation and generated foreign-key SQL evidence. Runtime database writes remain disabled.
+
+**Objective:** Extend schema-level relationship constraints from the core schedule/note graph into the visit-session, recording, transcript, and transcript-segment records needed before any local database-backed adapter can be enabled.
+
+**Candidate scope:**
+
+- Add Prisma relation fields for `VisitSession`, `RecordingAsset`, `Transcript`, and `TranscriptSegment`.
+- Preserve raw-audio one-week retention and transcript indefinite-retention semantics.
+- Extend SQL-generation readiness checks for visit, recording, transcript, and transcript-segment foreign-key fragments.
+- Keep in-memory runtime as the only enabled adapter.
+
+**Acceptance evidence:**
+
+- Prisma schema validation passes.
+- Persistence runtime readiness checks generated forward SQL for visit, recording, transcript, and transcript-segment foreign keys.
+- Existing repository, browser, acceptance, and persistence adapter gates continue to pass.
+
+**Known risks:**
+
+- This is visit/transcript relationship readiness, not full 35-model relationship completion.
+- Local database orchestration, row-level security, transaction/error-path behavior, retention deletion against durable storage, and full Prisma-backed repository replacement remain later work.

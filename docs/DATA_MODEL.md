@@ -353,3 +353,16 @@ This remains projection-only evidence. It is not a live database adapter, does n
 - `scripts/validate-persistence-runtime-readiness.js` now checks those generated foreign-key fragments.
 
 This is still not runtime database persistence. The relation graph is intentionally limited to the core schedule/note path; full 35-model relationship completion, RLS policy implementation, live migration apply/rollback, and Prisma-backed repository replacement remain deferred.
+
+## WO-024 visit, recording, and transcript Prisma relationship readiness status
+
+`WO-024` adds schema-level relation coverage for the visit documentation capture graph:
+
+- `VisitSession` now relates to `Tenant`, `Site`, `Note`, `RecordingAsset`, and `Transcript`;
+- `RecordingAsset` now relates to `Tenant`, `Site`, `Note`, and `VisitSession`;
+- `Transcript` now relates to `Tenant`, `Site`, `Note`, `VisitSession`, and `TranscriptSegment`;
+- `TranscriptSegment` now relates to `Tenant`, `Site`, `Transcript`, and `Note`;
+- generated migration SQL includes foreign-key constraints for those visit, recording, transcript, and transcript-segment relationships;
+- raw-audio retention and transcript-retention semantics remain unchanged from the existing domain/worker scaffolds.
+
+This is still not runtime database persistence. It does not apply migrations, connect Prisma Client, enable row-level security, store production PHI, connect recording/transcription vendors, or replace the in-memory synthetic repositories.

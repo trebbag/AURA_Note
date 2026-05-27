@@ -61,7 +61,31 @@ const requiredForwardFragments = [
   ['ALTER TABLE "Appointment" ADD CONSTRAINT "Appointment_clinicianId_fkey"', 'Appointment clinician foreign key'],
   ['ALTER TABLE "Note" ADD CONSTRAINT "Note_appointmentId_fkey"', 'Note appointment foreign key'],
   ['ALTER TABLE "Note" ADD CONSTRAINT "Note_patientId_fkey"', 'Note patient foreign key'],
-  ['ALTER TABLE "Note" ADD CONSTRAINT "Note_clinicianId_fkey"', 'Note clinician foreign key']
+  ['ALTER TABLE "Note" ADD CONSTRAINT "Note_clinicianId_fkey"', 'Note clinician foreign key'],
+  ['ALTER TABLE "VisitSession" ADD CONSTRAINT "VisitSession_tenantId_fkey"', 'VisitSession tenant foreign key'],
+  ['ALTER TABLE "VisitSession" ADD CONSTRAINT "VisitSession_siteId_fkey"', 'VisitSession site foreign key'],
+  ['ALTER TABLE "VisitSession" ADD CONSTRAINT "VisitSession_noteId_fkey"', 'VisitSession note foreign key'],
+  ['ALTER TABLE "RecordingAsset" ADD CONSTRAINT "RecordingAsset_tenantId_fkey"', 'RecordingAsset tenant foreign key'],
+  ['ALTER TABLE "RecordingAsset" ADD CONSTRAINT "RecordingAsset_siteId_fkey"', 'RecordingAsset site foreign key'],
+  ['ALTER TABLE "RecordingAsset" ADD CONSTRAINT "RecordingAsset_noteId_fkey"', 'RecordingAsset note foreign key'],
+  [
+    'ALTER TABLE "RecordingAsset" ADD CONSTRAINT "RecordingAsset_visitSessionId_fkey"',
+    'RecordingAsset visit session foreign key'
+  ],
+  ['ALTER TABLE "Transcript" ADD CONSTRAINT "Transcript_tenantId_fkey"', 'Transcript tenant foreign key'],
+  ['ALTER TABLE "Transcript" ADD CONSTRAINT "Transcript_siteId_fkey"', 'Transcript site foreign key'],
+  ['ALTER TABLE "Transcript" ADD CONSTRAINT "Transcript_noteId_fkey"', 'Transcript note foreign key'],
+  [
+    'ALTER TABLE "Transcript" ADD CONSTRAINT "Transcript_visitSessionId_fkey"',
+    'Transcript visit session foreign key'
+  ],
+  ['ALTER TABLE "TranscriptSegment" ADD CONSTRAINT "TranscriptSegment_tenantId_fkey"', 'TranscriptSegment tenant foreign key'],
+  ['ALTER TABLE "TranscriptSegment" ADD CONSTRAINT "TranscriptSegment_siteId_fkey"', 'TranscriptSegment site foreign key'],
+  [
+    'ALTER TABLE "TranscriptSegment" ADD CONSTRAINT "TranscriptSegment_transcriptId_fkey"',
+    'TranscriptSegment transcript foreign key'
+  ],
+  ['ALTER TABLE "TranscriptSegment" ADD CONSTRAINT "TranscriptSegment_noteId_fkey"', 'TranscriptSegment note foreign key']
 ];
 
 for (const [fragment, label] of requiredForwardFragments) {
