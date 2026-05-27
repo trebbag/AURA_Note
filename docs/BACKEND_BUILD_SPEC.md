@@ -179,3 +179,11 @@ Workers must support:
 - Prisma schema validation and SQL diff generation are available through root scripts.
 - The schema foundation covers platform, identity, appointment, note, visit session, transcript, review panel, finalization, export, writeback, coaching, audit, event, integration, feature-flag, and support status records.
 - Runtime repository replacement, row-level-security policy implementation, live database migration apply/rollback, production credentials, and PHI-bearing persistence are deferred to later numbered work orders.
+
+`WO-016` adds the first tenant identity and access foundation:
+
+- API request contexts use a shared local synthetic session parser from `packages/security`.
+- Tenant ID, site ID, actor user ID, session ID, role, purpose-of-use, and identity-provider mode are represented in the access context.
+- Cross-tenant and cross-site requests are denied before implemented API services perform route behavior.
+- `clinicos_delegate` and `oidc_delegate` modes are reserved adapter boundaries and are denied until provider configuration is specified.
+- Production SSO, MFA, account administration, persistent identity/session storage, and real ClinicOS identity delegation are deferred to later numbered work orders.

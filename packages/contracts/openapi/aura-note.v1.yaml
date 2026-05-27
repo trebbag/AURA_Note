@@ -2364,6 +2364,29 @@ components:
                     $ref: '#/components/schemas/AuraNoteEvent'
             meta:
               $ref: '#/components/schemas/ApiMeta'
+    LocalAuthSession:
+      type: object
+      description: Local synthetic auth/session scaffold only. This does not represent production SSO.
+      required: [tenantId, siteId, userId, role, sessionId, identityProviderMode, purposeOfUse, localSyntheticOnly]
+      properties:
+        tenantId: { type: string }
+        siteId: { type: string }
+        userId: { type: string }
+        role:
+          type: string
+          enum: [clinician, ma, billing_staff, admin, authorized_admin, clinic_manager, compliance_privacy_lead, support, service_account]
+        sessionId: { type: string }
+        identityProviderMode: { type: string, enum: [local_synthetic, clinicos_delegate, oidc_delegate] }
+        purposeOfUse: { type: string, enum: [treatment, payment, operations, support, audit, coaching, break_glass] }
+        localSyntheticOnly: { type: boolean, const: true }
+    TenantScopeDecision:
+      type: object
+      required: [allowed, tenantId]
+      properties:
+        allowed: { type: boolean }
+        tenantId: { type: string }
+        siteId: { type: string }
+        deniedReason: { type: string }
     AuraNoteEvent:
       type: object
       required: [eventId, eventType, schemaVersion, tenantId, siteId, producer, eventTime, traceId, idempotencyKey, sensitivity, retentionClass, payload]

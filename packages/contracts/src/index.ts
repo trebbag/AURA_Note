@@ -99,6 +99,36 @@ export interface ApiEnvelope<TData> {
   warnings?: ApiWarning[];
 }
 
+export type IdentityProviderModeDto = 'local_synthetic' | 'clinicos_delegate' | 'oidc_delegate';
+export type PurposeOfUseDto = 'treatment' | 'payment' | 'operations' | 'support' | 'audit' | 'coaching' | 'break_glass';
+
+export interface LocalAuthSessionDto {
+  tenantId: string;
+  siteId: string;
+  userId: string;
+  role:
+    | 'clinician'
+    | 'ma'
+    | 'billing_staff'
+    | 'admin'
+    | 'authorized_admin'
+    | 'clinic_manager'
+    | 'compliance_privacy_lead'
+    | 'support'
+    | 'service_account';
+  sessionId: string;
+  identityProviderMode: IdentityProviderModeDto;
+  purposeOfUse: PurposeOfUseDto;
+  localSyntheticOnly: boolean;
+}
+
+export interface TenantScopeDecisionDto {
+  allowed: boolean;
+  tenantId: string;
+  siteId?: string;
+  deniedReason?: string;
+}
+
 export interface AppointmentDto {
   appointmentId: string;
   tenantId: string;

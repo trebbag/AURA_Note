@@ -115,4 +115,18 @@ describe('AI API service', () => {
       ForbiddenException
     );
   });
+
+  it('denies cross-tenant AI gateway access before context packaging', () => {
+    const service = new AiService();
+
+    assert.throws(
+      () =>
+        service.getStatus({
+          'x-aura-role': 'clinician',
+          'x-aura-linked-visit': 'true',
+          'x-aura-tenant-id': 'tenant-other'
+        }),
+      ForbiddenException
+    );
+  });
 });

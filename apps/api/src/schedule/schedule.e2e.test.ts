@@ -30,6 +30,14 @@ describe('schedule appointment lifecycle API', () => {
     await app.close();
   });
 
+  it('denies cross-tenant schedule access through the API boundary', async () => {
+    await request(app.getHttpServer())
+      .get('/api/v1/schedule/appointments')
+      .set('x-aura-role', 'ma')
+      .set('x-aura-tenant-id', 'tenant-other')
+      .expect(403);
+  });
+
   it('creates a standalone appointment, creates its note shell, and starts the visit', async () => {
     const created = await request(app.getHttpServer())
       .post('/api/v1/schedule/appointments')

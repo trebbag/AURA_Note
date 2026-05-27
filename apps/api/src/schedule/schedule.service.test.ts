@@ -114,6 +114,19 @@ describe('ScheduleService', () => {
     assert.throws(() => service.createAppointment(createRequest, context), ForbiddenException);
   });
 
+  it('denies cross-tenant schedule access at the synthetic identity boundary', () => {
+    const service = new ScheduleService();
+
+    assert.throws(
+      () =>
+        service.createRequestContext({
+          'x-aura-role': 'ma',
+          'x-aura-tenant-id': 'tenant-other'
+        }),
+      ForbiddenException
+    );
+  });
+
   it('rejects invalid appointment input before note shell creation', () => {
     const service = new ScheduleService();
     const context = service.createRequestContext({ 'x-aura-role': 'ma' });

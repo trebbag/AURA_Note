@@ -19,9 +19,10 @@
     "WO-012": "done",
     "WO-013": "done",
     "WO-014": "done",
-    "WO-015": "done"
+    "WO-015": "done",
+    "WO-016": "done"
   },
-  "last_updated_by": "Codex WO-015 persistence foundation",
-  "last_updated_at": "2026-05-27T01:07:50Z",
-  "notes": "WO-015 post-CP4 persistence migration foundation is complete as schema/tooling only. Runtime repository replacement, live migration apply/rollback, row-level security policies, production credentials, and PHI-bearing persistence remain deferred to later numbered work orders."
+  "last_updated_by": "Codex WO-016 tenant identity access foundation",
+  "last_updated_at": "2026-05-27T01:21:03Z",
+  "notes": "WO-016 post-CP4 tenant identity and access foundation is complete as local synthetic auth/session scaffolding. Production SSO, MFA, account administration, persistent identity/session storage, real ClinicOS/OIDC delegation, and broader tenant administration remain deferred to later numbered work orders."
 }

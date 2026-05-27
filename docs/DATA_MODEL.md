@@ -295,3 +295,16 @@ The worker now has a tested retention job summary for raw-audio purge eligibilit
 - integration connections and feature flags default to disabled.
 
 This is not runtime persistence. The API still uses the existing synthetic process-local repositories until a later work order introduces Prisma-backed repository adapters and runs the existing e2e flows against a local database.
+
+## WO-016 tenant identity and access foundation status
+
+`WO-016` adds local synthetic identity and tenant-access records at the security/contract layer:
+
+- `AccessContext` now carries tenant ID, site ID, actor user ID, session ID, purpose-of-use, and identity-provider mode metadata in addition to role and linkage flags;
+- `LocalAuthSession` contract seeds represent development/test sessions only and are marked local synthetic rather than production SSO;
+- `TenantScopeDecision` contract seeds represent allow/deny outcomes for tenant-scoped access checks;
+- `local_synthetic` is the only enabled identity-provider mode;
+- `clinicos_delegate` and `oidc_delegate` are represented as future adapter modes and denied until configured by later work orders;
+- cross-tenant and cross-site requests are denied before API services perform clinical, billing, AI, integration, coaching, support, audit, or export behavior.
+
+This is not persistent identity management. User administration, SSO/MFA, account recovery, SCIM, ClinicOS identity delegation, and production identity-provider configuration remain deferred.

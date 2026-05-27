@@ -24,6 +24,7 @@ Codex must complete work orders sequentially unless a checkpoint or blocker stop
 - `WO-013` — Production hardening, observability, retention, audit.
 - `WO-014` — End-to-end acceptance and readiness report.
 - `WO-015` — Persistence migration foundation.
+- `WO-016` — Tenant identity and access foundation.
 
 ## Work order rules
 
@@ -39,3 +40,5 @@ The defined AURA Note v1 synthetic local-first work-order sequence ends at `WO-0
 Post-CP4 productionization candidates are documented in `docs/POST_CP4_PRODUCTIONIZATION_BACKLOG.md`. They are planning artifacts only until a tranche is promoted into a numbered `work_orders/WO-###_*.md` file and `repo_status.json` is updated deliberately.
 
 `WO-015` promotes the first post-CP4 productionization tranche into an active persistence migration foundation. Runtime repository replacement remains out of scope until a later numbered work order.
+
+`WO-016` promotes the second post-CP4 productionization tranche into an active local synthetic tenant identity and access foundation. Production SSO, MFA, and identity administration remain out of scope until a later numbered work order.
