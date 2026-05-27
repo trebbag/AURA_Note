@@ -475,3 +475,15 @@ These are metadata contracts and local fake-storage tests. They do not authorize
 - `WO-038` through `WO-039` complete standalone patient/chart/schedule/worklist/settings/template/estimate/rules-catalog records needed for daily product operation.
 
 No table should be treated as production-ready merely because it exists in the schema. Production readiness requires runtime adapter use, tenant/site repository tests, RLS or documented non-tenant rationale, audit evidence, backup/restore posture, and relevant UX/API tests.
+
+## WO-034 durable visit capture runtime status
+
+`WO-034` moves the visit capture slice from schema readiness to local durable runtime evidence:
+
+- `VisitSession`, `RecordingAsset`, `Transcript`, and `TranscriptSegment` now have a Prisma-backed repository adapter for synthetic local PostgreSQL;
+- persisted visit capture records preserve timer state, recording state, editor lock state, approved recording exceptions, raw-audio one-week retention metadata, transcript indefinite retention, and mock transcript segment ordering;
+- tenant/site scoped repository and API-harness tests deny wrong-tenant and wrong-site access before DTO exposure;
+- `rls-visit-capture.sql` adds local PostgreSQL RLS policies for the visit capture tables using `app.current_tenant_id` and `WITH CHECK` write enforcement;
+- `pnpm persistence:visit-capture-adapter` is the durable evidence gate for this slice.
+
+This is not full durable application runtime and is not production PHI database approval. Review panels, finalization/output/writeback, audit/event/support/config/coaching, standalone patient/settings/rules catalog, live transcription, browser recording transport, production storage/deletion, live EHR/ClinicOS, live AI, and claim submission remain future work.

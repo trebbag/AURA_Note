@@ -1,8 +1,8 @@
 {
   "project": "AURA Note v1",
   "mode": "production_build_in_progress",
-  "current_checkpoint": "P6.5",
-  "next_work_order": "WO-034",
+  "current_checkpoint": "P7",
+  "next_work_order": "WO-035",
   "work_orders": {
     "WO-000": "done",
     "WO-001": "done",
@@ -38,8 +38,8 @@
     "WO-031": "done",
     "WO-032": "done",
     "WO-033": "done",
-    "WO-034": "todo",
-    "WO-035": "planned",
+    "WO-034": "done",
+    "WO-035": "todo",
     "WO-036": "planned",
     "WO-037": "planned",
     "WO-038": "planned",
@@ -57,7 +57,7 @@
     "WO-050": "planned",
     "WO-051": "planned"
   },
-  "last_updated_by": "Codex WO-033 production build rails and readiness controls",
-  "last_updated_at": "2026-05-27T18:45:00Z",
-  "notes": "WO-033 re-established the production-build rails after WO-032. Completed synthetic/local readiness remains preserved for WO-000 through WO-032, future production work is discoverable from WO-034 through WO-051, acceptance readiness remains scoped to synthetic/post-CP4 evidence, and production readiness is now checked separately. AURA Note is not production-ready; production identity, broad durable runtime persistence, live storage, live transcription, live EHR, live AI, production PHI storage, production deletion, and claim submission remain future work."
+  "last_updated_by": "Codex WO-034 durable visit capture runtime persistence",
+  "last_updated_at": "2026-05-27T20:05:00Z",
+  "notes": "WO-034 added Prisma-backed local PostgreSQL persistence evidence for the visit capture slice: VisitSession, RecordingAsset, Transcript, and TranscriptSegment. Completed synthetic/local readiness remains preserved, production-build readiness is checked separately, and P7 is still incomplete until WO-035 through WO-037 are done. AURA Note is not production-ready; production identity, full durable workflow persistence, live storage, live transcription, live EHR, live AI, production PHI storage, production deletion, and claim submission remain future work."
 }
