@@ -192,3 +192,16 @@ The new `pnpm persistence:review-panel-adapter` evidence proves the backing `Sug
 - `ehr.writeback_failed.v1`.
 
 The new `pnpm persistence:finalization-output-adapter` evidence proves the backing `FinalizationRun`, `WizardStepDecision`, `EnhancedNoteVersion`, `PatientSummaryVersion`, `BillingAttestation`, `DraftClaimPreview`, `ExportArtifact`, and `EhrWritebackJob` state can be persisted and reloaded locally with tenant/site denial and RLS checks. Draft claim preview persistence explicitly enforces `submittedClaim=false`; signed final note, patient summary, and export artifact records are immutable after approval/signature evidence. Event payloads remain audit-safe workflow metadata in this work order; live EHR writeback, clearinghouse/payer integration, medical-necessity determination, charge finalization, and claim submission remain deferred.
+
+## WO-037 durable audit/event metadata evidence
+
+`WO-037` does not add new public clinical behavior. It adds durable local persistence evidence for the existing audit/support/coaching/config/integration event metadata family:
+
+- `audit.event_recorded.v1`;
+- `audit.export_requested.v1`;
+- current support status audit events;
+- current coaching report audit events;
+- current ClinicOS mode-mapping metadata events;
+- current disabled/mock integration status metadata.
+
+The new `pnpm persistence:durable-runtime-readiness` evidence proves the backing `AuditEvent`, `DomainEvent`, `SupportStatusSnapshot`, `FeatureFlag`, `Template`, `DotPhrase`, `CoachingReport`, `IntegrationConnection`, and `ModeMapping` state can be persisted and reloaded locally with tenant/site denial, role-denial harnesses, and broad RLS checks. Event payloads remain audit-safe synthetic metadata; production observability sinks, live vendor sync, production analytics, live AI, charge finalization, medical-necessity determination, and claim submission remain deferred.
