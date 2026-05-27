@@ -332,3 +332,16 @@ Codex must append a dated entry after each work order or meaningful implementati
 - **Accepted risks:** Relation coverage is still incremental and schema-level. The next persistence tranche still needs local database orchestration, transaction behavior, tenant-scope query tests, broader relation coverage, and error-path coverage before runtime persistence can be claimed.
 - **Open SPEC_GAPs:** None discovered for visit, recording, and transcript Prisma relationship readiness.
 - **Next step:** Run the full local gate, open the WO-024 PR, confirm GitHub Actions, and merge when green before selecting the next post-CP4 tranche.
+
+## 2026-05-27T02:55:01Z — WO-025 review panel Prisma relationship readiness
+
+- **Work order:** `WO-025` Review Panel Prisma Relationship Readiness.
+- **Summary of changes:** Promoted the next persistence follow-on into an active work order and added Prisma relation fields for the WO-005 review-panel graph.
+- **Persistence behavior:** Generated migration SQL now includes foreign-key constraints for Suggestion-to-Tenant/Site/Note, VisitSelection-to-Tenant/Site/Note/source Suggestion, ComplianceIssue-to-Tenant/Site/Note, HistoryGapQuestion-to-Tenant/Site/Note/linked Task, and Task-to-Tenant/Site/optional Note/optional Patient/optional owner User. Runtime remains on the in-memory synthetic adapter.
+- **Safety behavior:** This is schema and SQL-generation readiness only. Runtime database writes, Prisma Client usage, row-level security, live database migration apply/rollback, production PHI persistence, and autonomous clinical/coding/billing finalization remain out of scope.
+- **Files changed:** `packages/contracts/prisma/schema.prisma`, `scripts/validate-persistence-runtime-readiness.js`, `scripts/acceptance-readiness.js`, `docs/PERSISTENCE_FOUNDATION.md`, `docs/DATA_MODEL.md`, `docs/POST_CP4_PRODUCTIONIZATION_BACKLOG.md`, `docs/TEST_PLAN.md`, `work_orders/WO-025_review_panel_prisma_relations.md`, `work_orders/README.md`, `repo_status.json`, and `RUN_LOG.md`.
+- **Tests run:** `pnpm db:schema:validate`; `pnpm persistence:foundation`; `pnpm persistence:runtime-readiness`; `pnpm persistence:adapter-readiness`; `pnpm acceptance:readiness`; `node scripts/status.js`; `git diff --check`; `pnpm install --frozen-lockfile`; `pnpm lint`; `pnpm lint:phi`; `pnpm typecheck`; `pnpm test`; `pnpm test:e2e`; `pnpm test:browser`; `pnpm build`.
+- **Tests not run:** GitHub Actions remains to be run on the PR. Prisma Client runtime usage, live database migration apply/rollback, production PostgreSQL, row-level security, backup/restore, PHI-bearing persistence, full Prisma-backed repository replacement, production credentials, live AI, live EHR/ClinicOS/analytics integrations, audit export delivery, storage deletion, and claim submission are intentionally out of scope.
+- **Accepted risks:** Relation coverage is still incremental and schema-level. The next persistence tranche still needs local database orchestration, transaction behavior, tenant-scope query tests, broader relation coverage, and error-path coverage before runtime persistence can be claimed.
+- **Open SPEC_GAPs:** None discovered for review-panel Prisma relationship readiness.
+- **Next step:** Run the full local gate, open the WO-025 PR, confirm GitHub Actions, and merge when green before selecting the next post-CP4 tranche.

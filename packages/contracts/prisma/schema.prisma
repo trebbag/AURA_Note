@@ -75,6 +75,11 @@ model Tenant {
   recordingAssets RecordingAsset[]
   transcripts Transcript[]
   transcriptSegments TranscriptSegment[]
+  suggestions Suggestion[]
+  visitSelections VisitSelection[]
+  complianceIssues ComplianceIssue[]
+  historyGapQuestions HistoryGapQuestion[]
+  tasks Task[]
 
   @@index([mode])
 }
@@ -95,6 +100,11 @@ model Site {
   recordingAssets RecordingAsset[]
   transcripts Transcript[]
   transcriptSegments TranscriptSegment[]
+  suggestions Suggestion[]
+  visitSelections VisitSelection[]
+  complianceIssues ComplianceIssue[]
+  historyGapQuestions HistoryGapQuestion[]
+  tasks Task[]
 
   @@index([tenantId])
 }
@@ -112,6 +122,7 @@ model User {
   tenant                 Tenant        @relation(fields: [tenantId], references: [id])
   clinicianAppointments Appointment[] @relation("AppointmentClinician")
   clinicianNotes        Note[]        @relation("NoteClinician")
+  ownedTasks             Task[]        @relation("TaskOwner")
 
   @@unique([tenantId, email])
   @@index([tenantId, status])
@@ -143,6 +154,7 @@ model Patient {
   site         Site          @relation(fields: [siteId], references: [id])
   appointments Appointment[]
   notes        Note[]
+  tasks        Task[]
 
   @@unique([tenantId, safePatientId])
   @@index([tenantId, siteId])
@@ -217,6 +229,11 @@ model Note {
   recordingAssets RecordingAsset[]
   transcripts Transcript[]
   transcriptSegments TranscriptSegment[]
+  suggestions Suggestion[]
+  visitSelections VisitSelection[]
+  complianceIssues ComplianceIssue[]
+  historyGapQuestions HistoryGapQuestion[]
+  tasks Task[]
 
   @@index([tenantId, siteId, state])
   @@index([tenantId, patientId])
@@ -351,6 +368,11 @@ model Suggestion {
   createdAt                   DateTime @default(now())
   updatedAt                   DateTime @updatedAt
 
+  tenant          Tenant           @relation(fields: [tenantId], references: [id])
+  site            Site             @relation(fields: [siteId], references: [id])
+  note            Note             @relation(fields: [noteId], references: [id])
+  visitSelections VisitSelection[] @relation("SuggestionVisitSelections")
+
   @@index([tenantId, noteId, category])
   @@index([tenantId, status])
 }
@@ -369,6 +391,11 @@ model VisitSelection {
   createdAt          DateTime @default(now())
   updatedAt          DateTime @updatedAt
 
+  tenant           Tenant      @relation(fields: [tenantId], references: [id])
+  site             Site        @relation(fields: [siteId], references: [id])
+  note             Note        @relation(fields: [noteId], references: [id])
+  sourceSuggestion Suggestion? @relation("SuggestionVisitSelections", fields: [sourceSuggestionId], references: [id])
+
   @@index([tenantId, noteId, category])
 }
 
@@ -385,6 +412,10 @@ model ComplianceIssue {
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
+  tenant Tenant @relation(fields: [tenantId], references: [id])
+  site   Site   @relation(fields: [siteId], references: [id])
+  note   Note   @relation(fields: [noteId], references: [id])
+
   @@index([tenantId, noteId, severity])
 }
 
@@ -400,6 +431,11 @@ model HistoryGapQuestion {
   linkedTaskId        String?  @db.Uuid
   createdAt           DateTime @default(now())
   updatedAt           DateTime @updatedAt
+
+  tenant     Tenant @relation(fields: [tenantId], references: [id])
+  site       Site   @relation(fields: [siteId], references: [id])
+  note       Note   @relation(fields: [noteId], references: [id])
+  linkedTask Task?  @relation("HistoryGapLinkedTask", fields: [linkedTaskId], references: [id])
 
   @@index([tenantId, noteId, status])
 }
@@ -420,6 +456,13 @@ model Task {
   resolutionReason   String?
   createdAt          DateTime @default(now())
   updatedAt          DateTime @updatedAt
+
+  tenant              Tenant               @relation(fields: [tenantId], references: [id])
+  site                Site                 @relation(fields: [siteId], references: [id])
+  note                Note?                @relation(fields: [noteId], references: [id])
+  patient             Patient?             @relation(fields: [patientId], references: [id])
+  owner               User?                @relation("TaskOwner", fields: [ownerUserId], references: [id])
+  historyGapQuestions HistoryGapQuestion[] @relation("HistoryGapLinkedTask")
 
   @@index([tenantId, noteId, blocksSigning])
   @@index([tenantId, ownerUserId, status])

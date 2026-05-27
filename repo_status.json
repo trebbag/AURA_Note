@@ -28,9 +28,10 @@
     "WO-021": "done",
     "WO-022": "done",
     "WO-023": "done",
-    "WO-024": "done"
+    "WO-024": "done",
+    "WO-025": "done"
   },
-  "last_updated_by": "Codex WO-024 visit transcript Prisma relationship readiness",
-  "last_updated_at": "2026-05-27T02:46:41Z",
-  "notes": "WO-024 post-CP4 visit, recording, and transcript Prisma relationship readiness is complete as schema-level relation and generated foreign-key SQL evidence for VisitSession, RecordingAsset, Transcript, and TranscriptSegment links to tenant/site/note/session/transcript records. Runtime still defaults to in-memory synthetic repositories; Prisma Client runtime usage, live database connection, row-level security, production PHI persistence, production credentials, full relation graph completion, and full Prisma-backed repository replacement remain deferred."
+  "last_updated_by": "Codex WO-025 review panel Prisma relationship readiness",
+  "last_updated_at": "2026-05-27T02:55:01Z",
+  "notes": "WO-025 post-CP4 review panel Prisma relationship readiness is complete as schema-level relation and generated foreign-key SQL evidence for Suggestion, VisitSelection, ComplianceIssue, HistoryGapQuestion, and Task links to tenant/site/note/patient/user/source records. Runtime still defaults to in-memory synthetic repositories; Prisma Client runtime usage, live database connection, row-level security, production PHI persistence, production credentials, full relation graph completion, and full Prisma-backed repository replacement remain deferred."
 }
