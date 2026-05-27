@@ -206,6 +206,17 @@ Codex should add tests as implementation proceeds.
 - `pnpm persistence:adapter-readiness` confirms the runtime adapter remains disabled for Prisma writes;
 - full runtime database tests, row-level security tests, transaction tests, tenant-scoped query tests, production storage/PDF delivery tests, live EHR writeback tests, and complete 35-model relation coverage remain deferred.
 
+## WO-036 durable finalization/output runtime persistence
+
+`WO-036` adds live local PostgreSQL adapter evidence:
+
+- `pnpm persistence:finalization-output-adapter` generates Prisma Client, starts the synthetic PostgreSQL service through the integration test, applies generated schema SQL, and executes `apps/api/src/schedule/prisma-finalization-output.repository.integration.test.ts`;
+- positive coverage proves persisted reload for finalization runs, wizard decisions, signed final note and patient summary records, billing attestations, draft claim previews, storage-backed export metadata, and EHR writeback failure metadata;
+- negative coverage proves submitted claim payloads are rejected, signed final-note text cannot be mutated after approval/signature evidence exists, and wrong-tenant/wrong-site repository/API-harness reads return no DTO data before exposure;
+- RLS coverage applies `packages/contracts/prisma/rls-finalization-output.sql` and proves tenant-scoped reads, missing tenant-session denial, cross-tenant insert denial, and cross-tenant update denial for the finalization/output slice.
+
+This test evidence remains synthetic/local. It does not test live EHR writeback, live claim submission, clearinghouse/payer integration, production PHI database approval, production storage credentials, charge finalization, or medical-necessity determination.
+
 ## Post-CP4 local database orchestration readiness
 
 `WO-028` adds static local database orchestration checks:

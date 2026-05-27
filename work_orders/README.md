@@ -115,6 +115,8 @@ Post-CP4 productionization candidates are documented in `docs/POST_CP4_PRODUCTIO
 
 `WO-034` through `WO-037` form the P7 durable runtime candidate. They move broad workflow state to local Prisma/PostgreSQL persistence, add tenant/site query enforcement, expand RLS coverage, and make audit/event records durable.
 
+`WO-036` adds durable local finalization/output/writeback metadata evidence for signed final note, patient summary, billing attestation, draft claim preview, export artifacts, and EHR writeback queue state. The next P7 tranche is `WO-037`, which completes durable audit/event/support/config/coaching state and broad RLS evidence before the P7 checkpoint can close.
+
 `WO-038` through `WO-039` form the P7.5 standalone product completion candidate. They complete standalone patient/chart/schedule/worklist/settings/template/estimate/rules-catalog surfaces so core v1 operation does not depend on ClinicOS.
 
 `WO-040` forms the P8.5 audio and transcription candidate. It adds browser microphone capture, recording transport, transcription adapters, mock provider coverage, retention metadata, correction history, and provider-governance boundaries.

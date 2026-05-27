@@ -537,9 +537,20 @@ model FinalizationRun {
   tenantId           String   @db.Uuid
   siteId             String   @db.Uuid
   noteId             String   @db.Uuid
+  sourceRef          String
+  appointmentSourceRef String?
   currentStep        String
   completedStepsJson Json?
+  stepStatusesJson   Json
   frozenSnapshotJson Json
+  selectionDecisionsJson Json?
+  suggestionDecisionsJson Json?
+  unusedAuditItemsJson Json?
+  composePhasesJson  Json?
+  composeOutputJson  Json?
+  patientOpportunitiesJson Json?
+  finalNoteApproved  Boolean  @default(false)
+  patientSummaryApproved Boolean @default(false)
   readyForBillingAttest Boolean @default(false)
   billingAttested    Boolean  @default(false)
   signedAndDispatched Boolean @default(false)
@@ -555,6 +566,7 @@ model FinalizationRun {
   billingAttestations    BillingAttestation[]
   draftClaimPreviews     DraftClaimPreview[]
 
+  @@unique([tenantId, sourceRef])
   @@index([tenantId, noteId])
 }
 
@@ -564,6 +576,7 @@ model WizardStepDecision {
   siteId            String   @db.Uuid
   finalizationRunId String   @db.Uuid
   noteId            String   @db.Uuid
+  sourceRef         String
   step              String
   targetType        String
   targetId          String
@@ -578,6 +591,7 @@ model WizardStepDecision {
   note            Note            @relation(fields: [noteId], references: [id])
   actor           User?           @relation("WizardStepDecisionActor", fields: [actorUserId], references: [id])
 
+  @@unique([tenantId, sourceRef])
   @@index([tenantId, finalizationRunId, step])
 }
 
@@ -587,8 +601,16 @@ model EnhancedNoteVersion {
   siteId            String   @db.Uuid
   noteId            String   @db.Uuid
   finalizationRunId String   @db.Uuid
+  sourceRef         String
   version           Int
   text              String
+  payerReadableSupportSection String?
+  planTaskMappingJson Json?
+  sourceIntegrityWarningsJson Json?
+  patientSummaryInternalDetailsDetected Boolean @default(false)
+  staleDueToEdit    Boolean  @default(false)
+  draftOnly         Boolean  @default(true)
+  finalNoteRecordJson Json?
   approved          Boolean  @default(false)
   approvedById      String?  @db.Uuid
   approvedAt        DateTime?
@@ -600,6 +622,7 @@ model EnhancedNoteVersion {
   finalizationRun FinalizationRun @relation(fields: [finalizationRunId], references: [id])
   approvedBy      User?           @relation("EnhancedNoteApprovedBy", fields: [approvedById], references: [id])
 
+  @@unique([tenantId, sourceRef])
   @@unique([finalizationRunId, version])
   @@index([tenantId, noteId])
 }
@@ -610,10 +633,12 @@ model PatientSummaryVersion {
   siteId                      String   @db.Uuid
   noteId                      String   @db.Uuid
   finalizationRunId           String   @db.Uuid
+  sourceRef                   String
   version                     Int
   text                        String
   patientFacing               Boolean  @default(true)
   internalDetailsExcluded     Boolean  @default(true)
+  patientSummaryRecordJson    Json?
   approved                    Boolean  @default(false)
   approvedById                String?  @db.Uuid
   approvedAt                  DateTime?
@@ -625,6 +650,7 @@ model PatientSummaryVersion {
   finalizationRun FinalizationRun @relation(fields: [finalizationRunId], references: [id])
   approvedBy      User?           @relation("PatientSummaryApprovedBy", fields: [approvedById], references: [id])
 
+  @@unique([tenantId, sourceRef])
   @@unique([finalizationRunId, version])
   @@index([tenantId, noteId])
 }
@@ -635,6 +661,8 @@ model BillingAttestation {
   siteId                String   @db.Uuid
   noteId                String   @db.Uuid
   finalizationRunId     String   @db.Uuid
+  sourceRef             String
+  requiredStatementsJson Json?
   acceptedStatementsJson Json
   estimateCaveatAcknowledged Boolean @default(false)
   routeToBillingReview Boolean @default(false)
@@ -647,6 +675,7 @@ model BillingAttestation {
   finalizationRun FinalizationRun @relation(fields: [finalizationRunId], references: [id])
   attestedBy      User?           @relation("BillingAttestationActor", fields: [attestedById], references: [id])
 
+  @@unique([tenantId, sourceRef])
   @@index([tenantId, noteId])
 }
 
@@ -656,6 +685,7 @@ model DraftClaimPreview {
   siteId             String   @db.Uuid
   noteId             String   @db.Uuid
   finalizationRunId  String   @db.Uuid
+  sourceRef          String
   status             String
   submittedClaim     Boolean  @default(false)
   payloadJson        Json
@@ -668,6 +698,7 @@ model DraftClaimPreview {
   finalizationRun FinalizationRun @relation(fields: [finalizationRunId], references: [id])
   generatedBy     User?           @relation("DraftClaimPreviewGenerator", fields: [generatedById], references: [id])
 
+  @@unique([tenantId, sourceRef])
   @@index([tenantId, noteId])
 }
 
@@ -676,11 +707,20 @@ model ExportArtifact {
   tenantId            String         @db.Uuid
   siteId              String         @db.Uuid
   noteId              String         @db.Uuid
+  sourceRef           String
   artifactType        String
   status              String
   mimeType            String
   fileName            String
   storageKey          String?
+  checksum            String?
+  contentLengthBytes  Int?
+  deliveryMode        String?
+  storageProvider     String?
+  signedDownloadAvailable Boolean @default(false)
+  signedDownloadExpiresAt DateTime?
+  content             String?
+  sourceFinalizedAt   DateTime?
   signedVersionLocked Boolean        @default(true)
   retentionClass      RetentionClass @default(standard)
   generatedById       String?        @db.Uuid
@@ -692,6 +732,7 @@ model ExportArtifact {
   note        Note   @relation(fields: [noteId], references: [id])
   generatedBy User?  @relation("ExportArtifactGenerator", fields: [generatedById], references: [id])
 
+  @@unique([tenantId, sourceRef])
   @@index([tenantId, noteId, artifactType])
 }
 
@@ -700,12 +741,17 @@ model EhrWritebackJob {
   tenantId       String   @db.Uuid
   siteId         String   @db.Uuid
   noteId         String   @db.Uuid
+  sourceRef      String
   target         String
   vendor         String
   status         String
+  configured     Boolean  @default(false)
   humanApproved  Boolean  @default(false)
+  retryable      Boolean  @default(false)
   externalJobId  String?
   failureReason  String?
+  queuedAt       DateTime?
+  failedAt       DateTime?
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
 
@@ -713,6 +759,7 @@ model EhrWritebackJob {
   site   Site   @relation(fields: [siteId], references: [id])
   note   Note   @relation(fields: [noteId], references: [id])
 
+  @@unique([tenantId, sourceRef])
   @@index([tenantId, noteId, status])
 }
 

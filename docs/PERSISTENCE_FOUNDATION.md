@@ -228,7 +228,21 @@ This does not switch the full application runtime to Prisma. Review panels, fina
 - transaction/error-path coverage blocks accepted low-confidence diagnosis suggestions when persisted override evidence is missing;
 - `packages/contracts/prisma/rls-review-panel.sql` enables and forces RLS on `Suggestion`, `VisitSelection`, `ComplianceIssue`, `HistoryGapQuestion`, and `Task` with `app.current_tenant_id` policies and `WITH CHECK` write protection.
 
-This remains local synthetic persistence. It does not introduce live AI suggestion generation, production PHI persistence, production code/rules catalogs, live EHR/ClinicOS task synchronization, autonomous diagnosis/coding/billing/medical-necessity behavior, charge finalization, or claim submission. Finalization/output/writeback, durable audit/event repositories, support/config/coaching state, and broad RLS completion remain deferred to `WO-036` and `WO-037`.
+This remains local synthetic persistence. It does not introduce live AI suggestion generation, production PHI persistence, production code/rules catalogs, live EHR/ClinicOS task synchronization, autonomous diagnosis/coding/billing/medical-necessity behavior, charge finalization, or claim submission. Durable finalization/output/writeback evidence lands in `WO-036`; durable audit/event repositories, support/config/coaching state, and broad RLS completion remain deferred to `WO-037`.
+
+## WO-036 durable finalization/output runtime update
+
+`WO-036` adds the next durable workflow runtime slice:
+
+- `PrismaFinalizationOutputRepository` persists and reloads `FinalizationRun`, `WizardStepDecision`, `EnhancedNoteVersion`, `PatientSummaryVersion`, `BillingAttestation`, `DraftClaimPreview`, `ExportArtifact`, and `EhrWritebackJob` records against the synthetic local PostgreSQL database;
+- persisted finalization/output state preserves wizard step status, frozen snapshots, selection/suggestion decisions, compose output metadata, signed final-note text, patient summary text, billing attestation statements, draft claim preview payloads, storage-backed export metadata, and EHR writeback queue/failure metadata;
+- finalization/output tables now preserve semantic synthetic DTO identifiers in `sourceRef` fields while keeping deterministic UUID primary keys for database relations;
+- signed final notes, patient summaries, and signed export artifacts are treated as immutable by the adapter after approval/signature evidence exists;
+- draft claim preview persistence rejects any `submittedClaim: true` payload and keeps claim submission out of runtime behavior;
+- tenant and optional site scope are enforced on repository reads/writes, and a persisted-record API harness denies wrong-tenant and wrong-site access before DTO exposure;
+- `packages/contracts/prisma/rls-finalization-output.sql` enables and forces RLS on finalization/output/writeback tables with `app.current_tenant_id` policies and `WITH CHECK` write protection.
+
+This remains local synthetic persistence. It does not introduce live EHR writeback, live claim submission, clearinghouse/payer integration, charge finalization, medical-necessity determination, production PHI persistence, or production object-storage execution. Durable audit/event repositories, support/config/coaching state, and broad RLS completion remain deferred to `WO-037`.
 
 ## WO-032 storage delivery and retention deletion update
 

@@ -243,7 +243,7 @@ Define the post-CP-4 productionization backlog: durable persistence and migratio
 ## Open risks
 
 - P6.5 is a control/checkpoint package, not product runtime implementation.
-- `WO-034` through `WO-051` remain unimplemented until promoted and completed sequentially.
+- `WO-034` through `WO-036` now provide local synthetic durable runtime evidence for visit capture, review panels, and finalization/output/writeback metadata; `WO-037` through `WO-051` remain unimplemented until promoted and completed sequentially.
 - AURA Note remains not production-ready; production identity, broad durable persistence, live audio/transcription, live storage, live EHR, live AI, production PHI storage, production deletion, and claim submission remain deferred.
 
 ## Active SPEC_GAPs
@@ -256,4 +256,4 @@ Deferred decisions are tracked in `SPEC_GAPS.md` for production identity, produc
 
 ## Next recommended batch
 
-Begin P7 with `WO-034` through `WO-037`, starting with durable visit capture runtime persistence. Keep all production PHI, live vendor, autonomous clinical/coding/billing, live writeback, and claim-submission paths disabled unless later work orders and governance explicitly authorize them.
+Continue P7 with `WO-037` durable audit/event/support/config/coaching persistence and broad RLS completion. Keep all production PHI, live vendor, autonomous clinical/coding/billing, live writeback, and claim-submission paths disabled unless later work orders and governance explicitly authorize them.

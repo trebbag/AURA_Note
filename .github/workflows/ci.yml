@@ -38,6 +38,7 @@ jobs:
       - run: pnpm persistence:tenant-isolation
       - run: pnpm persistence:visit-capture-adapter
       - run: pnpm persistence:review-panel-adapter
+      - run: pnpm persistence:finalization-output-adapter
       - run: pnpm storage:azure-adapter-readiness
       - run: pnpm retention:storage-deletion-readiness
       - run: pnpm production:readiness
