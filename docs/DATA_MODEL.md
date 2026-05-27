@@ -486,7 +486,7 @@ No table should be treated as production-ready merely because it exists in the s
 - `rls-visit-capture.sql` adds local PostgreSQL RLS policies for the visit capture tables using `app.current_tenant_id` and `WITH CHECK` write enforcement;
 - `pnpm persistence:visit-capture-adapter` is the durable evidence gate for this slice.
 
-This is not full durable application runtime and is not production PHI database approval. Review panels, finalization/output/writeback, audit/event/support/config/coaching, standalone patient/settings/rules catalog, live transcription, browser recording transport, production storage/deletion, live EHR/ClinicOS, live AI, and claim submission remain future work.
+This is not full durable application runtime and is not production PHI database approval. Review panels land in `WO-035`; finalization/output/writeback lands in `WO-036`; audit/event/support/config/coaching, standalone patient/settings/rules catalog, live transcription, browser recording transport, production storage/deletion, live EHR/ClinicOS, live AI, and claim submission remain future work.
 
 ## WO-035 durable review-panel runtime status
 
@@ -500,4 +500,22 @@ This is not full durable application runtime and is not production PHI database 
 - `rls-review-panel.sql` adds local PostgreSQL RLS policies for review-panel tables using `app.current_tenant_id` and `WITH CHECK` write enforcement;
 - `pnpm persistence:review-panel-adapter` is the durable evidence gate for this slice.
 
-This is not full durable application runtime and is not production PHI database approval. Finalization/output/writeback, audit/event/support/config/coaching, broad tenant-owned RLS completion, standalone patient/settings/rules catalog, live AI suggestion generation, live EHR/ClinicOS task synchronization, production code/rules catalogs, production storage/deletion, medical-necessity determination, charge finalization, and claim submission remain future work.
+This is not full durable application runtime and is not production PHI database approval. Finalization/output/writeback lands in `WO-036`; audit/event/support/config/coaching, broad tenant-owned RLS completion, standalone patient/settings/rules catalog, live AI suggestion generation, live EHR/ClinicOS task synchronization, production code/rules catalogs, production storage/deletion, medical-necessity determination, charge finalization, and claim submission remain future work.
+
+## WO-036 durable finalization/output runtime status
+
+`WO-036` moves the finalization/output/writeback slice from schema readiness to local durable runtime evidence:
+
+- `FinalizationRun`, `WizardStepDecision`, `EnhancedNoteVersion`, `PatientSummaryVersion`, `BillingAttestation`, `DraftClaimPreview`, `ExportArtifact`, and `EhrWritebackJob` now have a Prisma-backed repository adapter for synthetic local PostgreSQL;
+- finalization/output records preserve semantic DTO IDs in `sourceRef` columns while database IDs remain deterministic UUIDs;
+- `FinalizationRun` preserves step statuses, frozen snapshot, decisions, compose phases/output, patient opportunities, and approval/attestation/sign-dispatch booleans as structured JSON/columns;
+- `EnhancedNoteVersion` and `PatientSummaryVersion` persist signed output text and signed DTO snapshots, with adapter tests proving approved/signed text cannot be mutated by a later save;
+- `BillingAttestation` persists required and accepted statements, estimate caveat acknowledgement, billing review route state, and attestation timestamp;
+- `DraftClaimPreview` persists the synthetic draft-claim payload while enforcing `submittedClaim=false`;
+- `ExportArtifact` persists storage-backed delivery metadata, content/checksum, retention class, signed download metadata, and signed-version lock evidence;
+- `EhrWritebackJob` persists disabled/failure/queue metadata without executing live writeback;
+- tenant/site scoped repository and API-harness tests deny wrong-tenant and wrong-site access before DTO exposure;
+- `rls-finalization-output.sql` adds local PostgreSQL RLS policies for finalization/output/writeback tables using `app.current_tenant_id` and `WITH CHECK` write enforcement;
+- `pnpm persistence:finalization-output-adapter` is the durable evidence gate for this slice.
+
+This is not full durable application runtime and is not production PHI database approval. Durable audit/event/support/config/coaching, broad tenant-owned RLS completion, standalone patient/settings/rules catalog, live EHR writeback, live claim submission, clearinghouse/payer integration, medical-necessity determination, charge finalization, and claim submission remain future work.

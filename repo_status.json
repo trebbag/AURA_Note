@@ -2,7 +2,7 @@
   "project": "AURA Note v1",
   "mode": "production_build_in_progress",
   "current_checkpoint": "P7",
-  "next_work_order": "WO-036",
+  "next_work_order": "WO-037",
   "work_orders": {
     "WO-000": "done",
     "WO-001": "done",
@@ -40,8 +40,8 @@
     "WO-033": "done",
     "WO-034": "done",
     "WO-035": "done",
-    "WO-036": "todo",
-    "WO-037": "planned",
+    "WO-036": "done",
+    "WO-037": "todo",
     "WO-038": "planned",
     "WO-039": "planned",
     "WO-040": "planned",
@@ -57,7 +57,7 @@
     "WO-050": "planned",
     "WO-051": "planned"
   },
-  "last_updated_by": "Codex WO-035 durable review-panel runtime persistence",
-  "last_updated_at": "2026-05-27T20:20:00Z",
-  "notes": "WO-035 added Prisma-backed local PostgreSQL persistence evidence for the review-panel slice: Suggestion, VisitSelection, ComplianceIssue, HistoryGapQuestion, and Task. Completed synthetic/local readiness remains preserved, production-build readiness is checked separately, and P7 is still incomplete until WO-036 and WO-037 are done. AURA Note is not production-ready; production identity, full durable workflow persistence, live storage, live transcription, live EHR, live AI, production PHI storage, production deletion, medical-necessity determination, charge finalization, and claim submission remain future work."
+  "last_updated_by": "Codex WO-036 durable finalization output persistence",
+  "last_updated_at": "2026-05-27T20:40:00Z",
+  "notes": "WO-036 added Prisma-backed local PostgreSQL persistence evidence for finalization/output/writeback metadata: FinalizationRun, WizardStepDecision, EnhancedNoteVersion, PatientSummaryVersion, BillingAttestation, DraftClaimPreview, ExportArtifact, and EhrWritebackJob. Completed synthetic/local readiness remains preserved, production-build readiness is checked separately, and P7 is still incomplete until WO-037 is done. AURA Note is not production-ready; production identity, full durable audit/event/config/support/coaching persistence, live storage, live transcription, live EHR, live AI, production PHI storage, production deletion, medical-necessity determination, charge finalization, and claim submission remain future work."
 }

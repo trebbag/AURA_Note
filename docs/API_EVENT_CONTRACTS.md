@@ -176,3 +176,19 @@ The new `pnpm persistence:visit-capture-adapter` evidence proves the backing `Vi
 - `task.blocker_changed.v1`.
 
 The new `pnpm persistence:review-panel-adapter` evidence proves the backing `Suggestion`, `VisitSelection`, `ComplianceIssue`, `HistoryGapQuestion`, and `Task` state can be persisted and reloaded locally with tenant/site denial and RLS checks. Low-confidence diagnosis suggestions remain draft/candidate-only and cannot be persisted as accepted without override evidence. Event payloads remain audit-safe workflow metadata in this work order; live AI suggestion generation, autonomous coding/billing, medical-necessity determination, charge finalization, claim submission, and live EHR/ClinicOS task sync remain deferred.
+
+## WO-036 durable finalization/output event evidence
+
+`WO-036` does not add new public finalization behavior beyond the existing CP-2 finalization, export, and writeback scaffold API surface. It adds durable local persistence evidence for the existing finalization/output event family:
+
+- `finalization.started.v1`;
+- `finalization.step_completed.v1`;
+- `final_note.approved.v1`;
+- `patient_summary.approved.v1`;
+- `billing.attested.v1`;
+- `final_note.signed.v1`;
+- `export.generated.v1`;
+- `ehr.writeback_queued.v1`;
+- `ehr.writeback_failed.v1`.
+
+The new `pnpm persistence:finalization-output-adapter` evidence proves the backing `FinalizationRun`, `WizardStepDecision`, `EnhancedNoteVersion`, `PatientSummaryVersion`, `BillingAttestation`, `DraftClaimPreview`, `ExportArtifact`, and `EhrWritebackJob` state can be persisted and reloaded locally with tenant/site denial and RLS checks. Draft claim preview persistence explicitly enforces `submittedClaim=false`; signed final note, patient summary, and export artifact records are immutable after approval/signature evidence. Event payloads remain audit-safe workflow metadata in this work order; live EHR writeback, clearinghouse/payer integration, medical-necessity determination, charge finalization, and claim submission remain deferred.
