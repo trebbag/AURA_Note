@@ -41,6 +41,11 @@ const routeExpectations = [
     nav: true
   },
   {
+    path: '/aura-note/operations',
+    heading: 'Standalone Operations Center',
+    nav: true
+  },
+  {
     path: '/aura-note/support/status',
     heading: 'Production Hardening Status',
     nav: true
@@ -130,10 +135,43 @@ test.describe('AURA Note route accessibility smoke suite', () => {
     await expect(page.getByRole('region', { name: 'Audit and failure states' })).toContainText('PHI');
   });
 
+  test('standalone operations route exposes worklists, billing review, settings, templates, estimates, and rules states', async ({ page }) => {
+    await page.goto('/aura-note/operations');
+
+    await expect(page.getByRole('region', { name: 'Standalone operations readiness' })).toContainText('Standalone Daily Operations');
+    await expect(page.getByRole('region', { name: 'Screen states' })).toContainText('permission-denied');
+    await expect(page.getByRole('article', { name: 'Task inbox' })).toContainText('open blocker');
+
+    await page.getByRole('button', { name: 'MA Follow-Up' }).click();
+    await page.getByRole('button', { name: 'Mark Answered' }).click();
+    await expect(page.getByRole('article', { name: 'MA follow-up worklist' })).toContainText('answered non-blocker');
+
+    await page.getByRole('button', { name: 'Billing Review' }).click();
+    await expect(page.getByRole('article', { name: 'Billing review queue' })).toContainText('submittedClaim=false');
+    await page.getByRole('button', { name: 'Trigger Review' }).click();
+    await expect(page.getByRole('article', { name: 'Billing review queue' })).toContainText('allowed for billing_staff triggered review');
+
+    await page.getByRole('button', { name: 'Settings' }).click();
+    await page.getByRole('button', { name: 'Set Mock Ready' }).click();
+    await expect(page.getByRole('article', { name: 'Settings admin integrations' })).toContainText('mock_ready');
+
+    await page.getByRole('button', { name: 'Templates' }).click();
+    await expect(page.getByRole('article', { name: 'Templates and dot phrases' })).toContainText('{{follow_up_interval}}');
+
+    await page.getByRole('button', { name: 'Estimates' }).click();
+    await expect(page.getByRole('article', { name: 'Estimate configuration' })).toContainText('Patient-facing: disabled');
+
+    await page.getByRole('button', { name: 'Rules Catalog' }).click();
+    await expect(page.getByRole('article', { name: 'Rules catalog' })).toContainText('Autonomous finalization: false');
+    await page.getByRole('button', { name: 'Publish' }).click();
+    await expect(page.getByRole('article', { name: 'Rules catalog' })).toContainText('published as active synthetic rules');
+    await expect(page.getByRole('region', { name: 'Operational summary' })).toContainText('Claim submission remains disabled.');
+  });
+
   test('core shells remain responsive without horizontal overflow on mobile width', async ({ page }) => {
     await page.setViewportSize({ width: 390, height: 844 });
 
-    for (const path of ['/aura-note/schedule', '/aura-note/workspace/appt-demo-001', '/aura-note/finalized/note-demo-finalized-001']) {
+    for (const path of ['/aura-note/schedule', '/aura-note/operations', '/aura-note/workspace/appt-demo-001', '/aura-note/finalized/note-demo-finalized-001']) {
       await page.goto(path);
       await expect(page.getByRole('main')).toBeVisible();
 

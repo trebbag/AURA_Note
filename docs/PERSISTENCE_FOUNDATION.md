@@ -269,6 +269,20 @@ This remains local synthetic persistence. It does not introduce production obser
 
 This remains synthetic/local readiness evidence. It is not production PHI database approval and does not implement production patient matching, MPI merge/unmerge, patient portal, live EHR chart merge, live ClinicOS synchronization, medical-necessity determination, charge finalization, or claim submission.
 
+## WO-039 standalone operations persistence update
+
+`WO-039` extends the broad in-memory API runtime for standalone operations while reusing the P7 durable metadata model shape:
+
+- task inbox and MA follow-up items carry safe patient IDs, note/appointment linkage, owner role, due metadata, blocker status, adjudication status, and source metadata;
+- billing review queue items carry draft claim preview metadata and preserve `submittedClaim=false`;
+- settings/admin/integration state carries tenant/site/user/role, feature flags, disabled/mock integration status, disabled-user state, and safe-degraded ClinicOS mappings;
+- templates and dot phrases carry safe variables and synthetic-only flags;
+- estimate configuration remains internal-only and caveated;
+- rules catalog entries carry source evidence, human-review-required, autonomous-finalization-disabled, and medical-necessity-determination-disabled metadata;
+- `pnpm standalone:operations-readiness` validates the WO-039 contracts, events, permissions, routes, browser shell, tests, and P7.5 checkpoint evidence.
+
+`WO-039` does not add new Prisma schema tables because P7 already established durable evidence for `Task`, `Template`, `DotPhrase`, `FeatureFlag`, `IntegrationConnection`, and mode/config metadata. This remains synthetic/local readiness evidence. It is not production PHI database approval and does not implement production payer/pricing catalogs, certified coding rules, live ClinicOS task synchronization, medical-necessity determination, charge finalization, or claim submission.
+
 ## WO-032 storage delivery and retention deletion update
 
 `WO-032` adds production-oriented storage boundaries without enabling real production storage:

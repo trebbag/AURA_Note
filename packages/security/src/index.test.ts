@@ -377,6 +377,54 @@ describe('support and audit permissions', () => {
   });
 });
 
+describe('standalone operations permissions', () => {
+  it('keeps worklists, billing review, settings, and rules role limited', () => {
+    const clinician = {
+      role: 'clinician' as const,
+      linkedToPatient: true,
+      linkedToVisit: true,
+      treatingClinician: true,
+      billingReviewTriggered: false,
+      authorizedAdmin: false
+    };
+    const ma = {
+      ...clinician,
+      role: 'ma' as const,
+      treatingClinician: false
+    };
+    const billing = {
+      ...clinician,
+      role: 'billing_staff' as const,
+      treatingClinician: false,
+      billingReviewTriggered: true
+    };
+    const support = {
+      ...clinician,
+      role: 'support' as const,
+      treatingClinician: false,
+      linkedToPatient: false,
+      linkedToVisit: false
+    };
+    const admin = {
+      ...clinician,
+      role: 'admin' as const,
+      authorizedAdmin: true,
+      treatingClinician: false
+    };
+
+    assert.equal(canPerform('task:view', ma), true);
+    assert.equal(canPerform('task:update', ma), true);
+    assert.equal(canPerform('billing_review:view', billing), true);
+    assert.equal(canPerform('billing_review:update', billing), true);
+    assert.equal(canPerform('settings:manage', admin), true);
+    assert.equal(canPerform('template:manage', clinician), true);
+    assert.equal(canPerform('estimate_config:manage', admin), true);
+    assert.equal(canPerform('rules_catalog:manage', billing), false);
+    assert.equal(canPerform('task:view', support), false);
+    assert.equal(canPerform('billing_review:view', support), false);
+  });
+});
+
 describe('PHI key guard', () => {
   it('detects forbidden keys recursively', () => {
     const result = scanForForbiddenPhiKeys({

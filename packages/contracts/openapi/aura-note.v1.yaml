@@ -86,6 +86,209 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/StandalonePatientResponse'
+  /standalone/operations/tasks:
+    get:
+      operationId: listStandaloneOperationTasks
+      description: WO-039 implemented synthetic task inbox and MA follow-up worklist.
+      responses:
+        '200':
+          description: Synthetic standalone task worklist.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TaskWorklistResponse'
+  /standalone/operations/tasks/{taskId}:
+    patch:
+      operationId: updateStandaloneOperationTask
+      description: Update task adjudication and blocker status with audit/event evidence.
+      parameters:
+        - name: taskId
+          in: path
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateOperationalTaskRequest'
+      responses:
+        '200':
+          description: Task updated.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OperationalActionResponse'
+  /standalone/operations/billing-review:
+    get:
+      operationId: listStandaloneBillingReviewQueue
+      description: WO-039 billing review queue with transcript access limited to triggered review context.
+      responses:
+        '200':
+          description: Synthetic billing review queue.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BillingReviewQueueResponse'
+  /standalone/operations/billing-review/{billingReviewId}:
+    patch:
+      operationId: updateStandaloneBillingReview
+      description: Update billing review status without submitting claims.
+      parameters:
+        - name: billingReviewId
+          in: path
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateBillingReviewRequest'
+      responses:
+        '200':
+          description: Billing review updated.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OperationalActionResponse'
+  /standalone/operations/settings:
+    get:
+      operationId: getStandaloneSettingsAdminCenter
+      description: Synthetic settings/admin/integrations center with disabled/mock adapter status.
+      responses:
+        '200':
+          description: Settings/admin center.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SettingsAdminResponse'
+  /standalone/operations/settings/integrations/{integrationId}:
+    patch:
+      operationId: updateStandaloneIntegrationStatus
+      description: Update disabled/mock integration scaffold status; no live credentials are accepted.
+      parameters:
+        - name: integrationId
+          in: path
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateIntegrationRequest'
+      responses:
+        '200':
+          description: Integration status updated.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OperationalActionResponse'
+  /standalone/operations/templates:
+    get:
+      operationId: listStandaloneTemplates
+      description: List synthetic templates and dot phrases with safe variables only.
+      responses:
+        '200':
+          description: Templates and dot phrases.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TemplatesResponse'
+    post:
+      operationId: createStandaloneTemplate
+      description: Create a synthetic template; obvious PHI and unsafe variables are rejected.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateTemplateRequest'
+      responses:
+        '201':
+          description: Template created.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OperationalActionResponse'
+  /standalone/operations/dot-phrases/{dotPhraseId}:
+    patch:
+      operationId: updateStandaloneDotPhrase
+      description: Update a synthetic dot phrase; obvious PHI and unsafe variables are rejected.
+      parameters:
+        - name: dotPhraseId
+          in: path
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateDotPhraseRequest'
+      responses:
+        '200':
+          description: Dot phrase updated.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OperationalActionResponse'
+  /standalone/operations/estimate-config:
+    get:
+      operationId: getStandaloneEstimateConfig
+      description: View internal-only estimate configuration; patient-facing estimates are disabled.
+      responses:
+        '200':
+          description: Estimate configuration.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EstimateConfigurationResponse'
+    patch:
+      operationId: updateStandaloneEstimateConfig
+      description: Update internal-only estimate caveats; patient-facing financial conclusions are rejected.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateEstimateConfigurationRequest'
+      responses:
+        '200':
+          description: Estimate configuration updated.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OperationalActionResponse'
+  /standalone/operations/rules-catalog:
+    get:
+      operationId: listStandaloneRulesCatalog
+      description: List draft/human-review-required rules catalog seeds.
+      responses:
+        '200':
+          description: Rules catalog.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RulesCatalogResponse'
+  /standalone/operations/rules-catalog/publish:
+    post:
+      operationId: publishStandaloneRulesCatalogEntries
+      description: Publish synthetic rules only with human-review attestation; no autonomous coding or medical-necessity decision is enabled.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PublishRulesCatalogRequest'
+      responses:
+        '201':
+          description: Rules catalog entries published.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OperationalActionResponse'
   /schedule/appointments/{appointmentId}:
     patch:
       operationId: updateStandaloneAppointment
@@ -2020,6 +2223,253 @@ components:
         blocksSigning: { type: boolean }
         adjudicationStatus: { type: string, enum: [open, answered, closed, assigned, deferred] }
         ownerRole: { type: string }
+    OperationalTask:
+      allOf:
+        - $ref: '#/components/schemas/Task'
+        - type: object
+          required: [tenantId, siteId, patientDisplayLabel, dueAt, priority, worklist, source, demoFixture]
+          properties:
+            tenantId: { type: string }
+            siteId: { type: string }
+            appointmentId: { type: string }
+            patientDisplayLabel: { type: string }
+            dueAt: { type: string, format: date-time }
+            priority: { type: string, enum: [routine, urgent] }
+            worklist: { type: string, enum: [task_inbox, ma_follow_up] }
+            source: { type: string, enum: [history_gap, compliance, billing_review, manual_synthetic] }
+            demoFixture: { type: boolean }
+    UpdateOperationalTaskRequest:
+      type: object
+      required: [adjudicationStatus]
+      properties:
+        adjudicationStatus: { type: string, enum: [open, answered, closed, assigned, deferred] }
+        blocksSigning: { type: boolean }
+        resolutionNote: { type: string }
+    TaskWorklistView:
+      type: object
+      required: [tasks, counts, states]
+      properties:
+        tasks:
+          type: array
+          items:
+            $ref: '#/components/schemas/OperationalTask'
+        counts:
+          type: object
+          properties:
+            total: { type: integer }
+            blockers: { type: integer }
+            maFollowUp: { type: integer }
+            overdue: { type: integer }
+        states:
+          type: array
+          items: { type: string }
+    BillingReviewQueueItem:
+      type: object
+      required: [billingReviewId, tenantId, siteId, noteId, safePatientId, draftClaimPreviewId, status, transcriptAccess, transcriptAccessReason, draftClaimPreview, assignedRole, dueAt, submittedClaim]
+      properties:
+        billingReviewId: { type: string }
+        tenantId: { type: string }
+        siteId: { type: string }
+        noteId: { type: string }
+        safePatientId: { type: string }
+        draftClaimPreviewId: { type: string }
+        status: { type: string, enum: [triggered, in_review, needs_clinician, cleared] }
+        transcriptAccess: { type: string, enum: [not_requested, allowed_for_triggered_review, denied] }
+        transcriptAccessReason: { type: string }
+        draftClaimPreview:
+          $ref: '#/components/schemas/DraftClaimPreview'
+        assignedRole: { type: string, enum: [billing_staff] }
+        dueAt: { type: string, format: date-time }
+        submittedClaim: { type: boolean, const: false }
+    BillingReviewQueueView:
+      type: object
+      required: [items, transcriptAccessLimitedToTriggeredReview, supportUsersDenied]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/BillingReviewQueueItem'
+        transcriptAccessLimitedToTriggeredReview: { type: boolean }
+        supportUsersDenied: { type: boolean }
+    UpdateBillingReviewRequest:
+      type: object
+      required: [status]
+      properties:
+        status: { type: string, enum: [triggered, in_review, needs_clinician, cleared] }
+        requestTranscriptAccess: { type: boolean }
+        noteForClinician: { type: string }
+    SettingsAdminView:
+      type: object
+      required: [tenant, sites, users, featureFlags, integrations, modeMappings, demoFixture]
+      properties:
+        tenant: { type: object }
+        sites: { type: array, items: { type: object } }
+        users: { type: array, items: { type: object } }
+        featureFlags: { type: array, items: { type: object } }
+        integrations: { type: array, items: { type: object } }
+        modeMappings: { type: array, items: { type: object } }
+        demoFixture: { type: boolean }
+    UpdateIntegrationRequest:
+      type: object
+      required: [status, reason]
+      properties:
+        status: { type: string, enum: [disabled, mock_ready] }
+        reason: { type: string }
+    TemplateManagement:
+      type: object
+      required: [templateId, tenantId, siteId, name, visitType, sections, variables, status, syntheticOnly]
+      properties:
+        templateId: { type: string }
+        tenantId: { type: string }
+        siteId: { type: string }
+        name: { type: string }
+        visitType: { type: string }
+        sections: { type: array, items: { type: string } }
+        variables: { type: array, items: { type: string } }
+        status: { type: string, enum: [draft, active, retired] }
+        syntheticOnly: { type: boolean }
+    DotPhrase:
+      type: object
+      required: [dotPhraseId, tenantId, siteId, trigger, expansion, variables, smartPhrasePlaceholders, status, syntheticOnly]
+      properties:
+        dotPhraseId: { type: string }
+        tenantId: { type: string }
+        siteId: { type: string }
+        trigger: { type: string }
+        expansion: { type: string }
+        variables: { type: array, items: { type: string } }
+        smartPhrasePlaceholders: { type: array, items: { type: string } }
+        status: { type: string, enum: [draft, active, retired] }
+        syntheticOnly: { type: boolean }
+    TemplatesView:
+      type: object
+      required: [templates, dotPhrases, forbiddenPhiRejected]
+      properties:
+        templates:
+          type: array
+          items:
+            $ref: '#/components/schemas/TemplateManagement'
+        dotPhrases:
+          type: array
+          items:
+            $ref: '#/components/schemas/DotPhrase'
+        forbiddenPhiRejected: { type: boolean }
+    CreateTemplateRequest:
+      type: object
+      required: [name, visitType, sections, variables]
+      properties:
+        name: { type: string }
+        visitType: { type: string }
+        sections: { type: array, items: { type: string } }
+        variables: { type: array, items: { type: string } }
+    UpdateDotPhraseRequest:
+      type: object
+      required: [expansion]
+      properties:
+        expansion: { type: string }
+        variables: { type: array, items: { type: string } }
+        status: { type: string, enum: [draft, active, retired] }
+    EstimateConfiguration:
+      type: object
+      required: [estimateConfigId, tenantId, siteId, internalEstimatesEnabled, patientFacingEstimatesEnabled, sourceDataConfigured, caveatText, updatedAt, syntheticOnly]
+      properties:
+        estimateConfigId: { type: string }
+        tenantId: { type: string }
+        siteId: { type: string }
+        internalEstimatesEnabled: { type: boolean }
+        patientFacingEstimatesEnabled: { type: boolean, const: false }
+        sourceDataConfigured: { type: boolean }
+        caveatText: { type: string }
+        updatedAt: { type: string, format: date-time }
+        syntheticOnly: { type: boolean }
+    UpdateEstimateConfigurationRequest:
+      type: object
+      required: [internalEstimatesEnabled, caveatText]
+      properties:
+        internalEstimatesEnabled: { type: boolean }
+        patientFacingEstimatesEnabled: { type: boolean }
+        caveatText: { type: string }
+    RulesCatalogEntry:
+      type: object
+      required: [ruleId, category, codeOrKey, title, sourceEvidence, effectiveDate, status, humanReviewRequired, autonomousFinalizationAllowed, medicalNecessityDeterminationAllowed]
+      properties:
+        ruleId: { type: string }
+        category: { type: string, enum: [cpt, hcpcs, icd10, hcc, em, quality_measure, visit_type, confidence_threshold] }
+        codeOrKey: { type: string }
+        title: { type: string }
+        sourceEvidence: { type: array, items: { type: string } }
+        effectiveDate: { type: string }
+        status: { type: string, enum: [draft, active] }
+        humanReviewRequired: { type: boolean }
+        autonomousFinalizationAllowed: { type: boolean, const: false }
+        medicalNecessityDeterminationAllowed: { type: boolean, const: false }
+    RulesCatalogView:
+      type: object
+      required: [entries, sourceEvidenceRequired, certifiedProductionRules, draftOnly]
+      properties:
+        entries:
+          type: array
+          items:
+            $ref: '#/components/schemas/RulesCatalogEntry'
+        sourceEvidenceRequired: { type: boolean }
+        certifiedProductionRules: { type: boolean, const: false }
+        draftOnly: { type: boolean }
+    PublishRulesCatalogRequest:
+      type: object
+      required: [ruleIds, attestation]
+      properties:
+        ruleIds: { type: array, items: { type: string } }
+        attestation: { type: string }
+    OperationalActionResponse:
+      type: object
+      properties:
+        data:
+          type: object
+          properties:
+            task:
+              $ref: '#/components/schemas/OperationalTask'
+            billingReview:
+              $ref: '#/components/schemas/BillingReviewQueueItem'
+            template:
+              $ref: '#/components/schemas/TemplateManagement'
+            dotPhrase:
+              $ref: '#/components/schemas/DotPhrase'
+            estimateConfig:
+              $ref: '#/components/schemas/EstimateConfiguration'
+            rulesCatalog:
+              $ref: '#/components/schemas/RulesCatalogView'
+            settings:
+              $ref: '#/components/schemas/SettingsAdminView'
+    TaskWorklistResponse:
+      type: object
+      properties:
+        data:
+          $ref: '#/components/schemas/TaskWorklistView'
+    BillingReviewQueueResponse:
+      type: object
+      properties:
+        data:
+          $ref: '#/components/schemas/BillingReviewQueueView'
+    SettingsAdminResponse:
+      type: object
+      properties:
+        data:
+          $ref: '#/components/schemas/SettingsAdminView'
+    TemplatesResponse:
+      type: object
+      properties:
+        data:
+          $ref: '#/components/schemas/TemplatesView'
+    EstimateConfigurationResponse:
+      type: object
+      properties:
+        data:
+          $ref: '#/components/schemas/EstimateConfiguration'
+    RulesCatalogResponse:
+      type: object
+      properties:
+        data:
+          $ref: '#/components/schemas/RulesCatalogView'
     EhrAdapterStatus:
       type: object
       required: [vendor, connected, mode, tenantId, siteId, health, warnings]

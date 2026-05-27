@@ -169,6 +169,15 @@ Codex should add tests as implementation proceeds.
 - `apps/api/src/schedule/prisma-schedule.tenant-isolation.integration.test.ts` verifies `ChartContextSnapshot` RLS read/write behavior with local synthetic PostgreSQL.
 - `pnpm standalone:patient-schedule-readiness` checks that the WO-038 contracts, permissions, routes, browser shell, RLS artifact, and test hooks are present.
 
+`WO-039` adds standalone operations completion checks:
+
+- `pnpm --filter @aura-note/api test` includes operations service coverage for task/blocker adjudication, billing-review transcript restrictions, patient-facing estimate rejection, PHI-bearing template rejection, and rules-catalog human-review attestation;
+- `pnpm --filter @aura-note/api test:e2e` includes standalone operations API coverage for worklists, role denial, billing transcript restrictions, support denial, settings/integration updates, template/dot phrase safety, estimate caveats, and rules catalog publication;
+- `pnpm test:browser` covers `/aura-note/operations` and verifies task inbox, MA follow-up, billing review, settings, templates, estimates, rules catalog, state labels, and mobile overflow behavior;
+- `pnpm standalone:operations-readiness` checks the WO-039 contracts, events, permissions, routes, browser shell, tests, and P7.5 checkpoint evidence.
+
+P7.5 remains synthetic/local readiness. Production identity, live payer data, certified coding rules, live ClinicOS synchronization, production PHI storage, medical-necessity determination, charge finalization, and claim submission remain deferred.
+
 The gate remains synthetic/local evidence only. It does not approve production PHI storage, live EHR patient matching, live ClinicOS synchronization, patient portal behavior, charge finalization, medical-necessity determination, or claim submission.
 
 `WO-023` extends schema SQL-generation checks:

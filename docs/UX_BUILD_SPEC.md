@@ -52,6 +52,12 @@ The browser-testable Schedule Builder shell lives at `/aura-note/schedule`. Thro
 
 `WO-038` adds explicit screen states for ready, saving, blocked, failed, permission-denied, read-only, and demo fixture states on the standalone patient/schedule surface. It remains synthetic/local only and must not display internal billing, revenue, coaching, confidence, audit, support, production PHI, or live EHR completeness on a patient-facing surface.
 
+## Standalone Operations Center
+
+`WO-039` adds the browser-testable standalone operations route at `/aura-note/operations`. It covers task inbox, MA follow-up worklist, billing review queue, settings/admin/integrations, templates/dot phrases, estimate configuration, and rules catalog states without depending on ClinicOS.
+
+The route exposes empty, loading, ready, saving, blocked, failed, permission-denied, read-only, and demo fixture state labels. Billing review visibly restricts transcript access to a triggered review context; estimates are internal-only with caveats; and the rules catalog displays human-review-required and autonomous-finalization-disabled states. No patient-facing view exposes internal billing, revenue, coaching, confidence, audit, support, rules-engine internals, or claim-submission behavior.
+
 Start Visit in `WO-002` activates the note shell and demonstrates Draft Notes visibility. Full timer, recording, transcription, editor unlock depth, and exception workflow behavior remain scoped to `WO-004`.
 
 ### WO-003 implementation status

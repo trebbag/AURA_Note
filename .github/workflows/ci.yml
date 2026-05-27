@@ -41,6 +41,7 @@ jobs:
       - run: pnpm persistence:finalization-output-adapter
       - run: pnpm persistence:durable-runtime-readiness
       - run: pnpm standalone:patient-schedule-readiness
+      - run: pnpm standalone:operations-readiness
       - run: pnpm storage:azure-adapter-readiness
       - run: pnpm retention:storage-deletion-readiness
       - run: pnpm production:readiness

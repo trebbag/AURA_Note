@@ -117,9 +117,9 @@ Post-CP4 productionization candidates are documented in `docs/POST_CP4_PRODUCTIO
 
 `WO-036` adds durable local finalization/output/writeback metadata evidence for signed final note, patient summary, billing attestation, draft claim preview, export artifacts, and EHR writeback queue state. `WO-037` completes durable audit/event/support/config/coaching state and broad RLS evidence, closing P7 as synthetic/local durable runtime evidence.
 
-`WO-038` through `WO-039` form the P7.5 standalone product completion candidate. They complete standalone patient/chart/schedule/worklist/settings/template/estimate/rules-catalog surfaces so core v1 operation does not depend on ClinicOS.
+`WO-038` through `WO-039` form the P7.5 standalone product completion candidate. They complete standalone patient/chart/schedule/worklist/settings/template/estimate/rules-catalog surfaces so core v1 operation does not depend on ClinicOS. P7.5 is complete once `WO-039` is implemented, tested, and merged.
 
-`WO-040` forms the P8.5 audio and transcription candidate. It adds browser microphone capture, recording transport, transcription adapters, mock provider coverage, retention metadata, correction history, and provider-governance boundaries.
+`WO-040` forms the P8.5 audio and transcription candidate. It adds browser microphone capture, recording transport, transcription adapters, mock provider coverage, retention metadata, correction history, and provider-governance boundaries. Live transcription providers and production PHI audio storage remain disabled unless a later governance work order explicitly authorizes them.
 
 `WO-041` through `WO-043` form the P8 production platform candidate. They harden identity, tenant administration, config/secrets, feature flags, Azure storage/download/retention/backup/restore, observability, support operations, and status views.
 

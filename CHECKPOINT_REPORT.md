@@ -299,3 +299,54 @@ Deferred production decisions remain tracked in `SPEC_GAPS.md`, including produc
 ## Next recommended batch
 
 Begin P7.5 with `WO-038` standalone patient, chart context, and schedule completion. Keep standalone-first and ClinicOS-embeddable behavior in one app through adapter boundaries.
+
+---
+
+# P7.5 — Standalone Product Completion Candidate
+
+## Completed work orders
+
+- `WO-038` — Standalone patient, chart context, and schedule completion.
+- `WO-039` — Standalone worklists, settings, templates, estimates, and rules catalog.
+
+## Acceptance evidence
+
+- `WO-038` added synthetic/local standalone patient shell create/search/edit behavior, appointment edit/check-in/cancel/no-show transitions, patient linkage evidence, chart-context snapshot metadata, source freshness warnings, browser day/week schedule coverage, OpenAPI/DTO/event updates, core `PatientLinkage` and `ChartContextSnapshot` RLS evidence, and `pnpm standalone:patient-schedule-readiness`.
+- `WO-039` added synthetic/local task inbox, MA follow-up worklist, billing review queue, settings/admin/integrations center, templates and dot phrases, internal-only estimate configuration, rules catalog seeds, browser operations route coverage, OpenAPI/DTO/event updates, and `pnpm standalone:operations-readiness`.
+- Billing review transcript access is limited to billing staff in a triggered review context.
+- Draft claim preview state remains `submittedClaim=false`.
+- Estimate configuration remains internal-only and caveated; patient-facing financial conclusions are disabled.
+- Rules catalog entries are source-linked, human-review-required, and prohibit autonomous finalization and medical-necessity determination.
+- Standalone mode can now operate the synthetic v1 patient, chart, schedule, worklist, billing-review, settings, template, estimate, and rules-catalog surfaces without ClinicOS dependency.
+- ClinicOS-integrated behavior remains adapter-bound and safe-degraded; ClinicOS does not bypass AURA Note permissions.
+
+## Tests and gates
+
+- `pnpm standalone:patient-schedule-readiness`
+- `pnpm standalone:operations-readiness`
+- `pnpm --filter @aura-note/api test`
+- `pnpm --filter @aura-note/api test:e2e`
+- `pnpm --filter @aura-note/contracts test`
+- `pnpm --filter @aura-note/domain test`
+- `pnpm --filter @aura-note/security test`
+- `pnpm --filter @aura-note/web typecheck`
+- Full local gate is recorded in `RUN_LOG.md` for `WO-039`.
+- GitHub Actions must pass before merge.
+
+## Open risks
+
+- P7.5 is browser/API-testable synthetic/local product evidence, not commercial production readiness.
+- Production identity, live payer data, certified rules catalogs, live ClinicOS synchronization, live EHR writeback, production PHI storage, production object storage execution, live AI, medical-necessity determination, charge finalization, claim submission, and production launch approval remain future work.
+- Browser audio capture, recording transport, transcription adapter behavior, correction history, and live transcription-provider governance are not part of P7.5 and begin in `WO-040`.
+
+## Active SPEC_GAPs
+
+None active as of the post-`WO-039` P7.5 review.
+
+## Deferred production decisions
+
+Deferred production decisions remain tracked in `SPEC_GAPS.md`, including production identity, production PHI database posture, Azure backup/restore execution, live transcription provider, external AI governance, live EHR writeback, ClinicOS live integration, revenue estimate policy, production rules licensing/certification, and claim/payer strategy.
+
+## Next recommended batch
+
+Begin P8.5 with `WO-040` browser audio capture and transcription candidate. Keep browser microphone, recording transport, transcription providers, raw-audio retention, transcript retention, correction history, and live-provider governance behind synthetic/mock or explicit configuration boundaries.

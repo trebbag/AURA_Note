@@ -1,8 +1,8 @@
 {
   "project": "AURA Note v1",
   "mode": "production_build_in_progress",
-  "current_checkpoint": "P7.5",
-  "next_work_order": "WO-039",
+  "current_checkpoint": "P8.5",
+  "next_work_order": "WO-040",
   "work_orders": {
     "WO-000": "done",
     "WO-001": "done",
@@ -43,8 +43,8 @@
     "WO-036": "done",
     "WO-037": "done",
     "WO-038": "done",
-    "WO-039": "todo",
-    "WO-040": "planned",
+    "WO-039": "done",
+    "WO-040": "todo",
     "WO-041": "planned",
     "WO-042": "planned",
     "WO-043": "planned",
@@ -57,7 +57,7 @@
     "WO-050": "planned",
     "WO-051": "planned"
   },
-  "last_updated_by": "Codex WO-038 standalone patient chart context schedule completion",
-  "last_updated_at": "2026-05-27T22:45:30Z",
-  "notes": "WO-038 added synthetic/local standalone patient shell create/search/edit, appointment edit/check-in/cancel/no-show, chart-context snapshot metadata with source freshness warnings, patient linkage evidence, OpenAPI/DTO/event updates, browser day/week schedule coverage, core ChartContextSnapshot RLS evidence, and pnpm standalone:patient-schedule-readiness. P7.5 remains in progress; WO-039 is next. AURA Note is not production-ready; standalone worklists/settings/templates/estimates/rules catalog, production identity, live storage, live transcription, live EHR/ClinicOS sync, live AI, production PHI storage, production deletion, medical-necessity determination, charge finalization, and claim submission remain future work."
+  "last_updated_by": "Codex WO-039 standalone operations completion",
+  "last_updated_at": "2026-05-27T23:20:00Z",
+  "notes": "WO-039 added synthetic/local standalone task inbox, MA follow-up worklist, billing review queue with triggered-review transcript restrictions, settings/admin/integrations center, templates and dot phrases, internal-only estimate configuration, rules catalog seeds, OpenAPI/DTO/event updates, browser operations route coverage, and pnpm standalone:operations-readiness. P7.5 is complete as synthetic/browser/API-testable standalone product evidence. AURA Note is not production-ready; browser audio capture, live transcription, production identity, live storage, live EHR/ClinicOS sync, live AI, production PHI storage, production deletion, medical-necessity determination, charge finalization, and claim submission remain future work."
 }

@@ -532,6 +532,20 @@ This is not full durable application runtime and is not production PHI database 
 
 The in-memory runtime remains the broad API default for browser workflow coverage. The Prisma schedule adapter persists the current schedule/note/patient/chart-context slice for local PostgreSQL evidence. Live EHR patient matching, production MPI, merge/unmerge, live insurance eligibility, production PHI database approval, patient portal behavior, live ClinicOS synchronization, medical-necessity determination, charge finalization, and claim submission remain deferred.
 
+## WO-039 standalone operations status
+
+`WO-039` makes the remaining standalone operating model browser/API-testable with synthetic data:
+
+- task inbox and MA follow-up worklist rows carry safe patient IDs, note/appointment linkage, owner role, due metadata, blocker status, adjudication status, and source metadata;
+- billing review queue rows link to draft claim preview metadata and preserve `submittedClaim=false`;
+- transcript access in billing review is represented as a context-limited decision, not broad transcript visibility;
+- settings/admin/integrations expose tenant/site/user/role, feature flag, disabled/mock integration, disabled-user, and safe-degraded ClinicOS mapping metadata;
+- templates and dot phrases use safe variable placeholders and reject obvious PHI;
+- estimate configuration is internal-only and caveated, with patient-facing estimates disabled;
+- rules catalog entries include category, code/key, source evidence, effective date, status, human-review-required, autonomous-finalization-disabled, and medical-necessity-determination-disabled metadata.
+
+The runtime implementation for `WO-039` is synthetic/local. It reuses the P7 durable metadata model shape for `Task`, `Template`, `DotPhrase`, `FeatureFlag`, `IntegrationConnection`, and related configuration evidence but does not approve production PHI storage, production payer/pricing catalogs, certified coding rules, live ClinicOS task synchronization, charge finalization, medical-necessity determination, or claim submission.
+
 ## WO-037 durable runtime metadata and broad RLS status
 
 `WO-037` moves the remaining P7 tenant-owned runtime metadata slice to local durable runtime evidence:

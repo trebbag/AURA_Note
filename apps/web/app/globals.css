@@ -56,7 +56,8 @@ button:disabled {
 .workspace-shell,
 .wizard-shell,
 .coaching-shell,
-.support-shell {
+.support-shell,
+.operations-shell {
   width: min(1180px, calc(100vw - 32px));
   margin: 0 auto;
   padding: 24px 0 40px;
@@ -233,6 +234,43 @@ textarea {
 .list-toolbar {
   display: grid;
   gap: 10px;
+}
+
+.operations-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 20px;
+}
+
+.secondary-button,
+.selected-tab {
+  min-height: 38px;
+  padding: 8px 10px;
+}
+
+.secondary-button {
+  border-color: var(--aura-color-border-strong);
+  background: #fff;
+  color: var(--aura-color-text-primary);
+}
+
+.selected-tab {
+  border-color: var(--aura-color-action-primary);
+  background: var(--aura-color-action-primary);
+  color: #fff;
+}
+
+.state-pill {
+  display: inline-flex;
+  min-height: 28px;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--aura-color-border);
+  padding: 4px 8px;
+  background: #fff;
+  color: var(--aura-color-text-muted);
+  font-size: 0.85rem;
 }
 
 .patient-context {
