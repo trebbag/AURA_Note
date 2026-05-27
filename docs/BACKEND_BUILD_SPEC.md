@@ -188,6 +188,8 @@ Workers must support:
 
 `WO-028` adds a local PostgreSQL compose contract and static readiness verifier. It does not start Docker in CI, apply migrations, use Prisma Client at runtime, replace in-memory repositories, enable row-level security, or authorize PHI-bearing persistence.
 
+`WO-029` adds live local PostgreSQL schema apply/rollback evidence with generated Prisma SQL. It starts only the synthetic local compose database, tears down the synthetic volume after the evidence run, and still does not use Prisma Client at runtime, replace in-memory repositories, enable row-level security, or authorize PHI-bearing persistence.
+
 `WO-016` adds the first tenant identity and access foundation:
 
 - API request contexts use a shared local synthetic session parser from `packages/security`.

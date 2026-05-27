@@ -37,7 +37,7 @@ const runLog = readText('RUN_LOG.md');
 const specGaps = readText('SPEC_GAPS.md');
 const openApi = readText('packages/contracts/openapi/aura-note.v1.yaml');
 
-const requiredWorkOrders = Array.from({ length: 29 }, (_, index) => `WO-${String(index).padStart(3, '0')}`);
+const requiredWorkOrders = Array.from({ length: 30 }, (_, index) => `WO-${String(index).padStart(3, '0')}`);
 const incompleteWorkOrders = requiredWorkOrders.filter((workOrder) => repoStatus.work_orders?.[workOrder] !== 'done');
 const incompleteRecordedWorkOrders = Object.entries(repoStatus.work_orders ?? {})
   .filter(([, status]) => status !== 'done')
@@ -98,7 +98,8 @@ check(
   ['test.schedule-repository', 'apps/api/src/schedule/schedule.repository.test.ts', 'Schedule repository seam unit coverage exists'],
   ['test.persistence-runtime-readiness', 'scripts/validate-persistence-runtime-readiness.js', 'Persistence runtime readiness verifier exists'],
   ['test.persistence-adapter', 'packages/persistence/src/index.test.ts', 'Persistence adapter scaffold unit coverage exists'],
-  ['test.local-db-readiness', 'scripts/validate-local-database-readiness.js', 'Local database orchestration readiness verifier exists']
+  ['test.local-db-readiness', 'scripts/validate-local-database-readiness.js', 'Local database orchestration readiness verifier exists'],
+  ['test.local-db-migration-evidence', 'scripts/verify-local-postgres-migration.js', 'Local PostgreSQL migration apply/rollback verifier exists']
 ].forEach(([id, relativePath, description]) => checkFile(id, relativePath, description));
 
 [

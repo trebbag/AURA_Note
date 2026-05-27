@@ -33,3 +33,4 @@ jobs:
       - run: pnpm persistence:runtime-readiness
       - run: pnpm persistence:adapter-readiness
       - run: pnpm persistence:local-db-readiness
+      - run: pnpm persistence:local-db:migrate-evidence

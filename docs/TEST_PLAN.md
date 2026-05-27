@@ -214,3 +214,12 @@ Codex should add tests as implementation proceeds.
 - CI runs `pnpm persistence:local-db-readiness` after the existing persistence gates;
 - existing full gate commands continue to cover lint, PHI lint, typecheck, unit tests, browser tests, build, acceptance readiness, Prisma schema validation, runtime-readiness SQL generation, and adapter-readiness tests;
 - live migration apply/rollback tests, row-level security tests, transaction tests, tenant-scoped query tests, and full Prisma-backed runtime repository tests remain deferred.
+
+## Post-CP4 local PostgreSQL migration apply and rollback evidence
+
+`WO-029` adds live local schema checks:
+
+- `pnpm persistence:local-db:migrate-evidence` starts the local synthetic PostgreSQL service, applies generated Prisma forward SQL, verifies no drift against the datamodel, applies generated rollback SQL, verifies empty database state, and tears down the synthetic volume;
+- CI runs `pnpm persistence:local-db:migrate-evidence` after static local DB readiness;
+- runtime repository behavior still uses the in-memory adapter;
+- Prisma Client runtime tests, row-level security tests, tenant-scoped live query tests, transaction/error-path tests, and full database-backed workflow tests remain deferred.

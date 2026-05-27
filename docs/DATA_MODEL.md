@@ -416,3 +416,14 @@ This is still not runtime database persistence. It does not apply migrations, co
 - CI runs `pnpm persistence:local-db-readiness` without requiring Docker or touching a live database.
 
 This remains readiness scaffolding. It does not apply migrations, run rollback, use Prisma Client at runtime, replace the in-memory repositories, enable row-level security, run tenant-scoped live queries, or store production PHI.
+
+## WO-029 local PostgreSQL migration evidence status
+
+`WO-029` proves the current Prisma datamodel can apply and roll back against the local synthetic PostgreSQL target:
+
+- `scripts/verify-local-postgres-migration.js` generates forward SQL, applies it to local PostgreSQL, and verifies no schema drift against the datamodel;
+- the same verifier generates rollback SQL, applies it, and verifies the local database is back to empty state;
+- the verifier refuses non-synthetic configuration and removes the synthetic local volume after the evidence run;
+- CI runs `pnpm persistence:local-db:migrate-evidence`.
+
+This remains schema evidence. It does not use Prisma Client at runtime, replace the in-memory repositories, enable row-level security, run tenant-scoped live queries, or store production PHI.
