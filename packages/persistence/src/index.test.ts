@@ -47,13 +47,35 @@ describe('persistence adapter plan', () => {
     assert.equal(plan.storesProductionPhi, false);
   });
 
-  it('keeps the Prisma adapter disabled without local database and integration evidence', () => {
+  it('keeps the Prisma adapter disabled without a local database URL', () => {
     const plan = resolvePersistenceAdapterPlan({ requestedAdapter: 'prisma' });
 
     assert.equal(plan.selectedAdapter, 'prisma');
     assert.equal(plan.runtimeEnabled, false);
     assert.equal(plan.readiness, 'blocked_missing_database_url');
     assert.equal(plan.requiredEvidence.includes('rollback evidence'), true);
+  });
+
+  it('enables the Prisma schedule adapter only for the synthetic local database', () => {
+    const plan = resolvePersistenceAdapterPlan({
+      requestedAdapter: 'prisma',
+      databaseUrl: 'postgresql://aura_note:aura_note@localhost:5432/aura_note_dev'
+    });
+
+    assert.equal(plan.runtimeEnabled, true);
+    assert.equal(plan.liveDatabaseConnectionAllowed, true);
+    assert.equal(plan.readiness, 'enabled_local_synthetic_prisma_schedule_adapter');
+  });
+
+  it('blocks non-local Prisma database URLs', () => {
+    const plan = resolvePersistenceAdapterPlan({
+      requestedAdapter: 'prisma',
+      databaseUrl: 'postgresql://aura_note:unsafe@example.invalid:5432/aura_note_dev'
+    });
+
+    assert.equal(plan.runtimeEnabled, false);
+    assert.equal(plan.liveDatabaseConnectionAllowed, false);
+    assert.equal(plan.readiness, 'blocked_non_local_database_url');
   });
 
   it('blocks production PHI persistence even when Prisma is requested', () => {
@@ -90,10 +112,12 @@ describe('appointment-note Prisma projection', () => {
       projection.rows.find((row) => row.table === 'Appointment')?.data.patientId,
       projection.rows.find((row) => row.table === 'Patient')?.data.id
     );
+    assert.equal(projection.rows.find((row) => row.table === 'Appointment')?.data.sourceRef, appointment.appointmentId);
     assert.equal(
       projection.rows.find((row) => row.table === 'Note')?.data.appointmentId,
       projection.rows.find((row) => row.table === 'Appointment')?.data.id
     );
+    assert.equal(projection.rows.find((row) => row.table === 'Note')?.data.sourceRef, note.noteId);
   });
 
   it('creates stable UUID-shaped identifiers for the same synthetic natural keys', () => {

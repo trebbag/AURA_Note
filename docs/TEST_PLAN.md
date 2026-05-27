@@ -223,3 +223,14 @@ Codex should add tests as implementation proceeds.
 - CI runs `pnpm persistence:local-db:migrate-evidence` after static local DB readiness;
 - runtime repository behavior still uses the in-memory adapter;
 - Prisma Client runtime tests, row-level security tests, tenant-scoped live query tests, transaction/error-path tests, and full database-backed workflow tests remain deferred.
+
+## Post-CP4 Prisma schedule runtime adapter
+
+`WO-030` adds the first local PostgreSQL-backed runtime adapter test:
+
+- `pnpm db:client:generate` generates Prisma Client from `packages/contracts/prisma/schema.prisma`;
+- `pnpm persistence:prisma-schedule-adapter` runs `apps/api/src/schedule/prisma-schedule.repository.integration.test.ts`;
+- the integration test starts the synthetic local PostgreSQL compose service, applies generated Prisma SQL, persists appointment and note shell state, reloads by appointment and note IDs, verifies tenant-scoped idempotency replay, rejects appointment-to-note remaps, and tears down the synthetic volume;
+- CI runs the adapter test after local DB readiness and migration apply/rollback evidence.
+
+Broad workflow database tests, row-level security tests, production migration tests, and PHI-bearing persistence tests remain deferred.

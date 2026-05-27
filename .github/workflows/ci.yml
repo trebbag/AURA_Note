@@ -21,6 +21,7 @@ jobs:
           node-version: 20
           cache: pnpm
       - run: pnpm install --frozen-lockfile
+      - run: pnpm db:client:generate
       - run: pnpm lint
       - run: pnpm lint:phi
       - run: pnpm typecheck
@@ -34,3 +35,4 @@ jobs:
       - run: pnpm persistence:adapter-readiness
       - run: pnpm persistence:local-db-readiness
       - run: pnpm persistence:local-db:migrate-evidence
+      - run: pnpm persistence:prisma-schedule-adapter

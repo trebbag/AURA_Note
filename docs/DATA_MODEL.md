@@ -427,3 +427,16 @@ This remains readiness scaffolding. It does not apply migrations, run rollback, 
 - CI runs `pnpm persistence:local-db:migrate-evidence`.
 
 This remains schema evidence. It does not use Prisma Client at runtime, replace the in-memory repositories, enable row-level security, run tenant-scoped live queries, or store production PHI.
+
+## WO-030 Prisma schedule runtime adapter status
+
+`WO-030` extends the local persistence model from schema proof into the first tested Prisma Client adapter slice:
+
+- `Appointment.sourceRef` stores the semantic synthetic appointment ID while `Appointment.id` remains a deterministic UUID primary key;
+- `Note.sourceRef` stores the semantic synthetic note ID while `Note.id` remains a deterministic UUID primary key;
+- tenant-scoped unique indexes on appointment and note source references prevent remapping one semantic appointment or note across persisted records;
+- `IdempotencyRecord` relates to `Tenant` and `Appointment` and enforces one replay key per tenant;
+- the Prisma schedule adapter persists and reloads the `Tenant`/`Site`/`User`/`Patient`/`Appointment`/`Note` graph through local PostgreSQL;
+- integration tests verify appointment-to-note lookup in both directions and reject appointment-note/idempotency remapping.
+
+This is not a full durable application switch. Visit sessions, recording/transcript state, suggestions, Visit Selections, compliance review, History Gap tasks, finalization, exports, writeback, coaching, support status, and audit export state still require later repository migration before the in-memory runtime can be retired.

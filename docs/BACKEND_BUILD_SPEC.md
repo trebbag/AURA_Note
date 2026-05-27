@@ -190,6 +190,8 @@ Workers must support:
 
 `WO-029` adds live local PostgreSQL schema apply/rollback evidence with generated Prisma SQL. It starts only the synthetic local compose database, tears down the synthetic volume after the evidence run, and still does not use Prisma Client at runtime, replace in-memory repositories, enable row-level security, or authorize PHI-bearing persistence.
 
+`WO-030` adds the first Prisma Client-backed repository adapter slice for schedule appointment and note shell state. It is local synthetic PostgreSQL only and covers appointment/note persistence, reverse lookup, one-to-one remapping blocks, and durable idempotency replay records. The broad `ScheduleService` runtime remains on the in-memory adapter until the remaining workflow state can be moved without partial persistence loss.
+
 `WO-016` adds the first tenant identity and access foundation:
 
 - API request contexts use a shared local synthetic session parser from `packages/security`.
