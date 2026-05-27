@@ -32,9 +32,10 @@
     "WO-025": "done",
     "WO-026": "done",
     "WO-027": "done",
-    "WO-028": "done"
+    "WO-028": "done",
+    "WO-029": "done"
   },
-  "last_updated_by": "Codex WO-028 local database orchestration readiness",
-  "last_updated_at": "2026-05-27T13:53:39Z",
-  "notes": "WO-028 post-CP4 local database orchestration readiness is complete as a local PostgreSQL compose contract and static verifier. Runtime still defaults to in-memory synthetic repositories; Docker startup, live database connection, migration apply/rollback, Prisma Client runtime usage, row-level security, tenant-scoped live query tests, production PHI persistence, production credentials, live EHR writeback, and full Prisma-backed repository replacement remain deferred."
+  "last_updated_by": "Codex WO-029 local PostgreSQL migration evidence",
+  "last_updated_at": "2026-05-27T14:22:35Z",
+  "notes": "WO-029 post-CP4 local PostgreSQL migration evidence is complete as live local apply/rollback verification against the synthetic compose database. Runtime still defaults to in-memory synthetic repositories; Prisma Client runtime usage, row-level security, tenant-scoped live query tests, production PHI persistence, production credentials, live EHR writeback, and full Prisma-backed repository replacement remain deferred."
 }

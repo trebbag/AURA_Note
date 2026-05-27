@@ -362,3 +362,29 @@ Do not implement these tranches directly from this backlog. Promote one tranche 
 
 - This is orchestration readiness, not a live database integration test.
 - A later work order still needs to run migrations against a local PostgreSQL instance, test rollback, enable tenant-scoped query checks, and prove transaction/error-path behavior before runtime persistence can be claimed.
+
+## Follow-on Tranche P6-10 — Local PostgreSQL Migration Apply And Rollback Evidence
+
+**Promotion status:** Promoted to `WO-029` as live local PostgreSQL apply/rollback evidence. Runtime database writes remain disabled.
+
+**Objective:** Prove the current Prisma schema can apply and roll back against the local synthetic PostgreSQL target before any Prisma-backed runtime adapter is enabled.
+
+**Candidate scope:**
+
+- Start the local PostgreSQL service from `docker-compose.yml`.
+- Generate forward SQL from empty to the current Prisma datamodel and execute it against the local database.
+- Verify the local database has no schema drift against the Prisma datamodel.
+- Generate rollback SQL from the Prisma datamodel to empty and execute it against the same local database.
+- Verify the rolled-back database has no schema drift against empty.
+- Tear down the synthetic local volume after the evidence run.
+
+**Acceptance evidence:**
+
+- `pnpm persistence:local-db:migrate-evidence` passes locally and in CI.
+- The verifier refuses non-synthetic database configuration.
+- Existing Prisma validation, persistence readiness, adapter readiness, acceptance readiness, browser, test, and build gates continue to pass.
+
+**Known risks:**
+
+- This proves schema apply/rollback only. It does not replace the in-memory runtime adapter.
+- Tenant-scoped live query tests, row-level security, transaction/error-path behavior, and full Prisma-backed repository replacement remain later work.

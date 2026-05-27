@@ -19,6 +19,7 @@ The backend source of truth recommends PostgreSQL with row-level security where 
 - `pnpm db:migration:diff` generates SQL from an empty database to the current Prisma datamodel. It does not connect to a live database.
 - `pnpm persistence:foundation` runs schema validation and the repository-specific persistence foundation verifier.
 - `pnpm persistence:local-db-readiness` validates the local PostgreSQL compose contract without starting Docker, applying migrations, or touching a live database.
+- `pnpm persistence:local-db:migrate-evidence` applies generated Prisma SQL to the local synthetic PostgreSQL container, verifies no drift, rolls back to empty, verifies no drift against empty, and tears down the synthetic volume.
 
 ## Schema coverage
 
@@ -165,3 +166,15 @@ Runtime database writes remain disabled. This still does not use Prisma Client, 
 - CI runs the verifier without requiring Docker to start.
 
 This is orchestration readiness only. It does not apply migrations, connect Prisma Client, replace the in-memory runtime adapter, enable row-level security, run tenant-scoped live query tests, store production PHI, or authorize production database use.
+
+## WO-029 local PostgreSQL migration evidence update
+
+`WO-029` adds live local schema apply/rollback evidence:
+
+- `pnpm persistence:local-db:migrate-evidence` starts the local synthetic PostgreSQL service from `docker-compose.yml`;
+- the verifier generates forward SQL from empty to the Prisma datamodel and executes it against the local database;
+- it verifies no schema drift remains after forward apply;
+- it generates rollback SQL from the Prisma datamodel to empty and executes it against the same local database;
+- it verifies the rolled-back local database matches empty state and removes the synthetic volume.
+
+This is local schema evidence only. It does not connect Prisma Client at runtime, replace the in-memory repository adapter, enable row-level security, run tenant-scoped live query tests, store production PHI, or authorize production database use.
