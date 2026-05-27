@@ -14,8 +14,10 @@ import {
   canSignAndDispatchAfterBilling,
   canStartFinalization,
   canStartVisit,
+  assertPatientLinkage,
   buildCoachingDashboardProjection,
   buildOwnCoachingReport,
+  chartContextRequiresFreshnessWarning,
   complianceBlocksFinalize,
   approveRecordingException,
   createAppointmentLifecycle,
@@ -32,6 +34,7 @@ import {
   resumeVisitGate,
   stopVisitGate,
   validateCoachingSignal,
+  validateStandalonePatientDraft,
   type CoachingSignal
 } from './index';
 
@@ -94,6 +97,59 @@ describe('appointment lifecycle', () => {
     assert.equal(canStartVisit('scheduled', 'shell_created'), true);
     assert.equal(canStartVisit('cancelled', 'shell_created'), false);
     assert.equal(canStartVisit('scheduled', 'visit_active'), false);
+  });
+});
+
+describe('standalone patient and chart-context invariants', () => {
+  it('accepts safe synthetic patient identifiers and rejects obvious unsafe identifiers', () => {
+    assert.deepEqual(
+      validateStandalonePatientDraft({
+        tenantId: 'tenant-001',
+        siteId: 'site-001',
+        safePatientId: 'safe-patient-001',
+        displayLabel: 'Standalone safe-patient-001'
+      }),
+      []
+    );
+
+    assert.match(
+      validateStandalonePatientDraft({
+        tenantId: 'tenant-001',
+        siteId: 'site-001',
+        safePatientId: 'MRN-12345',
+        displayLabel: 'DOB 01/01/1970'
+      }).join('; '),
+      /safePatientId must use the safe-patient-\* synthetic identifier format/
+    );
+  });
+
+  it('requires active patient linkage before chart or note exposure', () => {
+    assert.equal(
+      assertPatientLinkage({
+        safePatientId: 'safe-patient-001',
+        linkedObjectType: 'chart_context',
+        linkedObjectId: 'chart-context-001',
+        active: true
+      }).linkedObjectType,
+      'chart_context'
+    );
+
+    assert.throws(
+      () =>
+        assertPatientLinkage({
+          safePatientId: 'safe-patient-001',
+          linkedObjectType: 'note',
+          linkedObjectId: 'note-001',
+          active: false
+        }),
+      /patient linkage must be active/
+    );
+  });
+
+  it('flags stale or empty chart context snapshots for source freshness review', () => {
+    assert.equal(chartContextRequiresFreshnessWarning({ sourceFreshness: 'recent', sliceCount: 2 }), false);
+    assert.equal(chartContextRequiresFreshnessWarning({ sourceFreshness: 'unknown', sliceCount: 2 }), true);
+    assert.equal(chartContextRequiresFreshnessWarning({ sourceFreshness: 'current_visit', sliceCount: 0 }), true);
   });
 });
 

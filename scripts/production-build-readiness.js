@@ -139,8 +139,9 @@ checkpointNeedles.forEach((checkpoint) => {
 
 check(
   'spec-gaps.active-none-current',
-  'SPEC_GAPS explicitly reflects no active gaps after the post-WO-032 re-rail review',
-  specGaps.includes('No active gaps as of post-`WO-032` / production-build re-rail review'),
+  'SPEC_GAPS explicitly reflects no active gaps after the latest production-build rails review',
+  specGaps.includes('No active gaps as of post-`WO-032` / production-build re-rail review') ||
+    specGaps.includes('No active gaps as of post-`WO-038` standalone patient/chart/schedule review'),
   'SPEC_GAPS.md active gaps section'
 );
 

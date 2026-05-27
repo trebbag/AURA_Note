@@ -118,6 +118,25 @@ export interface AppointmentDraft {
   reasonForVisit?: string;
 }
 
+export interface StandalonePatientDraft {
+  tenantId: string;
+  siteId: string;
+  safePatientId: string;
+  displayLabel?: string;
+}
+
+export interface PatientLinkageInput {
+  safePatientId: string;
+  linkedObjectType: 'appointment' | 'note' | 'chart_context' | 'task' | 'finalization';
+  linkedObjectId: string;
+  active: boolean;
+}
+
+export interface ChartContextFreshnessInput {
+  sourceFreshness: 'current_visit' | 'recent' | 'historical' | 'unknown';
+  sliceCount: number;
+}
+
 export interface AppointmentLifecycle {
   appointmentId: string;
   noteId: string;
@@ -313,6 +332,34 @@ export function validateAppointmentDraft(draft: AppointmentDraft): string[] {
     errors.push('startsAt must be a valid ISO date-time');
   }
   return errors;
+}
+
+export function validateStandalonePatientDraft(draft: StandalonePatientDraft): string[] {
+  const errors: string[] = [];
+  if (!draft.tenantId.trim()) errors.push('tenantId is required');
+  if (!draft.siteId.trim()) errors.push('siteId is required');
+  if (!draft.safePatientId.trim()) errors.push('safePatientId is required');
+  if (!/^safe-patient-[a-z0-9-]+$/i.test(draft.safePatientId)) {
+    errors.push('safePatientId must use the safe-patient-* synthetic identifier format');
+  }
+  if (draft.displayLabel && /\b(?:MRN|DOB|SSN|@|\d{3}-\d{2}-\d{4})\b/i.test(draft.displayLabel)) {
+    errors.push('displayLabel must not contain obvious PHI');
+  }
+  return errors;
+}
+
+export function assertPatientLinkage(input: PatientLinkageInput): PatientLinkageInput {
+  if (!input.safePatientId.trim() || !input.linkedObjectId.trim()) {
+    throw new Error('patient linkage requires safe patient and linked object identifiers');
+  }
+  if (!input.active) {
+    throw new Error('patient linkage must be active before chart, note, task, or finalization access');
+  }
+  return input;
+}
+
+export function chartContextRequiresFreshnessWarning(input: ChartContextFreshnessInput): boolean {
+  return input.sliceCount === 0 || input.sourceFreshness === 'historical' || input.sourceFreshness === 'unknown';
 }
 
 export function createAppointmentLifecycle(

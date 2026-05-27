@@ -24,8 +24,17 @@ export type StorageProviderDto = 'azure_blob' | 'in_memory';
 export type StorageDeliveryModeDto = 'inline_synthetic' | 'storage_backed';
 
 export type CoreEventType =
+  | 'patient.shell_created.v1'
+  | 'patient.updated.v1'
+  | 'patient.linkage_recorded.v1'
   | 'appointment.created.v1'
+  | 'appointment.updated.v1'
+  | 'appointment.checked_in.v1'
+  | 'appointment.cancelled.v1'
+  | 'appointment.no_show_marked.v1'
   | 'note.shell_created.v1'
+  | 'chart_context.snapshot_created.v1'
+  | 'chart_context.snapshot_viewed.v1'
   | 'visit.started.v1'
   | 'visit.paused.v1'
   | 'visit.resumed.v1'
@@ -603,7 +612,7 @@ export type EhrChartContextSliceTypeDto =
   | 'payer'
   | 'tasks'
   | 'billing_context';
-export type EhrVendorDto = 'athenahealth' | 'epic' | 'eclinicalworks' | 'generic_mock';
+export type EhrVendorDto = 'athenahealth' | 'epic' | 'eclinicalworks' | 'generic_mock' | 'standalone_local';
 
 export interface EhrAdapterStatusDto {
   vendor: EhrVendorDto;
@@ -660,6 +669,90 @@ export interface EhrChartContextPackageDto {
   staleSliceCount: number;
   createdAt: string;
   warnings: string[];
+}
+
+export type StandalonePatientStatusDto = 'active' | 'inactive';
+export type ChartContextSourceFreshnessDto = 'current_visit' | 'recent' | 'historical' | 'unknown';
+
+export interface StandalonePatientDto {
+  patientId: string;
+  tenantId: string;
+  siteId: string;
+  safePatientId: string;
+  status: StandalonePatientStatusDto;
+  displayLabel: string;
+  preferredModality?: AppointmentModality;
+  createdAt: string;
+  updatedAt: string;
+  mode: AppMode;
+}
+
+export interface StandalonePatientLinkageDto {
+  patientLinkageId: string;
+  tenantId: string;
+  siteId: string;
+  safePatientId: string;
+  appointmentId?: string;
+  noteId?: string;
+  linkedObjectType: 'appointment' | 'note' | 'chart_context' | 'task' | 'finalization';
+  linkedObjectId: string;
+  purpose: 'treatment' | 'documentation' | 'operations';
+  active: boolean;
+  createdAt: string;
+}
+
+export interface CreateStandalonePatientRequestDto {
+  safePatientId: string;
+  displayLabel?: string;
+  preferredModality?: AppointmentModality;
+}
+
+export interface UpdateStandalonePatientRequestDto {
+  displayLabel?: string;
+  status?: StandalonePatientStatusDto;
+  preferredModality?: AppointmentModality;
+}
+
+export interface StandalonePatientSearchQueryDto {
+  safePatientId?: string;
+  status?: StandalonePatientStatusDto;
+}
+
+export interface StandalonePatientSearchViewDto {
+  patients: StandalonePatientDto[];
+  demoFixtureState: true;
+  realPhiExcluded: true;
+}
+
+export interface StandalonePatientResponseDto {
+  patient: StandalonePatientDto;
+  linkages: StandalonePatientLinkageDto[];
+  auditEvent: AuditEventDto;
+  domainEvents: Array<AuraNoteEvent<Record<string, unknown>>>;
+}
+
+export interface StandaloneChartContextSnapshotDto {
+  chartContextSnapshotId: string;
+  tenantId: string;
+  siteId: string;
+  safePatientId: string;
+  appointmentId?: string;
+  noteId?: string;
+  sourceSystem: 'standalone_local';
+  sourceFreshness: ChartContextSourceFreshnessDto;
+  staleWarning: boolean;
+  slices: EhrChartContextSliceDto[];
+  warnings: string[];
+  aiPackagingAllowed: false;
+  productionPhiStorageApproved: false;
+  createdAt: string;
+  mode: AppMode;
+}
+
+export interface StandaloneChartContextResponseDto {
+  chartContextSnapshot: StandaloneChartContextSnapshotDto;
+  auditEvent: AuditEventDto;
+  domainEvents: Array<AuraNoteEvent<Record<string, unknown>>>;
 }
 
 export interface EhrIntegrationStatusDto {
@@ -1113,17 +1206,49 @@ export interface CreateAppointmentRequestDto {
   reasonForVisit?: string;
 }
 
+export interface UpdateAppointmentRequestDto {
+  clinicianId?: string;
+  visitType?: string;
+  startsAt?: string;
+  durationMinutes?: number;
+  modality?: AppointmentModality;
+  reasonForVisit?: string;
+}
+
+export type AppointmentStatusActionDto = 'check_in' | 'cancel' | 'mark_no_show';
+
+export interface AppointmentStatusActionRequestDto {
+  action: AppointmentStatusActionDto;
+  reason?: string;
+}
+
 export interface ScheduleAppointmentDto extends AppointmentDto {
   noteStatus: NoteState;
   noteVisibleInDrafts: boolean;
   startVisitEnabled: boolean;
   ehrSchedulingEnabled: boolean;
   clinicOsSchedulingEnabled: boolean;
+  patientDisplayLabel?: string;
+  chartContextFreshness?: ChartContextSourceFreshnessDto;
+  chartContextWarnings?: string[];
 }
 
 export interface CreateAppointmentResponseDto {
   appointment: AppointmentDto;
   note: NoteDto;
+  patient: StandalonePatientDto;
+  linkages: StandalonePatientLinkageDto[];
+  chartContextSnapshot: StandaloneChartContextSnapshotDto;
+  auditEvent: AuditEventDto;
+  domainEvents: Array<AuraNoteEvent<Record<string, unknown>>>;
+}
+
+export interface AppointmentActionResponseDto {
+  appointment: AppointmentDto;
+  note: NoteDto;
+  patient: StandalonePatientDto;
+  linkages: StandalonePatientLinkageDto[];
+  chartContextSnapshot: StandaloneChartContextSnapshotDto;
   auditEvent: AuditEventDto;
   domainEvents: Array<AuraNoteEvent<Record<string, unknown>>>;
 }
@@ -1141,6 +1266,8 @@ export interface ScheduleViewDto {
   appointments: ScheduleAppointmentDto[];
   ehrSchedulingEnabled: boolean;
   clinicOsSchedulingEnabled: boolean;
+  viewMode?: 'day' | 'week';
+  activeDate?: string;
 }
 
 export type WorkspacePanelState =

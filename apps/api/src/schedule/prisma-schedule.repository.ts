@@ -1,5 +1,5 @@
 import type { Prisma, PrismaClient } from '@prisma/client';
-import type { AppointmentDto, NoteDto } from '@aura-note/contracts';
+import type { AppointmentDto, NoteDto, StandaloneChartContextSnapshotDto, StandalonePatientDto } from '@aura-note/contracts';
 import { createAppointmentLifecycle } from '@aura-note/domain';
 import { mapAppointmentNoteToPrismaProjection, toDeterministicPersistenceUuid } from '@aura-note/persistence';
 import type { AccessContext } from '@aura-note/security';
@@ -233,6 +233,27 @@ export class PrismaScheduleStateRepository implements AsyncScheduleStateReposito
         sourceRef: stringField(note, 'sourceRef')
       }
     });
+
+    await this.prisma.chartContextSnapshot.upsert({
+      where: { id: toDeterministicPersistenceUuid('chart-context', this.options.tenantId, entry.chartContextSnapshot.chartContextSnapshotId) },
+      create: {
+        id: toDeterministicPersistenceUuid('chart-context', this.options.tenantId, entry.chartContextSnapshot.chartContextSnapshotId),
+        tenantId: stringField(patient, 'tenantId'),
+        siteId: stringField(patient, 'siteId'),
+        patientId: stringField(patient, 'id'),
+        appointmentId: stringField(appointment, 'id'),
+        sourceSystem: entry.chartContextSnapshot.sourceSystem,
+        freshness: entry.chartContextSnapshot.sourceFreshness,
+        snapshotJson: entry.chartContextSnapshot as unknown as Prisma.InputJsonValue
+      },
+      update: {
+        siteId: stringField(patient, 'siteId'),
+        appointmentId: stringField(appointment, 'id'),
+        sourceSystem: entry.chartContextSnapshot.sourceSystem,
+        freshness: entry.chartContextSnapshot.sourceFreshness,
+        snapshotJson: entry.chartContextSnapshot as unknown as Prisma.InputJsonValue
+      }
+    });
   }
 
   async getIdempotentAppointmentId(idempotencyKey: string): Promise<string | undefined> {
@@ -339,6 +360,34 @@ export class PrismaScheduleStateRepository implements AsyncScheduleStateReposito
       state: record.note.state as NoteDto['state'],
       mode: toMode(record.tenant.mode)
     };
+    const patient: StandalonePatientDto = {
+      patientId: record.patient.id,
+      tenantId: this.options.tenantId,
+      siteId: record.site.name,
+      safePatientId: record.patient.safePatientId,
+      status: record.patient.status === 'inactive' ? 'inactive' : 'active',
+      displayLabel: `Standalone ${record.patient.safePatientId}`,
+      createdAt: record.patient.createdAt.toISOString(),
+      updatedAt: record.patient.updatedAt.toISOString(),
+      mode: toMode(record.tenant.mode)
+    };
+    const chartContextSnapshot: StandaloneChartContextSnapshotDto = {
+      chartContextSnapshotId: `chart-context-${appointmentId}`,
+      tenantId: this.options.tenantId,
+      siteId: record.site.name,
+      safePatientId: record.patient.safePatientId,
+      appointmentId,
+      noteId,
+      sourceSystem: 'standalone_local',
+      sourceFreshness: 'recent',
+      staleWarning: false,
+      slices: [],
+      warnings: ['Synthetic standalone chart context only; live EHR completeness is not implied.'],
+      aiPackagingAllowed: false,
+      productionPhiStorageApproved: false,
+      createdAt: record.createdAt.toISOString(),
+      mode: toMode(record.tenant.mode)
+    };
     const lifecycle = createAppointmentLifecycle(appointmentId, noteId, {
       tenantId: appointment.tenantId,
       siteId: appointment.siteId,
@@ -355,6 +404,36 @@ export class PrismaScheduleStateRepository implements AsyncScheduleStateReposito
     return {
       appointment,
       note,
+      patient,
+      linkages: [
+        {
+          patientLinkageId: `patient-linkage-${appointmentId}`,
+          tenantId: this.options.tenantId,
+          siteId: record.site.name,
+          safePatientId: record.patient.safePatientId,
+          appointmentId,
+          noteId,
+          linkedObjectType: 'appointment',
+          linkedObjectId: appointmentId,
+          purpose: 'treatment',
+          active: true,
+          createdAt: record.createdAt.toISOString()
+        },
+        {
+          patientLinkageId: `chart-context-linkage-${appointmentId}`,
+          tenantId: this.options.tenantId,
+          siteId: record.site.name,
+          safePatientId: record.patient.safePatientId,
+          appointmentId,
+          noteId,
+          linkedObjectType: 'chart_context',
+          linkedObjectId: chartContextSnapshot.chartContextSnapshotId,
+          purpose: 'documentation',
+          active: true,
+          createdAt: record.createdAt.toISOString()
+        }
+      ],
+      chartContextSnapshot,
       lifecycle: {
         ...lifecycle,
         appointmentState: appointment.state,

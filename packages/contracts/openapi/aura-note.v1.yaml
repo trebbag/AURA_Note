@@ -37,6 +37,115 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/CreateAppointmentResponse'
+  /standalone/patients:
+    get:
+      operationId: searchStandalonePatients
+      description: WO-038 implemented synthetic standalone patient shell search. Real PHI and production patient matching are out of scope.
+      responses:
+        '200':
+          description: Synthetic standalone patient shells.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandalonePatientSearchResponse'
+    post:
+      operationId: createStandalonePatientShell
+      description: Create a standalone patient shell with a safe synthetic patient identifier.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateStandalonePatientRequest'
+      responses:
+        '201':
+          description: Standalone patient shell created.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandalonePatientResponse'
+  /standalone/patients/{safePatientId}:
+    patch:
+      operationId: updateStandalonePatientShell
+      description: Update synthetic standalone patient shell metadata without real PHI.
+      parameters:
+        - name: safePatientId
+          in: path
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateStandalonePatientRequest'
+      responses:
+        '200':
+          description: Standalone patient shell updated.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandalonePatientResponse'
+  /schedule/appointments/{appointmentId}:
+    patch:
+      operationId: updateStandaloneAppointment
+      description: Edit appointment metadata while preserving the one appointment to one note invariant.
+      parameters:
+        - name: appointmentId
+          in: path
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateAppointmentRequest'
+      responses:
+        '200':
+          description: Appointment updated.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AppointmentActionResponse'
+  /schedule/appointments/{appointmentId}/status:
+    post:
+      operationId: updateStandaloneAppointmentStatus
+      description: Check in, cancel, or mark no-show for a standalone appointment.
+      parameters:
+        - name: appointmentId
+          in: path
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AppointmentStatusActionRequest'
+      responses:
+        '201':
+          description: Appointment lifecycle status updated.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AppointmentActionResponse'
+  /schedule/appointments/{appointmentId}/chart-context:
+    get:
+      operationId: getStandaloneChartContextSnapshot
+      description: Return source-linked synthetic/local chart-context snapshot metadata; live EHR completeness is not implied.
+      parameters:
+        - name: appointmentId
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: Synthetic standalone chart-context snapshot.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandaloneChartContextResponse'
   /schedule/appointments/{appointmentId}/start-visit:
     post:
       operationId: startVisit
@@ -825,6 +934,83 @@ components:
         durationMinutes: { type: integer, minimum: 5, maximum: 480 }
         modality: { type: string, enum: [in_person, telehealth, phone] }
         reasonForVisit: { type: string }
+    UpdateAppointmentRequest:
+      type: object
+      properties:
+        clinicianId: { type: string }
+        visitType: { type: string }
+        startsAt: { type: string, format: date-time }
+        durationMinutes: { type: integer, minimum: 5, maximum: 480 }
+        modality: { type: string, enum: [in_person, telehealth, phone] }
+        reasonForVisit: { type: string }
+    AppointmentStatusActionRequest:
+      type: object
+      required: [action]
+      properties:
+        action: { type: string, enum: [check_in, cancel, mark_no_show] }
+        reason: { type: string }
+    StandalonePatient:
+      type: object
+      required: [patientId, tenantId, siteId, safePatientId, status, displayLabel, createdAt, updatedAt, mode]
+      properties:
+        patientId: { type: string }
+        tenantId: { type: string }
+        siteId: { type: string }
+        safePatientId: { type: string }
+        status: { type: string, enum: [active, inactive] }
+        displayLabel: { type: string }
+        preferredModality: { type: string, enum: [in_person, telehealth, phone] }
+        createdAt: { type: string, format: date-time }
+        updatedAt: { type: string, format: date-time }
+        mode: { type: string, enum: [standalone, clinicos_integrated] }
+    StandalonePatientLinkage:
+      type: object
+      required: [patientLinkageId, tenantId, siteId, safePatientId, linkedObjectType, linkedObjectId, purpose, active, createdAt]
+      properties:
+        patientLinkageId: { type: string }
+        tenantId: { type: string }
+        siteId: { type: string }
+        safePatientId: { type: string }
+        appointmentId: { type: string }
+        noteId: { type: string }
+        linkedObjectType: { type: string, enum: [appointment, note, chart_context, task, finalization] }
+        linkedObjectId: { type: string }
+        purpose: { type: string, enum: [treatment, documentation, operations] }
+        active: { type: boolean }
+        createdAt: { type: string, format: date-time }
+    CreateStandalonePatientRequest:
+      type: object
+      required: [safePatientId]
+      properties:
+        safePatientId: { type: string }
+        displayLabel: { type: string }
+        preferredModality: { type: string, enum: [in_person, telehealth, phone] }
+    UpdateStandalonePatientRequest:
+      type: object
+      properties:
+        displayLabel: { type: string }
+        status: { type: string, enum: [active, inactive] }
+        preferredModality: { type: string, enum: [in_person, telehealth, phone] }
+    StandaloneChartContextSnapshot:
+      type: object
+      required: [chartContextSnapshotId, tenantId, siteId, safePatientId, sourceSystem, sourceFreshness, staleWarning, warnings, aiPackagingAllowed, productionPhiStorageApproved, createdAt, mode]
+      properties:
+        chartContextSnapshotId: { type: string }
+        tenantId: { type: string }
+        siteId: { type: string }
+        safePatientId: { type: string }
+        appointmentId: { type: string }
+        noteId: { type: string }
+        sourceSystem: { type: string, enum: [standalone_local] }
+        sourceFreshness: { type: string, enum: [current_visit, recent, historical, unknown] }
+        staleWarning: { type: boolean }
+        warnings:
+          type: array
+          items: { type: string }
+        aiPackagingAllowed: { type: boolean, enum: [false] }
+        productionPhiStorageApproved: { type: boolean, enum: [false] }
+        createdAt: { type: string, format: date-time }
+        mode: { type: string, enum: [standalone, clinicos_integrated] }
     ScheduleAppointment:
       allOf:
         - $ref: '#/components/schemas/Appointment'
@@ -838,6 +1024,11 @@ components:
             startVisitEnabled: { type: boolean }
             ehrSchedulingEnabled: { type: boolean }
             clinicOsSchedulingEnabled: { type: boolean }
+            patientDisplayLabel: { type: string }
+            chartContextFreshness: { type: string, enum: [current_visit, recent, historical, unknown] }
+            chartContextWarnings:
+              type: array
+              items: { type: string }
     ScheduleView:
       type: object
       required: [appointments, ehrSchedulingEnabled, clinicOsSchedulingEnabled]
@@ -862,12 +1053,20 @@ components:
       properties:
         data:
           type: object
-          required: [appointment, note, auditEvent, domainEvents]
+          required: [appointment, note, patient, linkages, chartContextSnapshot, auditEvent, domainEvents]
           properties:
             appointment:
               $ref: '#/components/schemas/Appointment'
             note:
               $ref: '#/components/schemas/Note'
+            patient:
+              $ref: '#/components/schemas/StandalonePatient'
+            linkages:
+              type: array
+              items:
+                $ref: '#/components/schemas/StandalonePatientLinkage'
+            chartContextSnapshot:
+              $ref: '#/components/schemas/StandaloneChartContextSnapshot'
             auditEvent:
               $ref: '#/components/schemas/AuditEvent'
             domainEvents:
@@ -876,6 +1075,71 @@ components:
                 $ref: '#/components/schemas/AuraNoteEvent'
         meta:
           $ref: '#/components/schemas/ApiMeta'
+    AppointmentActionResponse:
+      type: object
+      required: [data, meta]
+      properties:
+        data:
+          type: object
+          required: [appointment, note, patient, linkages, chartContextSnapshot, auditEvent, domainEvents]
+          properties:
+            appointment: { $ref: '#/components/schemas/Appointment' }
+            note: { $ref: '#/components/schemas/Note' }
+            patient: { $ref: '#/components/schemas/StandalonePatient' }
+            linkages:
+              type: array
+              items: { $ref: '#/components/schemas/StandalonePatientLinkage' }
+            chartContextSnapshot: { $ref: '#/components/schemas/StandaloneChartContextSnapshot' }
+            auditEvent: { $ref: '#/components/schemas/AuditEvent' }
+            domainEvents:
+              type: array
+              items: { $ref: '#/components/schemas/AuraNoteEvent' }
+        meta: { $ref: '#/components/schemas/ApiMeta' }
+    StandalonePatientSearchResponse:
+      type: object
+      required: [data, meta]
+      properties:
+        data:
+          type: object
+          required: [patients, demoFixtureState, realPhiExcluded]
+          properties:
+            patients:
+              type: array
+              items: { $ref: '#/components/schemas/StandalonePatient' }
+            demoFixtureState: { type: boolean }
+            realPhiExcluded: { type: boolean }
+        meta: { $ref: '#/components/schemas/ApiMeta' }
+    StandalonePatientResponse:
+      type: object
+      required: [data, meta]
+      properties:
+        data:
+          type: object
+          required: [patient, linkages, auditEvent, domainEvents]
+          properties:
+            patient: { $ref: '#/components/schemas/StandalonePatient' }
+            linkages:
+              type: array
+              items: { $ref: '#/components/schemas/StandalonePatientLinkage' }
+            auditEvent: { $ref: '#/components/schemas/AuditEvent' }
+            domainEvents:
+              type: array
+              items: { $ref: '#/components/schemas/AuraNoteEvent' }
+        meta: { $ref: '#/components/schemas/ApiMeta' }
+    StandaloneChartContextResponse:
+      type: object
+      required: [data, meta]
+      properties:
+        data:
+          type: object
+          required: [chartContextSnapshot, auditEvent, domainEvents]
+          properties:
+            chartContextSnapshot: { $ref: '#/components/schemas/StandaloneChartContextSnapshot' }
+            auditEvent: { $ref: '#/components/schemas/AuditEvent' }
+            domainEvents:
+              type: array
+              items: { $ref: '#/components/schemas/AuraNoteEvent' }
+        meta: { $ref: '#/components/schemas/ApiMeta' }
     StartVisitResponse:
       type: object
       required: [data, meta]

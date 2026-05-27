@@ -17,7 +17,7 @@ import {
 } from '@aura-note/domain';
 import { toDeterministicPersistenceUuid } from '@aura-note/persistence';
 import type { AccessContext } from '@aura-note/security';
-import type { StoredAppointment } from './schedule.repository';
+import { createStandalonePatientScheduleScaffold, type StoredAppointment } from './schedule.repository';
 import { createPrismaScheduleStateRepository, type AsyncScheduleStateRepository } from './prisma-schedule.repository';
 import {
   createPrismaVisitCaptureRepository,
@@ -114,8 +114,7 @@ function createStoredAppointment(
     reasonForVisit: 'Synthetic durable visit capture'
   });
 
-  return {
-    appointment: {
+  const appointment: StoredAppointment['appointment'] = {
       appointmentId,
       tenantId,
       siteId,
@@ -130,8 +129,8 @@ function createStoredAppointment(
       source: 'standalone',
       reasonForVisit: 'Synthetic durable visit capture',
       mode: 'standalone'
-    },
-    note: {
+  };
+  const note: StoredAppointment['note'] = {
       noteId,
       appointmentId,
       tenantId,
@@ -140,7 +139,12 @@ function createStoredAppointment(
       clinicianId: `clinician-${tenantId}-${siteId}`,
       state: lifecycle.noteState,
       mode: 'standalone'
-    },
+  };
+
+  return {
+    appointment,
+    note,
+    ...createStandalonePatientScheduleScaffold(appointment, note),
     lifecycle
   };
 }

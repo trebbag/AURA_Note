@@ -4,13 +4,13 @@ This file tracks missing, conflicting, unsafe, or deliberately deferred product 
 
 ## Active gaps
 
-No active gaps as of post-`WO-032` / production-build re-rail review on 2026-05-27.
+No active gaps as of post-`WO-038` standalone patient/chart/schedule review on 2026-05-27.
 
 The repo remains not production-ready. The items below are deferred production decisions rather than active blockers for the current rails work order.
 
 ## Deferred production decisions
 
-These items must stay visible and must be resolved before the related production work can be declared complete. They are not blockers for `WO-033` because `WO-033` is a planning/readiness-control work order.
+These items must stay visible and must be resolved before the related production work can be declared complete. They are not blockers for the current P7.5 rails because the active work remains synthetic/local and explicitly excludes live PHI, live EHR/ClinicOS synchronization, autonomous billing, and production launch behavior.
 
 ### Deferred Decision — Production identity provider and account lifecycle
 

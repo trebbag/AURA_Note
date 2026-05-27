@@ -48,7 +48,9 @@ Creating an appointment must create a one-to-one note shell.
 
 ### WO-002 implementation status
 
-The first browser-testable Schedule Builder shell lives at `/aura-note/schedule`. It supports synthetic standalone appointment creation, linked note shell display, disabled EHR/ClinicOS scheduling indicators, and Start Visit state feedback. This route is workflow-scaffold fidelity, not final Figma visual design.
+The browser-testable Schedule Builder shell lives at `/aura-note/schedule`. Through `WO-038` it supports synthetic standalone patient shell search/edit visibility, safe patient identifiers, chart-context source freshness warnings, day/week schedule views, linked note shell display, disabled EHR/ClinicOS scheduling indicators, and appointment check-in/cancel/no-show/Start Visit state feedback. This route is workflow-scaffold fidelity, not final Figma visual design.
+
+`WO-038` adds explicit screen states for ready, saving, blocked, failed, permission-denied, read-only, and demo fixture states on the standalone patient/schedule surface. It remains synthetic/local only and must not display internal billing, revenue, coaching, confidence, audit, support, production PHI, or live EHR completeness on a patient-facing surface.
 
 Start Visit in `WO-002` activates the note shell and demonstrates Draft Notes visibility. Full timer, recording, transcription, editor unlock depth, and exception workflow behavior remain scoped to `WO-004`.
 

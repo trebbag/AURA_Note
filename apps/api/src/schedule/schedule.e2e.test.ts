@@ -38,6 +38,145 @@ describe('schedule appointment lifecycle API', () => {
       .expect(403);
   });
 
+  it('supports standalone patient shell, chart context, and schedule status workflow without billing access', async () => {
+    const patient = await request(app.getHttpServer())
+      .post('/api/v1/standalone/patients')
+      .set('x-aura-role', 'ma')
+      .send({
+        safePatientId: 'safe-patient-e2e-038',
+        displayLabel: 'Standalone safe-patient-e2e-038',
+        preferredModality: 'in_person'
+      })
+      .expect(201);
+
+    assert.equal(patient.body.data.patient.safePatientId, 'safe-patient-e2e-038');
+    assert.equal(patient.body.data.patient.status, 'active');
+    assert.equal(patient.body.data.domainEvents[0].eventType, 'patient.shell_created.v1');
+
+    const searched = await request(app.getHttpServer())
+      .get('/api/v1/standalone/patients')
+      .query({ safePatientId: 'safe-patient-e2e-038' })
+      .set('x-aura-role', 'clinician')
+      .expect(200);
+
+    assert.equal(searched.body.data.patients.length, 1);
+    assert.equal(searched.body.data.realPhiExcluded, true);
+
+    await request(app.getHttpServer())
+      .get('/api/v1/standalone/patients')
+      .set('x-aura-role', 'billing_staff')
+      .expect(403);
+
+    const updatedPatient = await request(app.getHttpServer())
+      .patch('/api/v1/standalone/patients/safe-patient-e2e-038')
+      .set('x-aura-role', 'ma')
+      .send({ displayLabel: 'Standalone updated safe-patient-e2e-038', preferredModality: 'telehealth' })
+      .expect(200);
+
+    assert.equal(updatedPatient.body.data.patient.preferredModality, 'telehealth');
+
+    const created = await request(app.getHttpServer())
+      .post('/api/v1/schedule/appointments')
+      .set('x-aura-role', 'ma')
+      .set('idempotency-key', 'idem-e2e-wo038')
+      .send({
+        safePatientId: 'safe-patient-e2e-038',
+        clinicianId: 'clinician-e2e-038',
+        visitType: 'Chronic follow-up',
+        startsAt: '2026-05-27T15:00:00.000Z',
+        durationMinutes: 30,
+        modality: 'telehealth',
+        reasonForVisit: 'Synthetic WO-038 patient-linked appointment'
+      })
+      .expect(201);
+
+    const appointmentId = created.body.data.appointment.appointmentId;
+    assert.equal(created.body.data.patient.safePatientId, 'safe-patient-e2e-038');
+    assert.equal(created.body.data.linkages.some((linkage: { linkedObjectType: string }) => linkage.linkedObjectType === 'chart_context'), true);
+    assert.equal(created.body.data.chartContextSnapshot.productionPhiStorageApproved, false);
+
+    const edited = await request(app.getHttpServer())
+      .patch(`/api/v1/schedule/appointments/${appointmentId}`)
+      .set('x-aura-role', 'ma')
+      .send({ durationMinutes: 45, visitType: 'AWV plus problem' })
+      .expect(200);
+
+    assert.equal(edited.body.data.appointment.durationMinutes, 45);
+    assert.equal(edited.body.data.domainEvents[0].eventType, 'appointment.updated.v1');
+
+    const chart = await request(app.getHttpServer())
+      .get(`/api/v1/schedule/appointments/${appointmentId}/chart-context`)
+      .set('x-aura-role', 'clinician')
+      .expect(200);
+
+    assert.equal(chart.body.data.chartContextSnapshot.sourceSystem, 'standalone_local');
+    assert.equal(chart.body.data.chartContextSnapshot.aiPackagingAllowed, false);
+
+    await request(app.getHttpServer())
+      .get(`/api/v1/schedule/appointments/${appointmentId}/chart-context`)
+      .set('x-aura-role', 'billing_staff')
+      .expect(403);
+
+    const checkedIn = await request(app.getHttpServer())
+      .post(`/api/v1/schedule/appointments/${appointmentId}/status`)
+      .set('x-aura-role', 'ma')
+      .send({ action: 'check_in' })
+      .expect(201);
+
+    assert.equal(checkedIn.body.data.appointment.state, 'checked_in');
+    assert.equal(checkedIn.body.data.note.state, 'shell_created');
+
+    const cancelledCreated = await request(app.getHttpServer())
+      .post('/api/v1/schedule/appointments')
+      .set('x-aura-role', 'ma')
+      .set('idempotency-key', 'idem-e2e-wo038-cancel')
+      .send({
+        safePatientId: 'safe-patient-e2e-038',
+        clinicianId: 'clinician-e2e-038',
+        visitType: 'Urgent',
+        startsAt: '2026-05-27T16:00:00.000Z',
+        durationMinutes: 20,
+        modality: 'in_person',
+        reasonForVisit: 'Synthetic cancellation'
+      })
+      .expect(201);
+
+    const cancelled = await request(app.getHttpServer())
+      .post(`/api/v1/schedule/appointments/${cancelledCreated.body.data.appointment.appointmentId}/status`)
+      .set('x-aura-role', 'ma')
+      .send({ action: 'cancel', reason: 'Synthetic cancellation reason' })
+      .expect(201);
+
+    assert.equal(cancelled.body.data.appointment.state, 'cancelled');
+    await request(app.getHttpServer())
+      .post(`/api/v1/schedule/appointments/${cancelledCreated.body.data.appointment.appointmentId}/start-visit`)
+      .set('x-aura-role', 'clinician')
+      .expect(400);
+
+    const noShowCreated = await request(app.getHttpServer())
+      .post('/api/v1/schedule/appointments')
+      .set('x-aura-role', 'ma')
+      .set('idempotency-key', 'idem-e2e-wo038-noshow')
+      .send({
+        safePatientId: 'safe-patient-e2e-038',
+        clinicianId: 'clinician-e2e-038',
+        visitType: 'Telehealth',
+        startsAt: '2026-05-27T17:00:00.000Z',
+        durationMinutes: 20,
+        modality: 'telehealth',
+        reasonForVisit: 'Synthetic no-show'
+      })
+      .expect(201);
+
+    const noShow = await request(app.getHttpServer())
+      .post(`/api/v1/schedule/appointments/${noShowCreated.body.data.appointment.appointmentId}/status`)
+      .set('x-aura-role', 'ma')
+      .send({ action: 'mark_no_show' })
+      .expect(201);
+
+    assert.equal(noShow.body.data.appointment.state, 'no_show');
+  });
+
   it('creates a standalone appointment, creates its note shell, and starts the visit', async () => {
     const created = await request(app.getHttpServer())
       .post('/api/v1/schedule/appointments')
@@ -62,8 +201,11 @@ describe('schedule appointment lifecycle API', () => {
       .set('x-aura-role', 'clinician')
       .expect(200);
 
-    assert.equal(listed.body.data.appointments.length, 1);
-    assert.equal(listed.body.data.appointments[0].noteStatus, 'shell_created');
+    const listedAppointment = listed.body.data.appointments.find(
+      (appointment: { appointmentId: string }) => appointment.appointmentId === created.body.data.appointment.appointmentId
+    );
+    assert.equal(Boolean(listedAppointment), true);
+    assert.equal(listedAppointment.noteStatus, 'shell_created');
 
     const started = await request(app.getHttpServer())
       .post(`/api/v1/schedule/appointments/${created.body.data.appointment.appointmentId}/start-visit`)
