@@ -18,6 +18,7 @@ The backend source of truth recommends PostgreSQL with row-level security where 
 - `pnpm db:schema:validate` validates `packages/contracts/prisma/schema.prisma` using the synthetic local `DATABASE_URL` shape.
 - `pnpm db:migration:diff` generates SQL from an empty database to the current Prisma datamodel. It does not connect to a live database.
 - `pnpm persistence:foundation` runs schema validation and the repository-specific persistence foundation verifier.
+- `pnpm persistence:local-db-readiness` validates the local PostgreSQL compose contract without starting Docker, applying migrations, or touching a live database.
 
 ## Schema coverage
 
@@ -153,3 +154,14 @@ Runtime database writes remain disabled. This still does not use Prisma Client, 
 - `User` exposes an inverse relation array for generated export artifacts.
 
 `pnpm persistence:runtime-readiness` now verifies generated forward SQL includes those output and writeback foreign-key constraints. This remains SQL-generation evidence only: migrations are not applied, Prisma Client is not used at runtime, row-level security is not enabled, production PHI is not stored, production storage delivery is not enabled, and live EHR writeback remains disabled.
+
+## WO-028 local database orchestration readiness update
+
+`WO-028` adds a local PostgreSQL orchestration contract for future migration apply/rollback and repository-adapter tests:
+
+- `docker-compose.yml` defines a local PostgreSQL 16 service with the existing synthetic database name, user, password, port, named volume, and healthcheck;
+- `.env.example` remains the local synthetic `DATABASE_URL` source;
+- `pnpm persistence:local-db-readiness` statically validates the compose contract, package script, `.env.example`, and Prisma PostgreSQL provider;
+- CI runs the verifier without requiring Docker to start.
+
+This is orchestration readiness only. It does not apply migrations, connect Prisma Client, replace the in-memory runtime adapter, enable row-level security, run tenant-scoped live query tests, store production PHI, or authorize production database use.

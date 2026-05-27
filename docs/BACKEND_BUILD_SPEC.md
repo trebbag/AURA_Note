@@ -186,6 +186,8 @@ Workers must support:
 
 `WO-021` adds a package-level persistence adapter scaffold and Prisma row projection tests. The scaffold is intentionally disabled for runtime database writes and exists to prepare a later local database adapter work order.
 
+`WO-028` adds a local PostgreSQL compose contract and static readiness verifier. It does not start Docker in CI, apply migrations, use Prisma Client at runtime, replace in-memory repositories, enable row-level security, or authorize PHI-bearing persistence.
+
 `WO-016` adds the first tenant identity and access foundation:
 
 - API request contexts use a shared local synthetic session parser from `packages/security`.

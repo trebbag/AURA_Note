@@ -205,3 +205,12 @@ Codex should add tests as implementation proceeds.
 - `pnpm persistence:runtime-readiness` now checks generated forward SQL includes foreign-key constraints for output and writeback relationships;
 - `pnpm persistence:adapter-readiness` confirms the runtime adapter remains disabled for Prisma writes;
 - full runtime database tests, row-level security tests, transaction tests, tenant-scoped query tests, production storage/PDF delivery tests, live EHR writeback tests, and complete 35-model relation coverage remain deferred.
+
+## Post-CP4 local database orchestration readiness
+
+`WO-028` adds static local database orchestration checks:
+
+- `pnpm persistence:local-db-readiness` validates `docker-compose.yml`, `.env.example`, `package.json`, and the Prisma provider without starting Docker or touching a live database;
+- CI runs `pnpm persistence:local-db-readiness` after the existing persistence gates;
+- existing full gate commands continue to cover lint, PHI lint, typecheck, unit tests, browser tests, build, acceptance readiness, Prisma schema validation, runtime-readiness SQL generation, and adapter-readiness tests;
+- live migration apply/rollback tests, row-level security tests, transaction tests, tenant-scoped query tests, and full Prisma-backed runtime repository tests remain deferred.

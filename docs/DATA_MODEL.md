@@ -406,3 +406,13 @@ This is still not runtime database persistence. It does not apply migrations, co
 - export artifacts remain signed-version-locked metadata records, and writeback jobs remain conservative queue/status records.
 
 This is still not runtime database persistence. It does not apply migrations, connect Prisma Client, enable row-level security, store production PHI, deliver PDFs from production object storage, perform live EHR writeback, submit claims, or replace the in-memory synthetic repositories.
+
+## WO-028 local database orchestration readiness status
+
+`WO-028` adds the local PostgreSQL orchestration contract needed before live migration apply/rollback and Prisma-backed repository-adapter tests can be introduced:
+
+- `docker-compose.yml` defines the local PostgreSQL target that matches `.env.example`;
+- `scripts/validate-local-database-readiness.js` statically checks the compose contract, synthetic database URL, package script, and Prisma PostgreSQL provider;
+- CI runs `pnpm persistence:local-db-readiness` without requiring Docker or touching a live database.
+
+This remains readiness scaffolding. It does not apply migrations, run rollback, use Prisma Client at runtime, replace the in-memory repositories, enable row-level security, run tenant-scoped live queries, or store production PHI.

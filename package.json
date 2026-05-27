@@ -19,6 +19,7 @@
     "persistence:foundation": "pnpm db:schema:validate && node scripts/validate-persistence-foundation.js",
     "persistence:runtime-readiness": "node scripts/validate-persistence-runtime-readiness.js",
     "persistence:adapter-readiness": "pnpm --filter @aura-note/persistence test && pnpm --filter @aura-note/persistence typecheck",
+    "persistence:local-db-readiness": "node scripts/validate-local-database-readiness.js",
     "storybook": "pnpm --filter @aura-note/web storybook",
     "status": "node scripts/status.js"
   },

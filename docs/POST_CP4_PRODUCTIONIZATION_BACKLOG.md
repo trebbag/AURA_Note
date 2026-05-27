@@ -338,3 +338,27 @@ Do not implement these tranches directly from this backlog. Promote one tranche 
 
 - This is output/writeback relationship readiness, not production storage, PDF delivery, or live EHR writeback.
 - Local database orchestration, row-level security, transaction/error-path behavior, tenant-scoped query tests, production storage policy, and full Prisma-backed repository replacement remain later work.
+
+## Follow-on Tranche P6-09 — Local Database Orchestration Readiness
+
+**Promotion status:** Promoted to `WO-028` as a local PostgreSQL orchestration contract and static readiness verifier. Runtime database writes remain disabled.
+
+**Objective:** Add the local database orchestration contract needed before any later migration apply/rollback or Prisma-backed adapter work can run against PostgreSQL.
+
+**Candidate scope:**
+
+- Add a local-only PostgreSQL compose contract using the existing synthetic `DATABASE_URL` shape.
+- Add a deterministic verifier that checks the compose contract, synthetic `.env.example` database URL, and Prisma PostgreSQL provider without touching a live database.
+- Keep runtime on the in-memory adapter.
+- Keep migration apply/rollback, Prisma Client usage, row-level security, transaction behavior, and tenant-scoped query tests deferred to later work orders.
+
+**Acceptance evidence:**
+
+- `pnpm persistence:local-db-readiness` passes without requiring Docker to be installed or running.
+- Existing Prisma validation, persistence readiness, adapter readiness, acceptance readiness, browser, test, and build gates continue to pass.
+- No `.env`, credential, production connection string, or PHI-bearing seed enters the repo.
+
+**Known risks:**
+
+- This is orchestration readiness, not a live database integration test.
+- A later work order still needs to run migrations against a local PostgreSQL instance, test rollback, enable tenant-scoped query checks, and prove transaction/error-path behavior before runtime persistence can be claimed.
