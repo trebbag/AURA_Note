@@ -172,3 +172,10 @@ Workers must support:
 - worker retention status covers raw-audio one-week purge eligibility and transcript indefinite retention while keeping destructive purge disabled;
 - audit export is compliance/admin-only, redacted, metadata-only, and retained as audit evidence;
 - support status exposes safe degraded states without requiring live vendor credentials.
+
+`WO-015` adds the first persistence migration foundation:
+
+- PostgreSQL remains the durable database target.
+- Prisma schema validation and SQL diff generation are available through root scripts.
+- The schema foundation covers platform, identity, appointment, note, visit session, transcript, review panel, finalization, export, writeback, coaching, audit, event, integration, feature-flag, and support status records.
+- Runtime repository replacement, row-level-security policy implementation, live database migration apply/rollback, production credentials, and PHI-bearing persistence are deferred to later numbered work orders.
