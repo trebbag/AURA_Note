@@ -119,3 +119,13 @@ Codex should add tests as implementation proceeds.
 - `apps/api/src/support/support.e2e.test.ts` covers the expanded `GET /api/v1/support/status` contract through HTTP;
 - `pnpm test:browser` checks that the support route exposes observability, deployment, and runbook states;
 - production observability vendors, deployment automation, audit export download delivery, destructive retention purge, and live external integrations remain deferred.
+
+## Post-CP4 design system and review package foundation
+
+`WO-019` adds UI and browser hardening checks:
+
+- `pnpm --filter @aura-note/ui test` covers design tokens and review-surface copy boundaries;
+- `pnpm test:browser` includes mobile overflow coverage for Schedule, Documentation Workspace, and finalized-note viewer shells;
+- compliance/security/privacy review evidence lives in `docs/COMPLIANCE_SECURITY_PRIVACY_REVIEW_PACKAGE.md`;
+- UX copy review evidence lives in `docs/UX_COPY_REVIEW.md`;
+- final Figma fidelity, visual regression baselines, compliance certification, and production launch approval remain deferred.

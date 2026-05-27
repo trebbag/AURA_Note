@@ -2,15 +2,30 @@
   box-sizing: border-box;
 }
 
+:root {
+  --aura-color-text-primary: #17202a;
+  --aura-color-text-muted: #596579;
+  --aura-color-action-primary: #155eef;
+  --aura-color-surface: #ffffff;
+  --aura-color-canvas: #f7f8fa;
+  --aura-color-border: #d5dae3;
+  --aura-color-border-strong: #b9c0cc;
+  --aura-color-disabled-surface: #d7dce3;
+  --aura-color-success: #0f7b4f;
+  --aura-color-warning: #aa3d00;
+  --aura-radius-control: 4px;
+  --aura-space-panel: 16px;
+}
+
 body {
   margin: 0;
-  background: #f7f8fa;
-  color: #17202a;
+  background: var(--aura-color-canvas);
+  color: var(--aura-color-text-primary);
   font-family: Arial, Helvetica, sans-serif;
 }
 
 a {
-  color: #155eef;
+  color: var(--aura-color-action-primary);
 }
 
 button,
@@ -22,17 +37,17 @@ textarea {
 
 button {
   min-height: 40px;
-  border: 1px solid #155eef;
-  border-radius: 4px;
-  background: #155eef;
+  border: 1px solid var(--aura-color-action-primary);
+  border-radius: var(--aura-radius-control);
+  background: var(--aura-color-action-primary);
   color: #fff;
   cursor: pointer;
 }
 
 button:disabled {
   border-color: #a8b0bd;
-  background: #d7dce3;
-  color: #596579;
+  background: var(--aura-color-disabled-surface);
+  color: var(--aura-color-text-muted);
   cursor: not-allowed;
 }
 
@@ -76,27 +91,27 @@ button:disabled {
   min-height: 40px;
   align-items: center;
   justify-content: center;
-  border: 1px solid #155eef;
-  border-radius: 4px;
+  border: 1px solid var(--aura-color-action-primary);
+  border-radius: var(--aura-radius-control);
   padding: 8px 12px;
   background: #fff;
-  color: #155eef;
+  color: var(--aura-color-action-primary);
   text-decoration: none;
 }
 
 .button-link {
-  background: #155eef;
+  background: var(--aura-color-action-primary);
   color: #fff;
 }
 
 .button-link.secondary {
   background: #fff;
-  color: #155eef;
+  color: var(--aura-color-action-primary);
 }
 
 .eyebrow {
   margin: 0 0 6px;
-  color: #596579;
+  color: var(--aura-color-text-muted);
   font-size: 0.85rem;
   text-transform: uppercase;
 }
@@ -121,8 +136,8 @@ h2 {
   grid-template-columns: 1fr auto;
   align-items: center;
   padding: 16px;
-  border: 1px solid #d5dae3;
-  background: #fff;
+  border: 1px solid var(--aura-color-border);
+  background: var(--aura-color-surface);
 }
 
 .status-band dl {
@@ -131,7 +146,7 @@ h2 {
 }
 
 dt {
-  color: #596579;
+  color: var(--aura-color-text-muted);
   font-size: 0.78rem;
 }
 
@@ -154,7 +169,7 @@ dd {
 
 .appointment-form {
   padding: 16px;
-  border: 1px solid #d5dae3;
+  border: 1px solid var(--aura-color-border);
   background: #fff;
 }
 
@@ -172,10 +187,10 @@ select,
 textarea {
   width: 100%;
   min-height: 38px;
-  border: 1px solid #b9c0cc;
+  border: 1px solid var(--aura-color-border-strong);
   padding: 8px 10px;
   background: #fff;
-  color: #17202a;
+  color: var(--aura-color-text-primary);
 }
 
 .radio-row {
@@ -193,7 +208,7 @@ textarea {
   grid-template-columns: minmax(220px, 1fr) minmax(260px, 360px) 132px 148px;
   align-items: center;
   padding: 14px;
-  border: 1px solid #d5dae3;
+  border: 1px solid var(--aura-color-border);
   background: #fff;
 }
 
@@ -203,7 +218,7 @@ textarea {
 }
 
 .appointment-main small {
-  color: #596579;
+  color: var(--aura-color-text-muted);
 }
 
 .state-grid {
@@ -245,7 +260,7 @@ textarea {
 .panel-row,
 .export-panel,
 .artifact-status-grid {
-  border: 1px solid #d5dae3;
+  border: 1px solid var(--aura-color-border);
   background: #fff;
   padding: 16px;
 }
@@ -266,7 +281,7 @@ textarea {
 .panel-row p,
 .workspace-topline p,
 .read-only-viewer p {
-  color: #596579;
+  color: var(--aura-color-text-muted);
 }
 
 .workspace-topline {
@@ -292,7 +307,7 @@ textarea {
 }
 
 .secondary-controls span {
-  color: #596579;
+  color: var(--aura-color-text-muted);
 }
 
 .workspace-grid {
@@ -317,10 +332,10 @@ textarea {
 }
 
 .panel-row span {
-  border: 1px solid #b9c0cc;
+  border: 1px solid var(--aura-color-border-strong);
   border-radius: 999px;
   padding: 4px 8px;
-  color: #596579;
+  color: var(--aura-color-text-muted);
   font-size: 0.78rem;
 }
 
@@ -338,7 +353,7 @@ textarea {
 }
 
 .review-board article {
-  border: 1px solid #d5dae3;
+  border: 1px solid var(--aura-color-border);
   background: #fff;
   padding: 16px;
 }
@@ -346,7 +361,7 @@ textarea {
 .suggestion-row {
   grid-template-columns: minmax(0, 1fr) 92px 92px;
   align-items: center;
-  border-top: 1px solid #d5dae3;
+  border-top: 1px solid var(--aura-color-border);
   padding-top: 10px;
 }
 
@@ -357,21 +372,21 @@ textarea {
 }
 
 .selection-list span {
-  border: 1px solid #b9c0cc;
+  border: 1px solid var(--aura-color-border-strong);
   border-radius: 999px;
   padding: 6px 10px;
 }
 
 .state-blocked {
-  border-left-color: #aa3d00;
+  border-left-color: var(--aura-color-warning);
 }
 
 .state-ready {
-  border-left-color: #0f7b4f;
+  border-left-color: var(--aura-color-success);
 }
 
 .state-empty {
-  border-left-color: #596579;
+  border-left-color: var(--aura-color-text-muted);
 }
 
 .wizard-status,
@@ -410,7 +425,7 @@ textarea {
 .compose-phases span,
 .opportunity-list span,
 .draft-claim-preview span {
-  border: 1px solid #d5dae3;
+  border: 1px solid var(--aura-color-border);
   background: #fff;
   padding: 10px;
 }
@@ -422,12 +437,12 @@ textarea {
 }
 
 .wizard-progress .state-in_progress {
-  border-top-color: #155eef;
+  border-top-color: var(--aura-color-action-primary);
 }
 
 .wizard-progress .state-completed,
 .compose-phases .complete {
-  border-color: #0f7b4f;
+  border-color: var(--aura-color-success);
 }
 
 .wizard-grid {
@@ -441,7 +456,7 @@ textarea {
 .decision-row {
   grid-template-columns: minmax(0, 1fr) 88px 96px;
   align-items: center;
-  border-top: 1px solid #d5dae3;
+  border-top: 1px solid var(--aura-color-border);
   padding-top: 10px;
 }
 
@@ -453,7 +468,7 @@ textarea {
 .decision-row span,
 .wizard-status p,
 .wizard-progress small {
-  color: #596579;
+  color: var(--aura-color-text-muted);
 }
 
 .compose-phases {
@@ -479,7 +494,7 @@ textarea {
 
 .export-readiness-panel {
   margin-top: 12px;
-  border-top: 1px solid #d5dae3;
+  border-top: 1px solid var(--aura-color-border);
   padding-top: 12px;
 }
 
@@ -504,14 +519,14 @@ textarea {
 .coaching-panel,
 .support-panel,
 .coaching-signal {
-  border: 1px solid #d5dae3;
+  border: 1px solid var(--aura-color-border);
   background: #fff;
   padding: 16px;
 }
 
 .support-panel p,
 .analytics-list small {
-  color: #596579;
+  color: var(--aura-color-text-muted);
 }
 
 .analytics-list div {
@@ -529,11 +544,11 @@ textarea {
 
 .coaching-signal p {
   grid-column: 1 / -1;
-  color: #596579;
+  color: var(--aura-color-text-muted);
 }
 
 .coaching-signal span {
-  color: #596579;
+  color: var(--aura-color-text-muted);
 }
 
 .analytics-list div {
@@ -542,7 +557,7 @@ textarea {
   align-items: center;
   justify-content: space-between;
   gap: 12px;
-  border-top: 1px solid #d5dae3;
+  border-top: 1px solid var(--aura-color-border);
   padding-top: 10px;
 }
 
@@ -558,21 +573,21 @@ textarea {
 
 .segmented-control button {
   background: #fff;
-  color: #155eef;
+  color: var(--aura-color-action-primary);
 }
 
 .segmented-control button.active {
-  background: #155eef;
+  background: var(--aura-color-action-primary);
   color: #fff;
 }
 
 .artifact-text {
   min-height: 260px;
   white-space: pre-wrap;
-  border: 1px solid #d5dae3;
+  border: 1px solid var(--aura-color-border);
   padding: 14px;
-  background: #f7f8fa;
-  color: #17202a;
+  background: var(--aura-color-canvas);
+  color: var(--aura-color-text-primary);
   font: inherit;
 }
 
@@ -585,9 +600,9 @@ textarea {
 }
 
 .secondary-action {
-  border-color: #596579;
+  border-color: var(--aura-color-text-muted);
   background: #fff;
-  color: #17202a;
+  color: var(--aura-color-text-primary);
 }
 
 .artifact-status-grid {
