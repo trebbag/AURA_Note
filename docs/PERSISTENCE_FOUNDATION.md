@@ -203,3 +203,16 @@ This is the first local Prisma adapter slice only. The broad API runtime still d
 - `rls-core-schedule.sql` enables and forces RLS on `Tenant`, `Site`, `User`, `Patient`, `Appointment`, `Note`, and `IdempotencyRecord` using the `app.current_tenant_id` session setting plus `WITH CHECK` write policies.
 
 RLS expansion is intentionally limited to the tables currently exercised by the Prisma schedule adapter. Visit sessions, transcripts, suggestions, finalization, export artifacts, writeback jobs, coaching, support status, audit/event rows, and production PHI persistence remain deferred until their runtime repository slices are moved safely.
+
+## WO-032 storage delivery and retention deletion update
+
+`WO-032` adds production-oriented storage boundaries without enabling real production storage:
+
+- `@aura-note/storage` defines `ObjectStorageAdapter`, `AzureBlobObjectStorageAdapter`, and `InMemoryObjectStorageAdapter`;
+- Azure Blob configuration is represented through `AZURE_STORAGE_ACCOUNT_NAME`, `AZURE_STORAGE_CONTAINER_NAME`, and `AZURE_STORAGE_CREDENTIAL_SOURCE`;
+- final-note PDF, patient-summary PDF, copy, structured export, and audit export DTOs can now carry storage provider, storage key, checksum, content length, delivery mode, signed download token, and expiry metadata;
+- signed download evidence uses short-lived permission-checked metadata tokens and explicitly returns no public URL;
+- raw-audio retention deletion can delete storage objects only when destructive deletion is enabled and approval evidence is present;
+- transcript purge count remains zero because transcript retention is indefinite.
+
+Production backup/restore execution remains blocked pending security/privacy review. Required production posture is Azure Blob soft delete plus versioning for recovery, database point-in-time backup for metadata, immutable audit evidence retention for deletion approvals, and restore drills before PHI-bearing production use.

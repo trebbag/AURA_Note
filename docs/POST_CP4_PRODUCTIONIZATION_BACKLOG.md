@@ -439,3 +439,27 @@ Do not implement these tranches directly from this backlog. Promote one tranche 
 
 - RLS coverage is intentionally limited to the current persisted schedule/note slice.
 - Remaining workflow tables still require RLS and repository evidence as they are migrated to durable persistence.
+
+## Follow-on Tranche P6-13 — Azure Blob Export Delivery And Retention Deletion Readiness
+
+**Promotion status:** Promoted to `WO-032` as Azure Blob-oriented storage adapter, signed export/audit delivery metadata, and approval-gated raw-audio storage deletion readiness.
+
+**Objective:** Move export and retention deletion from inline-only scaffold behavior to production-shaped storage metadata and local fake-storage evidence without live credentials or PHI-bearing payloads.
+
+**Candidate scope:**
+
+- Add object storage adapter interfaces and Azure Blob config validation.
+- Add deterministic in-memory storage tests for signed tokens, wrong-tenant denial, expiry denial, and object deletion.
+- Extend final-note, patient-summary, structured export, and audit export DTOs with storage-backed delivery metadata.
+- Add worker deletion readiness for raw audio only, with approval evidence and transcript non-deletion.
+- Document Azure Blob soft-delete/versioning and backup/restore expectations.
+
+**Acceptance evidence:**
+
+- `pnpm storage:azure-adapter-readiness` passes locally and in CI.
+- `pnpm retention:storage-deletion-readiness` passes locally and in CI.
+- Full local gate continues to pass.
+
+**Known risks:**
+
+- Azure SDK execution, production container policy validation, production backup/restore drills, and PHI-bearing object delivery remain blocked until security/privacy review.

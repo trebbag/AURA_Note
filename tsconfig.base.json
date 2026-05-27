@@ -18,6 +18,7 @@
       "@aura-note/ehr-adapters": ["packages/ehr-adapters/src/index.ts"],
       "@aura-note/clinicos-adapter": ["packages/clinicos-adapter/src/index.ts"],
       "@aura-note/persistence": ["packages/persistence/src/index.ts"],
+      "@aura-note/storage": ["packages/storage/src/index.ts"],
       "@aura-note/testing": ["packages/testing/src/index.ts"]
     }
   },

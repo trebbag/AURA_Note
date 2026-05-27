@@ -26,6 +26,7 @@ import {
   type AccessContext,
   type FeatureFlagDecision
 } from '@aura-note/security';
+import { InMemoryObjectStorageAdapter, buildStorageKey, syntheticChecksum } from '@aura-note/storage';
 
 const TENANT_ID = 'tenant-synthetic-primary';
 const SITE_ID = 'site-synthetic-primary';
@@ -124,6 +125,31 @@ export class SupportService {
     };
     const redacted = redactForStructuredLog(rawPayload);
     const auditEvent = this.createAuditEvent('audit.export_request', 'AuditExport', auditExportId, context);
+    const records = [
+      {
+        auditEvent: {
+          auditEventId: this.nextId('audit'),
+          tenantId: TENANT_ID,
+          siteId: SITE_ID,
+          actorUserId: 'user-clinician-synthetic-001',
+          action: 'export.generated',
+          entityType: 'ExportArtifact',
+          entityId: 'export-synthetic-001',
+          traceId: context.traceId,
+          createdAt: now
+        },
+        domainEventType: 'export.generated.v1' as const,
+        requestId: context.requestId,
+        redactedPayload: redacted.value as Record<string, unknown>,
+        redactedPaths: redacted.redactedPaths
+      }
+    ];
+    const storageDelivery = this.createAuditExportStorageDelivery({
+      auditExportId,
+      records,
+      requestedAt: now,
+      context
+    });
 
     return createApiEnvelope(
       {
@@ -136,28 +162,10 @@ export class SupportService {
           format: 'jsonl',
           includePhi: false,
           redacted: true,
-          downloadEnabled: false,
           retentionClass: 'audit',
           recordCount: 1,
-          records: [
-            {
-              auditEvent: {
-                auditEventId: this.nextId('audit'),
-                tenantId: TENANT_ID,
-                siteId: SITE_ID,
-                actorUserId: 'user-clinician-synthetic-001',
-                action: 'export.generated',
-                entityType: 'ExportArtifact',
-                entityId: 'export-synthetic-001',
-                traceId: context.traceId,
-                createdAt: now
-              },
-              domainEventType: 'export.generated.v1',
-              requestId: context.requestId,
-              redactedPayload: redacted.value as Record<string, unknown>,
-              redactedPaths: redacted.redactedPaths
-            }
-          ]
+          records,
+          ...storageDelivery
         },
         auditEvent,
         domainEvents: [
@@ -176,7 +184,8 @@ export class SupportService {
               format: body.format,
               includePhi: false,
               recordCount: 1,
-              downloadEnabled: false
+              downloadEnabled: storageDelivery.downloadEnabled ?? false,
+              deliveryMode: storageDelivery.deliveryMode ?? 'inline_synthetic'
             }
           })
         ]
@@ -194,6 +203,63 @@ export class SupportService {
       auditExportDownloadEnabled: process.env.AURA_ENABLE_AUDIT_EXPORT_DOWNLOAD === 'true'
     });
     return flags.map((flag) => ({ ...flag }));
+  }
+
+  private createAuditExportStorageDelivery(input: {
+    auditExportId: string;
+    records: unknown[];
+    requestedAt: string;
+    context: RequestContext;
+  }) {
+    if (process.env.AURA_ENABLE_AUDIT_EXPORT_DOWNLOAD !== 'true') {
+      return {
+        deliveryMode: 'inline_synthetic' as const,
+        contentLengthBytes: Buffer.byteLength(JSON.stringify(input.records), 'utf8'),
+        checksum: syntheticChecksum(JSON.stringify(input.records)),
+        signedDownloadAvailable: false,
+        downloadEnabled: false
+      };
+    }
+
+    const content = input.records.map((record) => JSON.stringify(record)).join('\n');
+    const storage = new InMemoryObjectStorageAdapter(() => input.requestedAt);
+    const storageKey = buildStorageKey({
+      tenantId: TENANT_ID,
+      siteId: SITE_ID,
+      recordClass: 'audit-exports',
+      recordId: input.auditExportId,
+      fileName: `${input.auditExportId}.jsonl`
+    });
+    const stored = storage.putObject({
+      tenantId: TENANT_ID,
+      siteId: SITE_ID,
+      storageKey,
+      body: content,
+      contentType: 'application/json',
+      retentionClass: 'audit',
+      traceId: input.context.traceId
+    });
+    const signed = storage.createSignedDownload({
+      tenantId: TENANT_ID,
+      siteId: SITE_ID,
+      storageKey,
+      requestedByUserId: input.context.actorUserId,
+      permission: 'audit:export',
+      expiresAt: new Date(new Date(input.requestedAt).getTime() + 15 * 60_000).toISOString(),
+      traceId: input.context.traceId
+    });
+
+    return {
+      deliveryMode: 'storage_backed' as const,
+      storageProvider: 'azure_blob' as const,
+      storageKey: stored.storageKey,
+      contentLengthBytes: stored.contentLengthBytes,
+      checksum: stored.checksum,
+      signedDownloadAvailable: true,
+      signedDownloadToken: signed.signedDownloadToken,
+      signedDownloadExpiresAt: signed.signedDownloadExpiresAt,
+      downloadEnabled: true
+    };
   }
 
   private retentionPolicies(evaluatedAt: string): RetentionPolicyStatusDto[] {

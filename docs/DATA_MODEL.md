@@ -452,3 +452,14 @@ This is not a full durable application switch. Visit sessions, recording/transcr
 - core RLS SQL covers `Tenant`, `Site`, `User`, `Patient`, `Appointment`, `Note`, and `IdempotencyRecord` with `app.current_tenant_id` policies and `WITH CHECK` write protection.
 
 This does not add RLS to the remaining workflow tables yet. The deferred model work is to add equivalent policy artifacts and persisted-record evidence as each workflow slice moves from in-memory state to Prisma-backed repositories.
+
+## WO-032 storage delivery and retention deletion status
+
+`WO-032` extends output and retention DTOs with storage-delivery metadata:
+
+- `ExportArtifact` may include storage provider, storage key, content length, delivery mode, signed token metadata, retention class, and checksum evidence;
+- `AuditExport` may include the same storage delivery metadata while preserving `includePhi: false`;
+- `RawAudioRetentionMetadata` may include storage provider, storage key, checksum, and content length for purge-eligible raw-audio objects;
+- `RetentionJobResult` may include deletion evidence with object key, checksum/eTag, approval ID, deletion result, recovery-window status, trace ID, and `transcriptPurgeCount: 0`.
+
+These are metadata contracts and local fake-storage tests. They do not authorize production Azure credentials, PHI-bearing object payloads, or production backup/restore execution.

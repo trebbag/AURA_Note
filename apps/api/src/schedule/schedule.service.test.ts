@@ -591,6 +591,32 @@ describe('ScheduleService', () => {
     assert.equal(notePdf.data.finalizedNote.exportArtifacts.length, 1);
   });
 
+  it('adds storage-backed signed download metadata when export storage is enabled', () => {
+    const previous = process.env.AURA_ENABLE_STORAGE_BACKED_EXPORTS;
+    process.env.AURA_ENABLE_STORAGE_BACKED_EXPORTS = 'true';
+    try {
+      const service = new ScheduleService();
+      const { appointment, clinician } = completeThroughSignDispatch(service);
+
+      const notePdf = service.generateFinalNotePdf(appointment.noteId, clinician);
+      const summaryPdf = service.generatePatientSummaryPdf(appointment.noteId, clinician);
+
+      assert.equal(notePdf.data.artifact.deliveryMode, 'storage_backed');
+      assert.equal(notePdf.data.artifact.storageProvider, 'azure_blob');
+      assert.equal(notePdf.data.artifact.storageKey?.includes('/exports/'), true);
+      assert.equal(notePdf.data.artifact.signedDownloadAvailable, true);
+      assert.equal(notePdf.data.artifact.signedDownloadToken?.startsWith('dl-'), true);
+      assert.equal(summaryPdf.data.artifact.patientSummaryInternalDetailsExcluded, true);
+      assert.equal(summaryPdf.data.artifact.deliveryMode, 'storage_backed');
+    } finally {
+      if (previous === undefined) {
+        delete process.env.AURA_ENABLE_STORAGE_BACKED_EXPORTS;
+      } else {
+        process.env.AURA_ENABLE_STORAGE_BACKED_EXPORTS = previous;
+      }
+    }
+  });
+
   it('shows finalized note details and enforces linked-staff visibility', () => {
     const service = new ScheduleService();
     const { appointment, clinician } = completeThroughSignDispatch(service);

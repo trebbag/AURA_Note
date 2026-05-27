@@ -35,9 +35,10 @@
     "WO-028": "done",
     "WO-029": "done",
     "WO-030": "done",
-    "WO-031": "done"
+    "WO-031": "done",
+    "WO-032": "done"
   },
-  "last_updated_by": "Codex WO-031 tenant isolation and core RLS evidence",
-  "last_updated_at": "2026-05-27T15:25:00Z",
-  "notes": "WO-031 post-CP4 tenant isolation and core RLS evidence is complete for the current persisted schedule/note slice. Local synthetic PostgreSQL tests prove tenant/site-scoped Prisma repository queries, idempotency isolation, API access-context denial before DTO exposure, and core RLS policies for Tenant, Site, User, Patient, Appointment, Note, and IdempotencyRecord. Broader workflow persistence, broader-table RLS, production PHI persistence, production credentials, live EHR/AI/storage integrations, charge finalization, and claim submission remain deferred."
+  "last_updated_by": "Codex WO-032 Azure Blob export delivery and retention deletion readiness",
+  "last_updated_at": "2026-05-27T15:55:00Z",
+  "notes": "WO-032 post-CP4 Azure Blob export delivery and retention deletion readiness is complete as synthetic local evidence. The repo now has an object storage adapter boundary, Azure Blob config validation, storage-backed export and audit delivery metadata, signed download token semantics without public URLs, and approval-gated raw-audio object deletion readiness with transcript purge count fixed at zero. Real Azure credentials, production storage execution, PHI-bearing object payloads, production backup/restore execution, live EHR/AI integrations, charge finalization, medical-necessity determination, and claim submission remain deferred."
 }

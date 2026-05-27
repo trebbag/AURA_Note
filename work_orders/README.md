@@ -40,6 +40,7 @@ Codex must complete work orders sequentially unless a checkpoint or blocker stop
 - `WO-029` — Local PostgreSQL migration apply and rollback evidence.
 - `WO-030` — Prisma schedule runtime adapter.
 - `WO-031` — Tenant isolation and core RLS evidence.
+- `WO-032` — Azure Blob export delivery and retention deletion readiness.
 
 ## Work order rules
 
@@ -87,3 +88,5 @@ Post-CP4 productionization candidates are documented in `docs/POST_CP4_PRODUCTIO
 `WO-030` adds the first Prisma-backed runtime adapter slice for standalone schedule appointment and note shell persistence against the local synthetic PostgreSQL database. The broad API runtime remains on the in-memory adapter until later workflow state can be moved safely.
 
 `WO-031` adds live local PostgreSQL tenant/site query evidence and adopts core row-level security policies for the currently persisted schedule/note slice only. Broader-table RLS expansion and full Prisma-backed workflow persistence remain out of scope.
+
+`WO-032` adds Azure Blob-oriented object storage adapter boundaries, storage-backed export/audit delivery metadata, and raw-audio storage deletion readiness with synthetic approval controls. Real Azure credentials, production storage execution, PHI-bearing payloads, and production backup/restore execution remain out of scope.

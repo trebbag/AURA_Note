@@ -29,7 +29,6 @@ jobs:
       - run: pnpm exec playwright install --with-deps chromium
       - run: pnpm test:browser
       - run: pnpm build
-      - run: pnpm acceptance:readiness
       - run: pnpm persistence:foundation
       - run: pnpm persistence:runtime-readiness
       - run: pnpm persistence:adapter-readiness
@@ -37,3 +36,6 @@ jobs:
       - run: pnpm persistence:local-db:migrate-evidence
       - run: pnpm persistence:prisma-schedule-adapter
       - run: pnpm persistence:tenant-isolation
+      - run: pnpm storage:azure-adapter-readiness
+      - run: pnpm retention:storage-deletion-readiness
+      - run: pnpm acceptance:readiness

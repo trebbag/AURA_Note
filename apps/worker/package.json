@@ -12,7 +12,8 @@
     "test:e2e": "node --import tsx --test src/main.test.ts"
   },
   "dependencies": {
-    "@aura-note/contracts": "workspace:^"
+    "@aura-note/contracts": "workspace:^",
+    "@aura-note/storage": "workspace:^"
   },
   "devDependencies": {
     "tsx": "^4.19.0",

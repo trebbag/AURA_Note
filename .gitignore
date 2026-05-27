@@ -16,4 +16,4 @@ playwright-report/
 *.tsbuildinfo
 *.sqlite
 uploads/
-storage/
+/storage/

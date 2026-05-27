@@ -10,6 +10,7 @@ import type {
   TranscriptViewDto
 } from '@aura-note/contracts';
 import { createEventEnvelope } from '@aura-note/contracts';
+import type { ObjectStorageAdapter } from '@aura-note/storage';
 
 export function getWorkerStatus() {
   return {
@@ -150,6 +151,7 @@ export function evaluateRetentionJobRun(
       traceId,
       createdAt: nowIso
     },
+    transcriptPurgeCount: 0,
     domainEvents: [
       createEventEnvelope({
         eventId: 'evt-retention-worker-synthetic-001',
@@ -169,6 +171,70 @@ export function evaluateRetentionJobRun(
         }
       })
     ]
+  };
+}
+
+export interface StorageDeletionRetentionOptions {
+  destructiveDeletionEnabled: boolean;
+  approvalToken?: string;
+  approvalId?: string;
+  recoveryWindowEndsAt?: string;
+  traceId?: string;
+}
+
+export function evaluateStorageBackedRetentionDeletion(
+  rawAudioRecords: RawAudioRetentionMetadataDto[],
+  transcriptRecords: TranscriptViewDto[],
+  nowIso: string,
+  storage: ObjectStorageAdapter,
+  options: StorageDeletionRetentionOptions
+): RetentionJobResultDto {
+  const base = evaluateRetentionJobRun(rawAudioRecords, transcriptRecords, nowIso, options.traceId);
+  const evaluatedRawAudio = evaluateRawAudioRetention(rawAudioRecords, nowIso);
+  const deletionResults = evaluatedRawAudio
+    .filter((record): record is RawAudioRetentionMetadataDto & { storageKey: string } => record.purgeEligible && Boolean(record.storageKey))
+    .map((record) => {
+      if (!options.destructiveDeletionEnabled || !options.approvalToken || !options.approvalId) {
+        return {
+          storageProvider: record.storageProvider ?? 'in_memory',
+          storageKey: record.storageKey,
+          deleted: false,
+          deletionResult: 'skipped_not_enabled' as const,
+          ...(record.checksum ? { checksum: record.checksum } : {}),
+          ...(options.approvalId ? { approvalId: options.approvalId } : {}),
+          recoveryWindowStatus: 'recoverable' as const,
+          traceId: options.traceId ?? 'trace-retention-worker-synthetic'
+        };
+      }
+
+      return storage.deleteObject({
+        tenantId: 'tenant-synthetic-primary',
+        siteId: 'site-synthetic-primary',
+        storageKey: record.storageKey,
+        approvalId: options.approvalId,
+        traceId: options.traceId ?? 'trace-retention-worker-synthetic'
+      });
+    });
+
+  return {
+    ...base,
+    policies: base.policies.map((policy) =>
+      policy.recordClass === 'audio_ephemeral'
+        ? { ...policy, destructivePurgeEnabled: options.destructiveDeletionEnabled && Boolean(options.approvalToken) && Boolean(options.approvalId) }
+        : policy
+    ),
+    deletionResults,
+    transcriptPurgeCount: 0,
+    domainEvents: base.domainEvents.map((event) => ({
+      ...event,
+      payload: {
+        ...event.payload,
+        rawAudioDeletedCount: deletionResults.filter((result) => result.deleted).length,
+        transcriptPurgeCount: 0,
+        destructivePurgeEnabled: options.destructiveDeletionEnabled && Boolean(options.approvalToken) && Boolean(options.approvalId),
+        approvalId: options.approvalId ?? null
+      }
+    }))
   };
 }
 
