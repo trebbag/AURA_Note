@@ -38,6 +38,7 @@
     "clinicos:integration-readiness": "pnpm --filter @aura-note/clinicos-adapter test && pnpm --filter @aura-note/api test && node scripts/validate-clinicos-integration-readiness.js",
     "ai:governance-readiness": "pnpm --filter @aura-note/ai-gateway test && pnpm --filter @aura-note/api test && node scripts/validate-ai-governance-readiness.js",
     "security:review-readiness": "pnpm --filter @aura-note/security test && pnpm --filter @aura-note/api test && node scripts/validate-security-review-readiness.js",
+    "frontend:runtime-integration-readiness": "pnpm --filter @aura-note/web test:e2e && node scripts/validate-frontend-runtime-integration-readiness.js",
     "storage:azure-adapter-readiness": "pnpm --filter @aura-note/storage test && pnpm --filter @aura-note/storage typecheck && node scripts/validate-azure-storage-adapter-readiness.js",
     "storage:secure-download-readiness": "pnpm --filter @aura-note/storage test && pnpm --filter @aura-note/api test && node scripts/validate-secure-download-readiness.js",
     "retention:storage-deletion-readiness": "pnpm --filter @aura-note/worker test && node scripts/validate-storage-retention-readiness.js",

@@ -1,4 +1,9 @@
 import { expect, test } from '@playwright/test';
+import {
+  createAuraNoteApiClient,
+  frontendRuntimeBillingAttestationStatements,
+  getAuraNoteApiBaseUrl
+} from '../lib/aura-note-api-client';
 
 const routeExpectations = [
   {
@@ -68,6 +73,11 @@ const routeExpectations = [
   {
     path: '/aura-note/support/status',
     heading: 'Production Hardening Status',
+    nav: true
+  },
+  {
+    path: '/aura-note/runtime-integration',
+    heading: 'Frontend Runtime Integration Evidence',
     nav: true
   }
 ];
@@ -294,5 +304,69 @@ test.describe('AURA Note route accessibility smoke suite', () => {
     await page.getByRole('button', { name: 'Reject Unsafe Output' }).click();
     await expect(page.getByRole('article', { name: 'Output validation' })).toContainText('unsafe-output-rejected');
     await expect(page.getByRole('region', { name: 'AI governance safety summary' })).toContainText('does not autonomously diagnose');
+  });
+
+  test('frontend runtime integration gate exercises backend-backed appointment through finalization export and reload evidence', async ({ page }) => {
+    const baseUrl = getAuraNoteApiBaseUrl().replace('4000', process.env.AURA_NOTE_API_E2E_PORT ?? '3300');
+    const maApi = createAuraNoteApiClient({ baseUrl, role: 'ma', userId: 'user-ma-runtime-e2e' });
+    const clinicianApi = createAuraNoteApiClient({ baseUrl, role: 'clinician', userId: 'user-clinician-runtime-e2e' });
+    const idSuffix = Date.now().toString(36);
+    const created = await maApi.createAppointment(
+      {
+        safePatientId: `safe-patient-runtime-${idSuffix}`,
+        clinicianId: 'clinician-runtime-e2e',
+        visitType: 'Chronic follow-up',
+        startsAt: '2026-05-28T15:00:00.000Z',
+        durationMinutes: 30,
+        modality: 'in_person',
+        reasonForVisit: 'Synthetic Playwright runtime integration gate'
+      },
+      `idem-runtime-${idSuffix}`
+    );
+
+    const appointmentId = created.data.appointment.appointmentId;
+    const noteId = created.data.note.noteId;
+    await clinicianApi.startVisit(appointmentId);
+    await clinicianApi.addVisitSelection(noteId, { category: 'cpt', label: 'CPT 99214 candidate', confidence: 0.82 });
+    const started = await clinicianApi.startFinalization(noteId);
+    const firstSelection = started.data.finalizationSession.frozenSnapshot.visitSelections[0];
+    if (!firstSelection) {
+      throw new Error('Runtime integration workflow did not create a visit selection for code review');
+    }
+    const selectionId = firstSelection.visitSelectionId;
+    await clinicianApi.decideFinalizationSelection(noteId, selectionId, 'keep');
+    await clinicianApi.completeCodeReview(noteId);
+
+    for (const suggestionId of ['suggestion-demo-cpt-99214', 'suggestion-demo-icd10-e119', 'suggestion-demo-quality-bp']) {
+      await clinicianApi.decideFinalizationSuggestion(noteId, suggestionId, 'remove', 'Synthetic runtime gate final-pass removal');
+    }
+
+    await clinicianApi.completeSuggestionReview(noteId);
+    await clinicianApi.composeFinalizationDrafts(noteId);
+    await clinicianApi.approveFinalNote(noteId, { approved: true, attestation: 'Synthetic runtime final note approval' });
+    await clinicianApi.approvePatientSummary(noteId, { approved: true, attestation: 'Synthetic runtime patient summary approval' });
+    const preview = await clinicianApi.generateDraftClaimPreview(noteId);
+    expect(preview.data.finalizationSession.draftClaimPreview?.submittedClaim).toBe(false);
+    await clinicianApi.completeBillingAttest(noteId, {
+      acceptedStatements: frontendRuntimeBillingAttestationStatements,
+      estimateCaveatAcknowledged: true,
+      routeToBillingReview: true
+    });
+    const signed = await clinicianApi.signAndDispatch(noteId);
+    expect(signed.data.finalizationSession.signedAndDispatched).toBe(true);
+    const exported = await clinicianApi.generateFinalNotePdf(noteId);
+    expect(exported.data.artifact.status).toBe('generated');
+
+    const finalized = await clinicianApi.getFinalizedNote(noteId);
+    expect(finalized.data.finalNoteAvailable).toBe(true);
+    expect(finalized.data.readOnly).toBe(true);
+    expect(finalized.data.exportArtifacts.length).toBeGreaterThanOrEqual(1);
+
+    await page.goto('/aura-note/runtime-integration');
+    await expect(page.getByRole('article', { name: 'API backed finalized notes state' })).toContainText(noteId);
+    await expect(page.getByRole('article', { name: 'API backed finalized notes state' })).toContainText('read-only');
+    await page.reload();
+    await expect(page.getByRole('article', { name: 'API backed finalized notes state' })).toContainText(noteId);
+    await expect(page.getByRole('article', { name: 'API backed schedule state' })).toContainText(appointmentId);
   });
 });

@@ -50,13 +50,29 @@ function check(id, description, passed, evidence) {
 check('rbac.wo047', 'RBAC matrix records WO-047 reconciliation', rbac.includes('WO-047') && rbac.includes('security/privacy/compliance review'), 'docs/RBAC_ABAC_MATRIX.md');
 check('ai.wo047', 'AI/PHI governance records WO-047 review boundary', aiGovernance.includes('WO-047') && aiGovernance.includes('No new P9 AI/PHI blocker'), 'docs/AI_PHI_GOVERNANCE.md');
 check('status.wo047-done', 'repo_status marks WO-047 done', status.work_orders?.['WO-047'] === 'done', status.work_orders?.['WO-047']);
-check('status.next-wo048', 'repo_status advances to WO-048', status.next_work_order === 'WO-048' && status.work_orders?.['WO-048'] === 'todo', { nextWorkOrder: status.next_work_order, wo048: status.work_orders?.['WO-048'] });
+check(
+  'status.wo048-or-later',
+  'repo_status has advanced to WO-048 or later after P9 completion',
+  status.work_orders?.['WO-048'] && status.work_orders?.['WO-048'] !== 'planned',
+  { nextWorkOrder: status.next_work_order, wo048: status.work_orders?.['WO-048'] }
+);
 check('status.p10-next', 'repo_status current checkpoint advances to P10 after P9 completion', status.current_checkpoint === 'P10', status.current_checkpoint);
 check('checkpoint.p9', 'P9 checkpoint report records WO-044 through WO-047', ['P9', 'WO-044', 'WO-045', 'WO-046', 'WO-047'].every((snippet) => checkpointReport.includes(snippet)), 'CHECKPOINT_REPORT.md');
 check('runlog.wo047', 'RUN_LOG records WO-047 evidence', runLog.includes('WO-047 security privacy compliance and threat-model remediation'), 'RUN_LOG.md');
-check('spec-gaps.current', 'SPEC_GAPS records no active WO-047 gaps', specGaps.includes('No active gaps as of post-`WO-047` security/privacy/compliance and P9 review'), 'SPEC_GAPS.md');
+check(
+  'spec-gaps.current',
+  'SPEC_GAPS records no active WO-047-or-later gaps',
+  specGaps.includes('No active gaps as of post-`WO-047` security/privacy/compliance and P9 review') ||
+    specGaps.includes('No active gaps as of post-`WO-048` frontend runtime integration gate review'),
+  'SPEC_GAPS.md'
+);
 check('work-order.next-file', 'WO-048 work-order file exists for the next tranche', fs.readdirSync(path.join(root, 'work_orders')).some((file) => file.startsWith('WO-048_')), 'work_orders');
-check('work-order.readme', 'Work-order index marks P9 complete and WO-048 next', workOrderReadme.includes('P9 is complete') && workOrderReadme.includes('`WO-048` is the next active work order'), 'work_orders/README.md');
+check(
+  'work-order.readme',
+  'Work-order index marks P9 complete and records WO-048 or later P10 progress',
+  workOrderReadme.includes('P9 is complete') && (workOrderReadme.includes('`WO-048` is complete') || workOrderReadme.includes('`WO-048` is the next active work order')),
+  'work_orders/README.md'
+);
 check(
   'script.package',
   'package.json exposes security:review-readiness',
