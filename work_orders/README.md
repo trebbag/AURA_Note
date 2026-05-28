@@ -125,6 +125,6 @@ Post-CP4 productionization candidates are documented in `docs/POST_CP4_PRODUCTIO
 
 `WO-044` through `WO-047` form the P9 integration and AI candidate. `WO-044` is the next active work order for EHR sandbox integration and writeback queue hardening. They harden EHR, ClinicOS, AI governance/evaluation, and security/privacy/compliance evidence without enabling prohibited autonomous behavior.
 
-`WO-048` through `WO-050` form the P10 launch candidate. They cover UX/accessibility/visual regression, deployment/release controls, performance/reliability/operational drills, beta readiness, and limited launch governance.
+`WO-048` through `WO-050` form the P10 launch candidate. They cover UX/accessibility/visual regression, the Frontend Runtime Integration Gate, deployment/release controls, performance/reliability/operational drills, beta readiness, and limited launch governance. P10 cannot be claimed until production-intended screens use typed API clients and persisted backend state, synthetic local React state is limited to Storybook/demo mode, required route states are API-backed or documented mocks, and Playwright proves at least one seeded backend-backed workflow from appointment creation through finalization/export.
 
 `WO-051` is the P11 claim/payer decision gate. It captures the strategy for claim submission, clearinghouse, payer integration, denial automation, and payment workflows without implementing autonomous submission by default.

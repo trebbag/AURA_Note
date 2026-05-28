@@ -599,3 +599,14 @@ Codex must append a dated entry after each work order or meaningful implementati
 - **Accepted risks:** P8 is production-shaped control evidence only. SIEM/APM vendor selection, production exporter endpoints, credential source, log retention, alert thresholds, on-call ownership, support break-glass, and production launch approval remain deferred to founder/security/privacy review.
 - **Open SPEC_GAPs:** None active. Deferred production decisions remain in `SPEC_GAPS.md`.
 - **Next step:** Run `pnpm observability:production-readiness`, the full local gate, open the `WO-043` PR, confirm GitHub Actions, merge when green, then stop at the P8 checkpoint before proceeding to `WO-044`.
+
+## 2026-05-28T01:45:45Z — Production build plan frontend runtime integration gate
+
+- **Work order:** Planning/control update for the P10 launch-candidate gate; no work-order completion status changed.
+- **Summary:** Added a Frontend Runtime Integration Gate to the production build plan. P10 launch-candidate readiness now requires production-intended screens to use typed API clients and persisted backend state, allows synthetic local React state only in Storybook/demo mode, requires route states to be API-backed or documented mocks, and requires Playwright evidence for at least one seeded backend-backed appointment creation through finalization/export workflow.
+- **Files changed:** `docs/PRODUCTION_BUILD_PLAN.md`, `docs/TEST_PLAN.md`, `docs/POST_CP4_PRODUCTIONIZATION_BACKLOG.md`, `work_orders/README.md`, and `RUN_LOG.md`.
+- **Tests run:** `pnpm production:readiness`; `pnpm acceptance:readiness`; `node scripts/status.js`; `git diff --check`.
+- **Tests not run:** Full implementation gate was not run because this is a documentation/control update only. No runtime product code changed.
+- **Accepted risks:** The gate is now specified but not implemented as a script yet. `WO-048`/P10 must add `pnpm frontend:runtime-integration-readiness` or an equivalent named verifier before launch-candidate readiness can be claimed.
+- **Open SPEC_GAPs:** None active. This update tightens launch criteria without introducing product behavior.
+- **Next step:** Continue with `WO-044` when ready, preserving the new P10 frontend runtime integration requirement.
