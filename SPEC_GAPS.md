@@ -4,13 +4,13 @@ This file tracks missing, conflicting, unsafe, or deliberately deferred product 
 
 ## Active gaps
 
-No active gaps as of post-`WO-054` production PHI persistence/database operations review intake on 2026-05-28.
+No active gaps as of post-`WO-055` production Azure storage/deletion/restore review intake on 2026-05-28.
 
-The repo remains not production-ready. The items below are deferred production decisions rather than active blockers for the current post-`WO-054` planning/control scope.
+The repo remains not production-ready. The items below are deferred production decisions rather than active blockers for the current post-`WO-055` planning/control scope.
 
 ## Deferred production decisions
 
-These items must stay visible and must be resolved before the related production work can be declared complete. They are not blockers for the completed `WO-054` planning/control tranche because the active work remains synthetic/local and explicitly excludes legal certification claims, production deployment, production launch approval, live SIEM/APM vendors, production observability credentials, PHI-bearing logs, live Azure credentials, PHI-bearing object payloads, live destructive deletion, production restore execution, live IdP credentials, live OIDC/SAML, live ClinicOS delegation, live ClinicOS event-bus sync, raw ClinicOS payload storage, live EHR/ClinicOS synchronization, production database credentials, production PHI database storage, live migrations, production backup/restore execution, support database access, production EHR credentials, raw EHR payload storage, live EHR writeback delivery, live transcription credentials, live external AI credentials, production prompt stores, autonomous billing, charge finalization, medical-necessity determination, claim submission, denial automation, payment posting, patient-facing financial conclusions, and production launch behavior.
+These items must stay visible and must be resolved before the related production work can be declared complete. They are not blockers for the completed `WO-055` planning/control tranche because the active work remains synthetic/local and explicitly excludes legal certification claims, production deployment, production launch approval, live SIEM/APM vendors, production observability credentials, PHI-bearing logs, live Azure credentials, PHI-bearing object payloads, public object URLs, live destructive deletion, production restore execution, PHI-bearing audit exports, live IdP credentials, live OIDC/SAML, live ClinicOS delegation, live ClinicOS event-bus sync, raw ClinicOS payload storage, live EHR/ClinicOS synchronization, production database credentials, production PHI database storage, live migrations, production backup/restore execution, support database access, production EHR credentials, raw EHR payload storage, live EHR writeback delivery, live transcription credentials, live external AI credentials, production prompt stores, autonomous billing, charge finalization, medical-necessity determination, claim submission, denial automation, payment posting, patient-facing financial conclusions, and production launch behavior.
 
 ### Deferred Decision — Production SIEM/APM vendor and operational monitoring posture
 
@@ -35,10 +35,10 @@ These items must stay visible and must be resolved before the related production
 
 ### Deferred Decision — Production Azure Blob storage and destructive deletion
 
-- **Related future work:** post-`WO-042` security/privacy/founder review before live use
+- **Related future work:** `WO-055`; future approved storage implementation work order before live use
 - **Status:** deferred
 - **Decision needed before live use:** Azure account/container policy, credential source, customer-managed keys, private networking, legal hold, soft-delete/versioning configuration, backup/restore drill cadence, deletion approval authority, recovery window, and evidence retention.
-- **Safe current posture:** `WO-042` adds production-shaped adapter boundary, deterministic fake storage tests, server-mediated token validation, recovery-window-gated deletion evidence, and restore-readiness metadata only; no PHI-bearing production object delivery, public URLs, destructive production deletion, or production restore execution.
+- **Safe current posture:** `WO-042` adds production-shaped adapter boundary, deterministic fake storage tests, server-mediated token validation, recovery-window-gated deletion evidence, and restore-readiness metadata only. `WO-055` captures the live-readiness intake and future acceptance criteria. No live Azure credential, PHI-bearing production object delivery, public URL, destructive production deletion, PHI-bearing audit export, production restore execution, or launch behavior is enabled.
 
 ### Deferred Decision — Live transcription provider and PHI-bearing audio transport
 

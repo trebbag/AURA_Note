@@ -58,9 +58,10 @@
     "WO-051": "done",
     "WO-052": "done",
     "WO-053": "done",
-    "WO-054": "done"
+    "WO-054": "done",
+    "WO-055": "done"
   },
-  "last_updated_by": "Codex WO-054 production PHI persistence/database operations review intake",
-  "last_updated_at": "2026-05-28T18:37:48Z",
-  "notes": "WO-054 completed a post-P11 planning/control intake for production PHI persistence and database operations review. The repo now includes a production PHI database operations review document, required future decisions, acceptance criteria, event/audit inventory, and PHI database review readiness validation. next_work_order remains null. No production PHI storage, production database credential, live migration, runtime repository replacement, support database access, backup/restore execution, or production launch behavior is authorized or introduced."
+  "last_updated_by": "Codex WO-055 production Azure storage/deletion/restore review intake",
+  "last_updated_at": "2026-05-28T18:56:24Z",
+  "notes": "WO-055 completed a post-P11 planning/control intake for production Azure storage, deletion, and restore review. The repo now includes a production Azure storage/deletion/restore review document, required future decisions, acceptance criteria, event/audit inventory, and storage live review readiness validation. next_work_order remains null. No live Azure credential, PHI-bearing object delivery, public URL, destructive production deletion, production restore execution, PHI-bearing audit export, runtime storage behavior, or production launch behavior is authorized or introduced."
 }

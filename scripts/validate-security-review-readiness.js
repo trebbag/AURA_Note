@@ -69,7 +69,8 @@ check(
     specGaps.includes('No active gaps as of post-`WO-051` claim/payer decision gate and P11 review') ||
     specGaps.includes('No active gaps as of post-`WO-052` post-P11 continuation rails review') ||
     specGaps.includes('No active gaps as of post-`WO-053` production identity/account lifecycle review intake') ||
-    specGaps.includes('No active gaps as of post-`WO-054` production PHI persistence/database operations review intake'),
+    specGaps.includes('No active gaps as of post-`WO-054` production PHI persistence/database operations review intake') ||
+    specGaps.includes('No active gaps as of post-`WO-055` production Azure storage/deletion/restore review intake'),
   'SPEC_GAPS.md'
 );
 check('work-order.next-file', 'WO-048 work-order file exists for the next tranche', fs.readdirSync(path.join(root, 'work_orders')).some((file) => file.startsWith('WO-048_')), 'work_orders');

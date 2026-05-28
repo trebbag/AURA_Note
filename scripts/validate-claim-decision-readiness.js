@@ -114,7 +114,8 @@ check('doc.runbook-exists', 'WO-051 claim/payer runbook exists', exists('docs/ru
       : contents.includes(snippet) ||
         contents.includes('No active gaps as of post-`WO-052` post-P11 continuation rails review') ||
         contents.includes('No active gaps as of post-`WO-053` production identity/account lifecycle review intake') ||
-        contents.includes('No active gaps as of post-`WO-054` production PHI persistence/database operations review intake');
+        contents.includes('No active gaps as of post-`WO-054` production PHI persistence/database operations review intake') ||
+        contents.includes('No active gaps as of post-`WO-055` production Azure storage/deletion/restore review intake');
   check(id, `${id} includes ${snippet} or later post-P11 no-active-gap evidence`, passed, snippet);
 });
 

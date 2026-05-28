@@ -58,6 +58,7 @@ jobs:
       - run: pnpm storage:secure-download-readiness
       - run: pnpm retention:storage-deletion-readiness
       - run: pnpm retention:production-readiness
+      - run: pnpm storage:live-review-readiness
       - run: pnpm claim-decision:readiness
       - run: pnpm post-p11:readiness
       - run: pnpm production:readiness

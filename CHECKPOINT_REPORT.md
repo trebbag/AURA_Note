@@ -709,3 +709,44 @@ Deferred decisions remain tracked in `SPEC_GAPS.md`, including production PHI pe
 ## Next recommended batch
 
 No implementation work order is active. The next safest planning/control candidate is production Azure storage, deletion, and restore review, but it should not be promoted without explicit selection.
+
+---
+
+# Post-P11 Production Azure Storage Deletion Restore Review Intake
+
+## Completed work orders
+
+- `WO-055` — Production Azure storage, deletion, and restore review intake.
+
+## Acceptance evidence
+
+- `WO-055` added `docs/PRODUCTION_AZURE_STORAGE_DELETION_RESTORE_REVIEW.md` with required future Azure storage decisions, acceptance criteria, event/audit inventory, standalone behavior, and ClinicOS storage-boundary requirements.
+- `WO-055` added `work_orders/WO-055_production_azure_storage_deletion_restore_review_intake.md` so the intake is reviewable and bounded.
+- `pnpm storage:live-review-readiness` verifies that the tranche remains planning/control only and does not enable live Azure credentials, PHI-bearing object delivery, public URLs, destructive production deletion, production restore execution, PHI-bearing audit exports, runtime storage behavior, or launch behavior.
+- `repo_status.json` records `WO-055: done` while preserving the P11 checkpoint and no active next work order.
+
+## Tests and gates
+
+- `pnpm storage:live-review-readiness`
+- `pnpm post-p11:readiness`
+- `pnpm production:readiness`
+- `pnpm acceptance:readiness`
+- `node scripts/status.js`
+- `git diff --check`
+
+## Open risks
+
+- Azure account/container topology, private networking, credential source, customer-managed keys, tenant key isolation, signed download TTLs, token revocation, legal hold, immutability, backup/restore cadence, deletion approval authority, recovery window, evidence retention, support access, and incident response remain deferred decisions.
+- `WO-055` is a planning/control tranche only. It does not approve live Azure credentials, PHI-bearing object delivery, public URLs, destructive production deletion, production restore execution, PHI-bearing audit exports, runtime storage behavior, or production launch.
+
+## Active SPEC_GAPs
+
+None active as of the post-`WO-055` production Azure storage/deletion/restore review intake.
+
+## Deferred production decisions
+
+Deferred decisions remain tracked in `SPEC_GAPS.md`, including production Azure storage/deletion/restore controls, live transcription provider, external AI governance, production EHR credentialing/writeback, ClinicOS live integration, revenue estimate policy, production rules licensing/certification, future claim/payer implementation strategy, and production launch approval.
+
+## Next recommended batch
+
+No implementation work order is active. The next safest planning/control candidate is live transcription provider review, but it should not be promoted without explicit selection.

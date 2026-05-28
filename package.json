@@ -49,6 +49,7 @@
     "post-p11:readiness": "node scripts/validate-post-p11-continuation-readiness.js",
     "storage:azure-adapter-readiness": "pnpm --filter @aura-note/storage test && pnpm --filter @aura-note/storage typecheck && node scripts/validate-azure-storage-adapter-readiness.js",
     "storage:secure-download-readiness": "pnpm --filter @aura-note/storage test && pnpm --filter @aura-note/api test && node scripts/validate-secure-download-readiness.js",
+    "storage:live-review-readiness": "node scripts/validate-storage-live-review-readiness.js",
     "retention:storage-deletion-readiness": "pnpm --filter @aura-note/worker test && node scripts/validate-storage-retention-readiness.js",
     "retention:production-readiness": "pnpm --filter @aura-note/worker test && pnpm --filter @aura-note/storage test && node scripts/validate-retention-production-readiness.js",
     "production:readiness": "node scripts/production-build-readiness.js",

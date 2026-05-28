@@ -2,7 +2,7 @@
 
 ## Current state
 
-AURA Note has completed `WO-000` through `WO-054` as synthetic/local, decision-package, and planning/control evidence. The current active checkpoint remains P11. No production launch, live vendor use, production PHI storage, production database credential use, production identity credential use, live claim submission, clearinghouse integration, payer integration, denial automation, payment posting, charge finalization, medical-necessity determination, or patient-facing financial conclusion is approved or implemented.
+AURA Note has completed `WO-000` through `WO-055` as synthetic/local, decision-package, and planning/control evidence. The current active checkpoint remains P11. No production launch, live vendor use, production PHI storage, production database credential use, production identity credential use, live Azure credential use, PHI-bearing object delivery, public object URL, destructive production deletion, production restore execution, live claim submission, clearinghouse integration, payer integration, denial automation, payment posting, charge finalization, medical-necessity determination, or patient-facing financial conclusion is approved or implemented.
 
 `next_work_order` intentionally remains `null` until a specific future tranche is approved and promoted into `repo_status.json` as `todo` or `in_progress`.
 
@@ -32,6 +32,7 @@ Post-P11 work must start with a named work order and must be one of the followin
 
 ### Production Azure storage, deletion, and restore review
 
+- Promoted as `WO-055` for planning/control intake only.
 - Required decisions: Azure account/container, soft delete/versioning, legal hold, immutability, customer-managed keys, signed download TTLs, recovery windows, deletion approval authority, restore drill cadence, and evidence retention.
 - Required evidence before implementation: storage security review, no-public-url tests, deletion-approval tests, backup/restore runbook, and incident escalation path.
 - Safe current posture: Azure adapter and deletion behavior are local/fake readiness evidence only.
@@ -77,4 +78,4 @@ Post-P11 work must start with a named work order and must be one of the followin
 
 ## Current recommendation
 
-`WO-053` promoted the first candidate family, production identity and account lifecycle live review, into a planning/control intake without enabling live behavior. `WO-054` promoted the second candidate family, production PHI persistence and database operations review, into a planning/control intake without enabling live behavior. Keep the repo stopped at P11 until a specific next tranche is selected. The next safest planning/control candidate is production Azure storage, deletion, and restore review, but it should not be promoted until explicitly selected.
+`WO-053` promoted the first candidate family, production identity and account lifecycle live review, into a planning/control intake without enabling live behavior. `WO-054` promoted the second candidate family, production PHI persistence and database operations review, into a planning/control intake without enabling live behavior. `WO-055` promoted the third candidate family, production Azure storage, deletion, and restore review, into a planning/control intake without enabling live behavior. Keep the repo stopped at P11 until a specific next tranche is selected. The next safest planning/control candidate is live transcription provider review, but it should not be promoted until explicitly selected.
