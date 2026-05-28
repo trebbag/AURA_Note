@@ -111,7 +111,9 @@ check('doc.runbook-exists', 'WO-051 claim/payer runbook exists', exists('docs/ru
   const passed =
     id !== 'SPEC_GAPS'
       ? contents.includes(snippet)
-      : contents.includes(snippet) || contents.includes('No active gaps as of post-`WO-052` post-P11 continuation rails review');
+      : contents.includes(snippet) ||
+        contents.includes('No active gaps as of post-`WO-052` post-P11 continuation rails review') ||
+        contents.includes('No active gaps as of post-`WO-053` production identity/account lifecycle review intake');
   check(id, `${id} includes ${snippet} or later post-P11 no-active-gap evidence`, passed, snippet);
 });
 

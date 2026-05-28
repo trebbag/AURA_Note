@@ -4,13 +4,13 @@ This file tracks missing, conflicting, unsafe, or deliberately deferred product 
 
 ## Active gaps
 
-No active gaps as of post-`WO-052` post-P11 continuation rails review on 2026-05-28.
+No active gaps as of post-`WO-053` production identity/account lifecycle review intake on 2026-05-28.
 
-The repo remains not production-ready. The items below are deferred production decisions rather than active blockers for the current post-`WO-051` synthetic/local decision-gate scope.
+The repo remains not production-ready. The items below are deferred production decisions rather than active blockers for the current post-`WO-053` planning/control scope.
 
 ## Deferred production decisions
 
-These items must stay visible and must be resolved before the related production work can be declared complete. They are not blockers for the completed `WO-052` planning/control tranche because the active work remains synthetic/local and explicitly excludes legal certification claims, production deployment, production launch approval, live SIEM/APM vendors, production observability credentials, PHI-bearing logs, live Azure credentials, PHI-bearing object payloads, live destructive deletion, production restore execution, live IdP credentials, live ClinicOS delegation, live ClinicOS event-bus sync, raw ClinicOS payload storage, live EHR/ClinicOS synchronization, production EHR credentials, raw EHR payload storage, live EHR writeback delivery, live transcription credentials, live external AI credentials, production prompt stores, autonomous billing, charge finalization, medical-necessity determination, claim submission, denial automation, payment posting, patient-facing financial conclusions, and production launch behavior.
+These items must stay visible and must be resolved before the related production work can be declared complete. They are not blockers for the completed `WO-053` planning/control tranche because the active work remains synthetic/local and explicitly excludes legal certification claims, production deployment, production launch approval, live SIEM/APM vendors, production observability credentials, PHI-bearing logs, live Azure credentials, PHI-bearing object payloads, live destructive deletion, production restore execution, live IdP credentials, live OIDC/SAML, live ClinicOS delegation, live ClinicOS event-bus sync, raw ClinicOS payload storage, live EHR/ClinicOS synchronization, production EHR credentials, raw EHR payload storage, live EHR writeback delivery, live transcription credentials, live external AI credentials, production prompt stores, autonomous billing, charge finalization, medical-necessity determination, claim submission, denial automation, payment posting, patient-facing financial conclusions, and production launch behavior.
 
 ### Deferred Decision — Production SIEM/APM vendor and operational monitoring posture
 
@@ -21,10 +21,10 @@ These items must stay visible and must be resolved before the related production
 
 ### Deferred Decision — Production identity provider and account lifecycle
 
-- **Related future work:** post-`WO-041` security/founder review before live use
+- **Related future work:** `WO-053`; future approved identity implementation work order before live use
 - **Status:** deferred
 - **Decision needed before live use:** production IdP selection, OIDC/SAML/ClinicOS delegation posture, MFA expectations, account recovery, tenant/user/site administration ownership, disabled-user handling, and access-review cadence.
-- **Safe current posture:** `WO-041` adds fail-closed local synthetic identity and adapter boundaries only; delegated modes remain denied until configured and no raw tokens or secret values are returned.
+- **Safe current posture:** `WO-041` adds fail-closed local synthetic identity and adapter boundaries only; `WO-053` captures the live-readiness intake and future acceptance criteria. Delegated modes remain denied until configured by a later approved implementation work order and no raw tokens or secret values are returned.
 
 ### Deferred Decision — Production PHI persistence and database operations
 

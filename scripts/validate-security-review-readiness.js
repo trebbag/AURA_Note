@@ -67,7 +67,8 @@ check(
     specGaps.includes('No active gaps as of post-`WO-049` launch operations readiness review') ||
     specGaps.includes('No active gaps as of post-`WO-050` beta pilot launch gate and P10 review') ||
     specGaps.includes('No active gaps as of post-`WO-051` claim/payer decision gate and P11 review') ||
-    specGaps.includes('No active gaps as of post-`WO-052` post-P11 continuation rails review'),
+    specGaps.includes('No active gaps as of post-`WO-052` post-P11 continuation rails review') ||
+    specGaps.includes('No active gaps as of post-`WO-053` production identity/account lifecycle review intake'),
   'SPEC_GAPS.md'
 );
 check('work-order.next-file', 'WO-048 work-order file exists for the next tranche', fs.readdirSync(path.join(root, 'work_orders')).some((file) => file.startsWith('WO-048_')), 'work_orders');

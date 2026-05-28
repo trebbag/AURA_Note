@@ -627,3 +627,44 @@ Deferred decisions remain tracked in `SPEC_GAPS.md`, including production launch
 ## Next recommended batch
 
 No implementation work order is active. The next safe batch is to select one candidate family from `docs/POST_P11_CONTINUATION_PLAN.md` and promote it into a specific `WO-053` work order with approval evidence and stop conditions before implementation begins.
+
+---
+
+# Post-P11 Production Identity Review Intake
+
+## Completed work orders
+
+- `WO-053` — Production identity and account lifecycle review intake.
+
+## Acceptance evidence
+
+- `WO-053` added `docs/PRODUCTION_IDENTITY_ACCOUNT_LIFECYCLE_REVIEW.md` with required future identity decisions, acceptance criteria, event/audit inventory, standalone behavior, and ClinicOS delegated identity boundaries.
+- `WO-053` added `work_orders/WO-053_production_identity_account_lifecycle_review_intake.md` so the intake is reviewable and bounded.
+- `pnpm identity:live-review-readiness` verifies that the tranche remains planning/control only and does not enable live identity, production credentials, production PHI, ClinicOS delegation, or launch behavior.
+- `repo_status.json` records `WO-053: done` while preserving the P11 checkpoint and no active next work order.
+
+## Tests and gates
+
+- `pnpm identity:live-review-readiness`
+- `pnpm post-p11:readiness`
+- `pnpm production:readiness`
+- `pnpm acceptance:readiness`
+- `node scripts/status.js`
+- `git diff --check`
+
+## Open risks
+
+- Production IdP, OIDC/SAML posture, MFA, account recovery, disabled-user source of truth, session policy, break-glass, support access, access-review cadence, tenant administration ownership, and ClinicOS delegation remain deferred decisions.
+- `WO-053` is a planning/control tranche only. It does not approve live identity integration, production credentials, production PHI access, ClinicOS live delegation, or production launch.
+
+## Active SPEC_GAPs
+
+None active as of the post-`WO-053` production identity/account lifecycle review intake.
+
+## Deferred production decisions
+
+Deferred decisions remain tracked in `SPEC_GAPS.md`, including production identity/account lifecycle, production PHI persistence and database operations, production Azure storage/deletion/restore controls, production SIEM/APM and monitoring posture, live transcription provider, external AI governance, production EHR credentialing/writeback, ClinicOS live integration, revenue estimate policy, production rules licensing/certification, future claim/payer implementation strategy, and production launch approval.
+
+## Next recommended batch
+
+No implementation work order is active. The next safest planning/control candidate is production PHI persistence and database operations review, but it should not be promoted without explicit selection.

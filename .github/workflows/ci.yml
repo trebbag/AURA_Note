@@ -44,6 +44,7 @@ jobs:
       - run: pnpm standalone:operations-readiness
       - run: pnpm audio:transcription-readiness
       - run: pnpm identity:production-readiness
+      - run: pnpm identity:live-review-readiness
       - run: pnpm config:production-readiness
       - run: pnpm observability:production-readiness
       - run: pnpm ehr:integration-readiness

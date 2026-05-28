@@ -538,6 +538,29 @@ This gate does not authorize live EHR writeback, live AI, live transcription, pr
 
 **Implementation status as of `WO-052`:** complete as a planning/control tranche only. The repo now includes `docs/POST_P11_CONTINUATION_PLAN.md`, `work_orders/WO-052_post_p11_continuation_rails.md`, and `pnpm post-p11:readiness`. `next_work_order` remains `null`; no live production, vendor, claim, PHI, or launch behavior is authorized.
 
+## WO-053 — Production Identity And Account Lifecycle Review Intake
+
+- **Objective:** Promote production identity and account lifecycle live review into a planning/control decision package without enabling runtime identity behavior.
+- **Why this exists:** Production identity must be governed before live PHI, vendor, storage, EHR, AI, or payer work can be safely implemented.
+- **Prerequisites:** `WO-052` complete and merged; P11 retained; no active SPEC_GAP blocks planning/control work.
+- **In scope:** production identity review document, live-readiness decision inventory, OIDC/SAML/ClinicOS delegation considerations, MFA/session/disabled-user/account-recovery/break-glass/support/access-review criteria, readiness verifier, CI/status/docs updates.
+- **Out of scope:** live OIDC/SAML, production IdP credentials, real user directory sync, ClinicOS live delegated identity, production PHI access, break-glass runtime implementation, or production launch approval.
+- **UX requirements:** no new route; future identity UX must expose fail-closed, permission-denied, disabled-user, expired-session, missing-purpose, delegated-denied, support, break-glass, and access-review states through typed API clients before launch readiness.
+- **Backend/API requirements:** no new endpoint; future live identity work must use adapter boundaries and enforce tenant/site scope, permissions, purpose-of-use, idempotency where needed, and audit/event evidence.
+- **Data model/persistence requirements:** no schema change; future work must define durable tenant/site/user/role/session/delegated-mapping/break-glass/support/access-review records and RLS or equivalent tenant-isolation evidence.
+- **Event/audit requirements:** inventory future identity events including user provisioned/disabled, role assigned/removed, session expired, purpose-of-use recorded, delegated identity linked/denied, break-glass opened/closed, support access opened/closed, and access review completed.
+- **RBAC/ABAC requirements:** preserve current role boundaries and require future role-denial/cross-tenant/support/delegated-identity tests.
+- **Standalone-mode behavior:** standalone remains authoritative for tenant/site/user/role administration until a future approved implementation work order changes it.
+- **ClinicOS-integrated behavior:** ClinicOS delegated identity remains disabled/fail-closed; future delegation cannot bypass AURA Note permissions, tenant/site mapping, patient linkage, purpose-of-use, or audit.
+- **AI/PHI/security requirements:** no raw PHI, credentials, tokens, production URLs, `.env`, private keys, live IdP calls, live ClinicOS delegation, or external AI change.
+- **Testing requirements:** identity live-review readiness verifier plus post-P11, production, acceptance, status, and whitespace gates.
+- **Required scripts/gates:** `pnpm identity:live-review-readiness`; `pnpm post-p11:readiness`; `pnpm production:readiness`; `pnpm acceptance:readiness`; `node scripts/status.js`; `git diff --check`.
+- **Definition of Done:** decision package exists, `WO-053` is indexed and marked done, `next_work_order` remains `null`, readiness scripts pass, and no live identity, credential, PHI, ClinicOS delegation, or launch behavior is authorized.
+- **Stop conditions:** real IdP selection, live credentials, legal/security/privacy policy, or ClinicOS delegation decisions are required before implementation.
+- **Risks and deferred decisions:** production IdP, MFA, account recovery, session policy, break-glass, support access, access review, tenant administration ownership, and ClinicOS delegation rules remain deferred.
+
+**Implementation status as of `WO-053`:** complete as a planning/control tranche only. The repo now includes `docs/PRODUCTION_IDENTITY_ACCOUNT_LIFECYCLE_REVIEW.md`, `work_orders/WO-053_production_identity_account_lifecycle_review_intake.md`, and `pnpm identity:live-review-readiness`. `next_work_order` remains `null`; no live OIDC/SAML, production IdP credential, ClinicOS delegated identity, production PHI access, runtime identity behavior, or production launch behavior is authorized.
+
 ## Overall production-launch criteria
 
 AURA Note can be called production-launch-ready only when all of the following are true:
