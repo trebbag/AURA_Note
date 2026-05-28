@@ -642,3 +642,11 @@ These records remain synthetic/local API metadata mapped to audit/domain-event e
 ## WO-047 security/privacy/compliance data review
 
 `WO-047` reviews the P9 data posture and adds `docs/THREAT_MODEL.md` as evidence. No new P9 blocker was found in the current synthetic/local scope. The data model remains production-incomplete until P10/P11 and later launch work close deferred decisions for production database roles, migration approval/rollback, backup/restore drills, PHI storage policy, live vendor payload policy, formal access-review evidence, and launch signoff.
+
+## WO-048 frontend runtime integration data status
+
+`WO-048` adds no new persistence model. It proves that one browser workflow can use typed API clients and backend-backed state from appointment creation through finalization/export and refetch evidence. Existing documented mock routes still require later conversion or explicit launch deferral.
+
+## WO-049 launch operations data status
+
+`WO-049` adds no new PHI-bearing persistence and no production database writes. Launch operations evidence is represented as synthetic metadata in docs, support status UI, deterministic performance results, and existing audit/support event categories. Production launch remains blocked until formal deployment, backup/restore, migration approval, access-review, and operational owner evidence is approved.

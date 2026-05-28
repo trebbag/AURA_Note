@@ -176,6 +176,12 @@ test.describe('AURA Note route accessibility smoke suite', () => {
     await expect(page.getByRole('region', { name: 'Secure storage and restore states' })).toContainText('recovery window required');
     await expect(page.getByRole('region', { name: 'Operational evidence states' })).toContainText('productionLaunchReady=false');
     await expect(page.getByRole('region', { name: 'Operational evidence states' })).toContainText('metadata only');
+    await expect(page.getByRole('region', { name: 'Launch operations readiness' })).toContainText('Launch Ops Drills');
+    await expect(page.getByRole('region', { name: 'Launch operations readiness' })).toContainText('Rollback rehearsal');
+    await expect(page.getByRole('region', { name: 'Launch operations readiness' })).toContainText('Vendor outage drill');
+    await expect(page.getByRole('region', { name: 'Launch operations readiness' })).toContainText('Access review drill');
+    await expect(page.getByRole('region', { name: 'Launch operations readiness' })).toContainText('synthetic_load_baseline');
+    await expect(page.getByRole('region', { name: 'Launch operations readiness' })).toContainText('no production traffic');
     await expect(page.getByRole('region', { name: 'Feature flags and retention' })).toContainText('External AI');
     await expect(page.getByRole('region', { name: 'Audit and failure states' })).toContainText('server-mediated');
     await expect(page.getByRole('region', { name: 'Audit and failure states' })).toContainText('PHI');

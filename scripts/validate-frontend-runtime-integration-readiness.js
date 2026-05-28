@@ -97,8 +97,9 @@ for (const state of ['loading', 'empty', 'ready', 'saving', 'failed', 'permissio
 }
 
 const status = JSON.parse(read('repo_status.json'));
-if (status.work_orders?.['WO-048'] !== 'done' || status.next_work_order !== 'WO-049') {
-  throw new Error('repo_status.json must mark WO-048 done and advance next_work_order to WO-049 before frontend runtime readiness passes');
+const nextWorkOrderNumber = Number.parseInt(String(status.next_work_order || '').replace('WO-', ''), 10);
+if (status.work_orders?.['WO-048'] !== 'done' || !Number.isFinite(nextWorkOrderNumber) || nextWorkOrderNumber < 49) {
+  throw new Error('repo_status.json must mark WO-048 done and advance next_work_order to WO-049 or later before frontend runtime readiness passes');
 }
 
 assertIncludes('RUN_LOG.md', ['WO-048', 'frontend:runtime-integration-readiness']);

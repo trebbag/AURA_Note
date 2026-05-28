@@ -450,3 +450,25 @@ These tests prove synthetic P9 AI governance readiness only. They do not enable 
 - runs package security tests and API tests before the static verifier.
 
 This gate proves synthetic/local P9 review readiness only. It does not certify HIPAA compliance, SOC 2 readiness, legal compliance, production security approval, production privacy approval, production launch approval, live vendor readiness, or production PHI handling.
+
+## WO-048 frontend runtime integration readiness
+
+`WO-048` adds `pnpm frontend:runtime-integration-readiness`:
+
+- the web typed API client is validated against contract DTOs;
+- `/aura-note/runtime-integration` renders API-backed schedule and finalized-note evidence;
+- Playwright creates an appointment through the API, starts the visit, completes finalization, generates a draft claim preview with `submittedClaim=false`, signs/dispatches, generates a final-note PDF artifact, reloads the route, and confirms persisted read-only evidence remains visible;
+- `docs/FRONTEND_RUNTIME_INTEGRATION.md` inventories routes as API-backed, documented mocks, or static/read shells.
+
+This gate proves synthetic/local frontend runtime integration evidence only. Existing production-intended scaffold routes must be converted to typed API runtime behavior or explicitly deferred before launch-candidate readiness is claimed.
+
+## WO-049 launch operations readiness
+
+`WO-049` adds synthetic/local deployment, performance, reliability, and operational drill evidence:
+
+- `pnpm performance:launch-baseline` runs a deterministic 100-workflow synthetic performance harness without production traffic, PHI, or live vendors.
+- `pnpm launch:ops-readiness` runs the performance baseline, the web Playwright route suite, and the launch operations verifier.
+- Browser tests assert `/aura-note/support/status` exposes Launch Ops Drills, rollback rehearsal, synthetic_load_baseline, vendor outage, access review, disabled-vendor, and no-production-traffic states.
+- `scripts/validate-launch-ops-readiness.js` checks docs, runbooks, CI wiring, support status UI, status advancement, run-log evidence, and safety boundaries.
+
+This gate is operational rehearsal only. It does not approve production deployment, production PHI, live vendor use, charge finalization, medical-necessity determination, autonomous clinical/coding/billing behavior, or claim submission.

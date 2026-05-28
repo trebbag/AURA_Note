@@ -295,3 +295,9 @@ No live model credential, production prompt store, raw external model prompt, ra
 `WO-048` adds the first P10 Frontend Runtime Integration Gate evidence without adding new clinical, billing, EHR, ClinicOS, AI, or claim behavior. The web app now has a typed API client validated against `packages/contracts` and an API-backed `/aura-note/runtime-integration` route that reads schedule and finalized-note state from the local Nest API. Playwright starts the API and web runtime together, drives a synthetic appointment through visit start, finalization, sign/dispatch, final-note PDF export, finalized-note refetch, and browser reload evidence.
 
 Existing production-intended scaffold routes are inventoried in `docs/FRONTEND_RUNTIME_INTEGRATION.md` as API-backed runtime or documented mocks. Later P10 work must either convert those documented mocks to typed API runtime behavior or explicitly defer/disable them before launch-candidate review. No production PHI storage, live vendor execution, autonomous clinical/coding/billing behavior, medical-necessity determination, charge finalization, claim submission, or production launch approval is introduced.
+
+## WO-049 launch operations readiness
+
+`WO-049` adds synthetic/local backend operational readiness evidence. `pnpm launch:ops-readiness` combines the deterministic performance baseline, browser support-status drill assertions, and a static verifier for environment promotion, smoke checks, rollback rehearsal, incident response, access review, and support escalation evidence.
+
+No new production runtime service is enabled. Existing support/platform boundaries remain the operational evidence surface; live vendors, production credentials, production deployment, PHI-bearing logs, external AI, live EHR/ClinicOS delivery, charge finalization, medical-necessity determination, autonomous clinical/coding/billing behavior, and claim submission remain disabled or out of scope.

@@ -2,7 +2,7 @@
   "project": "AURA Note v1",
   "mode": "production_build_in_progress",
   "current_checkpoint": "P10",
-  "next_work_order": "WO-049",
+  "next_work_order": "WO-050",
   "work_orders": {
     "WO-000": "done",
     "WO-001": "done",
@@ -53,11 +53,11 @@
     "WO-046": "done",
     "WO-047": "done",
     "WO-048": "done",
-    "WO-049": "todo",
-    "WO-050": "planned",
+    "WO-049": "done",
+    "WO-050": "todo",
     "WO-051": "planned"
   },
-  "last_updated_by": "Codex WO-048 frontend runtime integration gate",
-  "last_updated_at": "2026-05-28T05:15:00Z",
-  "notes": "WO-048 completed synthetic/local P10 frontend runtime-integration evidence. The repo now includes a typed web API client, an API-backed runtime integration evidence route, Playwright coverage from appointment creation through finalization/export with reload/refetch evidence, a route inventory distinguishing API-backed runtime from documented mocks, and a frontend runtime readiness verifier. Existing production-intended scaffold routes still require later P10 conversion or explicit launch deferral before launch-candidate readiness can be claimed. No production launch approval, production PHI, live credentials, live external AI, live EHR/ClinicOS sync, live storage delivery, destructive production deletion, autonomous clinical/coding/billing behavior, medical-necessity determination, charge finalization, or claim submission was introduced."
+  "last_updated_by": "Codex WO-049 launch operations readiness",
+  "last_updated_at": "2026-05-28T04:41:55Z",
+  "notes": "WO-049 completed synthetic/local P10 launch operations readiness evidence. The repo now includes launch operations readiness documentation, a WO-049 runbook, support-status launch drill states, a deterministic synthetic performance baseline, and a launch operations readiness verifier wired into CI. This is operational rehearsal only: no production deployment, production launch approval, production PHI, live credentials, live external AI, live EHR/ClinicOS sync, live storage delivery, destructive production deletion, autonomous clinical/coding/billing behavior, medical-necessity determination, charge finalization, or claim submission was introduced."
 }
