@@ -58,6 +58,20 @@ Codex should add tests as implementation proceeds.
 12. Support hardening status route shows feature flags, retention posture, audit export posture, and failure states.
 13. CP-4 route sweep renders Schedule, Draft Notes, Workspace, Finalization, Finalized Notes, Coaching, and Support hardening routes with synthetic data.
 
+## Frontend runtime integration launch gate
+
+Before P10 launch-candidate readiness can be claimed, browser coverage must move beyond route-render scaffolds and prove production-intended screens are driven by typed API clients and persisted backend state:
+
+- every production-intended route must be inventoried as API-backed, documented-mock-backed, Storybook/demo-only, or blocked;
+- API-backed routes must use typed clients generated from or validated against `packages/contracts` and `packages/contracts/openapi/aura-note.v1.yaml`;
+- synthetic local React state is allowed only for Storybook, fixture-only demo mode, unit/component tests, or explicitly documented mocks;
+- each affected route must expose loading, empty, ready, saving, failed, permission-denied, and read-only states through API responses, persisted records, or documented mocks;
+- state-changing browser actions must call backend operations that are tenant/site scoped, permission checked, audit/event emitting, and idempotent where duplicate submissions are plausible;
+- `pnpm frontend:runtime-integration-readiness` or an equivalent named gate must fail if a production-intended route still relies on unapproved local-only React state;
+- Playwright must exercise at least one seeded backend-backed workflow from appointment creation through documentation/finalization/export, including reload or refetch evidence proving the browser is reading persisted backend records rather than only in-page state.
+
+This gate does not authorize live EHR writeback, live AI, live transcription, production PHI storage, charge finalization, medical-necessity determination, or claim submission.
+
 ## Security tests
 
 - Cross-tenant access denied.

@@ -84,6 +84,22 @@ git diff --check
 
 Checkpoint reports must list completed work orders, evidence, tests, open risks, active and deferred `SPEC_GAP`s, and the next recommended batch.
 
+## Frontend Runtime Integration Gate
+
+This is a P10 launch-blocking gate. AURA Note cannot claim launch-candidate readiness until every production-intended browser route has been converted from scaffold/demo-local state to typed API-client runtime behavior backed by persisted backend state.
+
+Requirements:
+
+- Every production-intended screen must use typed API clients generated from or validated against `packages/contracts` and `packages/contracts/openapi/aura-note.v1.yaml`.
+- Production routes must read and mutate persisted backend state through the API. Synthetic local React state is allowed only in Storybook, fixture-only demo routes, unit/component tests, or explicitly labeled demo mode.
+- Each affected route must expose `loading`, `empty`, `ready`, `saving`, `failed`, `permission-denied`, and `read-only` states backed by API responses, persisted records, or documented mocks when a live vendor dependency is intentionally disabled.
+- Any documented mock used for a route state must specify why the live dependency is unavailable, the production adapter boundary it stands in for, and the later work order or approval needed to replace it.
+- State-changing UI actions must call backend operations that are tenant/site scoped, permission checked, audit/event emitting, and idempotent where duplicate submissions are plausible.
+- Playwright coverage must exercise at least one seeded backend-backed workflow from appointment creation through documentation/finalization/export before P10 can be claimed. The test must prove browser state is driven by persisted backend records after reload or API refetch, not only by in-page React state.
+- `pnpm frontend:runtime-integration-readiness` or an equivalent named gate must be added before P10 and run in CI before `pnpm launch:readiness`.
+
+This gate does not authorize live EHR writeback, live AI, live transcription, production PHI storage, charge finalization, medical-necessity determination, or claim submission. Those remain governed by their own work orders and safety gates.
+
 ## WO-033 — Production Build Rails And Readiness Controls
 
 - **Objective:** Put the remainder of the build back on rails without implementing new product behavior.
@@ -402,21 +418,21 @@ Checkpoint reports must list completed work orders, evidence, tests, open risks,
 ## WO-048 — UX, Accessibility, Responsive, And Visual Regression Hardening
 
 - **Objective:** Harden production UX and accessibility across required role workflows.
-- **Why this exists:** Browser-testable scaffolds need production-quality flow correctness.
+- **Why this exists:** Browser-testable scaffolds need production-quality flow correctness, and launch review must distinguish API-backed runtime screens from Storybook/demo-only local React state.
 - **Prerequisites:** P7.5 product surfaces.
-- **In scope:** route/state coverage, keyboard controls, accessible names, responsive hardening, visual regression, patient-facing exclusion review, clinician/MA/billing/admin/support workflows.
+- **In scope:** route/state coverage, typed API-client integration inventory, keyboard controls, accessible names, responsive hardening, visual regression, patient-facing exclusion review, clinician/MA/billing/admin/support workflows.
 - **Out of scope:** final design signoff if Figma is unavailable.
-- **UX requirements:** every required screen has empty/loading/ready/saving/blocked/failed/permission-denied/read-only/demo states.
-- **Backend/API requirements:** no new APIs unless needed for UX state fidelity.
-- **Data model/persistence requirements:** none unless state tracking is required.
+- **UX requirements:** every required screen has empty/loading/ready/saving/blocked/failed/permission-denied/read-only/demo states; production-intended route state must come from typed API responses or documented mocks, not unlabelled local-only React fixtures.
+- **Backend/API requirements:** no new APIs unless needed for UX state fidelity; any route that cannot be API-backed must be explicitly documented as demo/Storybook-only or blocked by a later dependency.
+- **Data model/persistence requirements:** none unless state tracking is required; identify routes whose current state is not yet backed by persisted records and assign remediation before P10.
 - **Event/audit requirements:** user actions retain existing audit coverage.
 - **RBAC/ABAC requirements:** role-denied UX tests for sensitive views.
 - **Standalone-mode behavior:** standalone workflows complete.
 - **ClinicOS-integrated behavior:** embedded workflows safely degrade.
 - **AI/PHI/security requirements:** no patient-facing internal billing/revenue/coaching/confidence details.
-- **Testing requirements:** Playwright accessibility/responsive/visual tests.
-- **Required scripts/gates:** `pnpm ux:production-readiness` plus default gate.
-- **Definition of Done:** UX/accessibility evidence is ready for launch review.
+- **Testing requirements:** Playwright accessibility/responsive/visual tests plus frontend-runtime integration inventory tests that distinguish API-backed runtime screens from documented mocks.
+- **Required scripts/gates:** `pnpm ux:production-readiness`, `pnpm frontend:runtime-integration-readiness`, plus default gate.
+- **Definition of Done:** UX/accessibility evidence is ready for launch review and the Frontend Runtime Integration Gate has an inventory with no unapproved production local-state screens.
 - **Stop conditions:** design requirement conflict with safety/compliance.
 - **Risks and deferred decisions:** final Figma fidelity may require separate design review.
 
@@ -444,21 +460,21 @@ Checkpoint reports must list completed work orders, evidence, tests, open risks,
 ## WO-050 — Beta Pilot And Limited Production Launch Gate
 
 - **Objective:** Prepare beta and limited launch governance after technical/security readiness.
-- **Why this exists:** Launch requires onboarding, training, support, monitoring, rollback, and approval evidence.
+- **Why this exists:** Launch requires onboarding, training, support, monitoring, rollback, frontend runtime integration evidence, and approval evidence.
 - **Prerequisites:** `WO-049`.
-- **In scope:** tenant onboarding/provisioning, pilot setup checklist, role training, disabled feature list, support escalation, launch checklist, first-week monitoring, rollback criteria, founder/clinical/compliance/security approvals.
+- **In scope:** tenant onboarding/provisioning, pilot setup checklist, role training, disabled feature list, support escalation, launch checklist, first-week monitoring, rollback criteria, Frontend Runtime Integration Gate evidence, founder/clinical/compliance/security approvals.
 - **Out of scope:** unrestricted general availability.
-- **UX requirements:** onboarding and support paths clear for pilot users.
-- **Backend/API requirements:** tenant provisioning checks and launch smoke tests.
-- **Data model/persistence requirements:** launch tenant/config evidence.
+- **UX requirements:** onboarding and support paths clear for pilot users; production-intended screens use typed API clients with loading/empty/ready/saving/failed/permission-denied/read-only states backed by API responses or documented mocks.
+- **Backend/API requirements:** tenant provisioning checks and launch smoke tests; launch smoke must include at least one backend-backed seeded browser workflow from appointment creation through finalization/export.
+- **Data model/persistence requirements:** launch tenant/config evidence plus persisted workflow-state evidence for the seeded browser journey.
 - **Event/audit requirements:** launch signoff and onboarding evidence.
 - **RBAC/ABAC requirements:** access review complete before launch.
 - **Standalone-mode behavior:** standalone pilot path ready.
 - **ClinicOS-integrated behavior:** integrated pilot path documented if used.
 - **AI/PHI/security requirements:** production PHI only if all prior approvals are complete.
-- **Testing requirements:** pilot smoke, rollback, monitoring validation.
-- **Required scripts/gates:** `pnpm pilot:readiness`, `pnpm launch:readiness`, default gate.
-- **Definition of Done:** P10 checkpoint can support limited launch decision without overclaiming readiness.
+- **Testing requirements:** pilot smoke, rollback, monitoring validation, and Playwright backend-backed workflow coverage from appointment creation through finalization/export.
+- **Required scripts/gates:** `pnpm frontend:runtime-integration-readiness`, `pnpm pilot:readiness`, `pnpm launch:readiness`, default gate.
+- **Definition of Done:** P10 checkpoint can support limited launch decision without overclaiming readiness, and launch evidence proves production screens are API-backed or explicitly documented as mocks/demo-only.
 - **Stop conditions:** missing founder/clinical/compliance/security approval.
 - **Risks and deferred decisions:** pilot scope and real tenant readiness must be approved.
 
@@ -498,6 +514,9 @@ AURA Note can be called production-launch-ready only when all of the following a
 - transcript retention remains indefinite unless an approved tenant policy changes it;
 - observability, support, incident response, and access review runbooks are backed by evidence;
 - EHR, ClinicOS, AI, and storage live paths are either disabled, sandbox-approved, or production-approved with documented controls;
+- production-intended frontend screens use typed API clients and persisted backend state, with synthetic local React state limited to Storybook/demo mode;
+- production routes expose loading, empty, ready, saving, failed, permission-denied, and read-only states through API-backed responses or documented mocks;
+- Playwright proves at least one seeded backend-backed browser workflow from appointment creation through finalization/export before launch-candidate readiness is claimed;
 - AI remains draft/candidate/suggestion-only and never sends raw PHI to external AI;
 - patient-facing views exclude internal billing, revenue, confidence, coaching, and payer-optimization details unless explicitly approved by tenant policy and source data;
 - security/privacy/compliance review blockers are closed or formally waived;
