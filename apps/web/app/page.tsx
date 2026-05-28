@@ -31,6 +31,9 @@ export default function HomePage() {
         <li>
           <a href="/aura-note/support/status">Support Hardening Status</a>
         </li>
+        <li>
+          <a href="/aura-note/runtime-integration">Frontend Runtime Integration Evidence</a>
+        </li>
         <li>Finalization Wizard</li>
       </ul>
     </main>

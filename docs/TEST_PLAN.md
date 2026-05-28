@@ -72,6 +72,8 @@ Before P10 launch-candidate readiness can be claimed, browser coverage must move
 
 This gate does not authorize live EHR writeback, live AI, live transcription, production PHI storage, charge finalization, medical-necessity determination, or claim submission.
 
+`WO-048` implements the first synthetic/local version of this gate. `pnpm frontend:runtime-integration-readiness` verifies the route inventory, typed web API client, API-backed `/aura-note/runtime-integration` evidence route, Playwright backend workflow, CI wiring, and no-launch-claim posture. Playwright now starts the local API alongside Next.js and exercises a synthetic appointment from creation through visit start, finalization, sign/dispatch, final-note PDF export, finalized-note API refetch, and browser reload evidence. Existing production-intended scaffold routes remain documented mocks until later P10 work converts them to typed API runtime behavior or explicitly defers them for launch review.
+
 ## Security tests
 
 - Cross-tenant access denied.

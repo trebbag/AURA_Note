@@ -410,6 +410,8 @@ The route is AI governance-review evidence, not a live AI operations console. It
 - storage and retention states must keep production delivery/deletion blocked without approval, recovery, backup/restore, and audit evidence;
 - patient-facing views must not expose internal billing, revenue, confidence, coaching, or payer-optimization details.
 
+`WO-048` adds the first Frontend Runtime Integration Gate evidence route and inventory. `/aura-note/runtime-integration` is API-backed through the typed web client and shows schedule/finalized-note state from backend responses. Existing production-intended scaffold routes remain documented mocks until later P10 work converts them to typed API runtime behavior or explicitly defers them before launch-candidate review. This is not final Figma fidelity, a formal accessibility audit, or production launch approval.
+
 ## Required accessibility and UX states
 
 Every screen must have empty, loading, ready, saving, blocked, failed, permission-denied, and read-only states.

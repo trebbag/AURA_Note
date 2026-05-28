@@ -444,6 +444,8 @@ This gate does not authorize live EHR writeback, live AI, live transcription, pr
 - **Stop conditions:** design requirement conflict with safety/compliance.
 - **Risks and deferred decisions:** final Figma fidelity may require separate design review.
 
+**Implementation status as of `WO-048`:** complete as synthetic/local frontend runtime-integration evidence. The repo now includes `docs/FRONTEND_RUNTIME_INTEGRATION.md`, a typed web API client validated against `packages/contracts`, an API-backed `/aura-note/runtime-integration` evidence route, Playwright coverage from appointment creation through finalization/export with reload/refetch proof, and `pnpm frontend:runtime-integration-readiness`. Existing production-intended scaffold routes remain inventoried as documented mocks until later P10 work converts them to typed API runtime behavior or explicitly defers them before launch-candidate review. No production launch approval, production PHI, live credentials, live vendors, autonomous clinical/coding/billing behavior, medical-necessity determination, charge finalization, or claim submission was introduced.
+
 ## WO-049 — Deployment, Environment Promotion, Performance, Reliability, And Operational Drills
 
 - **Objective:** Add deployment and operational readiness evidence.

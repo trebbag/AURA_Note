@@ -289,3 +289,9 @@ No live model credential, production prompt store, raw external model prompt, ra
 ## WO-047 security/privacy/compliance review
 
 `WO-047` does not add live backend product behavior. It adds the `pnpm security:review-readiness` gate, updates the P9 security/privacy/compliance package, and records a threat model for standalone and ClinicOS-integrated modes. The backend review found no new P9 blocker in the synthetic/local scope. Existing API and worker boundaries continue to fail closed for missing credentials, missing purpose-of-use, disabled users, cross-tenant access, wrong role, stale/degraded integration mappings, unsafe AI output, and unsupported live-vendor execution.
+
+## WO-048 frontend runtime integration backend status
+
+`WO-048` adds the first P10 Frontend Runtime Integration Gate evidence without adding new clinical, billing, EHR, ClinicOS, AI, or claim behavior. The web app now has a typed API client validated against `packages/contracts` and an API-backed `/aura-note/runtime-integration` route that reads schedule and finalized-note state from the local Nest API. Playwright starts the API and web runtime together, drives a synthetic appointment through visit start, finalization, sign/dispatch, final-note PDF export, finalized-note refetch, and browser reload evidence.
+
+Existing production-intended scaffold routes are inventoried in `docs/FRONTEND_RUNTIME_INTEGRATION.md` as API-backed runtime or documented mocks. Later P10 work must either convert those documented mocks to typed API runtime behavior or explicitly defer/disable them before launch-candidate review. No production PHI storage, live vendor execution, autonomous clinical/coding/billing behavior, medical-necessity determination, charge finalization, claim submission, or production launch approval is introduced.
