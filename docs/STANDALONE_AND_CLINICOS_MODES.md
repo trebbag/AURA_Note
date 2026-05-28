@@ -162,3 +162,7 @@ In ClinicOS-integrated mode, future AI request/governance metadata may map to M2
 In standalone mode, `WO-049` launch operations readiness proves AURA Note can rehearse build, smoke, rollback, disabled-vendor, performance, incident, access-review, and support-escalation controls without ClinicOS.
 
 In ClinicOS-integrated mode, ClinicOS dependencies are treated as disabled or degraded adapter states during rehearsal. Missing ClinicOS delegation, event publication, mapping, or operational status services fail closed and cannot bypass AURA Note permissions or support metadata-only boundaries. Production launch approval, live vendor traffic, production PHI, charge finalization, medical-necessity determination, and claim submission remain out of scope.
+
+## WO-050 beta pilot launch gate
+
+Standalone beta pilot setup remains possible without ClinicOS. Tenant onboarding, role training, support escalation, first-week monitoring, rollback, and go/no-go evidence use standalone AURA Note controls first. ClinicOS-integrated pilot setup remains optional and adapter-bound; missing delegated identity, mapping, operational status, or event-bus delivery must fail closed and cannot block standalone pilot operation or bypass AURA Note permissions.

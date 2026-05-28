@@ -41,6 +41,8 @@
     "frontend:runtime-integration-readiness": "pnpm --filter @aura-note/web test:e2e && node scripts/validate-frontend-runtime-integration-readiness.js",
     "performance:launch-baseline": "node scripts/simulate-launch-performance-baseline.js",
     "launch:ops-readiness": "pnpm performance:launch-baseline && pnpm --filter @aura-note/web test:e2e && node scripts/validate-launch-ops-readiness.js",
+    "pilot:readiness": "node scripts/simulate-pilot-launch-smoke.js && pnpm frontend:runtime-integration-readiness && node scripts/validate-pilot-readiness.js",
+    "launch:readiness": "pnpm launch:ops-readiness && pnpm pilot:readiness",
     "storage:azure-adapter-readiness": "pnpm --filter @aura-note/storage test && pnpm --filter @aura-note/storage typecheck && node scripts/validate-azure-storage-adapter-readiness.js",
     "storage:secure-download-readiness": "pnpm --filter @aura-note/storage test && pnpm --filter @aura-note/api test && node scripts/validate-secure-download-readiness.js",
     "retention:storage-deletion-readiness": "pnpm --filter @aura-note/worker test && node scripts/validate-storage-retention-readiness.js",

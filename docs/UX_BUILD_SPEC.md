@@ -414,6 +414,8 @@ The route is AI governance-review evidence, not a live AI operations console. It
 
 `WO-049` extends `/aura-note/support/status` with synthetic launch operations readiness states for Launch Ops Drills, rollback rehearsal, vendor outage drill, access review drill, synthetic performance baseline, and no-production-traffic evidence. These states are browser-testable operational rehearsal evidence only; they do not imply production launch approval, live vendor execution, production PHI, charge finalization, medical-necessity determination, or claim submission.
 
+`WO-050` extends `/aura-note/support/status` with Pilot Launch Gate, Go/No-Go Approvals, Pilot Smoke Evidence, and Limited Launch Boundary states. The UI must keep `productionLaunchApproved=false`, `submittedClaim=false`, live vendor disabled, approval-required, permission-denied, read-only, and documented-mock language visible for pilot decision review.
+
 ## Required accessibility and UX states
 
 Every screen must have empty, loading, ready, saving, blocked, failed, permission-denied, and read-only states.

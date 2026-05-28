@@ -151,7 +151,8 @@ check(
     specGaps.includes('No active gaps as of post-`WO-046` AI Gateway production governance and evaluation harness') ||
     specGaps.includes('No active gaps as of post-`WO-047` security/privacy/compliance and P9 review') ||
     specGaps.includes('No active gaps as of post-`WO-048` frontend runtime integration gate review') ||
-    specGaps.includes('No active gaps as of post-`WO-049` launch operations readiness review'),
+    specGaps.includes('No active gaps as of post-`WO-049` launch operations readiness review') ||
+    specGaps.includes('No active gaps as of post-`WO-050` beta pilot launch gate and P10 review'),
   'SPEC_GAPS.md active gaps section'
 );
 

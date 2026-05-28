@@ -562,3 +562,19 @@ Do not implement these tranches directly from this backlog. Promote one tranche 
 **Known risks:**
 
 - Production hosting target, staging URL, secret manager, SIEM/APM vendor, named support/on-call owners, SLO/SLA targets, and founder/clinical/compliance/security launch approval remain deferred.
+
+## Follow-on Tranche P10-03 — Beta Pilot And Limited Launch Gate
+
+**Promotion status:** Promoted to `WO-050` and completed as synthetic P10 beta-pilot decision-package evidence.
+
+**Objective:** Add tenant onboarding/provisioning checklist, role training, disabled feature inventory, first-week monitoring, support escalation, rollback criteria, go/no-go checklist, and founder/clinical/compliance/security approval placeholders without approving production launch.
+
+**Acceptance evidence:**
+
+- `pnpm pilot:readiness` and `pnpm launch:readiness` pass locally and in CI.
+- `/aura-note/support/status` exposes Pilot Launch Gate, Go/No-Go Approvals, Pilot Smoke Evidence, `productionLaunchApproved=false`, and `submittedClaim=false` states.
+- `docs/PILOT_LAUNCH_READINESS.md` and `docs/runbooks/WO-050_BETA_PILOT_RUNBOOK.md` document beta-pilot controls.
+
+**Known risks:**
+
+- Real tenant scope, named support/on-call owners, pilot dates, production approvals, production credentials, production PHI posture, live vendors, charge finalization, medical-necessity determination, and claim submission remain deferred.

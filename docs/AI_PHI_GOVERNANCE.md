@@ -128,3 +128,7 @@ The review does not approve live AI use. Private/BAA model selection, live crede
 ## WO-049 launch operations PHI boundary
 
 `WO-049` launch operations readiness uses synthetic operational metadata only. Performance baselines, rollback rehearsal, reliability drills, incident response, access review, and support escalation evidence must not include PHI, secrets, production URLs, raw transcripts, final notes, billing details, coaching output, raw prompts, raw EHR/ClinicOS payloads, storage object payloads, medical-necessity determinations, charge finalization, or claim submission evidence.
+
+## WO-050 beta pilot launch gate
+
+`WO-050` does not add AI behavior. Pilot decision evidence remains synthetic metadata only; live external AI stays disabled, no raw PHI is sent to external AI, all AI/coding/billing/coaching/patient-summary/payer-support outputs remain draft/candidate/human-review-required, and `productionLaunchApproved=false` until founder, clinical, compliance/privacy, and security approvals exist.

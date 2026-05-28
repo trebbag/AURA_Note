@@ -52,7 +52,7 @@ check(
   packageJson.scripts?.['performance:launch-baseline']
 );
 
-check('ci.launch-gate', 'CI runs launch ops readiness before production readiness', workflow.includes('pnpm launch:ops-readiness'), '.github/workflows/ci.yml');
+check('ci.launch-gate', 'CI runs launch ops readiness directly or through launch readiness before production readiness', workflow.includes('pnpm launch:ops-readiness') || workflow.includes('pnpm launch:readiness'), '.github/workflows/ci.yml');
 check('script.performance-exists', 'Synthetic performance harness exists', exists('scripts/simulate-launch-performance-baseline.js'), 'scripts/simulate-launch-performance-baseline.js');
 check('doc.launch-ops-exists', 'Launch operations readiness document exists', exists('docs/LAUNCH_OPERATIONS_READINESS.md'), 'docs/LAUNCH_OPERATIONS_READINESS.md');
 check('doc.runbook-exists', 'WO-049 launch ops runbook exists', exists('docs/runbooks/WO-049_LAUNCH_OPS_RUNBOOK.md'), 'docs/runbooks/WO-049_LAUNCH_OPS_RUNBOOK.md');
@@ -108,11 +108,15 @@ check('doc.runbook-exists', 'WO-049 launch ops runbook exists', exists('docs/run
   ['RUN_LOG', runLog, 'WO-049 launch operations readiness'],
   ['SPEC_GAPS', specGaps, 'No active gaps as of post-`WO-049` launch operations readiness review']
 ].forEach(([id, contents, snippet]) => {
-  check(id, `${id} includes ${snippet}`, contents.includes(snippet), snippet);
+  const passed =
+    id !== 'SPEC_GAPS'
+      ? contents.includes(snippet)
+      : contents.includes(snippet) || contents.includes('No active gaps as of post-`WO-050` beta pilot launch gate and P10 review');
+  check(id, `${id} includes ${snippet} or later P10 no-active-gap evidence`, passed, snippet);
 });
 
 check('status.wo049-done', 'WO-049 is marked done', status.work_orders?.['WO-049'] === 'done', status.work_orders?.['WO-049']);
-check('status.wo050-next', 'WO-050 is next active work order', status.next_work_order === 'WO-050' && status.work_orders?.['WO-050'] === 'todo', {
+check('status.wo050-or-later', 'Repo status is advanced to WO-050 or later while WO-049 remains done', ['WO-050', 'WO-051'].includes(status.next_work_order) && ['todo', 'done'].includes(status.work_orders?.['WO-050']), {
   next_work_order: status.next_work_order,
   WO050: status.work_orders?.['WO-050']
 });

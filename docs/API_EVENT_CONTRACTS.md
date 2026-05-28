@@ -311,3 +311,9 @@ New event types are `clinicos.event_publication_failed.v1`, `clinicos.mapping_st
 Event stubs for launch review are `deployment.smoke_checked.v1`, `deployment.rollback_rehearsed.v1`, `performance.baseline_measured.v1`, `reliability.drill_recorded.v1`, `incident.response_rehearsed.v1`, and `access_review.launch_checked.v1`.
 
 Payloads must be audit-safe metadata only: environment label, synthetic tenant/site, actor role, trace ID, release ID, drill name, expected degraded state, actual result, rollback decision, and follow-up owner. Payloads must not include PHI-bearing logs, transcripts, final notes, billing details, coaching outputs, raw AI prompts, raw EHR/ClinicOS payloads, storage object payloads, production URLs, credentials, charge finalization, medical-necessity determinations, or claim submission evidence.
+
+## WO-050 beta pilot launch gate event evidence
+
+`WO-050` adds beta-pilot launch gate event stubs for future audited launch evidence: `launch.onboarding_checklist_recorded.v1`, `launch.role_training_recorded.v1`, `launch.disabled_feature_inventory_reviewed.v1`, `launch.first_week_monitoring_planned.v1`, `launch.rollback_criteria_reviewed.v1`, `launch.signoff_placeholder_recorded.v1`, and `launch.go_no_go_reviewed.v1`.
+
+Current `WO-050` evidence is docs/script/UI metadata only; these event stubs do not represent live launch approval, production deployment, production PHI, live vendor traffic, charge finalization, medical-necessity determination, or claim submission.

@@ -93,6 +93,27 @@ const performanceBaselines = [
   { label: 'Launch load profile', state: '100 synthetic workflows', mode: 'local deterministic harness; no production traffic' }
 ];
 
+const pilotLaunchChecklist = [
+  { label: 'Tenant Onboarding', state: 'checklist_ready', mode: 'synthetic tenant/site provisioning only' },
+  { label: 'Role Training', state: 'checklist_ready', mode: 'clinician, MA, billing, admin, privacy, support, service-account' },
+  { label: 'Disabled Feature Inventory', state: 'reviewed_synthetic', mode: 'live vendors, charge finalization, and claim submission disabled' },
+  { label: 'First-Week Monitoring', state: 'placeholder_ready', mode: 'daily access, workflow, export, vendor-disabled, and support review' }
+];
+
+const pilotApprovals = [
+  { label: 'Founder approval', state: 'required_before_live_launch', mode: 'productionLaunchApproved=false' },
+  { label: 'Clinical approval', state: 'required_before_live_launch', mode: 'human-review gates remain required' },
+  { label: 'Compliance/privacy approval', state: 'required_before_live_launch', mode: 'no real PHI in pilot evidence' },
+  { label: 'Security approval', state: 'required_before_live_launch', mode: 'no production credentials or live vendors' }
+];
+
+const pilotGoNoGo = [
+  { label: 'Frontend Runtime Integration Gate', state: 'ready_synthetic', mode: 'typed API client and persisted reload evidence' },
+  { label: 'Rollback Criteria', state: 'documented', mode: 'unauthorized access, privacy incident, smoke failure, vendor misroute' },
+  { label: 'Support Escalation', state: 'placeholder_ready', mode: 'release, clinical, privacy, security, infrastructure owners required' },
+  { label: 'Draft Claim Boundary', state: 'blocked_live_submission', mode: 'submittedClaim=false' }
+];
+
 export default function SupportStatusPage() {
   return (
     <main className="support-shell">
@@ -247,6 +268,68 @@ export default function SupportStatusPage() {
               </div>
             ))}
           </div>
+        </section>
+      </section>
+
+      <section className="support-grid" aria-label="Pilot launch gate">
+        <section className="support-panel">
+          <h2>Pilot Launch Gate</h2>
+          <div className="analytics-list">
+            {pilotLaunchChecklist.map((item) => (
+              <div key={item.label}>
+                <span>{item.label}</span>
+                <strong>{item.state}</strong>
+                <small>{item.mode}</small>
+              </div>
+            ))}
+          </div>
+        </section>
+
+        <section className="support-panel">
+          <h2>Go/No-Go Approvals</h2>
+          <div className="analytics-list">
+            {pilotApprovals.map((item) => (
+              <div key={item.label}>
+                <span>{item.label}</span>
+                <strong>{item.state}</strong>
+                <small>{item.mode}</small>
+              </div>
+            ))}
+          </div>
+        </section>
+      </section>
+
+      <section className="support-grid" aria-label="Pilot smoke and rollback">
+        <section className="support-panel">
+          <h2>Pilot Smoke Evidence</h2>
+          <div className="analytics-list">
+            {pilotGoNoGo.map((item) => (
+              <div key={item.label}>
+                <span>{item.label}</span>
+                <strong>{item.state}</strong>
+                <small>{item.mode}</small>
+              </div>
+            ))}
+          </div>
+        </section>
+
+        <section className="support-panel">
+          <h2>Limited Launch Boundary</h2>
+          <dl className="state-grid">
+            <div>
+              <dt>Production launch</dt>
+              <dd>productionLaunchApproved=false</dd>
+            </div>
+            <div>
+              <dt>Claim submission</dt>
+              <dd>submittedClaim=false</dd>
+            </div>
+            <div>
+              <dt>Live vendors</dt>
+              <dd>disabled</dd>
+            </div>
+          </dl>
+          <p>Beta pilot evidence is a decision package only. Live launch still requires founder, clinical, compliance/privacy, and security approval.</p>
         </section>
       </section>
 

@@ -472,3 +472,7 @@ This gate proves synthetic/local frontend runtime integration evidence only. Exi
 - `scripts/validate-launch-ops-readiness.js` checks docs, runbooks, CI wiring, support status UI, status advancement, run-log evidence, and safety boundaries.
 
 This gate is operational rehearsal only. It does not approve production deployment, production PHI, live vendor use, charge finalization, medical-necessity determination, autonomous clinical/coding/billing behavior, or claim submission.
+
+## WO-050 beta pilot and limited launch gate
+
+`WO-050` adds the P10 beta-pilot decision package. Verification includes `pnpm pilot:readiness`, `pnpm launch:readiness`, support-status browser assertions for Pilot Launch Gate, Tenant Onboarding, Role Training, Disabled Feature Inventory, First-Week Monitoring, Go/No-Go Approvals, `productionLaunchApproved=false`, and `submittedClaim=false`. The gate also reruns `pnpm frontend:runtime-integration-readiness` so the seeded backend-backed appointment-through-finalization/export workflow remains part of launch review evidence.

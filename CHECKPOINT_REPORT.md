@@ -499,3 +499,51 @@ Deferred production decisions remain tracked in `SPEC_GAPS.md`, including produc
 ## Next recommended batch
 
 Begin P10 with `WO-048` UX, accessibility, responsive, visual-regression, and Frontend Runtime Integration Gate hardening. Keep production launch, live vendor use, production PHI, autonomous clinical/coding/billing behavior, medical-necessity determination, charge finalization, and claim submission disabled unless later review explicitly authorizes them.
+
+---
+
+# P10 — Launch Candidate
+
+## Completed work orders
+
+- `WO-048` — UX, accessibility, responsive, visual-regression, and Frontend Runtime Integration Gate hardening.
+- `WO-049` — Deployment, environment promotion, performance, reliability, and operational drills.
+- `WO-050` — Beta pilot and limited production launch gate.
+
+## Acceptance evidence
+
+- `WO-048` added a typed web API client, an API-backed `/aura-note/runtime-integration` route, route inventory evidence, and Playwright coverage that drives a backend-backed appointment through finalization/export with reload/refetch proof.
+- `WO-049` added launch operations readiness docs/runbook coverage, support-status launch drill states, deterministic synthetic performance baseline evidence, and `pnpm launch:ops-readiness`.
+- `WO-050` added `docs/PILOT_LAUNCH_READINESS.md`, `docs/runbooks/WO-050_BETA_PILOT_RUNBOOK.md`, support-status pilot gate states, deterministic pilot smoke evidence, `pnpm pilot:readiness`, and `pnpm launch:readiness`.
+- The P10 evidence package keeps `productionLaunchApproved=false`, `productionLaunchReady=false`, `submittedClaim=false`, live vendors disabled, production credentials absent, production PHI absent, and patient-facing internal billing/revenue/coaching/confidence/payer-strategy details excluded.
+- P10 is complete as a limited-launch decision package only. It does not approve production deployment or general availability.
+
+## Tests and gates
+
+- `pnpm frontend:runtime-integration-readiness`
+- `pnpm performance:launch-baseline`
+- `pnpm launch:ops-readiness`
+- `pnpm pilot:readiness`
+- `pnpm launch:readiness`
+- `pnpm production:readiness`
+- `pnpm acceptance:readiness`
+- Full local gate is recorded in `RUN_LOG.md` for `WO-050`.
+- GitHub Actions must pass on the `WO-050` PR before merge.
+
+## Open risks
+
+- P10 is synthetic/local decision-package evidence, not live production launch approval.
+- Real tenant scope, named launch owners, production hosting target, staging URL, secret manager, SIEM/APM vendor, SLO/SLA targets, support/on-call owners, formal accessibility review, formal privacy/security/legal review, and actual founder/clinical/compliance/security signoff remain deferred.
+- Production PHI, live EHR/ClinicOS synchronization, live external AI, live transcription, production object storage delivery, destructive production deletion, production restore execution, charge finalization, medical-necessity determination, claim submission, clearinghouse integration, payer integration, denial automation, and payment workflows remain disabled or out of scope.
+
+## Active SPEC_GAPs
+
+None active as of the post-`WO-050` P10 review.
+
+## Deferred production decisions
+
+Deferred decisions remain tracked in `SPEC_GAPS.md`, including production launch approval, production identity/account lifecycle, production PHI persistence and database operations, production Azure storage/deletion/restore controls, production SIEM/APM and monitoring posture, live transcription provider, external AI governance, production EHR credentialing/writeback, ClinicOS live integration, revenue estimate policy, production rules licensing/certification, and claim/payer strategy.
+
+## Next recommended batch
+
+Begin P11 with `WO-051` claim submission and payer integration decision gate. Keep v1 default behavior at draft claim preview only with `submittedClaim=false`; do not implement live claim submission, autonomous charge finalization, payer integration, denial automation, payment posting, or medical-necessity determination without explicit founder, billing, compliance, privacy, security, and legal approval.

@@ -301,3 +301,7 @@ Existing production-intended scaffold routes are inventoried in `docs/FRONTEND_R
 `WO-049` adds synthetic/local backend operational readiness evidence. `pnpm launch:ops-readiness` combines the deterministic performance baseline, browser support-status drill assertions, and a static verifier for environment promotion, smoke checks, rollback rehearsal, incident response, access review, and support escalation evidence.
 
 No new production runtime service is enabled. Existing support/platform boundaries remain the operational evidence surface; live vendors, production credentials, production deployment, PHI-bearing logs, external AI, live EHR/ClinicOS delivery, charge finalization, medical-necessity determination, autonomous clinical/coding/billing behavior, and claim submission remain disabled or out of scope.
+
+## WO-050 beta pilot and limited launch gate
+
+`WO-050` adds pilot launch readiness evidence as metadata-only governance. `pnpm pilot:readiness` runs a deterministic smoke harness, reruns frontend runtime integration evidence, and validates the P10 decision package. It does not create live tenants, deploy production, provision production credentials, call live vendors, store production PHI, finalize charges, determine medical necessity, or submit claims. Future launch evidence recording must remain tenant/site scoped, permission checked, audit-safe, and metadata-only until explicit approval.
