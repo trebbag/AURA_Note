@@ -62,9 +62,10 @@
     "WO-055": "done",
     "WO-056": "done",
     "WO-057": "done",
-    "WO-058": "done"
+    "WO-058": "done",
+    "WO-059": "done"
   },
-  "last_updated_by": "Codex WO-058 production EHR writeback credentialing review intake",
-  "last_updated_at": "2026-05-28T20:01:53Z",
-  "notes": "WO-058 completed a post-P11 planning/control intake for production EHR writeback credentialing review. The repo now includes a production EHR writeback credentialing review document, required future decisions, acceptance criteria, event/audit inventory, and EHR live review readiness validation. next_work_order remains null. No production EHR credential, raw EHR payload storage, live writeback delivery, writeback without human approval, autonomous finalization, claim submission, runtime EHR behavior, or production launch behavior is authorized or introduced."
+  "last_updated_by": "Codex WO-059 ClinicOS live integration review intake",
+  "last_updated_at": "2026-05-28T20:22:31Z",
+  "notes": "WO-059 completed a post-P11 planning/control intake for ClinicOS live integration review. The repo now includes a production ClinicOS live integration review document, required future decisions, acceptance criteria, event/audit inventory, and ClinicOS live review readiness validation. next_work_order remains null. No live ClinicOS credential, live event-bus delivery, delegated identity bypass, raw ClinicOS payload storage, live synchronization, runtime ClinicOS behavior, autonomous finalization, claim submission, or production launch behavior is authorized or introduced."
 }

@@ -82,7 +82,8 @@ check(
   'spec-gaps.current',
   'SPEC_GAPS reflects post-WO-057 or later post-P11 planning/control with no active gaps',
   specGaps.includes('No active gaps as of post-`WO-057` external AI private/BAA pathway review intake') ||
-    specGaps.includes('No active gaps as of post-`WO-058` production EHR writeback credentialing review intake'),
+    specGaps.includes('No active gaps as of post-`WO-058` production EHR writeback credentialing review intake') ||
+    specGaps.includes('No active gaps as of post-`WO-059` ClinicOS live integration review intake'),
   'SPEC_GAPS.md'
 );
 check('spec-gaps.deferred-ai', 'SPEC_GAPS preserves external AI provider and PHI governance as deferred before live use', specGaps.includes('External AI provider and PHI governance') && specGaps.includes('future approved AI implementation work order'), 'SPEC_GAPS.md');

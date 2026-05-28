@@ -877,3 +877,48 @@ Deferred decisions remain tracked in `SPEC_GAPS.md`, including production EHR cr
 ## Next recommended batch
 
 No implementation work order is active. The next safest planning/control candidate is ClinicOS live integration review, but it should not be promoted without explicit selection.
+
+---
+
+# Post-P11 ClinicOS Live Integration Review Intake
+
+## Completed work orders
+
+- `WO-059` — ClinicOS live integration review intake.
+
+## Acceptance evidence
+
+- `WO-059` added `docs/PRODUCTION_CLINICOS_LIVE_INTEGRATION_REVIEW.md` with required future live ClinicOS module contracts, delegated identity, service-account governance, tenant/site/user/patient mapping, event-bus delivery, replay/reconciliation, degraded-mode, support, observability, and audit decisions.
+- `WO-059` added `work_orders/WO-059_clinicos_live_integration_review_intake.md` so the intake is reviewable and bounded.
+- `pnpm clinicos:live-review-readiness` verifies that the tranche remains planning/control only and does not enable live ClinicOS credentials, live event-bus delivery, delegated identity bypass, raw ClinicOS payload storage, live synchronization, runtime ClinicOS behavior, autonomous finalization, claim submission, or launch behavior.
+- `repo_status.json` records `WO-059: done` while preserving the P11 checkpoint and no active next work order.
+
+## Tests and gates
+
+- `pnpm install --frozen-lockfile`
+- `pnpm clinicos:live-review-readiness`
+- `pnpm post-p11:readiness`
+- `pnpm production:readiness`
+- `pnpm acceptance:readiness`
+- `pnpm lint`
+- `pnpm typecheck`
+- `pnpm clinicos:integration-readiness`
+- `node scripts/status.js`
+- `git diff --check`
+
+## Open risks
+
+- Live ClinicOS module contracts, delegated identity posture, service-account governance, tenant/site/user/patient mapping, event-bus delivery, replay/reconciliation ownership, degraded-mode policy, raw payload retention policy, Data Cloud analytics boundary, support visibility, incident response, and operational ownership remain deferred decisions.
+- `WO-059` is a planning/control tranche only. It does not approve live ClinicOS credentials, live event-bus delivery, delegated identity bypass, raw ClinicOS payload storage, live synchronization, runtime ClinicOS behavior, autonomous finalization, claim submission, or production launch.
+
+## Active SPEC_GAPs
+
+None active as of the post-`WO-059` ClinicOS live integration review intake.
+
+## Deferred production decisions
+
+Deferred decisions remain tracked in `SPEC_GAPS.md`, including ClinicOS live integration, revenue estimate policy, production rules licensing/certification, future claim/payer implementation strategy, and production launch approval.
+
+## Next recommended batch
+
+No implementation work order is active. The next safest planning/control candidate is revenue estimate and patient-facing financial content review, but it should not be promoted without explicit selection.
