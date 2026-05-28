@@ -169,6 +169,50 @@ describe('audio capture and transcription permissions', () => {
     assert.equal(canPerform('transcript:correct', billing), false);
     assert.equal(canPerform('transcription_provider:view', support), false);
   });
+
+  it('limits EHR writeback queue visibility and lifecycle actions', () => {
+    const linkedClinician = {
+      role: 'clinician' as const,
+      linkedToPatient: true,
+      linkedToVisit: true,
+      treatingClinician: true,
+      billingReviewTriggered: false,
+      authorizedAdmin: false
+    };
+    const support = {
+      role: 'support' as const,
+      linkedToPatient: false,
+      linkedToVisit: false,
+      treatingClinician: false,
+      billingReviewTriggered: false,
+      authorizedAdmin: false
+    };
+    const compliance = {
+      role: 'compliance_privacy_lead' as const,
+      linkedToPatient: false,
+      linkedToVisit: false,
+      treatingClinician: false,
+      billingReviewTriggered: false,
+      authorizedAdmin: false
+    };
+    const billing = {
+      role: 'billing_staff' as const,
+      linkedToPatient: true,
+      linkedToVisit: false,
+      treatingClinician: false,
+      billingReviewTriggered: true,
+      authorizedAdmin: false
+    };
+
+    assert.equal(canPerform('ehr_writeback:view', linkedClinician), true);
+    assert.equal(canPerform('ehr_writeback:view', support), true);
+    assert.equal(canPerform('ehr_writeback:view', compliance), true);
+    assert.equal(canPerform('ehr_writeback:approve', linkedClinician), true);
+    assert.equal(canPerform('ehr_writeback:approve', support), false);
+    assert.equal(canPerform('ehr_writeback:manage', compliance), true);
+    assert.equal(canPerform('ehr_writeback:view', billing), false);
+    assert.equal(canPerform('ehr_writeback:manage', billing), false);
+  });
 });
 
 describe('final note and coaching access', () => {

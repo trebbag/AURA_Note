@@ -605,3 +605,14 @@ These records are synthetic/local control-plane evidence. Production identity/se
 - `BackupRestoreReadinessDto` records required Azure Blob soft-delete/versioning, database backup, restore-drill, and evidence-retention posture without enabling production restore execution.
 
 These are synthetic/local records. Production Azure account policy, customer-managed keys, legal hold, real backup schedules, production restore drills, and PHI-bearing payload storage remain deferred.
+
+## WO-044 EHR writeback queue model status
+
+`WO-044` extends the EHR/writeback model as metadata-only runtime evidence:
+
+- `EhrWritebackQueueItemDto` records writeback job ID, note ID, target, vendor, external encounter reference, lifecycle status, configured state, human approval state, retry/dead-letter/reconciliation metadata, idempotency key, trace ID, and audit-safe flags.
+- Queue records explicitly carry `liveDeliveryEnabled=false` and `payloadStored=false`.
+- `EhrWritebackQueueViewDto` records queue lifecycle states, sandbox mode, `liveProductionWritebackEnabled=false`, `payloadsExcluded=true`, and warnings that live production delivery remains disabled.
+- `EhrWritebackQueueActionRequestDto` and response DTOs represent approval, retry, dead-letter, and reconciliation evidence without raw payload content.
+
+These records remain synthetic/local API metadata. `WO-044` does not add new production database approval, raw EHR payload storage, production EHR credentials, live writeback delivery, autonomous note submission, charge finalization, medical-necessity determination, or claim submission.

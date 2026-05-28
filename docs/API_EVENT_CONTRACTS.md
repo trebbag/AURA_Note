@@ -279,3 +279,13 @@ The event family now includes `storage.download_requested.v1`, `storage.download
 - `GET /support/status` now includes P8 domain-event evidence for support status and observability status checks.
 
 New event types are `support.status_checked.v1`, `observability.status_checked.v1`, `operational.readiness_checked.v1`, `incident.runbook_viewed.v1`, `degraded_mode.acknowledged.v1`, and `access_review.evidence_recorded.v1`. Payloads are metadata-only and must not include PHI-bearing logs, secrets, production URLs, final notes, transcripts, billing details, coaching outputs, or writeback payloads.
+
+## WO-044 EHR sandbox writeback queue contracts
+
+`WO-044` adds the P9 EHR sandbox/writeback queue API/event surface:
+
+- `GET /integrations/ehr/writeback-queue` returns metadata-only writeback queue state for disabled, pending approval, approved, retrying, failed, dead-lettered, and reconciled items.
+- `POST /integrations/ehr/writeback-queue/{writebackJobId}/actions` records approval, retry, dead-letter, or reconciliation actions with idempotency, role checks, PHI evidence rejection, and audit/domain events.
+- Existing EHR status and chart-context contracts remain intact and continue to use disabled/mock/sandbox-safe adapter behavior by default.
+
+New event types are `ehr.writeback_approval_recorded.v1`, `ehr.writeback_retry_scheduled.v1`, `ehr.writeback_dead_lettered.v1`, `ehr.writeback_reconciliation_checked.v1`, and `ehr.writeback_disabled.v1`. Payloads are metadata-only and must not include raw EHR payloads, production patient identifiers, final-note text, transcript text, billing details, credentials, production URLs, charge finalization, medical-necessity determinations, or claim submission evidence.

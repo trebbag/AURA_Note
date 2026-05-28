@@ -46,6 +46,7 @@ jobs:
       - run: pnpm identity:production-readiness
       - run: pnpm config:production-readiness
       - run: pnpm observability:production-readiness
+      - run: pnpm ehr:integration-readiness
       - run: pnpm storage:azure-adapter-readiness
       - run: pnpm storage:secure-download-readiness
       - run: pnpm retention:storage-deletion-readiness

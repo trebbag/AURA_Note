@@ -69,4 +69,85 @@ describe('EHR integration service', () => {
       ForbiddenException
     );
   });
+
+  it('manages EHR writeback queue approval retry dead-letter and reconciliation as metadata only', async () => {
+    const service = new EhrService();
+    const clinicianHeaders = {
+      'x-aura-role': 'clinician',
+      'x-aura-linked-patient': 'true',
+      'x-aura-linked-visit': 'true',
+      'x-trace-id': 'trace-ehr-writeback-001'
+    };
+    const adminHeaders = {
+      'x-aura-role': 'compliance_privacy_lead',
+      'x-trace-id': 'trace-ehr-writeback-admin-001'
+    };
+
+    const queue = await service.listWritebackQueue(clinicianHeaders);
+    assert.equal(queue.data.queue.liveProductionWritebackEnabled, false);
+    assert.equal(queue.data.queue.payloadsExcluded, true);
+    assert.equal(queue.data.queue.items.some((item) => item.status === 'pending_approval'), true);
+
+    const approved = await service.actOnWritebackJob(
+      'ehr-wb-pending-001',
+      { action: 'approve', approvalId: 'approval-synthetic-001', reason: 'synthetic approval metadata' },
+      { ...clinicianHeaders, 'idempotency-key': 'idem-approve-ehr-wb' }
+    );
+    const replayed = await service.actOnWritebackJob(
+      'ehr-wb-pending-001',
+      { action: 'approve', approvalId: 'approval-synthetic-001', reason: 'synthetic approval metadata' },
+      { ...clinicianHeaders, 'idempotency-key': 'idem-approve-ehr-wb' }
+    );
+    const retry = await service.actOnWritebackJob('ehr-wb-failed-001', { action: 'retry' }, adminHeaders);
+    const deadLetter = await service.actOnWritebackJob(
+      'ehr-wb-failed-001',
+      { action: 'dead_letter', reason: 'synthetic vendor error exhausted' },
+      adminHeaders
+    );
+    const reconciled = await service.actOnWritebackJob(
+      'ehr-wb-pending-001',
+      { action: 'reconcile', reconciliationId: 'reconcile-synthetic-001' },
+      adminHeaders
+    );
+
+    assert.equal(approved.data.writeback.humanApproved, true);
+    assert.equal(approved.data.domainEvents[0]?.eventType, 'ehr.writeback_approval_recorded.v1');
+    assert.equal(replayed.data.domainEvents[0]?.payload.replayed, true);
+    assert.equal(retry.data.writeback.status, 'retrying');
+    assert.equal(deadLetter.data.writeback.status, 'dead_lettered');
+    assert.equal(reconciled.data.writeback.status, 'reconciled');
+    assert.equal(reconciled.data.writeback.liveDeliveryEnabled, false);
+    assert.equal(reconciled.data.writeback.payloadStored, false);
+  });
+
+  it('limits writeback lifecycle actions and rejects PHI-bearing evidence', async () => {
+    const service = new EhrService();
+
+    await assert.rejects(
+      () =>
+        service.actOnWritebackJob(
+          'ehr-wb-pending-001',
+          { action: 'approve', approvalId: 'approval-synthetic-001' },
+          {
+            'x-aura-role': 'support',
+            'x-trace-id': 'trace-support-denied'
+          }
+        ),
+      ForbiddenException
+    );
+
+    await assert.rejects(
+      () =>
+        service.actOnWritebackJob(
+          'ehr-wb-pending-001',
+          { action: 'approve', approvalId: 'approval-synthetic-001', reason: 'call 555-121-1212' },
+          {
+            'x-aura-role': 'clinician',
+            'x-aura-linked-patient': 'true',
+            'x-aura-linked-visit': 'true'
+          }
+        ),
+      /PHI/
+    );
+  });
 });

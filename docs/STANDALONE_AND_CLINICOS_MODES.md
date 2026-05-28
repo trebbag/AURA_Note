@@ -128,3 +128,11 @@ In standalone mode, AURA Note owns the local observability/support operations me
 In ClinicOS-integrated mode, future operational status may be mapped to ClinicOS/Integration Hub, but `WO-043` keeps AURA Note authoritative for support access, redaction, PHI boundaries, audit evidence, and permission checks. Missing ClinicOS operational delegation fails closed and does not reduce AURA Note RBAC/ABAC enforcement.
 
 `WO-043` does not enable live SIEM/APM exporters, production observability credentials, PHI-bearing logs, production launch approval, live EHR/ClinicOS sync, live AI, charge finalization, medical-necessity determination, or claim submission.
+
+## WO-044 EHR sandbox/writeback mode behavior
+
+In standalone mode, AURA Note owns EHR adapter status, chart-context packaging, and metadata-only writeback queue approval/retry/dead-letter/reconciliation behavior. EHR can remain disabled without blocking the standalone documentation workflow.
+
+In ClinicOS-integrated mode, future EHR routing may pass through M25 Integration Hub, but `WO-044` keeps AURA Note authoritative for writeback approval, idempotency, retry/dead-letter/reconciliation metadata, audit evidence, and permission checks. Missing ClinicOS/EHR delegation fails closed and cannot enable live writeback or expose writeback payloads.
+
+`WO-044` does not enable production EHR credentials, raw EHR payload storage, live writeback delivery, autonomous note submission, charge finalization, medical-necessity determination, or claim submission.

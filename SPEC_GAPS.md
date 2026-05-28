@@ -4,13 +4,13 @@ This file tracks missing, conflicting, unsafe, or deliberately deferred product 
 
 ## Active gaps
 
-No active gaps as of post-`WO-043` production observability/support operations/status views and P8 review on 2026-05-28.
+No active gaps as of post-`WO-044` EHR sandbox integration/writeback queue hardening on 2026-05-28.
 
-The repo remains not production-ready. The items below are deferred production decisions rather than active blockers for the current production observability/support operations/status views scope.
+The repo remains not production-ready. The items below are deferred production decisions rather than active blockers for the current EHR sandbox integration/writeback queue hardening scope.
 
 ## Deferred production decisions
 
-These items must stay visible and must be resolved before the related production work can be declared complete. They are not blockers for the completed `WO-043` tranche because the active work remains synthetic/local and explicitly excludes live SIEM/APM vendors, production observability credentials, PHI-bearing logs, live Azure credentials, PHI-bearing object payloads, live destructive deletion, production restore execution, live IdP credentials, live ClinicOS delegation, live EHR/ClinicOS synchronization, live transcription credentials, autonomous billing, and production launch behavior.
+These items must stay visible and must be resolved before the related production work can be declared complete. They are not blockers for the completed `WO-044` tranche because the active work remains synthetic/local and explicitly excludes live SIEM/APM vendors, production observability credentials, PHI-bearing logs, live Azure credentials, PHI-bearing object payloads, live destructive deletion, production restore execution, live IdP credentials, live ClinicOS delegation, live EHR/ClinicOS synchronization, production EHR credentials, raw EHR payload storage, live EHR writeback delivery, live transcription credentials, autonomous billing, and production launch behavior.
 
 ### Deferred Decision — Production SIEM/APM vendor and operational monitoring posture
 
@@ -54,12 +54,12 @@ These items must stay visible and must be resolved before the related production
 - **Decision needed before live use:** private/BAA model path, de-identification policy, source-freshness rules, model/prompt approval, evaluation thresholds, monitoring, and incident response.
 - **Safe current posture:** external AI remains disabled by default; mock-only/draft-only gateway rejects or redacts obvious PHI.
 
-### Deferred Decision — EHR sandbox and production writeback
+### Deferred Decision — Production EHR credentialing and live writeback delivery
 
-- **Related future work:** `WO-044`
+- **Related future work:** post-`WO-044` founder/security/privacy/vendor review before live use
 - **Status:** deferred
-- **Decision needed before live use:** athenahealth sandbox credentials, production credentialing, writeback scope, approval roles, reconciliation rules, retry/dead-letter policy, and rollback support.
-- **Safe current posture:** adapter scaffolds and writeback queue metadata only; no live writeback.
+- **Decision needed before live use:** production athenahealth credentialing, sandbox credential source if live sandbox calls are required, approved writeback target scope, vendor error taxonomy, reconciliation ownership, retry/dead-letter policy, rollback/support process, and launch approval.
+- **Safe current posture:** `WO-044` adds a vendor-neutral, athenahealth-first sandbox-ready adapter path plus metadata-only writeback queue lifecycle evidence. Human approval, idempotency replay, retry, dead-letter, reconciliation, role denial, PHI rejection, and audit/domain events are tested; no production credential, raw EHR payload storage, or live writeback delivery is enabled.
 
 ### Deferred Decision — ClinicOS live integration contracts
 

@@ -96,3 +96,9 @@ External AI remains blocked until `WO-046` adds production AI gateway governance
 `WO-043` extends PHI governance to operational observability and support evidence. Structured log entries, metric labels, trace attributes, operational readiness payloads, and operational evidence records must remain metadata-only, request/trace correlated, and PHI-safe. The support service rejects obvious PHI in operational evidence notes and continues to expose only redacted operational metadata to support users.
 
 No raw PHI is sent to external AI, SIEM, APM, EHR, ClinicOS, or storage vendors as part of `WO-043`. Production observability vendor selection, log retention, and alert routing remain deferred security/privacy decisions.
+
+## WO-044 EHR writeback PHI boundary
+
+`WO-044` keeps EHR writeback queue behavior metadata-only. Writeback action evidence is scanned for forbidden PHI keys and obvious PHI-like text before approval, retry, dead-letter, or reconciliation metadata is recorded. Support users receive redacted operational metadata and cannot view raw writeback payloads or external job identifiers.
+
+No raw PHI is sent to external AI or live EHR vendors as part of `WO-044`. No production EHR credential, production patient record, raw EHR payload, final-note payload, transcript text, billing detail, live writeback delivery, medical-necessity determination, charge finalization, or claim submission is introduced.

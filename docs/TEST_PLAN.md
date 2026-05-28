@@ -399,3 +399,16 @@ Required focused evidence:
 - `pnpm observability:production-readiness` is the WO-043 readiness gate.
 
 These tests prove synthetic P8 observability/support operations evidence only. They do not enable live SIEM/APM vendors, production observability credentials, PHI-bearing logs, production launch approval, live EHR/ClinicOS synchronization, live AI, charge finalization, medical-necessity determination, or claim submission.
+
+## WO-044 EHR sandbox integration/writeback readiness
+
+`WO-044` adds the `pnpm ehr:integration-readiness` gate:
+
+- contracts tests cover EHR writeback queue DTOs, action responses, and new lifecycle event types;
+- security tests cover `ehr_writeback:view`, `ehr_writeback:approve`, and `ehr_writeback:manage` role boundaries;
+- EHR adapter tests prove athenahealth sandbox writeback requires human approval and remains disabled-safe without credentials;
+- API service and e2e tests cover writeback queue inspection, approval, idempotency replay, retry, dead-letter, reconciliation, support-role denial, and PHI-bearing evidence rejection;
+- browser tests cover `/aura-note/integrations/ehr` sandbox queue lifecycle, permission/payload boundaries, and demo fixture states;
+- the readiness script verifies contracts, OpenAPI, routes, tests, status/run-log evidence, and no live EHR credential or production writeback markers.
+
+These tests prove synthetic P9 EHR sandbox/writeback queue readiness only. They do not enable production EHR credentials, raw EHR payload storage, live writeback delivery, autonomous note submission, charge finalization, medical-necessity determination, or claim submission.

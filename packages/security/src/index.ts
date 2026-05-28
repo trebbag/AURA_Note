@@ -50,7 +50,10 @@ export type Permission =
   | 'patient_summary:export'
   | 'ehr_adapter:view'
   | 'ehr_chart_context:view'
+  | 'ehr_writeback:view'
   | 'ehr_writeback:queue'
+  | 'ehr_writeback:approve'
+  | 'ehr_writeback:manage'
   | 'clinicos_adapter:view'
   | 'clinicos_mapping:write'
   | 'ai_gateway:invoke'
@@ -566,8 +569,18 @@ export function canPerform(permission: Permission, ctx: AccessContext): boolean 
       return ctx.authorizedAdmin || ['clinician', 'admin', 'clinic_manager', 'compliance_privacy_lead'].includes(ctx.role);
     case 'ehr_chart_context:view':
       return ctx.authorizedAdmin || (ctx.role === 'clinician' && ctx.treatingClinician && ctx.linkedToPatient);
+    case 'ehr_writeback:view':
+      return (
+        ctx.authorizedAdmin ||
+        ['admin', 'clinic_manager', 'compliance_privacy_lead', 'support', 'service_account'].includes(ctx.role) ||
+        (ctx.role === 'clinician' && ctx.treatingClinician && ctx.linkedToVisit)
+      );
     case 'ehr_writeback:queue':
       return ctx.authorizedAdmin || (ctx.role === 'clinician' && ctx.treatingClinician && ctx.linkedToVisit);
+    case 'ehr_writeback:approve':
+      return ctx.authorizedAdmin || (ctx.role === 'clinician' && ctx.treatingClinician && ctx.linkedToVisit);
+    case 'ehr_writeback:manage':
+      return ctx.authorizedAdmin || ['admin', 'clinic_manager', 'compliance_privacy_lead', 'service_account'].includes(ctx.role);
     case 'clinicos_adapter:view':
       return ctx.authorizedAdmin || ['clinician', 'admin', 'clinic_manager', 'compliance_privacy_lead'].includes(ctx.role);
     case 'clinicos_mapping:write':

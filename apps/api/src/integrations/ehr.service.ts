@@ -1,4 +1,4 @@
-import { ForbiddenException, Injectable } from '@nestjs/common';
+import { BadRequestException, ForbiddenException, Injectable } from '@nestjs/common';
 import {
   createEhrAdapter,
   validateChartContextPackage,
@@ -17,9 +17,14 @@ import {
   type EhrChartContextPackageDto,
   type EhrChartContextResponseDto,
   type EhrChartContextSliceTypeDto,
-  type EhrIntegrationStatusDto
+  type EhrIntegrationStatusDto,
+  type EhrWritebackQueueActionRequestDto,
+  type EhrWritebackQueueActionResponseDto,
+  type EhrWritebackQueueItemDto,
+  type EhrWritebackQueueResponseDto,
+  type EhrWritebackTarget
 } from '@aura-note/contracts';
-import { canPerform, createSyntheticLocalSession, type AccessContext } from '@aura-note/security';
+import { canPerform, createSyntheticLocalSession, scanForForbiddenPhiKeys, scanForForbiddenPhiText, type AccessContext } from '@aura-note/security';
 
 const TENANT_ID = 'tenant-synthetic-primary';
 const SITE_ID = 'site-synthetic-primary';
@@ -36,6 +41,8 @@ interface RequestContext {
 @Injectable()
 export class EhrService {
   private sequence = 1;
+  private readonly writebackJobs = new Map<string, EhrWritebackQueueItemDto>();
+  private readonly idempotencyReplay = new Map<string, EhrWritebackQueueItemDto>();
 
   async getStatus(headers: Record<string, string | string[] | undefined>): Promise<ApiEnvelope<EhrIntegrationStatusDto>> {
     const context = this.createRequestContext(headers);
@@ -130,6 +137,292 @@ export class EhrService {
       this.createMeta(context),
       validationErrors.map((message) => ({ code: 'EHR_CHART_CONTEXT_VALIDATION', message, severity: 'warning' as const }))
     );
+  }
+
+  async listWritebackQueue(headers: Record<string, string | string[] | undefined>): Promise<ApiEnvelope<EhrWritebackQueueResponseDto>> {
+    const context = this.createRequestContext(headers);
+    if (!canPerform('ehr_writeback:view', context.access)) {
+      throw new ForbiddenException('role cannot view EHR writeback queue');
+    }
+
+    this.ensureSeedWritebackJobs(context);
+    const adapter = this.createAdapter(headers);
+    const health = await adapter.healthCheck();
+    const items = [...this.writebackJobs.values()].map((job) => this.projectJobForRole(job, context));
+
+    return createApiEnvelope(
+      {
+        queue: {
+          items,
+          sandboxMode: health.status.mode === 'production' ? 'sandbox' : health.status.mode,
+          liveProductionWritebackEnabled: false,
+          payloadsExcluded: true,
+          states: ['disabled', 'pending_approval', 'approved', 'queued', 'retrying', 'failed', 'dead_lettered', 'reconciled'],
+          warnings: [
+            'Writeback queue contains audit-safe metadata only.',
+            'Live production EHR delivery remains disabled until a later approved work order.'
+          ]
+        },
+        auditEvent: this.createAuditEvent('ehr.writeback_queue_viewed', 'EhrWritebackQueue', 'synthetic-ehr-writeback-queue', context),
+        domainEvents: [
+          createEventEnvelope({
+            eventId: this.nextId('evt'),
+            eventType: 'ehr.adapter_status_checked.v1',
+            tenantId: TENANT_ID,
+            siteId: SITE_ID,
+            producer: 'aura-note-api',
+            traceId: context.traceId,
+            idempotencyKey: context.idempotencyKey ?? this.nextId('idem'),
+            sensitivity: 'restricted',
+            retentionClass: 'audit',
+            payload: {
+              queueItemCount: items.length,
+              payloadsExcluded: true,
+              liveProductionWritebackEnabled: false,
+              vendor: health.status.vendor,
+              mode: health.status.mode
+            }
+          })
+        ]
+      },
+      this.createMeta(context)
+    );
+  }
+
+  async actOnWritebackJob(
+    writebackJobId: string,
+    body: EhrWritebackQueueActionRequestDto,
+    headers: Record<string, string | string[] | undefined>
+  ): Promise<ApiEnvelope<EhrWritebackQueueActionResponseDto>> {
+    const context = this.createRequestContext(headers);
+    this.validateWritebackActionRequest(body);
+
+    const requiredPermission = body.action === 'approve' ? 'ehr_writeback:approve' : 'ehr_writeback:manage';
+    if (!canPerform(requiredPermission, context.access)) {
+      throw new ForbiddenException('role cannot update EHR writeback queue');
+    }
+
+    this.ensureSeedWritebackJobs(context);
+    const replayKey = context.idempotencyKey ? `${body.action}:${writebackJobId}:${context.idempotencyKey}` : undefined;
+    const replayed = replayKey ? this.idempotencyReplay.get(replayKey) : undefined;
+    if (replayed) {
+      return this.writebackActionEnvelope(replayed, body.action, context, true);
+    }
+
+    const existing = this.writebackJobs.get(writebackJobId);
+    if (!existing) {
+      throw new BadRequestException('writeback job does not exist in synthetic queue');
+    }
+
+    const now = new Date().toISOString();
+    const updated = this.applyWritebackAction(existing, body, context, now);
+    this.writebackJobs.set(writebackJobId, updated);
+    if (replayKey) {
+      this.idempotencyReplay.set(replayKey, updated);
+    }
+
+    return this.writebackActionEnvelope(updated, body.action, context, false);
+  }
+
+  private validateWritebackActionRequest(body: EhrWritebackQueueActionRequestDto): void {
+    if (!body || !['approve', 'retry', 'dead_letter', 'reconcile'].includes(body.action)) {
+      throw new BadRequestException('EHR writeback action is not supported');
+    }
+    if (body.action === 'approve' && !body.approvalId) {
+      throw new BadRequestException('approvalId is required before EHR writeback approval');
+    }
+    if (body.action === 'reconcile' && !body.reconciliationId) {
+      throw new BadRequestException('reconciliationId is required for reconciliation evidence');
+    }
+    const phiKeyScan = scanForForbiddenPhiKeys(body);
+    const phiTextScan = scanForForbiddenPhiText(body);
+    if (phiKeyScan.containsForbiddenPhi || phiTextScan.containsForbiddenPhiText) {
+      throw new BadRequestException('EHR writeback evidence must not contain PHI');
+    }
+  }
+
+  private applyWritebackAction(
+    existing: EhrWritebackQueueItemDto,
+    body: EhrWritebackQueueActionRequestDto,
+    context: RequestContext,
+    now: string
+  ): EhrWritebackQueueItemDto {
+    switch (body.action) {
+      case 'approve': {
+        const { failureReason: _failureReason, ...base } = existing;
+        const approvalId = body.approvalId;
+        if (!approvalId) {
+          throw new BadRequestException('approvalId is required before EHR writeback approval');
+        }
+        return {
+          ...base,
+          status: existing.configured ? 'approved' : 'pending_approval',
+          humanApproved: true,
+          approvedAt: now,
+          approvedBy: context.actorUserId,
+          approvalId,
+          ...(existing.configured ? {} : { failureReason: 'Sandbox credentials are not configured; approval recorded without delivery.' })
+        };
+      }
+      case 'retry': {
+        const { failureReason: _failureReason, nextRetryAt: _nextRetryAt, ...base } = existing;
+        return {
+          ...base,
+          status: existing.configured ? 'retrying' : 'failed',
+          retryable: existing.configured,
+          retryCount: existing.retryCount + 1,
+          lastAttemptAt: now,
+          ...(existing.configured
+            ? { nextRetryAt: new Date(Date.parse(now) + 15 * 60 * 1000).toISOString() }
+            : { failureReason: 'Retry blocked because EHR sandbox credentials are not configured.' })
+        };
+      }
+      case 'dead_letter':
+        return {
+          ...existing,
+          status: 'dead_lettered',
+          retryable: false,
+          deadLetteredAt: now,
+          deadLetterReason: body.reason ?? 'Synthetic dead-letter evidence recorded after retry review.'
+        };
+      case 'reconcile': {
+        const reconciliationId = body.reconciliationId;
+        if (!reconciliationId) {
+          throw new BadRequestException('reconciliationId is required for reconciliation evidence');
+        }
+        return {
+          ...existing,
+          status: 'reconciled',
+          retryable: false,
+          reconciliationId,
+          reconciledAt: now,
+          externalJobId: existing.externalJobId ?? `sandbox-reconcile-${existing.writebackJobId}`
+        };
+      }
+    }
+  }
+
+  private writebackActionEnvelope(
+    writeback: EhrWritebackQueueItemDto,
+    action: EhrWritebackQueueActionRequestDto['action'],
+    context: RequestContext,
+    replayed: boolean
+  ): ApiEnvelope<EhrWritebackQueueActionResponseDto> {
+    const eventType = this.eventTypeForWritebackAction(action, writeback);
+    return createApiEnvelope(
+      {
+        writeback: this.projectJobForRole(writeback, context),
+        auditEvent: this.createAuditEvent(`ehr.writeback_${action}`, 'EhrWritebackJob', writeback.writebackJobId, context),
+        domainEvents: [
+          createEventEnvelope({
+            eventId: this.nextId('evt'),
+            eventType,
+            tenantId: TENANT_ID,
+            siteId: SITE_ID,
+            producer: 'aura-note-api',
+            traceId: context.traceId,
+            idempotencyKey: context.idempotencyKey ?? this.nextId('idem'),
+            sensitivity: 'restricted',
+            retentionClass: 'audit',
+            payload: {
+              writebackJobId: writeback.writebackJobId,
+              noteId: writeback.noteId,
+              target: writeback.target,
+              vendor: writeback.vendor,
+              status: writeback.status,
+              humanApproved: writeback.humanApproved,
+              retryCount: writeback.retryCount,
+              liveDeliveryEnabled: false,
+              payloadStored: false,
+              replayed
+            }
+          })
+        ]
+      },
+      this.createMeta(context)
+    );
+  }
+
+  private eventTypeForWritebackAction(
+    action: EhrWritebackQueueActionRequestDto['action'],
+    writeback: EhrWritebackQueueItemDto
+  ) {
+    if (writeback.status === 'disabled') return 'ehr.writeback_disabled.v1' as const;
+    switch (action) {
+      case 'approve':
+        return 'ehr.writeback_approval_recorded.v1' as const;
+      case 'retry':
+        return 'ehr.writeback_retry_scheduled.v1' as const;
+      case 'dead_letter':
+        return 'ehr.writeback_dead_lettered.v1' as const;
+      case 'reconcile':
+        return 'ehr.writeback_reconciliation_checked.v1' as const;
+    }
+  }
+
+  private ensureSeedWritebackJobs(context: RequestContext): void {
+    if (this.writebackJobs.size > 0) {
+      return;
+    }
+    const now = new Date().toISOString();
+    const seed = [
+      this.createQueueJob('ehr-wb-disabled-001', 'note-demo-finalized-001', 'final_note', 'disabled', false, false, false, context.traceId, now),
+      this.createQueueJob('ehr-wb-pending-001', 'note-demo-finalized-001', 'final_note', 'pending_approval', true, false, true, context.traceId, now),
+      this.createQueueJob('ehr-wb-failed-001', 'note-demo-finalized-001', 'patient_summary', 'failed', true, true, true, context.traceId, now)
+    ];
+    for (const job of seed) {
+      this.writebackJobs.set(job.writebackJobId, job);
+    }
+  }
+
+  private createQueueJob(
+    writebackJobId: string,
+    noteId: string,
+    target: EhrWritebackTarget,
+    status: EhrWritebackQueueItemDto['status'],
+    configured: boolean,
+    humanApproved: boolean,
+    retryable: boolean,
+    traceId: string,
+    now: string
+  ): EhrWritebackQueueItemDto {
+    return {
+      writebackJobId,
+      noteId,
+      target,
+      vendor: 'athenahealth',
+      externalEncounterId: 'athena-encounter-synthetic-001',
+      status,
+      configured,
+      humanApproved,
+      liveDeliveryEnabled: false,
+      retryable,
+      retryCount: status === 'failed' ? 1 : 0,
+      maxRetries: 3,
+      idempotencyKey: `idem-${writebackJobId}`,
+      traceId,
+      auditSafe: true,
+      payloadStored: false,
+      ...(status === 'pending_approval' || status === 'failed' ? { queuedAt: now } : {}),
+      ...(status === 'failed'
+        ? {
+            failedAt: now,
+            failureReason: 'Synthetic sandbox writeback failure awaiting retry or dead-letter review.'
+          }
+        : {})
+    };
+  }
+
+  private projectJobForRole(job: EhrWritebackQueueItemDto, context: RequestContext): EhrWritebackQueueItemDto {
+    if (context.access.role === 'support') {
+      const metadataOnly = { ...job };
+      delete metadataOnly.externalJobId;
+      return {
+        ...metadataOnly,
+        externalEncounterId: 'redacted-support-metadata-only'
+      };
+    }
+    return job;
   }
 
   private createAdapter(headers: Record<string, string | string[] | undefined>): EhrAdapter {

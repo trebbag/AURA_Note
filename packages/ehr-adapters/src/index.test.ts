@@ -93,12 +93,25 @@ describe('EHR adapter contract', () => {
       idempotencyKey: 'idem-athena-failed',
       humanApproved: true
     });
+    const unapproved = await new AthenahealthAdapter({
+      mode: 'sandbox',
+      clientIdConfigured: true,
+      clientSecretConfigured: true
+    }).writeFinalNote({
+      externalEncounterId: 'athena-encounter-synthetic-001',
+      target: 'final_note',
+      content: 'Synthetic final note text',
+      idempotencyKey: 'idem-athena-unapproved',
+      humanApproved: false
+    });
 
     assert.equal(unconfigured.status, 'not_configured');
     assert.equal(queued.status, 'queued');
     assert.match(queued.externalJobId ?? '', /^athena-sandbox-writeback-/);
     assert.equal(failed.status, 'failed');
     assert.equal(failed.retryable, true);
+    assert.equal(unapproved.status, 'failed');
+    assert.equal(unapproved.queued, false);
   });
 
   it('creates adapters from vendor-neutral configuration', async () => {

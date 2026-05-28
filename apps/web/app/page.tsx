@@ -20,6 +20,9 @@ export default function HomePage() {
           <a href="/aura-note/coaching">Coaching and Analytics</a>
         </li>
         <li>
+          <a href="/aura-note/integrations/ehr">EHR Sandbox Integration</a>
+        </li>
+        <li>
           <a href="/aura-note/support/status">Support Hardening Status</a>
         </li>
         <li>Finalization Wizard</li>

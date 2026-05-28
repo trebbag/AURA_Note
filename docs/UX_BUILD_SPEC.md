@@ -363,6 +363,18 @@ The route is operational scaffold fidelity, not a production support console. It
 
 The route is security-review evidence, not a production admin console. It does not enable production SSO, return secrets or raw tokens, enable live ClinicOS delegation, execute live vendor behavior, expose PHI, or perform destructive production actions.
 
+## EHR integration sandbox
+
+`WO-044` adds `/aura-note/integrations/ehr` as a browser-testable synthetic shell for EHR sandbox integration and writeback queue hardening:
+
+- adapter status and chart-context boundaries for disabled/mock/sandbox-safe behavior;
+- writeback queue lifecycle states for disabled, pending approval, approved, retrying, failed, dead-lettered, and reconciled items;
+- visible controls for recording human approval, scheduling retry, dead-lettering, and reconciliation metadata;
+- permission-denied, payload-excluded, degraded, failed, empty, loading, ready, saving, read-only, and demo fixture states;
+- explicit messaging that `payloadStored=false`, `liveDeliveryEnabled=false`, and production EHR writeback remains disabled.
+
+The route is integration-review evidence, not a live EHR console. It does not expose PHI-bearing writeback payloads, call live production EHRs, store production credentials, submit notes autonomously, finalize charges, determine medical necessity, or submit claims.
+
 ## Required accessibility and UX states
 
 Every screen must have empty, loading, ready, saving, blocked, failed, permission-denied, and read-only states.

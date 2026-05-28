@@ -107,6 +107,11 @@ export type CoreEventType =
   | 'ehr.adapter_status_checked.v1'
   | 'ehr.patient_matched.v1'
   | 'ehr.chart_context_loaded.v1'
+  | 'ehr.writeback_approval_recorded.v1'
+  | 'ehr.writeback_retry_scheduled.v1'
+  | 'ehr.writeback_dead_lettered.v1'
+  | 'ehr.writeback_reconciliation_checked.v1'
+  | 'ehr.writeback_disabled.v1'
   | 'clinicos.mode_resolved.v1'
   | 'clinicos.mapping_recorded.v1'
   | 'clinicos.event_published.v1'
@@ -1319,6 +1324,78 @@ export interface EhrIntegrationStatusDto {
 
 export interface EhrChartContextResponseDto {
   chartContext: EhrChartContextPackageDto;
+  auditEvent: AuditEventDto;
+  domainEvents: Array<AuraNoteEvent<Record<string, unknown>>>;
+}
+
+export type EhrWritebackLifecycleStatusDto =
+  | 'disabled'
+  | 'pending_approval'
+  | 'approved'
+  | 'queued'
+  | 'retrying'
+  | 'failed'
+  | 'dead_lettered'
+  | 'reconciled';
+
+export type EhrWritebackQueueActionDto = 'approve' | 'retry' | 'dead_letter' | 'reconcile';
+
+export interface EhrWritebackQueueItemDto {
+  writebackJobId: string;
+  noteId: string;
+  target: EhrWritebackTarget;
+  vendor: EhrVendorDto;
+  externalEncounterId: string;
+  status: EhrWritebackLifecycleStatusDto;
+  configured: boolean;
+  humanApproved: boolean;
+  liveDeliveryEnabled: false;
+  retryable: boolean;
+  retryCount: number;
+  maxRetries: number;
+  idempotencyKey: string;
+  traceId: string;
+  auditSafe: true;
+  payloadStored: false;
+  queuedAt?: string;
+  approvedAt?: string;
+  approvedBy?: string;
+  approvalId?: string;
+  lastAttemptAt?: string;
+  nextRetryAt?: string;
+  failedAt?: string;
+  failureReason?: string;
+  deadLetteredAt?: string;
+  deadLetterReason?: string;
+  reconciliationId?: string;
+  reconciledAt?: string;
+  externalJobId?: string;
+}
+
+export interface EhrWritebackQueueViewDto {
+  items: EhrWritebackQueueItemDto[];
+  sandboxMode: 'disabled' | 'mock' | 'sandbox';
+  liveProductionWritebackEnabled: false;
+  payloadsExcluded: true;
+  states: EhrWritebackLifecycleStatusDto[];
+  warnings: string[];
+}
+
+export interface EhrWritebackQueueResponseDto {
+  queue: EhrWritebackQueueViewDto;
+  auditEvent: AuditEventDto;
+  domainEvents: Array<AuraNoteEvent<Record<string, unknown>>>;
+}
+
+export interface EhrWritebackQueueActionRequestDto {
+  action: EhrWritebackQueueActionDto;
+  approvalId?: string;
+  reason?: string;
+  reconciliationId?: string;
+}
+
+export interface EhrWritebackQueueActionResponseDto {
+  writeback: EhrWritebackQueueItemDto;
   auditEvent: AuditEventDto;
   domainEvents: Array<AuraNoteEvent<Record<string, unknown>>>;
 }
