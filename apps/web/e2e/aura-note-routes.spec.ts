@@ -190,6 +190,14 @@ test.describe('AURA Note route accessibility smoke suite', () => {
     await expect(page.getByRole('region', { name: 'Pilot launch gate' })).toContainText('Go/No-Go Approvals');
     await expect(page.getByRole('region', { name: 'Pilot launch gate' })).toContainText('productionLaunchApproved=false');
     await expect(page.getByRole('region', { name: 'Pilot smoke and rollback' })).toContainText('submittedClaim=false');
+    await expect(page.getByRole('region', { name: 'Claim payer decision gate' })).toContainText('Claim/Payer Decision Gate');
+    await expect(page.getByRole('region', { name: 'Claim payer decision gate' })).toContainText('Draft Claim Boundary');
+    await expect(page.getByRole('region', { name: 'Claim payer decision gate' })).toContainText('No Live Clearinghouse');
+    await expect(page.getByRole('region', { name: 'Claim payer decision gate' })).toContainText('No Payer API');
+    await expect(page.getByRole('region', { name: 'Claim payer decision gate' })).toContainText('No Denial Automation');
+    await expect(page.getByRole('region', { name: 'Claim payer decision gate' })).toContainText('No Payment Posting');
+    await expect(page.getByRole('region', { name: 'Claim payer decision gate' })).toContainText('submittedClaim=false');
+    await expect(page.getByRole('region', { name: 'Claim payer decision gate' })).toContainText('claimSubmissionEnabled=false');
     await expect(page.getByRole('region', { name: 'Feature flags and retention' })).toContainText('External AI');
     await expect(page.getByRole('region', { name: 'Audit and failure states' })).toContainText('server-mediated');
     await expect(page.getByRole('region', { name: 'Audit and failure states' })).toContainText('PHI');

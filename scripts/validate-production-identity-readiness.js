@@ -26,7 +26,9 @@ const openapi = read('packages/contracts/openapi/aura-note.v1.yaml');
 const runLog = read('RUN_LOG.md');
 const status = JSON.parse(read('repo_status.json'));
 const nextWorkOrderNumber = Number.parseInt(String(status.next_work_order || '').replace('WO-', ''), 10);
-const hasAdvancedPastWo041 = status.work_orders?.['WO-041'] === 'done' && Number.isFinite(nextWorkOrderNumber) && nextWorkOrderNumber >= 42;
+const hasAdvancedPastWo041 =
+  status.work_orders?.['WO-041'] === 'done' &&
+  (status.next_work_order === null || (Number.isFinite(nextWorkOrderNumber) && nextWorkOrderNumber >= 42));
 
 check(
   'contracts.identity-dtos',

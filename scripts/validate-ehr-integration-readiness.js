@@ -68,7 +68,7 @@ const nextWorkOrderNumber = Number.parseInt(String(status.next_work_order || '')
 if (status.work_orders?.['WO-044'] !== 'done') {
   failures.push({ id: 'status.wo044', path: 'repo_status.json', missing: 'WO-044 done' });
 }
-if (!Number.isFinite(nextWorkOrderNumber) || nextWorkOrderNumber < 45) {
+if (status.next_work_order !== null && (!Number.isFinite(nextWorkOrderNumber) || nextWorkOrderNumber < 45)) {
   failures.push({ id: 'status.next', path: 'repo_status.json', missing: 'next_work_order advanced to WO-045 or later' });
 }
 

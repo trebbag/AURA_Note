@@ -21,6 +21,7 @@ const runLog = read('RUN_LOG.md');
 const status = JSON.parse(read('repo_status.json'));
 const packageJson = JSON.parse(read('package.json'));
 const nextWorkOrderNumber = Number.parseInt(String(status.next_work_order || '').replace('WO-', ''), 10);
+const hasAdvancedPastWo043 = status.next_work_order === null || (Number.isFinite(nextWorkOrderNumber) && nextWorkOrderNumber >= 44);
 
 const requiredSnippets = [
   'observability.status_checked.v1',
@@ -44,7 +45,7 @@ const requiredSnippets = [
 const corpus = [contracts, security, supportService, supportController, supportTests, supportPage, browserTests, openApi].join('\n');
 const missing = requiredSnippets.filter((snippet) => !corpus.includes(snippet));
 const p8Recorded = checkpointReport.includes('P8') && checkpointReport.includes('WO-043');
-const statusAdvanced = status.work_orders?.['WO-043'] === 'done' && Number.isFinite(nextWorkOrderNumber) && nextWorkOrderNumber >= 44;
+const statusAdvanced = status.work_orders?.['WO-043'] === 'done' && hasAdvancedPastWo043;
 const runLogRecorded = runLog.includes('WO-043 production observability support operations and status views');
 
 const result = {

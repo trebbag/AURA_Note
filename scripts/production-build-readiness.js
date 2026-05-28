@@ -81,8 +81,8 @@ check(
 const activeCandidates = Object.entries(repoStatus.work_orders ?? {}).filter(([, status]) => ['todo', 'in_progress'].includes(status));
 check(
   'status.next-work-order',
-  'next_work_order points to the first active todo/in-progress work order',
-  activeCandidates.length > 0 && repoStatus.next_work_order === activeCandidates[0][0],
+  'next_work_order points to the first active todo/in-progress work order, or null when all planned work orders are done',
+  activeCandidates.length > 0 ? repoStatus.next_work_order === activeCandidates[0][0] : repoStatus.next_work_order === null,
   { nextWorkOrder: repoStatus.next_work_order, activeCandidates }
 );
 
@@ -107,7 +107,13 @@ check(
   doneFutureWithoutWorkOrderFile
 );
 
-check('work-order.active-file', 'Active next work order file exists', fs.readdirSync(path.join(root, 'work_orders')).some((file) => file.startsWith(`${repoStatus.next_work_order}_`)), repoStatus.next_work_order);
+check(
+  'work-order.active-file',
+  'Active next work order file exists when a next work order remains',
+  repoStatus.next_work_order === null ||
+    fs.readdirSync(path.join(root, 'work_orders')).some((file) => file.startsWith(`${repoStatus.next_work_order}_`)),
+  repoStatus.next_work_order
+);
 
 futureWorkOrders.forEach((workOrder) => {
   check(`plan.${workOrder}`, `${workOrder} appears in the production build plan`, plan.includes(`## ${workOrder} `), `docs/PRODUCTION_BUILD_PLAN.md contains ${workOrder}`);
@@ -152,7 +158,8 @@ check(
     specGaps.includes('No active gaps as of post-`WO-047` security/privacy/compliance and P9 review') ||
     specGaps.includes('No active gaps as of post-`WO-048` frontend runtime integration gate review') ||
     specGaps.includes('No active gaps as of post-`WO-049` launch operations readiness review') ||
-    specGaps.includes('No active gaps as of post-`WO-050` beta pilot launch gate and P10 review'),
+    specGaps.includes('No active gaps as of post-`WO-050` beta pilot launch gate and P10 review') ||
+    specGaps.includes('No active gaps as of post-`WO-051` claim/payer decision gate and P11 review'),
   'SPEC_GAPS.md active gaps section'
 );
 
@@ -180,7 +187,7 @@ check(
 
 const failed = checks.filter((item) => !item.passed);
 const result = {
-  status: failed.length === 0 ? 'ready_for_next_work_order' : 'blocked',
+  status: failed.length === 0 ? (repoStatus.next_work_order === null ? 'ready_planned_work_orders_complete' : 'ready_for_next_work_order') : 'blocked',
   checkedAt: new Date().toISOString(),
   nextWorkOrder: repoStatus.next_work_order,
   totalChecks: checks.length,

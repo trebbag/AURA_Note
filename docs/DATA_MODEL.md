@@ -654,3 +654,7 @@ These records remain synthetic/local API metadata mapped to audit/domain-event e
 ## WO-050 beta pilot launch data status
 
 `WO-050` adds no PHI-bearing persistence. Pilot launch readiness evidence is synthetic metadata only: tenant/site placeholders, role-training checklist status, disabled feature inventory, support escalation placeholders, first-week monitoring placeholders, rollback criteria, approval placeholders, and seeded frontend runtime integration evidence. No production tenant, production PHI, raw transcript, final note, billing detail, raw prompt, production credential, live vendor payload, charge-finalization record, medical-necessity record, or submitted claim is persisted by this work order.
+
+## WO-051 claim/payer decision data status
+
+`WO-051` adds no claim-submission persistence, clearinghouse payload tables, payer response tables, denial automation tables, payment posting tables, production payer credentials, or PHI-bearing payer records. The decision package documents future data needs only: claim submission request/approval, clearinghouse routing, payer acknowledgement/rejection, denial worklists, void/reversal, payment reconciliation, and audit evidence. Current draft claim preview persistence continues enforcing `submittedClaim=false`.

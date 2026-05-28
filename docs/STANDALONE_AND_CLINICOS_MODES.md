@@ -166,3 +166,9 @@ In ClinicOS-integrated mode, ClinicOS dependencies are treated as disabled or de
 ## WO-050 beta pilot launch gate
 
 Standalone beta pilot setup remains possible without ClinicOS. Tenant onboarding, role training, support escalation, first-week monitoring, rollback, and go/no-go evidence use standalone AURA Note controls first. ClinicOS-integrated pilot setup remains optional and adapter-bound; missing delegated identity, mapping, operational status, or event-bus delivery must fail closed and cannot block standalone pilot operation or bypass AURA Note permissions.
+
+## WO-051 claim/payer decision gate
+
+In standalone mode, AURA Note keeps claim activity at draft claim preview and human billing review only. Live clearinghouse submission, payer API calls, denial automation, payment posting, charge finalization, medical-necessity determination, and patient financial conclusions remain disabled.
+
+In ClinicOS-integrated mode, any future ClinicOS/M21 Charge Integrity or clearinghouse handoff must remain adapter-scoped and cannot bypass AURA Note permissions, human approval, audit, tenant/site scope, or `submittedClaim=false` default behavior. `WO-051` does not implement live ClinicOS charge submission, payer connectivity, claim submission, denial automation, or payment workflows.

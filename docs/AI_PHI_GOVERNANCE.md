@@ -132,3 +132,7 @@ The review does not approve live AI use. Private/BAA model selection, live crede
 ## WO-050 beta pilot launch gate
 
 `WO-050` does not add AI behavior. Pilot decision evidence remains synthetic metadata only; live external AI stays disabled, no raw PHI is sent to external AI, all AI/coding/billing/coaching/patient-summary/payer-support outputs remain draft/candidate/human-review-required, and `productionLaunchApproved=false` until founder, clinical, compliance/privacy, and security approvals exist.
+
+## WO-051 claim/payer decision gate
+
+`WO-051` does not add AI behavior or payer connectivity. AI remains prohibited from determining medical necessity, finalizing codes, finalizing charges, submitting claims, managing denials autonomously, posting payments, or creating patient-facing financial conclusions. Draft payer-readable support language and draft claim-preview support may remain human-review-required only. No raw PHI, payer payload, production credential, claim payload, denial evidence, or payment data is sent to external AI.

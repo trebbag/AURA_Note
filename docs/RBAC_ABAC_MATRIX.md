@@ -88,3 +88,7 @@ AURA Note must enforce role permissions and relationship-to-patient constraints.
 ## WO-050 beta pilot launch gate access
 
 `WO-050` documents `launch_pilot:view` and future `launch_pilot:record` posture for the beta-pilot decision package. Authorized admin, compliance/privacy lead, clinic manager, support metadata-only, and service-account contexts may view pilot launch metadata. Recording future pilot evidence is restricted to authorized admin, release/security owner, compliance/privacy lead, and approved service-account contexts. Founder, clinical, compliance/privacy, and security signoff placeholders are visible as metadata only and do not grant production launch authority.
+
+## WO-051 claim/payer decision gate access
+
+`WO-051` documents `claim_strategy:view` and future `claim_strategy:record` posture for claim/payer strategy evidence. Authorized admin, billing lead, compliance/privacy lead, security/founder context, and approved service-account contexts may view or record metadata-only decision evidence. Clinicians may review clinical documentation support but cannot submit claims autonomously through AURA Note. Support users remain metadata-only and cannot access claim payloads, payer details, transcripts, final notes, billing evidence beyond operational status, production credentials, or patient financial conclusions. ClinicOS-integrated mode and M21 Charge Integrity cannot bypass AURA Note permissions, human approval, audit, or the default `submittedClaim=false` posture.

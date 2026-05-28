@@ -4,13 +4,13 @@ This file tracks missing, conflicting, unsafe, or deliberately deferred product 
 
 ## Active gaps
 
-No active gaps as of post-`WO-050` beta pilot launch gate and P10 review on 2026-05-28.
+No active gaps as of post-`WO-051` claim/payer decision gate and P11 review on 2026-05-28.
 
-The repo remains not production-ready. The items below are deferred production decisions rather than active blockers for the current `WO-050` synthetic/local beta-pilot launch gate scope.
+The repo remains not production-ready. The items below are deferred production decisions rather than active blockers for the current post-`WO-051` synthetic/local decision-gate scope.
 
 ## Deferred production decisions
 
-These items must stay visible and must be resolved before the related production work can be declared complete. They are not blockers for the completed `WO-050` tranche because the active work remains synthetic/local and explicitly excludes legal certification claims, production deployment, production launch approval, live SIEM/APM vendors, production observability credentials, PHI-bearing logs, live Azure credentials, PHI-bearing object payloads, live destructive deletion, production restore execution, live IdP credentials, live ClinicOS delegation, live ClinicOS event-bus sync, raw ClinicOS payload storage, live EHR/ClinicOS synchronization, production EHR credentials, raw EHR payload storage, live EHR writeback delivery, live transcription credentials, live external AI credentials, production prompt stores, autonomous billing, charge finalization, medical-necessity determination, claim submission, and production launch behavior.
+These items must stay visible and must be resolved before the related production work can be declared complete. They are not blockers for the completed `WO-051` tranche because the active work remains synthetic/local and explicitly excludes legal certification claims, production deployment, production launch approval, live SIEM/APM vendors, production observability credentials, PHI-bearing logs, live Azure credentials, PHI-bearing object payloads, live destructive deletion, production restore execution, live IdP credentials, live ClinicOS delegation, live ClinicOS event-bus sync, raw ClinicOS payload storage, live EHR/ClinicOS synchronization, production EHR credentials, raw EHR payload storage, live EHR writeback delivery, live transcription credentials, live external AI credentials, production prompt stores, autonomous billing, charge finalization, medical-necessity determination, claim submission, denial automation, payment posting, patient-facing financial conclusions, and production launch behavior.
 
 ### Deferred Decision — Production SIEM/APM vendor and operational monitoring posture
 
@@ -77,10 +77,10 @@ These items must stay visible and must be resolved before the related production
 
 ### Deferred Decision — Claim submission, clearinghouse, payer integration, and denial automation
 
-- **Related future work:** `WO-051`
+- **Related future work:** future founder-approved claim/payer implementation work order
 - **Status:** deferred
-- **Decision needed before implementation:** whether live claim submission belongs in v1 or later, clearinghouse/payer strategy, billing compliance requirements, human approval model, audit model, and rollback/voiding procedures.
-- **Safe current posture:** draft claim preview only with `submittedClaim = false`; no autonomous charge finalization or claim submission.
+- **Decision needed before implementation:** whether live claim submission belongs in v1 or later, clearinghouse/payer strategy, billing compliance requirements, human approval model, audit model, denial/payment scope, patient-facing financial language, and rollback/void/reversal procedures.
+- **Safe current posture:** `WO-051` captured the P11 decision gate. Draft claim preview remains internal and human-reviewed with `submittedClaim = false`; no clearinghouse API, payer API, autonomous charge finalization, medical-necessity determination, claim submission, denial automation, payment posting, or patient-facing financial conclusion is enabled.
 
 ## Gap entry format
 

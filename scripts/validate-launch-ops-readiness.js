@@ -111,12 +111,14 @@ check('doc.runbook-exists', 'WO-049 launch ops runbook exists', exists('docs/run
   const passed =
     id !== 'SPEC_GAPS'
       ? contents.includes(snippet)
-      : contents.includes(snippet) || contents.includes('No active gaps as of post-`WO-050` beta pilot launch gate and P10 review');
+      : contents.includes(snippet) ||
+        contents.includes('No active gaps as of post-`WO-050` beta pilot launch gate and P10 review') ||
+        contents.includes('No active gaps as of post-`WO-051` claim/payer decision gate and P11 review');
   check(id, `${id} includes ${snippet} or later P10 no-active-gap evidence`, passed, snippet);
 });
 
 check('status.wo049-done', 'WO-049 is marked done', status.work_orders?.['WO-049'] === 'done', status.work_orders?.['WO-049']);
-check('status.wo050-or-later', 'Repo status is advanced to WO-050 or later while WO-049 remains done', ['WO-050', 'WO-051'].includes(status.next_work_order) && ['todo', 'done'].includes(status.work_orders?.['WO-050']), {
+check('status.wo050-or-later', 'Repo status is advanced to WO-050 or later while WO-049 remains done', (status.next_work_order === null || ['WO-050', 'WO-051'].includes(status.next_work_order)) && ['todo', 'done'].includes(status.work_orders?.['WO-050']), {
   next_work_order: status.next_work_order,
   WO050: status.work_orders?.['WO-050']
 });

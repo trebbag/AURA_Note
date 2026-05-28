@@ -114,6 +114,21 @@ const pilotGoNoGo = [
   { label: 'Draft Claim Boundary', state: 'blocked_live_submission', mode: 'submittedClaim=false' }
 ];
 
+const claimDecisionItems = [
+  { label: 'Draft Claim Boundary', state: 'internal_review_only', mode: 'submittedClaim=false' },
+  { label: 'No Live Clearinghouse', state: 'disabled', mode: 'claimSubmissionEnabled=false' },
+  { label: 'No Payer API', state: 'deferred', mode: 'vendor and legal strategy required' },
+  { label: 'No Denial Automation', state: 'deferred', mode: 'human billing review required' },
+  { label: 'No Payment Posting', state: 'deferred', mode: 'paymentPostingEnabled=false' }
+];
+
+const claimApprovalCriteria = [
+  { label: 'Founder/Billing approval', state: 'required_for_future_work', mode: 'live submission cannot be enabled by default' },
+  { label: 'Compliance/Privacy approval', state: 'required_for_future_work', mode: 'payer payload and PHI policy required' },
+  { label: 'Security/Legal approval', state: 'required_for_future_work', mode: 'credential, contract, and audit posture required' },
+  { label: 'ClinicOS/M21 handoff', state: 'adapter_only_if_approved', mode: 'cannot bypass AURA Note permissions' }
+];
+
 export default function SupportStatusPage() {
   return (
     <main className="support-shell">
@@ -330,6 +345,35 @@ export default function SupportStatusPage() {
             </div>
           </dl>
           <p>Beta pilot evidence is a decision package only. Live launch still requires founder, clinical, compliance/privacy, and security approval.</p>
+        </section>
+      </section>
+
+      <section className="support-grid" aria-label="Claim payer decision gate">
+        <section className="support-panel">
+          <h2>Claim/Payer Decision Gate</h2>
+          <div className="analytics-list">
+            {claimDecisionItems.map((item) => (
+              <div key={item.label}>
+                <span>{item.label}</span>
+                <strong>{item.state}</strong>
+                <small>{item.mode}</small>
+              </div>
+            ))}
+          </div>
+        </section>
+
+        <section className="support-panel">
+          <h2>Future Claim Approval Criteria</h2>
+          <div className="analytics-list">
+            {claimApprovalCriteria.map((item) => (
+              <div key={item.label}>
+                <span>{item.label}</span>
+                <strong>{item.state}</strong>
+                <small>{item.mode}</small>
+              </div>
+            ))}
+          </div>
+          <p>Claim submission, clearinghouse integration, payer API calls, denial automation, payment posting, charge finalization, and medical-necessity determination remain disabled until a later approved work order.</p>
         </section>
       </section>
 

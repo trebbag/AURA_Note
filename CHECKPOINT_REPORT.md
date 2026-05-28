@@ -547,3 +547,43 @@ Deferred decisions remain tracked in `SPEC_GAPS.md`, including production launch
 ## Next recommended batch
 
 Begin P11 with `WO-051` claim submission and payer integration decision gate. Keep v1 default behavior at draft claim preview only with `submittedClaim=false`; do not implement live claim submission, autonomous charge finalization, payer integration, denial automation, payment posting, or medical-necessity determination without explicit founder, billing, compliance, privacy, security, and legal approval.
+
+---
+
+# P11 — Claim/Payer Decision Gate
+
+## Completed work orders
+
+- `WO-051` — Claim submission and payer integration decision gate.
+
+## Acceptance evidence
+
+- `WO-051` added `docs/CLAIM_PAYER_DECISION_GATE.md` and `docs/runbooks/WO-051_CLAIM_PAYER_DECISION_RUNBOOK.md`.
+- `/aura-note/support/status` now exposes Claim/Payer Decision Gate and Future Claim Approval Criteria states for Draft Claim Boundary, No Live Clearinghouse, No Payer API, No Denial Automation, No Payment Posting, `submittedClaim=false`, and `claimSubmissionEnabled=false`.
+- `pnpm claim-decision:readiness` verifies P11 docs, runbook, support UI/browser assertions, status/run-log/checkpoint evidence, existing draft-claim tests, OpenAPI no-live-submit posture, and prohibited-claim behavior checks.
+- Current default remains draft claim preview and human billing review only.
+
+## Tests and gates
+
+- `pnpm claim-decision:readiness`
+- `pnpm production:readiness`
+- `pnpm acceptance:readiness`
+- Full local gate is recorded in `RUN_LOG.md` for `WO-051`.
+- GitHub Actions must pass on the `WO-051` PR before merge.
+
+## Open risks
+
+- P11 is a decision package only, not approval to implement or operate live claim submission.
+- Clearinghouse selection, payer scope, claim status reconciliation, denial workflow design, payment posting, void/reversal behavior, patient-facing financial language, medical-necessity governance, billing compliance ownership, production credentials, and vendor/legal approvals remain deferred.
+
+## Active SPEC_GAPs
+
+None active as of the post-`WO-051` P11 review.
+
+## Deferred production decisions
+
+Deferred decisions remain tracked in `SPEC_GAPS.md`, including production launch approval, production identity/account lifecycle, production PHI persistence and database operations, production Azure storage/deletion/restore controls, production SIEM/APM and monitoring posture, live transcription provider, external AI governance, production EHR credentialing/writeback, ClinicOS live integration, revenue estimate policy, production rules licensing/certification, and future claim/payer implementation strategy.
+
+## Next recommended batch
+
+Stop at P11. No further numbered work order is active until the founder approves a new tranche. Any future claim/payer implementation must begin with a new work order that names the approved clearinghouse/payer or ClinicOS/M21 handoff strategy and preserves human approval, audit, idempotency, RBAC/ABAC, PHI/security, and no-autonomy boundaries.
