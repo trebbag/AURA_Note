@@ -2,7 +2,7 @@
 
 ## Current state
 
-AURA Note has completed `WO-000` through `WO-058` as synthetic/local, decision-package, and planning/control evidence. The current active checkpoint remains P11. No production launch, live vendor use, production PHI storage, production database credential use, production identity credential use, live Azure credential use, PHI-bearing object delivery, public object URL, destructive production deletion, production restore execution, live transcription credential use, PHI-bearing audio transport, live provider call, production raw-audio storage, live external AI credential use, raw PHI transfer to external AI, live model call, production prompt store, production EHR credential use, raw EHR payload storage, live writeback delivery, writeback without human approval, live claim submission, clearinghouse integration, payer integration, denial automation, payment posting, charge finalization, medical-necessity determination, or patient-facing financial conclusion is approved or implemented.
+AURA Note has completed `WO-000` through `WO-059` as synthetic/local, decision-package, and planning/control evidence. The current active checkpoint remains P11. No production launch, live vendor use, production PHI storage, production database credential use, production identity credential use, live Azure credential use, PHI-bearing object delivery, public object URL, destructive production deletion, production restore execution, live transcription credential use, PHI-bearing audio transport, live provider call, production raw-audio storage, live external AI credential use, raw PHI transfer to external AI, live model call, production prompt store, production EHR credential use, raw EHR payload storage, live writeback delivery, writeback without human approval, live ClinicOS credential use, live ClinicOS event-bus delivery, delegated identity bypass, raw ClinicOS payload storage, live ClinicOS synchronization, live claim submission, clearinghouse integration, payer integration, denial automation, payment posting, charge finalization, medical-necessity determination, or patient-facing financial conclusion is approved or implemented.
 
 `next_work_order` intentionally remains `null` until a specific future tranche is approved and promoted into `repo_status.json` as `todo` or `in_progress`.
 
@@ -60,9 +60,16 @@ Post-P11 work must start with a named work order and must be one of the followin
 
 ### ClinicOS live integration review
 
+- Promoted as `WO-059` for planning/control intake only.
 - Required decisions: live ClinicOS module contracts, M03/M04/M17/M21/M23/M24/M25/M26 event schemas, delegated identity posture, tenant/user mapping, event-bus delivery, replay/reconciliation owner, and degraded-mode policy.
 - Required evidence before implementation: ClinicOS integration approval, service-account governance, adapter contract tests, no-permission-bypass tests, and event audit contracts.
 - Safe current posture: ClinicOS mode remains mock/degraded and cannot bypass AURA Note permissions.
+
+### Revenue estimate and patient-facing financial content review
+
+- Required decisions: tenant estimate source data, caveat language, patient-facing permission, payer/fee/payment data governance, internal-only revenue controls, support visibility, and compliance review.
+- Required evidence before implementation: billing/compliance/privacy approval, no-patient-facing-internal-revenue tests, source-data provenance, role-denial tests, and audit/event contracts.
+- Safe current posture: no patient-facing revenue by default; estimates show unavailable/caveat language unless configured.
 
 ### Claim, clearinghouse, payer, denial, and payment review
 
@@ -81,4 +88,4 @@ Post-P11 work must start with a named work order and must be one of the followin
 
 ## Current recommendation
 
-`WO-053` promoted the first candidate family, production identity and account lifecycle live review, into a planning/control intake without enabling live behavior. `WO-054` promoted the second candidate family, production PHI persistence and database operations review, into a planning/control intake without enabling live behavior. `WO-055` promoted the third candidate family, production Azure storage, deletion, and restore review, into a planning/control intake without enabling live behavior. `WO-056` promoted the fourth candidate family, live transcription provider review, into a planning/control intake without enabling live behavior. `WO-057` promoted the fifth candidate family, external AI private/BAA pathway review, into a planning/control intake without enabling live behavior. `WO-058` promoted the sixth candidate family, production EHR writeback credentialing review, into a planning/control intake without enabling live behavior. Keep the repo stopped at P11 until a specific next tranche is selected. The next safest planning/control candidate is ClinicOS live integration review, but it should not be promoted until explicitly selected.
+`WO-053` promoted the first candidate family, production identity and account lifecycle live review, into a planning/control intake without enabling live behavior. `WO-054` promoted the second candidate family, production PHI persistence and database operations review, into a planning/control intake without enabling live behavior. `WO-055` promoted the third candidate family, production Azure storage, deletion, and restore review, into a planning/control intake without enabling live behavior. `WO-056` promoted the fourth candidate family, live transcription provider review, into a planning/control intake without enabling live behavior. `WO-057` promoted the fifth candidate family, external AI private/BAA pathway review, into a planning/control intake without enabling live behavior. `WO-058` promoted the sixth candidate family, production EHR writeback credentialing review, into a planning/control intake without enabling live behavior. `WO-059` promoted the seventh candidate family, ClinicOS live integration review, into a planning/control intake without enabling live behavior. Keep the repo stopped at P11 until a specific next tranche is selected. The next safest planning/control candidate is revenue estimate and patient-facing financial content review, but it should not be promoted until explicitly selected.

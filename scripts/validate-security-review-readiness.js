@@ -73,7 +73,8 @@ check(
     specGaps.includes('No active gaps as of post-`WO-055` production Azure storage/deletion/restore review intake') ||
     specGaps.includes('No active gaps as of post-`WO-056` live transcription provider review intake') ||
     specGaps.includes('No active gaps as of post-`WO-057` external AI private/BAA pathway review intake') ||
-    specGaps.includes('No active gaps as of post-`WO-058` production EHR writeback credentialing review intake'),
+    specGaps.includes('No active gaps as of post-`WO-058` production EHR writeback credentialing review intake') ||
+    specGaps.includes('No active gaps as of post-`WO-059` ClinicOS live integration review intake'),
   'SPEC_GAPS.md'
 );
 check('work-order.next-file', 'WO-048 work-order file exists for the next tranche', fs.readdirSync(path.join(root, 'work_orders')).some((file) => file.startsWith('WO-048_')), 'work_orders');

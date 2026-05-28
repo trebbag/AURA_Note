@@ -74,7 +74,13 @@ check('ehr-review.exists', 'Production EHR writeback credentialing review docume
   check(`ehr-review.event.${eventName}`, `EHR review includes future event ${eventName}`, ehrReview.includes(eventName), eventName);
 });
 
-check('spec-gaps.current', 'SPEC_GAPS reflects post-WO-058 with no active gaps', specGaps.includes('No active gaps as of post-`WO-058` production EHR writeback credentialing review intake'), 'SPEC_GAPS.md');
+check(
+  'spec-gaps.current',
+  'SPEC_GAPS reflects post-WO-058 or later post-P11 planning/control with no active gaps',
+  specGaps.includes('No active gaps as of post-`WO-058` production EHR writeback credentialing review intake') ||
+    specGaps.includes('No active gaps as of post-`WO-059` ClinicOS live integration review intake'),
+  'SPEC_GAPS.md'
+);
 check('spec-gaps.deferred-ehr', 'SPEC_GAPS preserves production EHR credentialing and live writeback delivery as deferred before live use', specGaps.includes('Production EHR credentialing and live writeback delivery') && specGaps.includes('future approved EHR implementation work order'), 'SPEC_GAPS.md');
 check('runlog.wo058', 'RUN_LOG records WO-058 evidence', runLog.includes('WO-058 production EHR writeback credentialing review intake'), 'RUN_LOG.md');
 check('package.script', 'package.json exposes EHR live review readiness script', packageJson.scripts?.['ehr:live-review-readiness'] === 'node scripts/validate-ehr-live-review-readiness.js', packageJson.scripts?.['ehr:live-review-readiness']);
