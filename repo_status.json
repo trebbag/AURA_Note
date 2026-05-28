@@ -2,7 +2,7 @@
   "project": "AURA Note v1",
   "mode": "production_build_in_progress",
   "current_checkpoint": "P9",
-  "next_work_order": "WO-044",
+  "next_work_order": "WO-045",
   "work_orders": {
     "WO-000": "done",
     "WO-001": "done",
@@ -48,8 +48,8 @@
     "WO-041": "done",
     "WO-042": "done",
     "WO-043": "done",
-    "WO-044": "todo",
-    "WO-045": "planned",
+    "WO-044": "done",
+    "WO-045": "todo",
     "WO-046": "planned",
     "WO-047": "planned",
     "WO-048": "planned",
@@ -57,7 +57,7 @@
     "WO-050": "planned",
     "WO-051": "planned"
   },
-  "last_updated_by": "Codex WO-043 production observability/support operations/status views",
-  "last_updated_at": "2026-05-28T01:30:00Z",
-  "notes": "WO-043 completed P8 synthetic/browser/API-testable production observability and support operations evidence. Support status now reports P8, local redacted logs/metrics/traces, disabled SIEM/APM vendor placeholders, operational readiness with productionLaunchReady=false, and support operational evidence for incident runbook views, degraded-mode acknowledgements, and access-review records. No live SIEM/APM vendor, production credentials, PHI-bearing logs, production launch approval, live EHR/ClinicOS sync, live AI, medical-necessity determination, charge finalization, or claim submission was introduced. Next active work is WO-044 EHR sandbox integration and writeback queue hardening."
+  "last_updated_by": "Codex WO-044 EHR sandbox integration/writeback queue hardening",
+  "last_updated_at": "2026-05-28T02:34:01Z",
+  "notes": "WO-044 completed P9 synthetic/browser/API-testable EHR sandbox integration and writeback queue evidence. EHR status/chart-context behavior remains intact, and the API now exposes a metadata-only writeback queue with human approval, idempotency replay, retry, dead-letter, reconciliation, role denial, PHI-key/text rejection, and audit/domain event evidence. The browser route /aura-note/integrations/ehr exposes sandbox queue lifecycle states. No live production EHR credential, raw EHR payload, production patient data, live writeback delivery, autonomous note submission, medical-necessity determination, charge finalization, or claim submission was introduced. Next active work is WO-045 ClinicOS integration hardening."
 }

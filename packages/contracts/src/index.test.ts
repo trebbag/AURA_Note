@@ -21,6 +21,8 @@ import {
   type DraftNoteSummaryDto,
   type EhrChartContextPackageDto,
   type EhrIntegrationStatusDto,
+  type EhrWritebackQueueActionResponseDto,
+  type EhrWritebackQueueResponseDto,
   type ExportActionResponseDto,
   type FinalizationSessionDto,
   type FinalizedNoteDetailDto,
@@ -897,6 +899,87 @@ describe('EHR adapter contracts', () => {
     assert.equal(chartContext.sourceSystem, 'athenahealth');
     assert.equal(chartContext.slices[0]?.allowedPurposes.includes('ai_context_packaging'), true);
     assert.equal(chartContext.slices[0]?.evidenceIds.length, 1);
+  });
+
+  it('represents P9 EHR writeback queue lifecycle metadata without payloads', () => {
+    const queue: EhrWritebackQueueResponseDto = {
+      queue: {
+        items: [
+          {
+            writebackJobId: 'ehr-wb-pending-001',
+            noteId: 'note-demo-finalized-001',
+            target: 'final_note',
+            vendor: 'athenahealth',
+            externalEncounterId: 'athena-encounter-synthetic-001',
+            status: 'pending_approval',
+            configured: true,
+            humanApproved: false,
+            liveDeliveryEnabled: false,
+            retryable: true,
+            retryCount: 0,
+            maxRetries: 3,
+            idempotencyKey: 'idem-ehr-wb-pending-001',
+            traceId: 'trace-ehr-wb-001',
+            auditSafe: true,
+            payloadStored: false
+          }
+        ],
+        sandboxMode: 'sandbox',
+        liveProductionWritebackEnabled: false,
+        payloadsExcluded: true,
+        states: ['disabled', 'pending_approval', 'approved', 'queued', 'retrying', 'failed', 'dead_lettered', 'reconciled'],
+        warnings: ['Writeback queue contains audit-safe metadata only.']
+      },
+      auditEvent: {
+        auditEventId: 'audit-ehr-wb-001',
+        tenantId: 'tenant-001',
+        action: 'ehr.writeback_queue_viewed',
+        entityType: 'EhrWritebackQueue',
+        entityId: 'synthetic-ehr-writeback-queue',
+        traceId: 'trace-ehr-wb-001',
+        createdAt: '2026-05-28T01:00:00.000Z'
+      },
+      domainEvents: []
+    };
+
+    const action: EhrWritebackQueueActionResponseDto = {
+      writeback: {
+        ...queue.queue.items[0]!,
+        status: 'approved',
+        humanApproved: true,
+        approvalId: 'approval-synthetic-001',
+        approvedAt: '2026-05-28T01:01:00.000Z'
+      },
+      auditEvent: {
+        auditEventId: 'audit-ehr-wb-002',
+        tenantId: 'tenant-001',
+        action: 'ehr.writeback_approve',
+        entityType: 'EhrWritebackJob',
+        entityId: 'ehr-wb-pending-001',
+        traceId: 'trace-ehr-wb-001',
+        createdAt: '2026-05-28T01:01:00.000Z'
+      },
+      domainEvents: [
+        createEventEnvelope({
+          eventId: 'evt-ehr-wb-001',
+          eventType: 'ehr.writeback_approval_recorded.v1',
+          tenantId: 'tenant-001',
+          siteId: 'site-001',
+          producer: 'aura-note-api',
+          traceId: 'trace-ehr-wb-001',
+          idempotencyKey: 'idem-ehr-wb-approve',
+          sensitivity: 'restricted',
+          retentionClass: 'audit',
+          payload: { writebackJobId: 'ehr-wb-pending-001', liveDeliveryEnabled: false, payloadStored: false }
+        })
+      ]
+    };
+
+    assert.equal(queue.queue.payloadsExcluded, true);
+    assert.equal(queue.queue.liveProductionWritebackEnabled, false);
+    assert.equal(action.writeback.humanApproved, true);
+    assert.equal(action.writeback.payloadStored, false);
+    assert.equal(action.domainEvents[0]?.eventType, 'ehr.writeback_approval_recorded.v1');
   });
 });
 

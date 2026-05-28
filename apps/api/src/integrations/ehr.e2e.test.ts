@@ -49,4 +49,55 @@ describe('EHR integration API e2e', () => {
     assert.equal(chart.body.data.chartContext.slices.length, 5);
     assert.equal(chart.body.data.domainEvents[0].eventType, 'ehr.chart_context_loaded.v1');
   });
+
+  it('exposes human-approved writeback queue lifecycle without live delivery', async () => {
+    const queue = await request(app.getHttpServer())
+      .get('/api/v1/integrations/ehr/writeback-queue')
+      .set('x-aura-role', 'clinician')
+      .set('x-aura-linked-patient', 'true')
+      .set('x-aura-linked-visit', 'true')
+      .expect(200);
+
+    assert.equal(queue.body.data.queue.liveProductionWritebackEnabled, false);
+    assert.equal(queue.body.data.queue.payloadsExcluded, true);
+    assert.equal(queue.body.data.queue.items.some((item: { status: string }) => item.status === 'pending_approval'), true);
+
+    const approved = await request(app.getHttpServer())
+      .post('/api/v1/integrations/ehr/writeback-queue/ehr-wb-pending-001/actions')
+      .set('x-aura-role', 'clinician')
+      .set('x-aura-linked-patient', 'true')
+      .set('x-aura-linked-visit', 'true')
+      .set('idempotency-key', 'idem-e2e-approve-ehr')
+      .send({ action: 'approve', approvalId: 'approval-e2e-synthetic-001', reason: 'synthetic approval metadata' })
+      .expect(201);
+
+    assert.equal(approved.body.data.writeback.humanApproved, true);
+    assert.equal(approved.body.data.writeback.liveDeliveryEnabled, false);
+    assert.equal(approved.body.data.writeback.payloadStored, false);
+    assert.equal(approved.body.data.domainEvents[0].eventType, 'ehr.writeback_approval_recorded.v1');
+
+    const retry = await request(app.getHttpServer())
+      .post('/api/v1/integrations/ehr/writeback-queue/ehr-wb-failed-001/actions')
+      .set('x-aura-role', 'compliance_privacy_lead')
+      .send({ action: 'retry' })
+      .expect(201);
+
+    assert.equal(retry.body.data.writeback.status, 'retrying');
+  });
+
+  it('denies support approval and PHI-like writeback evidence', async () => {
+    await request(app.getHttpServer())
+      .post('/api/v1/integrations/ehr/writeback-queue/ehr-wb-pending-001/actions')
+      .set('x-aura-role', 'support')
+      .send({ action: 'approve', approvalId: 'approval-denied' })
+      .expect(403);
+
+    await request(app.getHttpServer())
+      .post('/api/v1/integrations/ehr/writeback-queue/ehr-wb-pending-001/actions')
+      .set('x-aura-role', 'clinician')
+      .set('x-aura-linked-patient', 'true')
+      .set('x-aura-linked-visit', 'true')
+      .send({ action: 'approve', approvalId: 'approval-denied', reason: 'call 555-121-1212' })
+      .expect(400);
+  });
 });

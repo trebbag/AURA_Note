@@ -347,10 +347,12 @@ This gate does not authorize live EHR writeback, live AI, live transcription, pr
 - **ClinicOS-integrated behavior:** can route through M25 Integration Hub while preserving AURA Note approval.
 - **AI/PHI/security requirements:** no raw EHR payload logs; no AI bypass.
 - **Testing requirements:** fake sandbox, idempotency, unauthorized approval denial, retry/dead-letter.
-- **Required scripts/gates:** `pnpm ehr:sandbox-readiness` plus default gate.
+- **Required scripts/gates:** `pnpm ehr:integration-readiness` plus default gate.
 - **Definition of Done:** EHR integration is sandbox-review-ready without live production writeback.
 - **Stop conditions:** missing vendor credentials for live sandbox; fake mode remains.
 - **Risks and deferred decisions:** athenahealth credentialing and production writeback review deferred.
+
+**Implementation status as of `WO-044`:** complete as synthetic/browser/API-testable EHR sandbox and writeback queue evidence. The implemented gate is `pnpm ehr:integration-readiness`. API behavior includes metadata-only queue inspection, human approval, idempotency replay, retry scheduling, dead-letter, reconciliation, support redaction, PHI evidence rejection, and audit/domain events. The browser route `/aura-note/integrations/ehr` exposes sandbox lifecycle states. Live production EHR credentials, raw EHR payload storage, and live writeback delivery remain deferred.
 
 ## WO-045 — ClinicOS Integration Hardening
 

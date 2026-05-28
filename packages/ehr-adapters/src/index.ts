@@ -473,6 +473,17 @@ export class AthenahealthAdapter extends MockEhrAdapter {
 
   private async athenaWriteback(input: WritebackPayload): Promise<WritebackResult> {
     const capabilities = await this.getWritebackCapabilities();
+    if (!input.humanApproved) {
+      return {
+        target: input.target,
+        vendor: this.vendor,
+        queued: false,
+        configured: capabilities.configured,
+        retryable: false,
+        status: 'failed',
+        failureReason: 'Human approval is required before athenahealth sandbox writeback queueing.'
+      };
+    }
     if (!capabilities.configured) {
       return {
         target: input.target,

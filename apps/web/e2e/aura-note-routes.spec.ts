@@ -51,6 +51,11 @@ const routeExpectations = [
     nav: true
   },
   {
+    path: '/aura-note/integrations/ehr',
+    heading: 'EHR Sandbox Integration',
+    nav: true
+  },
+  {
     path: '/aura-note/support/status',
     heading: 'Production Hardening Status',
     nav: true
@@ -215,10 +220,29 @@ test.describe('AURA Note route accessibility smoke suite', () => {
     await expect(page.getByRole('region', { name: 'Platform summary' })).toContainText('Production SSO');
   });
 
+  test('EHR integration route exposes sandbox writeback queue lifecycle states', async ({ page }) => {
+    await page.goto('/aura-note/integrations/ehr');
+
+    await expect(page.getByRole('region', { name: 'EHR integration readiness' })).toContainText('disabled');
+    await expect(page.getByRole('article', { name: 'Adapter status' })).toContainText('Athenahealth');
+    await expect(page.getByRole('article', { name: 'Writeback queue' })).toContainText('pending_approval');
+    await expect(page.getByRole('article', { name: 'Permission and payload boundaries' })).toContainText('payloadStored=false');
+    await expect(page.getByRole('region', { name: 'EHR route states' })).toContainText('permission-denied');
+
+    await page.getByRole('button', { name: 'Record Approval' }).click();
+    await expect(page.getByRole('article', { name: 'Writeback queue' })).toContainText('approved');
+    await page.getByRole('button', { name: 'Schedule Retry' }).click();
+    await expect(page.getByRole('article', { name: 'Writeback queue' })).toContainText('retrying');
+    await page.getByRole('button', { name: 'Dead Letter' }).click();
+    await expect(page.getByRole('article', { name: 'Writeback queue' })).toContainText('dead_lettered');
+    await page.getByRole('button', { name: 'Reconcile' }).click();
+    await expect(page.getByRole('article', { name: 'Writeback queue' })).toContainText('reconciled');
+  });
+
   test('core shells remain responsive without horizontal overflow on mobile width', async ({ page }) => {
     await page.setViewportSize({ width: 390, height: 844 });
 
-    for (const path of ['/aura-note/schedule', '/aura-note/operations', '/aura-note/platform', '/aura-note/workspace/appt-demo-001', '/aura-note/finalized/note-demo-finalized-001']) {
+    for (const path of ['/aura-note/schedule', '/aura-note/operations', '/aura-note/platform', '/aura-note/integrations/ehr', '/aura-note/workspace/appt-demo-001', '/aura-note/finalized/note-demo-finalized-001']) {
       await page.goto(path);
       await expect(page.getByRole('main')).toBeVisible();
 

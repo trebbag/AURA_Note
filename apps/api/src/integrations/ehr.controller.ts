@@ -1,4 +1,5 @@
-import { Controller, Get, Headers, Inject, Param, Query } from '@nestjs/common';
+import { Body, Controller, Get, Headers, Inject, Param, Post, Query } from '@nestjs/common';
+import type { EhrWritebackQueueActionRequestDto } from '@aura-note/contracts';
 import { EhrService } from './ehr.service';
 
 @Controller('integrations/ehr')
@@ -18,5 +19,19 @@ export class EhrController {
     @Headers() headers: Record<string, string | string[] | undefined>
   ) {
     return this.ehrService.getChartContext(safePatientId, externalEncounterId, slices, headers);
+  }
+
+  @Get('writeback-queue')
+  listWritebackQueue(@Headers() headers: Record<string, string | string[] | undefined>) {
+    return this.ehrService.listWritebackQueue(headers);
+  }
+
+  @Post('writeback-queue/:writebackJobId/actions')
+  actOnWritebackJob(
+    @Param('writebackJobId') writebackJobId: string,
+    @Body() body: EhrWritebackQueueActionRequestDto,
+    @Headers() headers: Record<string, string | string[] | undefined>
+  ) {
+    return this.ehrService.actOnWritebackJob(writebackJobId, body, headers);
   }
 }

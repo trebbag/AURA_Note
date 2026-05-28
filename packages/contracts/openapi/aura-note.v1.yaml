@@ -1344,6 +1344,39 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/EhrChartContextResponse'
+  /integrations/ehr/writeback-queue:
+    get:
+      operationId: listEhrWritebackQueue
+      description: WO-044 audit-safe EHR writeback queue metadata. Payloads and live production delivery are excluded.
+      responses:
+        '200':
+          description: EHR writeback queue metadata.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EhrWritebackQueueResponse'
+  /integrations/ehr/writeback-queue/{writebackJobId}/actions:
+    post:
+      operationId: actOnEhrWritebackQueueJob
+      description: WO-044 human approval, retry, dead-letter, and reconciliation metadata for EHR writeback jobs.
+      parameters:
+        - name: writebackJobId
+          in: path
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EhrWritebackQueueActionRequest'
+      responses:
+        '201':
+          description: EHR writeback queue action recorded as audit-safe metadata.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EhrWritebackQueueActionResponse'
   /integrations/clinicos/status:
     get:
       operationId: getClinicOsStatus
@@ -2045,6 +2078,100 @@ components:
         target: { type: string, enum: [final_note, patient_summary, both] }
         humanApproved: { type: boolean }
         scaffoldMode: { type: string, enum: [not_configured, mock_queue, simulate_failure, unsupported_by_vendor] }
+    EhrWritebackQueueLifecycleItem:
+      type: object
+      required: [writebackJobId, noteId, target, vendor, externalEncounterId, status, configured, humanApproved, liveDeliveryEnabled, retryable, retryCount, maxRetries, idempotencyKey, traceId, auditSafe, payloadStored]
+      properties:
+        writebackJobId: { type: string }
+        noteId: { type: string }
+        target: { type: string, enum: [final_note, patient_summary, both] }
+        vendor: { type: string, enum: [athenahealth, epic, eclinicalworks, generic_mock, standalone_local] }
+        externalEncounterId: { type: string }
+        status: { type: string, enum: [disabled, pending_approval, approved, queued, retrying, failed, dead_lettered, reconciled] }
+        configured: { type: boolean }
+        humanApproved: { type: boolean }
+        liveDeliveryEnabled: { type: boolean, const: false }
+        retryable: { type: boolean }
+        retryCount: { type: integer }
+        maxRetries: { type: integer }
+        idempotencyKey: { type: string }
+        traceId: { type: string }
+        auditSafe: { type: boolean, const: true }
+        payloadStored: { type: boolean, const: false }
+        queuedAt: { type: string, format: date-time }
+        approvedAt: { type: string, format: date-time }
+        approvedBy: { type: string }
+        approvalId: { type: string }
+        lastAttemptAt: { type: string, format: date-time }
+        nextRetryAt: { type: string, format: date-time }
+        failedAt: { type: string, format: date-time }
+        failureReason: { type: string }
+        deadLetteredAt: { type: string, format: date-time }
+        deadLetterReason: { type: string }
+        reconciliationId: { type: string }
+        reconciledAt: { type: string, format: date-time }
+        externalJobId: { type: string }
+    EhrWritebackQueueView:
+      type: object
+      required: [items, sandboxMode, liveProductionWritebackEnabled, payloadsExcluded, states, warnings]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/EhrWritebackQueueLifecycleItem'
+        sandboxMode: { type: string, enum: [disabled, mock, sandbox] }
+        liveProductionWritebackEnabled: { type: boolean, const: false }
+        payloadsExcluded: { type: boolean, const: true }
+        states:
+          type: array
+          items: { type: string, enum: [disabled, pending_approval, approved, queued, retrying, failed, dead_lettered, reconciled] }
+        warnings:
+          type: array
+          items: { type: string }
+    EhrWritebackQueueResponse:
+      allOf:
+        - type: object
+          properties:
+            data:
+              type: object
+              required: [queue, auditEvent, domainEvents]
+              properties:
+                queue:
+                  $ref: '#/components/schemas/EhrWritebackQueueView'
+                auditEvent:
+                  $ref: '#/components/schemas/AuditEvent'
+                domainEvents:
+                  type: array
+                  items:
+                    $ref: '#/components/schemas/AuraNoteEvent'
+            meta:
+              $ref: '#/components/schemas/ApiMeta'
+    EhrWritebackQueueActionRequest:
+      type: object
+      required: [action]
+      properties:
+        action: { type: string, enum: [approve, retry, dead_letter, reconcile] }
+        approvalId: { type: string }
+        reason: { type: string }
+        reconciliationId: { type: string }
+    EhrWritebackQueueActionResponse:
+      allOf:
+        - type: object
+          properties:
+            data:
+              type: object
+              required: [writeback, auditEvent, domainEvents]
+              properties:
+                writeback:
+                  $ref: '#/components/schemas/EhrWritebackQueueLifecycleItem'
+                auditEvent:
+                  $ref: '#/components/schemas/AuditEvent'
+                domainEvents:
+                  type: array
+                  items:
+                    $ref: '#/components/schemas/AuraNoteEvent'
+            meta:
+              $ref: '#/components/schemas/ApiMeta'
     FinalizedNoteDetail:
       allOf:
         - $ref: '#/components/schemas/FinalizedNoteSummary'
@@ -4078,7 +4205,7 @@ components:
         eventId: { type: string }
         eventType:
           type: string
-          enum: [appointment.created.v1, note.shell_created.v1, visit.started.v1, visit.paused.v1, visit.resumed.v1, visit.stopped.v1, recording.started.v1, microphone.permission_recorded.v1, recording.chunk_received.v1, recording.exception_approved.v1, recording.stopped.v1, raw_audio.retention_scheduled.v1, transcription.provider_status_checked.v1, transcription.job_queued.v1, transcription.job_processed.v1, transcription.job_failed.v1, transcript.segment_appended.v1, transcript.segment_corrected.v1, suggestions.evaluated.v1, suggestion.accepted.v1, suggestion.removed.v1, visit_selection.added.v1, compliance.evaluated.v1, history_gap.task_created.v1, task.blocker_changed.v1, low_confidence_diagnosis.override_recorded.v1, finalization.started.v1, finalization.selection_decided.v1, finalization.suggestion_decided.v1, finalization.compose_requested.v1, finalization.compose_completed.v1, finalization.compare_edit_updated.v1, finalization.compose_rebeautified.v1, finalization.step_completed.v1, final_note.approved.v1, patient_summary.approved.v1, billing_review.triggered.v1, draft_claim_preview.generated.v1, billing_attestation.completed.v1, final_note.created.v1, patient_summary.finalized.v1, note.signed.v1, note.dispatched.v1, export.generated.v1, storage.download_requested.v1, storage.download_denied.v1, storage.object_delivered.v1, storage.object_missing.v1, backup.posture_checked.v1, restore.readiness_checked.v1, observability.status_checked.v1, support.status_checked.v1, incident.runbook_viewed.v1, degraded_mode.acknowledged.v1, access_review.evidence_recorded.v1, operational.readiness_checked.v1, ehr_writeback.queued.v1, ehr_writeback.failed.v1, ehr.adapter_status_checked.v1, ehr.patient_matched.v1, ehr.chart_context_loaded.v1, clinicos.mode_resolved.v1, clinicos.mapping_recorded.v1, clinicos.event_published.v1, clinicos.unavailable.v1, ai.request_prepared.v1, ai.context_scrubbed.v1, ai.phi_rejected.v1, ai.response_recorded.v1, ai.output_rejected.v1, coaching.signal_created.v1, coaching.report_generated.v1, coaching.dashboard_viewed.v1, retention.scan_completed.v1, audit.export_requested.v1, audit.event_recorded.v1]
+          enum: [appointment.created.v1, note.shell_created.v1, visit.started.v1, visit.paused.v1, visit.resumed.v1, visit.stopped.v1, recording.started.v1, microphone.permission_recorded.v1, recording.chunk_received.v1, recording.exception_approved.v1, recording.stopped.v1, raw_audio.retention_scheduled.v1, transcription.provider_status_checked.v1, transcription.job_queued.v1, transcription.job_processed.v1, transcription.job_failed.v1, transcript.segment_appended.v1, transcript.segment_corrected.v1, suggestions.evaluated.v1, suggestion.accepted.v1, suggestion.removed.v1, visit_selection.added.v1, compliance.evaluated.v1, history_gap.task_created.v1, task.blocker_changed.v1, low_confidence_diagnosis.override_recorded.v1, finalization.started.v1, finalization.selection_decided.v1, finalization.suggestion_decided.v1, finalization.compose_requested.v1, finalization.compose_completed.v1, finalization.compare_edit_updated.v1, finalization.compose_rebeautified.v1, finalization.step_completed.v1, final_note.approved.v1, patient_summary.approved.v1, billing_review.triggered.v1, draft_claim_preview.generated.v1, billing_attestation.completed.v1, final_note.created.v1, patient_summary.finalized.v1, note.signed.v1, note.dispatched.v1, export.generated.v1, storage.download_requested.v1, storage.download_denied.v1, storage.object_delivered.v1, storage.object_missing.v1, backup.posture_checked.v1, restore.readiness_checked.v1, observability.status_checked.v1, support.status_checked.v1, incident.runbook_viewed.v1, degraded_mode.acknowledged.v1, access_review.evidence_recorded.v1, operational.readiness_checked.v1, ehr_writeback.queued.v1, ehr_writeback.failed.v1, ehr.adapter_status_checked.v1, ehr.patient_matched.v1, ehr.chart_context_loaded.v1, ehr.writeback_approval_recorded.v1, ehr.writeback_retry_scheduled.v1, ehr.writeback_dead_lettered.v1, ehr.writeback_reconciliation_checked.v1, ehr.writeback_disabled.v1, clinicos.mode_resolved.v1, clinicos.mapping_recorded.v1, clinicos.event_published.v1, clinicos.unavailable.v1, ai.request_prepared.v1, ai.context_scrubbed.v1, ai.phi_rejected.v1, ai.response_recorded.v1, ai.output_rejected.v1, coaching.signal_created.v1, coaching.report_generated.v1, coaching.dashboard_viewed.v1, retention.scan_completed.v1, audit.export_requested.v1, audit.event_recorded.v1]
         schemaVersion: { type: string, enum: [v1] }
         tenantId: { type: string }
         siteId: { type: string }
