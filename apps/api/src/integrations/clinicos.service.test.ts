@@ -15,6 +15,10 @@ describe('ClinicOS integration service', () => {
     assert.equal(status.data.modeContext.hostMode, 'standalone');
     assert.equal(status.data.modeContext.availability, 'disabled');
     assert.equal(status.data.permissionsStillEnforcedByAuraNote, true);
+    assert.equal(status.data.rawPayloadsStored, false);
+    assert.equal(status.data.liveClinicOsSyncEnabled, false);
+    assert.equal(status.data.moduleBoundaries.length, 8);
+    assert.equal(status.data.states.includes('permission-denied'), true);
     assert.equal(status.data.domainEvents[0]?.eventType, 'clinicos.mode_resolved.v1');
   });
 
@@ -36,7 +40,53 @@ describe('ClinicOS integration service', () => {
     assert.equal(mapped.data.mappings.length, 2);
     assert.equal(mapped.data.mappings[0]?.clinicosModuleId, 'M03');
     assert.equal(mapped.data.publishedEvent.status, 'queued');
+    assert.equal(mapped.data.publishedEvent.payloadStored, false);
     assert.equal(mapped.data.domainEvents.some((event) => event.eventType === 'clinicos.mapping_recorded.v1'), true);
+  });
+
+  it('records stale ClinicOS mappings with metadata-only review evidence', async () => {
+    const service = new ClinicOsService();
+    const response = await service.upsertMapping(
+      {
+        localObjectType: 'task',
+        localObjectId: 'task-ma-follow-up-001',
+        clinicosModuleId: 'M04',
+        status: 'stale',
+        reason: 'ClinicOS task reference is older than the local blocker.'
+      },
+      {
+        'x-aura-role': 'service_account',
+        'x-aura-clinicos-mode': 'clinicos_integrated',
+        'idempotency-key': 'idem-clinicos-stale-001',
+        'x-trace-id': 'trace-clinicos-stale-001'
+      }
+    );
+
+    assert.equal(response.data.mapping.status, 'stale');
+    assert.equal(response.data.mapping.staleReason, 'ClinicOS task reference is older than the local blocker.');
+    assert.equal(response.data.domainEvents[0]?.eventType, 'clinicos.mapping_stale_detected.v1');
+  });
+
+  it('publishes failed/degraded event metadata without raw ClinicOS payload storage', async () => {
+    const service = new ClinicOsService();
+    const response = await service.publishEvent(
+      {
+        eventType: 'ehr.writeback_approval_recorded.v1',
+        targetModules: ['M25'],
+        localObjectId: 'ehr-wb-pending-001'
+      },
+      {
+        'x-aura-role': 'service_account',
+        'x-aura-clinicos-mode': 'clinicos_integrated',
+        'x-aura-clinicos-unavailable': 'true',
+        'x-trace-id': 'trace-clinicos-publish-failed-001'
+      }
+    );
+
+    assert.equal(response.data.publishedEvent.status, 'failed_unavailable');
+    assert.equal(response.data.publishedEvent.payloadStored, false);
+    assert.equal(response.data.publishedEvent.permissionBoundaryEnforced, true);
+    assert.equal(response.data.domainEvents[0]?.eventType, 'clinicos.event_publication_failed.v1');
   });
 
   it('denies mapping writes to ordinary clinicians', async () => {
@@ -91,5 +141,26 @@ describe('ClinicOS integration service', () => {
     assert.equal(mapped.data.modeContext.availability, 'unavailable');
     assert.equal(mapped.data.mappings.length, 0);
     assert.equal(mapped.data.publishedEvent.status, 'failed_unavailable');
+  });
+
+  it('denies cross-tenant service-account attempts before metadata is exposed', async () => {
+    const service = new ClinicOsService();
+
+    await assert.rejects(
+      () =>
+        service.upsertMapping(
+          {
+            localObjectType: 'appointment',
+            localObjectId: 'appt-cross-tenant',
+            clinicosModuleId: 'M03'
+          },
+          {
+            'x-aura-role': 'service_account',
+            'x-aura-tenant-id': 'tenant-synthetic-other',
+            'x-aura-clinicos-mode': 'clinicos_integrated'
+          }
+        ),
+      ForbiddenException
+    );
   });
 });

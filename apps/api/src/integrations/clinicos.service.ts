@@ -4,8 +4,10 @@ import {
   MockClinicOsAdapter,
   STANDALONE_MODE_SETTINGS,
   type AuraNoteHostMode,
+  type ClinicOsMappingRecord,
   type ClinicOsModeContext,
-  type ClinicOsPublishedEvent
+  type ClinicOsPublishedEvent,
+  getClinicOsModuleBoundaries
 } from '@aura-note/clinicos-adapter';
 import {
   createApiEnvelope,
@@ -13,10 +15,16 @@ import {
   type ApiEnvelope,
   type ApiMeta,
   type AuditEventDto,
+  type ClinicOsEventPublishRequestDto,
+  type ClinicOsEventPublishResponseDto,
   type ClinicOsIntegrationStatusDto,
+  type ClinicOsMappingRecordDto,
+  type ClinicOsMappingUpsertRequestDto,
+  type ClinicOsMappingUpsertResponseDto,
   type ClinicOsMapVisitRequestDto,
   type ClinicOsMapVisitResponseDto,
   type ClinicOsModeContextDto,
+  type ClinicOsModuleBoundaryDto,
   type ClinicOsPublishedEventDto
 } from '@aura-note/contracts';
 import { canPerform, createSyntheticLocalSession, type AccessContext } from '@aura-note/security';
@@ -36,6 +44,78 @@ interface RequestContext {
 @Injectable()
 export class ClinicOsService {
   private sequence = 1;
+  private readonly mappingRecords: ClinicOsMappingRecordDto[] = [
+    {
+      mappingId: 'clinicos-map-active-m03-001',
+      tenantId: TENANT_ID,
+      siteId: SITE_ID,
+      localObjectType: 'appointment',
+      localObjectId: 'appt-demo-001',
+      clinicosModuleId: 'M03',
+      clinicosObjectId: 'clinicos-m03-visitgraph-synthetic-001',
+      sourceOfTruth: 'clinicos',
+      status: 'active',
+      traceId: 'trace-clinicos-seed-active',
+      lastCheckedAt: '2026-05-28T00:00:00.000Z',
+      lastPublishedAt: '2026-05-28T00:01:00.000Z',
+      createdAt: '2026-05-28T00:00:00.000Z'
+    },
+    {
+      mappingId: 'clinicos-map-stale-m04-001',
+      tenantId: TENANT_ID,
+      siteId: SITE_ID,
+      localObjectType: 'task',
+      localObjectId: 'task-ma-follow-up-001',
+      clinicosModuleId: 'M04',
+      clinicosObjectId: 'clinicos-m04-task-stale-synthetic-001',
+      sourceOfTruth: 'clinicos',
+      status: 'stale',
+      staleReason: 'Last ClinicOS task projection is older than the local blocker task state.',
+      traceId: 'trace-clinicos-seed-stale',
+      lastCheckedAt: '2026-05-28T00:00:00.000Z',
+      createdAt: '2026-05-28T00:00:00.000Z'
+    },
+    {
+      mappingId: 'clinicos-map-degraded-m25-001',
+      tenantId: TENANT_ID,
+      siteId: SITE_ID,
+      localObjectType: 'event',
+      localObjectId: 'ehr-wb-pending-001',
+      clinicosModuleId: 'M25',
+      clinicosObjectId: 'clinicos-m25-writeback-degraded-synthetic-001',
+      sourceOfTruth: 'hybrid',
+      status: 'degraded',
+      degradedReason: 'Integration Hub delegation is metadata-only; live writeback routing remains disabled.',
+      traceId: 'trace-clinicos-seed-degraded',
+      lastCheckedAt: '2026-05-28T00:00:00.000Z',
+      createdAt: '2026-05-28T00:00:00.000Z'
+    }
+  ];
+  private readonly publishedEvents: ClinicOsPublishedEventDto[] = [
+    {
+      outboxId: 'clinicos-outbox-skipped-001',
+      tenantId: TENANT_ID,
+      siteId: SITE_ID,
+      eventType: 'note.signed.v1',
+      targetModules: ['M17'],
+      status: 'skipped_disabled',
+      payloadStored: false,
+      permissionBoundaryEnforced: true,
+      createdAt: '2026-05-28T00:00:00.000Z'
+    },
+    {
+      outboxId: 'clinicos-outbox-failed-001',
+      tenantId: TENANT_ID,
+      siteId: SITE_ID,
+      eventType: 'ehr.writeback_approval_recorded.v1',
+      targetModules: ['M25'],
+      status: 'failed_unavailable',
+      payloadStored: false,
+      permissionBoundaryEnforced: true,
+      failedReason: 'ClinicOS mock adapter unavailable; no payload was stored or delivered.',
+      createdAt: '2026-05-28T00:00:00.000Z'
+    }
+  ];
 
   async getStatus(headers: Record<string, string | string[] | undefined>): Promise<ApiEnvelope<ClinicOsIntegrationStatusDto>> {
     const context = this.createRequestContext(headers);
@@ -45,11 +125,28 @@ export class ClinicOsService {
 
     const adapter = this.createAdapter(headers);
     const modeContext = await adapter.getModeContext();
+    const moduleBoundaries = this.toModuleBoundaryDtos(this.getModuleBoundaries(headers));
     const status: ClinicOsIntegrationStatusDto = {
       modeContext: this.toModeContextDto(modeContext),
-      mappings: await adapter.listMappings(),
-      publishedEvents: await adapter.getPublishedEvents(),
+      moduleBoundaries,
+      mappings: this.projectMappingsForContext(modeContext),
+      publishedEvents: this.projectPublishedEventsForContext(modeContext),
       permissionsStillEnforcedByAuraNote: true,
+      rawPayloadsStored: false,
+      liveClinicOsSyncEnabled: false,
+      states: [
+        'empty',
+        'loading',
+        'ready',
+        'saving',
+        'degraded',
+        'failed',
+        'permission-denied',
+        'disabled',
+        'stale-mapping',
+        'read-only',
+        'demo-fixture'
+      ],
       auditEvent: this.createAuditEvent('clinicos.status', 'ClinicOsAdapter', modeContext.hostMode, context),
       domainEvents: [
         createEventEnvelope({
@@ -94,6 +191,8 @@ export class ClinicOsService {
       localNoteId: body.localNoteId
     });
     const publishedEvent = await adapter.publishAuraNoteEvent({ eventType: 'visit.started.v1' });
+    this.mappingRecords.push(...mapped.mappings.map((mapping) => this.toMappingRecordDto(mapping)));
+    this.publishedEvents.push(this.toPublishedEventDto(publishedEvent));
 
     return createApiEnvelope(
       {
@@ -144,15 +243,137 @@ export class ClinicOsService {
     );
   }
 
+  async upsertMapping(
+    body: ClinicOsMappingUpsertRequestDto,
+    headers: Record<string, string | string[] | undefined>
+  ): Promise<ApiEnvelope<ClinicOsMappingUpsertResponseDto>> {
+    const context = this.createRequestContext(headers);
+    if (!canPerform('clinicos_mapping:write', context.access)) {
+      throw new ForbiddenException('role cannot record ClinicOS mappings');
+    }
+    if (!body.localObjectType || !body.localObjectId?.trim() || !body.clinicosModuleId) {
+      throw new BadRequestException('localObjectType, localObjectId, and clinicosModuleId are required');
+    }
+
+    const modeContext = await this.createAdapter(headers).getModeContext();
+    const now = new Date().toISOString();
+    const status = body.status ?? (modeContext.availability === 'available' ? 'active' : 'unavailable');
+    const mapping: ClinicOsMappingRecordDto = {
+      mappingId: this.nextId('clinicos-map'),
+      tenantId: TENANT_ID,
+      siteId: SITE_ID,
+      localObjectType: body.localObjectType,
+      localObjectId: body.localObjectId,
+      clinicosModuleId: body.clinicosModuleId,
+      clinicosObjectId: body.clinicosObjectId ?? `clinicos-${body.clinicosModuleId.toLowerCase()}-${body.localObjectId}`,
+      sourceOfTruth: body.sourceOfTruth ?? (modeContext.enabled ? 'clinicos' : 'aura_note'),
+      status,
+      ...(status === 'stale' ? { staleReason: body.reason ?? 'Mapping review flagged the ClinicOS reference as stale.' } : {}),
+      ...(status === 'degraded' ? { degradedReason: body.reason ?? 'Mapping is metadata-only while ClinicOS live sync is disabled.' } : {}),
+      traceId: context.traceId,
+      lastCheckedAt: now,
+      createdAt: now
+    };
+    this.mappingRecords.push(mapping);
+
+    const eventType = status === 'stale' ? 'clinicos.mapping_stale_detected.v1' : 'clinicos.mapping_recorded.v1';
+    return createApiEnvelope(
+      {
+        modeContext: this.toModeContextDto(modeContext),
+        mapping,
+        auditEvent: this.createAuditEvent('clinicos.mapping_upsert', 'ClinicOsModeMapping', mapping.mappingId, context),
+        domainEvents: [
+          createEventEnvelope({
+            eventId: this.nextId('evt'),
+            eventType,
+            tenantId: TENANT_ID,
+            siteId: SITE_ID,
+            producer: 'aura-note-api',
+            traceId: context.traceId,
+            idempotencyKey: context.idempotencyKey ?? this.nextId('idem'),
+            sensitivity: 'restricted',
+            retentionClass: 'audit',
+            payload: {
+              mappingId: mapping.mappingId,
+              moduleId: mapping.clinicosModuleId,
+              status: mapping.status,
+              payloadStored: false,
+              permissionsStillEnforcedByAuraNote: true
+            }
+          })
+        ]
+      },
+      this.createMeta(context)
+    );
+  }
+
+  async publishEvent(
+    body: ClinicOsEventPublishRequestDto,
+    headers: Record<string, string | string[] | undefined>
+  ): Promise<ApiEnvelope<ClinicOsEventPublishResponseDto>> {
+    const context = this.createRequestContext(headers);
+    if (!canPerform('clinicos_mapping:write', context.access)) {
+      throw new ForbiddenException('role cannot publish ClinicOS event metadata');
+    }
+    if (!body.eventType?.trim()) {
+      throw new BadRequestException('eventType is required');
+    }
+
+    const adapter = this.createAdapter(headers);
+    const modeContext = await adapter.getModeContext();
+    const published = this.toPublishedEventDto(await adapter.publishAuraNoteEvent({ eventType: body.eventType }));
+    const overridden: ClinicOsPublishedEventDto = {
+      ...published,
+      ...(body.targetModules ? { targetModules: body.targetModules } : {})
+    };
+    this.publishedEvents.push(overridden);
+
+    const eventType =
+      overridden.status === 'failed_unavailable' || overridden.status === 'degraded'
+        ? 'clinicos.event_publication_failed.v1'
+        : 'clinicos.event_published.v1';
+
+    return createApiEnvelope(
+      {
+        modeContext: this.toModeContextDto(modeContext),
+        publishedEvent: overridden,
+        auditEvent: this.createAuditEvent('clinicos.event_publish', 'ClinicOsOutbox', overridden.outboxId, context),
+        domainEvents: [
+          createEventEnvelope({
+            eventId: this.nextId('evt'),
+            eventType,
+            tenantId: TENANT_ID,
+            siteId: SITE_ID,
+            producer: 'aura-note-api',
+            traceId: context.traceId,
+            idempotencyKey: context.idempotencyKey ?? this.nextId('idem'),
+            sensitivity: 'restricted',
+            retentionClass: 'audit',
+            payload: {
+              sourceEventType: body.eventType,
+              targetModules: overridden.targetModules,
+              outboxStatus: overridden.status,
+              payloadStored: false,
+              permissionsStillEnforcedByAuraNote: true
+            }
+          })
+        ]
+      },
+      this.createMeta(context)
+    );
+  }
+
   private createAdapter(headers: Record<string, string | string[] | undefined>): MockClinicOsAdapter {
     const hostMode = this.parseHostMode(this.headerValue(headers['x-aura-clinicos-mode']));
     const enabled = hostMode !== 'standalone';
     const unavailable = this.parseBooleanHeader(this.headerValue(headers['x-aura-clinicos-unavailable'])) ?? false;
+    const degraded = this.parseBooleanHeader(this.headerValue(headers['x-aura-clinicos-degraded'])) ?? false;
     return new MockClinicOsAdapter({
       ...(enabled ? CLINICOS_MOCK_MODE_SETTINGS : STANDALONE_MODE_SETTINGS),
       hostMode,
       enabled,
       unavailable,
+      degraded,
       tenantId: TENANT_ID,
       siteId: SITE_ID
     });
@@ -185,8 +406,63 @@ export class ClinicOsService {
       eventType: event.eventType,
       targetModules: event.targetModules,
       status: event.status,
+      payloadStored: event.payloadStored,
+      permissionBoundaryEnforced: event.permissionBoundaryEnforced,
+      ...(event.degradedReason ? { degradedReason: event.degradedReason } : {}),
+      ...(event.failedReason ? { failedReason: event.failedReason } : {}),
       createdAt: event.createdAt
     };
+  }
+
+  private toMappingRecordDto(mapping: ClinicOsMappingRecord): ClinicOsMappingRecordDto {
+    return {
+      mappingId: mapping.mappingId,
+      tenantId: mapping.tenantId,
+      siteId: mapping.siteId,
+      localObjectType: mapping.localObjectType,
+      localObjectId: mapping.localObjectId,
+      clinicosModuleId: mapping.clinicosModuleId,
+      clinicosObjectId: mapping.clinicosObjectId,
+      sourceOfTruth: mapping.sourceOfTruth,
+      status: mapping.status,
+      ...(mapping.staleReason ? { staleReason: mapping.staleReason } : {}),
+      ...(mapping.degradedReason ? { degradedReason: mapping.degradedReason } : {}),
+      traceId: mapping.traceId,
+      lastCheckedAt: mapping.lastCheckedAt,
+      ...(mapping.lastPublishedAt ? { lastPublishedAt: mapping.lastPublishedAt } : {}),
+      createdAt: mapping.createdAt
+    };
+  }
+
+  private toModuleBoundaryDtos(boundaries: ReturnType<typeof getClinicOsModuleBoundaries>): ClinicOsModuleBoundaryDto[] {
+    return boundaries.map((boundary) => ({
+      moduleId: boundary.moduleId,
+      moduleName: boundary.moduleName,
+      maps: boundary.maps,
+      sourceOfTruth: boundary.sourceOfTruth,
+      delegationEnabled: boundary.delegationEnabled,
+      permissionBoundary: boundary.permissionBoundary
+    }));
+  }
+
+  private getModuleBoundaries(headers: Record<string, string | string[] | undefined>): ReturnType<typeof getClinicOsModuleBoundaries> {
+    const hostMode = this.parseHostMode(this.headerValue(headers['x-aura-clinicos-mode']));
+    return getClinicOsModuleBoundaries(hostMode === 'standalone' ? STANDALONE_MODE_SETTINGS.sourceOfTruth : CLINICOS_MOCK_MODE_SETTINGS.sourceOfTruth);
+  }
+
+  private projectMappingsForContext(modeContext: ClinicOsModeContext): ClinicOsMappingRecordDto[] {
+    if (!modeContext.enabled) {
+      return this.mappingRecords.map((mapping) => ({ ...mapping, status: 'unavailable', degradedReason: 'ClinicOS disabled; standalone mode is authoritative.' }));
+    }
+    if (modeContext.availability === 'unavailable') {
+      return this.mappingRecords.map((mapping) => ({ ...mapping, status: mapping.status === 'active' ? 'unavailable' : mapping.status }));
+    }
+    return [...this.mappingRecords];
+  }
+
+  private projectPublishedEventsForContext(modeContext: ClinicOsModeContext): ClinicOsPublishedEventDto[] {
+    if (modeContext.enabled) return [...this.publishedEvents];
+    return this.publishedEvents.map((event) => ({ ...event, status: 'skipped_disabled' }));
   }
 
   createRequestContext(headers: Record<string, string | string[] | undefined>): RequestContext {

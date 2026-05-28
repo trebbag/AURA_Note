@@ -4,13 +4,13 @@ This file tracks missing, conflicting, unsafe, or deliberately deferred product 
 
 ## Active gaps
 
-No active gaps as of post-`WO-044` EHR sandbox integration/writeback queue hardening on 2026-05-28.
+No active gaps as of post-`WO-045` ClinicOS integration hardening on 2026-05-28.
 
-The repo remains not production-ready. The items below are deferred production decisions rather than active blockers for the current EHR sandbox integration/writeback queue hardening scope.
+The repo remains not production-ready. The items below are deferred production decisions rather than active blockers for the current ClinicOS integration hardening scope.
 
 ## Deferred production decisions
 
-These items must stay visible and must be resolved before the related production work can be declared complete. They are not blockers for the completed `WO-044` tranche because the active work remains synthetic/local and explicitly excludes live SIEM/APM vendors, production observability credentials, PHI-bearing logs, live Azure credentials, PHI-bearing object payloads, live destructive deletion, production restore execution, live IdP credentials, live ClinicOS delegation, live EHR/ClinicOS synchronization, production EHR credentials, raw EHR payload storage, live EHR writeback delivery, live transcription credentials, autonomous billing, and production launch behavior.
+These items must stay visible and must be resolved before the related production work can be declared complete. They are not blockers for the completed `WO-045` tranche because the active work remains synthetic/local and explicitly excludes live SIEM/APM vendors, production observability credentials, PHI-bearing logs, live Azure credentials, PHI-bearing object payloads, live destructive deletion, production restore execution, live IdP credentials, live ClinicOS delegation, live ClinicOS event-bus sync, raw ClinicOS payload storage, live EHR/ClinicOS synchronization, production EHR credentials, raw EHR payload storage, live EHR writeback delivery, live transcription credentials, autonomous billing, and production launch behavior.
 
 ### Deferred Decision — Production SIEM/APM vendor and operational monitoring posture
 
@@ -61,12 +61,12 @@ These items must stay visible and must be resolved before the related production
 - **Decision needed before live use:** production athenahealth credentialing, sandbox credential source if live sandbox calls are required, approved writeback target scope, vendor error taxonomy, reconciliation ownership, retry/dead-letter policy, rollback/support process, and launch approval.
 - **Safe current posture:** `WO-044` adds a vendor-neutral, athenahealth-first sandbox-ready adapter path plus metadata-only writeback queue lifecycle evidence. Human approval, idempotency replay, retry, dead-letter, reconciliation, role denial, PHI rejection, and audit/domain events are tested; no production credential, raw EHR payload storage, or live writeback delivery is enabled.
 
-### Deferred Decision — ClinicOS live integration contracts
+### Deferred Decision — ClinicOS live integration contracts and event-bus delivery
 
-- **Related future work:** `WO-045`
+- **Related future work:** post-`WO-045` founder/security/privacy/ClinicOS review before live use
 - **Status:** deferred
-- **Decision needed before live use:** live ClinicOS module contracts, tenant/user mapping, VisitGraph/WorkOS/Charge Integrity/Copilot/Governance/Integration/Data Cloud event schemas, and operational ownership.
-- **Safe current posture:** standalone remains authoritative; ClinicOS mock/integration scaffolds cannot bypass AURA Note permissions.
+- **Decision needed before live use:** live ClinicOS module contracts, tenant/user mapping, delegated identity posture, VisitGraph/WorkOS/Charge Integrity/Copilot/Governance/Integration/Data Cloud event schemas, event-bus delivery semantics, replay/reconciliation ownership, and operational ownership.
+- **Safe current posture:** `WO-045` adds metadata-only module boundaries, mapping review, stale/degraded mapping states, failed/degraded publication metadata, service-account/cross-tenant denial, and AURA Note permission-boundary evidence. Standalone remains authoritative; ClinicOS mock/integration scaffolds cannot bypass AURA Note permissions and no raw ClinicOS payload storage or live event delivery is enabled.
 
 ### Deferred Decision — Revenue estimates and patient-facing financial content
 

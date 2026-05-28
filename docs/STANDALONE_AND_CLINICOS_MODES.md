@@ -136,3 +136,11 @@ In standalone mode, AURA Note owns EHR adapter status, chart-context packaging, 
 In ClinicOS-integrated mode, future EHR routing may pass through M25 Integration Hub, but `WO-044` keeps AURA Note authoritative for writeback approval, idempotency, retry/dead-letter/reconciliation metadata, audit evidence, and permission checks. Missing ClinicOS/EHR delegation fails closed and cannot enable live writeback or expose writeback payloads.
 
 `WO-044` does not enable production EHR credentials, raw EHR payload storage, live writeback delivery, autonomous note submission, charge finalization, medical-necessity determination, or claim submission.
+
+## WO-045 ClinicOS integration mode behavior
+
+In standalone mode, AURA Note remains authoritative for tenant/site context, schedule, patient shell, note lifecycle, tasks, finalization, exports, writeback approval metadata, audit, AI/PHI controls, and coaching evidence. ClinicOS disabled or unavailable state produces safe degraded metadata and does not block standalone documentation workflows.
+
+In ClinicOS-integrated mode, AURA Note maps metadata to M03 VisitGraph, M04 WorkOS/tasks, M17 NP Cockpit, M21 Charge Integrity, M23 Copilot Runtime, M24 AI Governance, M25 Integration Hub, and M26 Data Cloud through adapter boundaries only. `WO-045` adds visible module boundaries, stale/degraded mapping review, failed/degraded event publication metadata, and service-account/cross-tenant denial evidence. ClinicOS context cannot bypass AURA Note permissions, human-review gates, PHI boundaries, writeback approval, or finalization blockers.
+
+`WO-045` does not enable live ClinicOS credentials, production event-bus delivery, raw ClinicOS payload storage, live delegated identity, live EHR/writeback through ClinicOS, charge finalization, medical-necessity determination, or claim submission.

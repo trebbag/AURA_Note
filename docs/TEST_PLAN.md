@@ -412,3 +412,16 @@ These tests prove synthetic P8 observability/support operations evidence only. T
 - the readiness script verifies contracts, OpenAPI, routes, tests, status/run-log evidence, and no live EHR credential or production writeback markers.
 
 These tests prove synthetic P9 EHR sandbox/writeback queue readiness only. They do not enable production EHR credentials, raw EHR payload storage, live writeback delivery, autonomous note submission, charge finalization, medical-necessity determination, or claim submission.
+
+## WO-045 ClinicOS integration hardening readiness
+
+`WO-045` adds the `pnpm clinicos:integration-readiness` gate:
+
+- ClinicOS adapter tests cover host-mode resolution, disabled/unavailable/degraded behavior, M03 through M26 module boundaries, mapping records, publication status, and AURA Note permission-boundary metadata;
+- contracts tests cover ClinicOS status, module boundaries, stale mapping DTOs, failed publication DTOs, and new event types;
+- security tests cover ClinicOS adapter visibility for operational metadata, mapping-write denial for ordinary clinicians/support users, and service-account scoping;
+- API service and e2e tests cover status, mapping upsert/review, stale mapping detection, failed publication metadata, permission denial, delegated identity denial, and cross-tenant service-account denial;
+- browser tests cover `/aura-note/integrations/clinicos` module boundaries, stale mapping review, failed publication state, permission-denied/read-only/demo states, and safety messaging;
+- the readiness script verifies contracts, OpenAPI, routes, tests, status/run-log evidence, no live ClinicOS credentials, no raw payload storage, and no prohibited clinical/billing behavior.
+
+These tests prove synthetic P9 ClinicOS integration-hardening readiness only. They do not enable production ClinicOS credentials, live event-bus delivery, raw ClinicOS payload storage, live delegated identity, live EHR/writeback through ClinicOS, charge finalization, medical-necessity determination, or claim submission.

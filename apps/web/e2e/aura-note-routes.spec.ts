@@ -56,6 +56,11 @@ const routeExpectations = [
     nav: true
   },
   {
+    path: '/aura-note/integrations/clinicos',
+    heading: 'ClinicOS Integration Hardening',
+    nav: true
+  },
+  {
     path: '/aura-note/support/status',
     heading: 'Production Hardening Status',
     nav: true
@@ -249,5 +254,23 @@ test.describe('AURA Note route accessibility smoke suite', () => {
       const overflow = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
       expect(overflow).toBeLessThanOrEqual(1);
     }
+  });
+
+  test('ClinicOS integration route exposes boundaries, stale mapping review, and failed publication states', async ({ page }) => {
+    await page.goto('/aura-note/integrations/clinicos');
+
+    await expect(page.getByRole('region', { name: 'ClinicOS integration readiness' })).toContainText('AURA Note authoritative');
+    await expect(page.getByRole('article', { name: 'Module boundary map' })).toContainText('M03 / VisitGraph');
+    await expect(page.getByRole('article', { name: 'Module boundary map' })).toContainText('M26 / Data Cloud');
+    await expect(page.getByRole('article', { name: 'ClinicOS mappings' })).toContainText('stale');
+    await expect(page.getByRole('article', { name: 'Publication metadata' })).toContainText('payloadStored=false');
+    await expect(page.getByRole('region', { name: 'ClinicOS route states' })).toContainText('permission-denied');
+    await expect(page.getByRole('region', { name: 'ClinicOS route states' })).toContainText('read-only');
+
+    await page.getByRole('button', { name: 'Review Stale' }).click();
+    await expect(page.getByRole('article', { name: 'ClinicOS mappings' })).toContainText('local blocker remains authoritative');
+    await page.getByRole('button', { name: 'Failed Closed' }).click();
+    await expect(page.getByRole('article', { name: 'Publication metadata' })).toContainText('failed_unavailable');
+    await expect(page.getByRole('region', { name: 'ClinicOS safety summary' })).toContainText('does not build ClinicOS modules');
   });
 });

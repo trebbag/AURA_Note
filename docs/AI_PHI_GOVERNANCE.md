@@ -102,3 +102,9 @@ No raw PHI is sent to external AI, SIEM, APM, EHR, ClinicOS, or storage vendors 
 `WO-044` keeps EHR writeback queue behavior metadata-only. Writeback action evidence is scanned for forbidden PHI keys and obvious PHI-like text before approval, retry, dead-letter, or reconciliation metadata is recorded. Support users receive redacted operational metadata and cannot view raw writeback payloads or external job identifiers.
 
 No raw PHI is sent to external AI or live EHR vendors as part of `WO-044`. No production EHR credential, production patient record, raw EHR payload, final-note payload, transcript text, billing detail, live writeback delivery, medical-necessity determination, charge finalization, or claim submission is introduced.
+
+## WO-045 ClinicOS AI/PHI boundary
+
+`WO-045` maps ClinicOS M23 Copilot Runtime and M24 AI Governance as metadata-only module boundaries. AI/governance delegation remains disabled for live use; AURA Note remains authoritative for PHI scrubbing, purpose-of-use, source freshness, role checks, and human-review gates. ClinicOS status, mapping, and publication records must keep `payloadStored=false` and must not include raw prompts, transcripts, final notes, billing details, coaching output, or raw ClinicOS messages.
+
+No raw PHI is sent to ClinicOS, external AI, EHR vendors, analytics vendors, or storage vendors as part of `WO-045`. Live M23/M24 delegation, live event-bus delivery, private/BAA model configuration, model evaluation thresholds, and AI governance operations remain deferred to `WO-046` and later security/privacy/founder review.

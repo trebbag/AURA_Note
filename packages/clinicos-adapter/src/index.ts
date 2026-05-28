@@ -2,7 +2,8 @@ export type AuraNoteHostMode = 'standalone' | 'clinicos_integrated' | 'ehr_embed
 export type ClinicOsModuleId = 'M03' | 'M04' | 'M17' | 'M21' | 'M23' | 'M24' | 'M25' | 'M26';
 export type ClinicOsAvailability = 'available' | 'disabled' | 'unavailable' | 'degraded';
 export type ClinicOsSourceOfTruth = 'aura_note' | 'clinicos' | 'ehr' | 'hybrid';
-export type ClinicOsMappingStatus = 'active' | 'pending' | 'unavailable' | 'failed';
+export type ClinicOsMappingStatus = 'active' | 'pending' | 'stale' | 'degraded' | 'unavailable' | 'failed';
+export type ClinicOsPublishedEventStatus = 'queued' | 'sent_mock' | 'skipped_disabled' | 'failed_unavailable' | 'degraded';
 
 export interface ClinicOsModeSettings {
   hostMode: AuraNoteHostMode;
@@ -18,6 +19,7 @@ export interface ClinicOsModeSettings {
     analytics: ClinicOsSourceOfTruth;
   };
   unavailable?: boolean;
+  degraded?: boolean;
 }
 
 export interface ClinicOsModeContext {
@@ -47,6 +49,11 @@ export interface ClinicOsMappingRecord {
   clinicosObjectId: string;
   sourceOfTruth: ClinicOsSourceOfTruth;
   status: ClinicOsMappingStatus;
+  staleReason?: string;
+  degradedReason?: string;
+  traceId: string;
+  lastCheckedAt: string;
+  lastPublishedAt?: string;
   createdAt: string;
 }
 
@@ -56,8 +63,21 @@ export interface ClinicOsPublishedEvent {
   siteId: string;
   eventType: string;
   targetModules: ClinicOsModuleId[];
-  status: 'queued' | 'skipped_disabled' | 'failed_unavailable';
+  status: ClinicOsPublishedEventStatus;
+  payloadStored: false;
+  permissionBoundaryEnforced: true;
+  degradedReason?: string;
+  failedReason?: string;
   createdAt: string;
+}
+
+export interface ClinicOsModuleBoundary {
+  moduleId: ClinicOsModuleId;
+  moduleName: string;
+  maps: string;
+  sourceOfTruth: ClinicOsSourceOfTruth;
+  delegationEnabled: boolean;
+  permissionBoundary: 'aura_note_authoritative';
 }
 
 export interface ClinicOsVisitContextMapping {
@@ -137,6 +157,19 @@ export class ClinicOsModeResolver {
       };
     }
 
+    if (settings.degraded) {
+      return {
+        enabled: true,
+        hostMode: settings.hostMode,
+        tenantId: settings.tenantId,
+        siteId: settings.siteId,
+        availability: 'degraded',
+        visitGraphId: 'clinicos-m03-visitgraph-synthetic-001',
+        npCockpitContextId: 'clinicos-m17-np-cockpit-synthetic-001',
+        warnings: ['ClinicOS is degraded; AURA Note must keep local permissions and fail closed for writes.']
+      };
+    }
+
     return {
       enabled: true,
       hostMode: settings.hostMode,
@@ -183,17 +216,24 @@ export class MockClinicOsAdapter implements ClinicOsAdapter {
 
   async publishAuraNoteEvent(event: { eventType: string; payload?: Record<string, unknown> }): Promise<ClinicOsPublishedEvent> {
     const context = await this.getModeContext();
+    const status: ClinicOsPublishedEventStatus = !context.enabled
+      ? 'skipped_disabled'
+      : context.availability === 'unavailable'
+        ? 'failed_unavailable'
+        : context.availability === 'degraded'
+          ? 'degraded'
+          : 'queued';
     const published: ClinicOsPublishedEvent = {
       outboxId: this.nextId('clinicos-outbox'),
       tenantId: context.tenantId,
       siteId: context.siteId,
       eventType: event.eventType,
       targetModules: resolveTargetModules(event.eventType),
-      status: !context.enabled
-        ? 'skipped_disabled'
-        : context.availability === 'unavailable'
-          ? 'failed_unavailable'
-          : 'queued',
+      status,
+      payloadStored: false,
+      permissionBoundaryEnforced: true,
+      ...(status === 'degraded' ? { degradedReason: 'ClinicOS mock publication is degraded; AURA Note retains authority.' } : {}),
+      ...(status === 'failed_unavailable' ? { failedReason: 'ClinicOS mock adapter unavailable; publication failed closed.' } : {}),
       createdAt: new Date().toISOString()
     };
     this.outbox.push(published);
@@ -273,6 +313,8 @@ export class MockClinicOsAdapter implements ClinicOsAdapter {
       clinicosObjectId,
       sourceOfTruth,
       status: context.enabled && context.availability === 'available' ? 'active' : 'unavailable',
+      traceId: this.nextId('trace-clinicos-map'),
+      lastCheckedAt: new Date().toISOString(),
       createdAt: new Date().toISOString()
     };
     this.mappings.push(record);
@@ -284,6 +326,75 @@ export class MockClinicOsAdapter implements ClinicOsAdapter {
     this.sequence += 1;
     return id;
   }
+}
+
+export function getClinicOsModuleBoundaries(sourceOfTruth: ClinicOsModeSettings['sourceOfTruth']): ClinicOsModuleBoundary[] {
+  return [
+    {
+      moduleId: 'M03',
+      moduleName: 'VisitGraph',
+      maps: 'appointment and visit context',
+      sourceOfTruth: sourceOfTruth.schedule,
+      delegationEnabled: sourceOfTruth.schedule === 'clinicos',
+      permissionBoundary: 'aura_note_authoritative'
+    },
+    {
+      moduleId: 'M04',
+      moduleName: 'WorkOS Tasks',
+      maps: 'tasks and blocker follow-up',
+      sourceOfTruth: sourceOfTruth.tasks,
+      delegationEnabled: sourceOfTruth.tasks === 'clinicos',
+      permissionBoundary: 'aura_note_authoritative'
+    },
+    {
+      moduleId: 'M17',
+      moduleName: 'NP Cockpit',
+      maps: 'documentation workspace launch context',
+      sourceOfTruth: sourceOfTruth.schedule,
+      delegationEnabled: sourceOfTruth.schedule === 'clinicos',
+      permissionBoundary: 'aura_note_authoritative'
+    },
+    {
+      moduleId: 'M21',
+      moduleName: 'Charge Integrity',
+      maps: 'draft claim preview metadata',
+      sourceOfTruth: sourceOfTruth.chargeIntegrity,
+      delegationEnabled: sourceOfTruth.chargeIntegrity === 'clinicos',
+      permissionBoundary: 'aura_note_authoritative'
+    },
+    {
+      moduleId: 'M23',
+      moduleName: 'Copilot Runtime',
+      maps: 'AI request metadata only',
+      sourceOfTruth: sourceOfTruth.aiRuntime,
+      delegationEnabled: sourceOfTruth.aiRuntime === 'clinicos',
+      permissionBoundary: 'aura_note_authoritative'
+    },
+    {
+      moduleId: 'M24',
+      moduleName: 'AI Governance',
+      maps: 'prompt, policy, and review metadata',
+      sourceOfTruth: sourceOfTruth.aiRuntime,
+      delegationEnabled: sourceOfTruth.aiRuntime === 'clinicos',
+      permissionBoundary: 'aura_note_authoritative'
+    },
+    {
+      moduleId: 'M25',
+      moduleName: 'Integration Hub',
+      maps: 'EHR adapter and writeback metadata',
+      sourceOfTruth: 'hybrid',
+      delegationEnabled: true,
+      permissionBoundary: 'aura_note_authoritative'
+    },
+    {
+      moduleId: 'M26',
+      moduleName: 'Data Cloud',
+      maps: 'analytics and coaching signal metadata',
+      sourceOfTruth: sourceOfTruth.analytics,
+      delegationEnabled: sourceOfTruth.analytics === 'clinicos',
+      permissionBoundary: 'aura_note_authoritative'
+    }
+  ];
 }
 
 export function resolveTargetModules(eventType: string): ClinicOsModuleId[] {

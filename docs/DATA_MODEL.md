@@ -616,3 +616,14 @@ These are synthetic/local records. Production Azure account policy, customer-man
 - `EhrWritebackQueueActionRequestDto` and response DTOs represent approval, retry, dead-letter, and reconciliation evidence without raw payload content.
 
 These records remain synthetic/local API metadata. `WO-044` does not add new production database approval, raw EHR payload storage, production EHR credentials, live writeback delivery, autonomous note submission, charge finalization, medical-necessity determination, or claim submission.
+
+## WO-045 ClinicOS mapping and publication model status
+
+`WO-045` extends the ClinicOS metadata model without adding raw payload persistence:
+
+- `ClinicOsModuleBoundaryDto` records the M03/M04/M17/M21/M23/M24/M25/M26 module boundary, source-of-truth posture, delegation flag, and `permissionBoundary='aura_note_authoritative'`.
+- `ClinicOsMappingRecordDto` now records mapping status across active, pending, stale, degraded, unavailable, and failed states with trace ID, last-checked timestamp, optional stale/degraded reason, and optional last-published timestamp.
+- `ClinicOsPublishedEventDto` records target modules and publication status across queued, sent-mock, skipped-disabled, failed-unavailable, and degraded states with `payloadStored=false` and `permissionBoundaryEnforced=true`.
+- `ClinicOsIntegrationStatusDto` records screen states, `rawPayloadsStored=false`, `liveClinicOsSyncEnabled=false`, and explicit AURA Note permission-boundary evidence.
+
+These records remain synthetic/local API metadata mapped to the existing P7 `ModeMapping`, `IntegrationConnection`, and `DomainEvent` shape. `WO-045` does not add live ClinicOS credentials, production event-bus payload persistence, raw ClinicOS message storage, live delegated identity, production patient data, charge finalization, medical-necessity determination, or claim submission.

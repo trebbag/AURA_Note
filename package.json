@@ -35,6 +35,7 @@
     "config:production-readiness": "node scripts/validate-production-config-readiness.js",
     "observability:production-readiness": "pnpm --filter @aura-note/security test && pnpm --filter @aura-note/api test && node scripts/validate-observability-production-readiness.js",
     "ehr:integration-readiness": "pnpm --filter @aura-note/ehr-adapters test && pnpm --filter @aura-note/api test && node scripts/validate-ehr-integration-readiness.js",
+    "clinicos:integration-readiness": "pnpm --filter @aura-note/clinicos-adapter test && pnpm --filter @aura-note/api test && node scripts/validate-clinicos-integration-readiness.js",
     "storage:azure-adapter-readiness": "pnpm --filter @aura-note/storage test && pnpm --filter @aura-note/storage typecheck && node scripts/validate-azure-storage-adapter-readiness.js",
     "storage:secure-download-readiness": "pnpm --filter @aura-note/storage test && pnpm --filter @aura-note/api test && node scripts/validate-secure-download-readiness.js",
     "retention:storage-deletion-readiness": "pnpm --filter @aura-note/worker test && node scripts/validate-storage-retention-readiness.js",

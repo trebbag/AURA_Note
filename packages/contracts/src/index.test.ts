@@ -9,7 +9,9 @@ import {
   type AiGatewayStatusDto,
   type AuditExportResponseDto,
   type BackupRestoreReadinessResponseDto,
+  type ClinicOsEventPublishResponseDto,
   type ClinicOsIntegrationStatusDto,
+  type ClinicOsMappingUpsertResponseDto,
   type ClinicOsMapVisitResponseDto,
   type CoachingDashboardDto,
   type CoachingReportDto,
@@ -994,9 +996,22 @@ describe('ClinicOS adapter contracts', () => {
         availability: 'disabled',
         warnings: ['ClinicOS disabled']
       },
+      moduleBoundaries: [
+        {
+          moduleId: 'M17',
+          moduleName: 'NP Cockpit',
+          maps: 'documentation workspace launch context',
+          sourceOfTruth: 'aura_note',
+          delegationEnabled: false,
+          permissionBoundary: 'aura_note_authoritative'
+        }
+      ],
       mappings: [],
       publishedEvents: [],
       permissionsStillEnforcedByAuraNote: true,
+      rawPayloadsStored: false,
+      liveClinicOsSyncEnabled: false,
+      states: ['empty', 'loading', 'ready', 'saving', 'failed', 'permission-denied', 'read-only'],
       auditEvent: {
         auditEventId: 'audit-clinicos-001',
         tenantId: 'tenant-001',
@@ -1011,6 +1026,7 @@ describe('ClinicOS adapter contracts', () => {
 
     assert.equal(status.modeContext.hostMode, 'standalone');
     assert.equal(status.permissionsStillEnforcedByAuraNote, true);
+    assert.equal(status.rawPayloadsStored, false);
   });
 
   it('represents VisitGraph and M17 mapping records for mock ClinicOS mode', () => {
@@ -1038,6 +1054,8 @@ describe('ClinicOS adapter contracts', () => {
           clinicosObjectId: 'clinicos-m03-visitgraph-synthetic-001',
           sourceOfTruth: 'clinicos',
           status: 'active',
+          traceId: 'trace-clinicos-map-001',
+          lastCheckedAt: '2026-05-26T18:30:00.000Z',
           createdAt: '2026-05-26T18:30:00.000Z'
         }
       ],
@@ -1048,6 +1066,8 @@ describe('ClinicOS adapter contracts', () => {
         eventType: 'visit.started.v1',
         targetModules: ['M03', 'M17'],
         status: 'queued',
+        payloadStored: false,
+        permissionBoundaryEnforced: true,
         createdAt: '2026-05-26T18:30:00.000Z'
       },
       auditEvent: {
@@ -1064,6 +1084,86 @@ describe('ClinicOS adapter contracts', () => {
 
     assert.equal(mapped.mappings[0]?.clinicosModuleId, 'M03');
     assert.deepEqual(mapped.publishedEvent.targetModules, ['M03', 'M17']);
+  });
+
+  it('represents stale mappings and failed publication as metadata-only ClinicOS hardening evidence', () => {
+    const mapping: ClinicOsMappingUpsertResponseDto = {
+      modeContext: {
+        enabled: true,
+        hostMode: 'clinicos_integrated',
+        tenantId: 'tenant-001',
+        siteId: 'site-001',
+        availability: 'available',
+        warnings: []
+      },
+      mapping: {
+        mappingId: 'clinicos-map-stale-001',
+        tenantId: 'tenant-001',
+        siteId: 'site-001',
+        localObjectType: 'task',
+        localObjectId: 'task-001',
+        clinicosModuleId: 'M04',
+        clinicosObjectId: 'clinicos-m04-task-001',
+        sourceOfTruth: 'clinicos',
+        status: 'stale',
+        staleReason: 'ClinicOS task projection is older than local blocker task.',
+        traceId: 'trace-clinicos-stale-001',
+        lastCheckedAt: '2026-05-28T00:00:00.000Z',
+        createdAt: '2026-05-28T00:00:00.000Z'
+      },
+      auditEvent: {
+        auditEventId: 'audit-clinicos-stale-001',
+        tenantId: 'tenant-001',
+        action: 'clinicos.mapping_upsert',
+        entityType: 'ClinicOsModeMapping',
+        entityId: 'clinicos-map-stale-001',
+        traceId: 'trace-clinicos-stale-001',
+        createdAt: '2026-05-28T00:00:00.000Z'
+      },
+      domainEvents: [
+        createEventEnvelope({
+          eventId: 'evt-clinicos-stale-001',
+          eventType: 'clinicos.mapping_stale_detected.v1',
+          tenantId: 'tenant-001',
+          siteId: 'site-001',
+          producer: 'aura-note-api',
+          traceId: 'trace-clinicos-stale-001',
+          idempotencyKey: 'idem-clinicos-stale-001',
+          sensitivity: 'restricted',
+          retentionClass: 'audit',
+          payload: { status: 'stale', payloadStored: false }
+        })
+      ]
+    };
+    const publication: ClinicOsEventPublishResponseDto = {
+      modeContext: mapping.modeContext,
+      publishedEvent: {
+        outboxId: 'clinicos-outbox-failed-001',
+        tenantId: 'tenant-001',
+        siteId: 'site-001',
+        eventType: 'ehr.writeback_approval_recorded.v1',
+        targetModules: ['M25'],
+        status: 'failed_unavailable',
+        payloadStored: false,
+        permissionBoundaryEnforced: true,
+        failedReason: 'ClinicOS unavailable',
+        createdAt: '2026-05-28T00:00:00.000Z'
+      },
+      auditEvent: {
+        auditEventId: 'audit-clinicos-publish-001',
+        tenantId: 'tenant-001',
+        action: 'clinicos.event_publish',
+        entityType: 'ClinicOsOutbox',
+        entityId: 'clinicos-outbox-failed-001',
+        traceId: 'trace-clinicos-publish-001',
+        createdAt: '2026-05-28T00:00:00.000Z'
+      },
+      domainEvents: []
+    };
+
+    assert.equal(mapping.mapping.status, 'stale');
+    assert.equal(publication.publishedEvent.payloadStored, false);
+    assert.equal(publication.publishedEvent.permissionBoundaryEnforced, true);
   });
 });
 

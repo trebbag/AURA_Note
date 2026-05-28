@@ -392,6 +392,7 @@ describe('worker scaffold', () => {
           availability: 'unavailable',
           warnings: []
         },
+        moduleBoundaries: [],
         mappings: [],
         publishedEvents: [
           {
@@ -401,10 +402,15 @@ describe('worker scaffold', () => {
             eventType: 'visit.started.v1',
             targetModules: ['M03', 'M17'],
             status: 'queued',
+            payloadStored: false,
+            permissionBoundaryEnforced: true,
             createdAt: '2026-05-26T18:30:00.000Z'
           }
         ],
         permissionsStillEnforcedByAuraNote: true,
+        rawPayloadsStored: false,
+        liveClinicOsSyncEnabled: false,
+        states: ['ready'],
         auditEvent: {
           auditEventId: 'audit-clinicos-001',
           tenantId: 'tenant-synthetic-primary',
