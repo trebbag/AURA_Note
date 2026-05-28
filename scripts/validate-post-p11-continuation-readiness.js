@@ -42,7 +42,13 @@ check('continuation.exists', 'Post-P11 continuation plan exists', exists('docs/P
 check('continuation.activation-checklist', 'Continuation plan includes activation checklist', continuation.includes('## Activation checklist for any future work order'), 'docs/POST_P11_CONTINUATION_PLAN.md');
 check('continuation.candidate-families', 'Continuation plan lists candidate future tranche families', continuation.includes('Production identity and account lifecycle') && continuation.includes('Claim, clearinghouse, payer, denial, and payment review'), 'docs/POST_P11_CONTINUATION_PLAN.md');
 check('continuation.safe-current-posture', 'Continuation plan records safe current posture for claim work', continuation.includes('submittedClaim=false') && continuation.includes('draft claim preview remains internal'), 'docs/POST_P11_CONTINUATION_PLAN.md');
-check('spec-gaps.current', 'SPEC_GAPS reflects post-WO-052 with no active gaps', specGaps.includes('No active gaps as of post-`WO-052` post-P11 continuation rails review'), 'SPEC_GAPS.md');
+check(
+  'spec-gaps.current',
+  'SPEC_GAPS reflects post-WO-052 or later post-P11 planning/control with no active gaps',
+  specGaps.includes('No active gaps as of post-`WO-052` post-P11 continuation rails review') ||
+    specGaps.includes('No active gaps as of post-`WO-053` production identity/account lifecycle review intake'),
+  'SPEC_GAPS.md'
+);
 check('runlog.wo052', 'RUN_LOG records WO-052 evidence', runLog.includes('WO-052 post-P11 continuation rails'), 'RUN_LOG.md');
 check('checkpoint.wo052', 'CHECKPOINT_REPORT records post-P11 continuation evidence', checkpointReport.includes('Post-P11 Continuation Rails') && checkpointReport.includes('WO-052'), 'CHECKPOINT_REPORT.md');
 check('package.script', 'package.json exposes post-p11 readiness script', readText('package.json').includes('post-p11:readiness'), 'package.json');

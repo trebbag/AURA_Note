@@ -18,6 +18,7 @@ Post-P11 work must start with a named work order and must be one of the followin
 
 ### Production identity and account lifecycle live review
 
+- Promoted as `WO-053` for planning/control intake only.
 - Required decisions: production IdP, SSO protocol, MFA, account recovery, disabled-user source of truth, session timeout, audit retention, break-glass posture, support role limits, and ClinicOS delegation rules.
 - Required evidence before implementation: security/privacy approval, credential-source plan, staging environment, role-denial tests, access-review runbook, and incident-response runbook.
 - Safe current posture: production-shaped identity remains synthetic and fail-closed.
@@ -75,4 +76,4 @@ Post-P11 work must start with a named work order and must be one of the followin
 
 ## Current recommendation
 
-Keep the repo stopped at P11 until a specific future tranche is selected. The safest next implementation-oriented tranche would be a planning/control work order that promotes one of the candidate families above into a fully specified `WO-053` without enabling live behavior.
+`WO-053` promoted the first candidate family, production identity and account lifecycle live review, into a planning/control intake without enabling live behavior. Keep the repo stopped at P11 until a specific next tranche is selected. The next safest planning/control candidate is production PHI persistence and database operations review, but it should not be promoted until explicitly selected.

@@ -32,6 +32,7 @@
     "standalone:operations-readiness": "node scripts/validate-standalone-operations-readiness.js",
     "audio:transcription-readiness": "node scripts/validate-audio-transcription-readiness.js",
     "identity:production-readiness": "node scripts/validate-production-identity-readiness.js",
+    "identity:live-review-readiness": "node scripts/validate-identity-live-review-readiness.js",
     "config:production-readiness": "node scripts/validate-production-config-readiness.js",
     "observability:production-readiness": "pnpm --filter @aura-note/security test && pnpm --filter @aura-note/api test && node scripts/validate-observability-production-readiness.js",
     "ehr:integration-readiness": "pnpm --filter @aura-note/ehr-adapters test && pnpm --filter @aura-note/api test && node scripts/validate-ehr-integration-readiness.js",

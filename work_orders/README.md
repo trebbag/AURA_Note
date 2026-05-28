@@ -61,6 +61,7 @@ Codex must complete work orders sequentially unless a checkpoint or blocker stop
 - `WO-050` — Beta pilot and limited production launch gate.
 - `WO-051` — Claim submission and payer integration decision gate.
 - `WO-052` — Post-P11 continuation rails and tranche intake.
+- `WO-053` — Production identity and account lifecycle review intake.
 
 ## Work order rules
 
@@ -130,4 +131,6 @@ Post-CP4 productionization candidates are documented in `docs/POST_CP4_PRODUCTIO
 
 `WO-051` is complete as the P11 claim/payer decision gate. It captures the strategy for claim submission, clearinghouse, payer integration, denial automation, and payment workflows without implementing autonomous submission by default. P11 is complete as a decision package only: `submittedClaim=false`, `claimSubmissionEnabled=false`, no clearinghouse API, no payer API, no denial automation, no payment posting, no charge finalization, no medical-necessity determination, and no patient-facing financial conclusion are enabled.
 
-`WO-052` is complete as a post-P11 planning/control tranche. It adds continuation rails, candidate future tranche families, activation criteria, and `pnpm post-p11:readiness` without authorizing live production, vendor, claim, PHI, or launch behavior. No further numbered implementation work order is active until the founder approves a specific new tranche.
+`WO-052` is complete as a post-P11 planning/control tranche. It adds continuation rails, candidate future tranche families, activation criteria, and `pnpm post-p11:readiness` without authorizing live production, vendor, claim, PHI, or launch behavior.
+
+`WO-053` is complete as a post-P11 planning/control intake tranche for production identity and account lifecycle review. It promotes the first candidate future tranche family into a fully specified decision package and readiness verifier without enabling live OIDC/SAML, ClinicOS delegated identity, production credentials, PHI access, runtime identity behavior, or launch behavior. No further numbered implementation work order is active until the founder approves a specific new tranche.
