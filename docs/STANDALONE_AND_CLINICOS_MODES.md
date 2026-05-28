@@ -152,3 +152,7 @@ In standalone mode, AURA Note owns the local AI governance metadata: prompt regi
 In ClinicOS-integrated mode, future AI request/governance metadata may map to M23 Copilot Runtime and M24 AI Governance through adapter boundaries only. `WO-046` keeps AURA Note authoritative for PHI scrubbing, purpose-of-use, source freshness, role checks, output validation, and human-review gates. Missing or degraded ClinicOS AI governance delegation fails closed and cannot enable live external AI calls or bypass AURA Note permissions.
 
 `WO-046` does not enable live external AI, production model credentials, production prompt stores, raw PHI model payloads, autonomous diagnosis, final code or charge behavior, medical-necessity determination, order placement, claim submission, or patient-facing financial conclusions.
+
+## WO-047 P9 mode-review posture
+
+`WO-047` reviews standalone and ClinicOS-integrated mode threats. No new P9 blocker was found in the current synthetic/local scope. Standalone remains fully usable through local governance and disabled live-vendor boundaries. ClinicOS-integrated mode remains adapter-bound and metadata-only for live integration; missing or degraded ClinicOS delegation, event-bus delivery, module mapping, or AI governance delegation fails closed and cannot override AURA Note RBAC/ABAC, PHI, audit, or human-review gates.

@@ -451,3 +451,51 @@ Deferred production decisions remain tracked in `SPEC_GAPS.md`, including produc
 ## Next recommended batch
 
 Begin P9 with `WO-044` EHR sandbox integration and writeback queue hardening. Keep live production EHR credentials, production patient records, autonomous note/writeback submission, charge finalization, medical-necessity determination, claim submission, and production launch approval disabled unless later review explicitly authorizes them.
+
+---
+
+# P9 — Integration And AI Candidate
+
+## Completed work orders
+
+- `WO-044` — EHR sandbox integration and writeback queue hardening.
+- `WO-045` — ClinicOS integration hardening.
+- `WO-046` — AI Gateway production governance and evaluation harness.
+- `WO-047` — Security, privacy, compliance, and threat-model remediation.
+
+## Acceptance evidence
+
+- `WO-044` added an athenahealth-first, vendor-neutral EHR adapter path plus a metadata-only writeback queue with human approval, idempotency, retry scheduling, dead-letter, reconciliation, role-denial, PHI rejection, and audit/domain event evidence. Live production EHR writeback remains disabled.
+- `WO-045` added ClinicOS module-boundary evidence for M03, M04, M17, M21, M23, M24, M25, and M26; metadata-only mappings/publications; stale/degraded review states; service-account/cross-tenant denial; and proof that ClinicOS cannot bypass AURA Note permissions.
+- `WO-046` added AI Gateway prompt/model metadata, deterministic evaluation cases, output validation/rejection, source-linked evidence, human-review-required labels, role denial, cross-tenant denial, no-live-model posture, and no-raw-PHI-to-external-AI evidence.
+- `WO-047` added the P9 security/privacy/compliance review package, threat model, RBAC/ABAC reconciliation, AI/PHI review note, `pnpm security:review-readiness`, and next `WO-048` work order.
+- No P9 active `SPEC_GAP` was found for the synthetic/local scope.
+
+## Tests and gates
+
+- `pnpm ehr:integration-readiness`
+- `pnpm clinicos:integration-readiness`
+- `pnpm ai:governance-readiness`
+- `pnpm security:review-readiness`
+- `pnpm production:readiness`
+- `pnpm acceptance:readiness`
+- Full local gates are recorded in `RUN_LOG.md` for `WO-044`, `WO-045`, `WO-046`, and `WO-047`.
+- GitHub Actions must pass on the `WO-047` PR before merge.
+
+## Open risks
+
+- P9 is synthetic/browser/API/local review evidence, not production launch readiness.
+- External counsel, formal HIPAA/security/privacy review, BAA/vendor review, production EHR credentialing, live ClinicOS contracts, private/BAA model approval, live transcription provider approval, production storage policy, SIEM/APM vendor selection, incident-response ownership, access-review cadence, founder/clinical/compliance/security signoff, and launch approval remain future work.
+- The Frontend Runtime Integration Gate is launch-blocking for P10: production-intended screens must use typed API clients and persisted backend state, and Playwright must prove a seeded backend-backed appointment-through-finalization/export workflow before launch-candidate readiness can be claimed.
+
+## Active SPEC_GAPs
+
+None active as of the post-`WO-047` P9 review.
+
+## Deferred production decisions
+
+Deferred production decisions remain tracked in `SPEC_GAPS.md`, including production SIEM/APM, production identity/account lifecycle, production PHI persistence/database operations, Azure Blob/deletion/restore controls, live transcription provider, external AI governance, production EHR credentialing/writeback, ClinicOS live integration, revenue estimates/patient-facing financial content, and claim/payer strategy.
+
+## Next recommended batch
+
+Begin P10 with `WO-048` UX, accessibility, responsive, visual-regression, and Frontend Runtime Integration Gate hardening. Keep production launch, live vendor use, production PHI, autonomous clinical/coding/billing behavior, medical-necessity determination, charge finalization, and claim submission disabled unless later review explicitly authorizes them.

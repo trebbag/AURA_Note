@@ -56,8 +56,9 @@ for (const [relativePath, snippet, label] of prohibitedSnippets) {
 }
 
 const status = JSON.parse(read('repo_status.json'));
-if (status.next_work_order !== 'WO-047' || status.work_orders?.['WO-046'] !== 'done') {
-  throw new Error('repo_status.json must mark WO-046 done and WO-047 next before AI governance readiness passes');
+const activeOrder = ['WO-047', 'WO-048', 'WO-049', 'WO-050', 'WO-051'];
+if (!activeOrder.includes(status.next_work_order) || status.work_orders?.['WO-046'] !== 'done') {
+  throw new Error('repo_status.json must mark WO-046 done and next_work_order advanced to WO-047 or later before AI governance readiness passes');
 }
 
 console.log('AI governance readiness verified: prompt/model metadata, eval harness, output validation, PHI guardrails, tests, docs, and status are present.');

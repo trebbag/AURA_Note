@@ -148,7 +148,8 @@ check(
     specGaps.includes('No active gaps as of post-`WO-042` secure storage/download/retention/restore controls review') ||
     specGaps.includes('No active gaps as of post-`WO-043` production observability/support operations/status views and P8 review') ||
     specGaps.includes('No active gaps as of post-`WO-044` EHR sandbox integration/writeback queue hardening') ||
-    specGaps.includes('No active gaps as of post-`WO-046` AI Gateway production governance and evaluation harness'),
+    specGaps.includes('No active gaps as of post-`WO-046` AI Gateway production governance and evaluation harness') ||
+    specGaps.includes('No active gaps as of post-`WO-047` security/privacy/compliance and P9 review'),
   'SPEC_GAPS.md active gaps section'
 );
 

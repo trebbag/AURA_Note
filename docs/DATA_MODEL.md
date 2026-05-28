@@ -638,3 +638,7 @@ These records remain synthetic/local API metadata mapped to the existing P7 `Mod
 - `AiOutputValidationResultDto` records accepted/rejected status, risk label, prohibited-action detection, raw-PHI detection, unsafe reasons, and `humanReviewRequired=true`.
 
 These records remain synthetic/local API metadata mapped to audit/domain-event evidence. `WO-046` does not add production prompt stores, raw prompt persistence, raw model response persistence, production model credentials, raw PHI transfer to AI, live external AI execution, autonomous finalization, medical-necessity determination, charge finalization, or claim submission.
+
+## WO-047 security/privacy/compliance data review
+
+`WO-047` reviews the P9 data posture and adds `docs/THREAT_MODEL.md` as evidence. No new P9 blocker was found in the current synthetic/local scope. The data model remains production-incomplete until P10/P11 and later launch work close deferred decisions for production database roles, migration approval/rollback, backup/restore drills, PHI storage policy, live vendor payload policy, formal access-review evidence, and launch signoff.

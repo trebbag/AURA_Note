@@ -76,3 +76,7 @@ AURA Note must enforce role permissions and relationship-to-patient constraints.
 ## WO-046 AI governance access
 
 `WO-046` keeps `ai_gateway:invoke` limited to treating clinicians linked to the visit and authorized admins. `ai_governance:view` remains limited to compliance/privacy leads and authorized admins for evaluation runs and output-validation metadata. Support users may view broader operational status surfaces elsewhere, but they cannot run AI governance evaluations, validate outputs, access prompts, transcripts, final notes, billing details, coaching outputs, raw AI payloads, or raw model data. Billing staff cannot invoke clinical AI suggestions or governance actions unless a later approved work order adds a review-specific path. Cross-tenant AI requests are denied before context packaging or metadata exposure.
+
+## WO-047 security/privacy/compliance review
+
+`WO-047` reconciles this matrix against implemented P8/P8.5/P9 checks. No new P9 blocker was found in the synthetic/local scope. The review keeps AURA Note RBAC/ABAC authoritative in standalone and ClinicOS-integrated modes: ClinicOS service context cannot bypass tenant/site scope, purpose-of-use, support metadata-only limits, transcript/final-note/billing/coaching restrictions, AI governance role checks, or human-review gates. Future P10 UX/accessibility hardening must preserve visible denied, read-only, disabled, and failed states for these sensitive paths.

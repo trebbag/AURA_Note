@@ -1,8 +1,8 @@
 {
   "project": "AURA Note v1",
   "mode": "production_build_in_progress",
-  "current_checkpoint": "P9",
-  "next_work_order": "WO-047",
+  "current_checkpoint": "P10",
+  "next_work_order": "WO-048",
   "work_orders": {
     "WO-000": "done",
     "WO-001": "done",
@@ -51,13 +51,13 @@
     "WO-044": "done",
     "WO-045": "done",
     "WO-046": "done",
-    "WO-047": "todo",
-    "WO-048": "planned",
+    "WO-047": "done",
+    "WO-048": "todo",
     "WO-049": "planned",
     "WO-050": "planned",
     "WO-051": "planned"
   },
-  "last_updated_by": "Codex WO-046 AI Gateway production governance and evaluation harness",
-  "last_updated_at": "2026-05-28T03:45:00Z",
-  "notes": "WO-046 completed P9 synthetic/browser/API-testable AI Gateway governance hardening evidence. The API now exposes prompt/model metadata, deterministic governance evaluation runs, unsafe output validation/rejection, source-linked evidence, human-review-required labels, role denial, cross-tenant denial, and no-live-model/no-raw-PHI-to-external-AI evidence. The browser route /aura-note/ai-governance exposes empty, loading, ready, saving, failed, permission-denied, disabled, read-only, evaluation-failed, unsafe-output-rejected, and demo states. No live model credentials, production prompt store, raw PHI, live external AI, autonomous clinical/coding/billing behavior, medical-necessity determination, charge finalization, or claim submission was introduced. Next active work is WO-047 security, privacy, compliance, and threat-model remediation."
+  "last_updated_by": "Codex WO-047 security privacy compliance and threat-model remediation",
+  "last_updated_at": "2026-05-28T04:20:00Z",
+  "notes": "WO-047 completed P9 security/privacy/compliance and threat-model review evidence. The repo now includes a P9 review package, threat model, security review readiness verifier, P9 checkpoint report, and next WO-048 launch-candidate UX/accessibility/runtime-integration work order. No active SPEC_GAPs were found for the synthetic/local P9 scope. No legal certification, production launch approval, production PHI, live credentials, live external AI, live EHR/ClinicOS sync, live storage delivery, destructive production deletion, autonomous clinical/coding/billing behavior, medical-necessity determination, charge finalization, or claim submission was introduced."
 }
