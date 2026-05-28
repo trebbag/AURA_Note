@@ -67,7 +67,8 @@ check(
   'spec-gaps.current',
   'SPEC_GAPS reflects post-WO-053 or later post-P11 planning/control with no active gaps',
   specGaps.includes('No active gaps as of post-`WO-053` production identity/account lifecycle review intake') ||
-    specGaps.includes('No active gaps as of post-`WO-054` production PHI persistence/database operations review intake'),
+    specGaps.includes('No active gaps as of post-`WO-054` production PHI persistence/database operations review intake') ||
+    specGaps.includes('No active gaps as of post-`WO-055` production Azure storage/deletion/restore review intake'),
   'SPEC_GAPS.md'
 );
 check('spec-gaps.deferred-identity', 'SPEC_GAPS preserves production identity as deferred before live use', specGaps.includes('Production identity provider and account lifecycle') && specGaps.includes('future approved identity implementation work order'), 'SPEC_GAPS.md');

@@ -67,7 +67,13 @@ check('db-review.exists', 'Production PHI persistence/database operations review
   check(`db-review.event.${eventName}`, `Database review includes future event ${eventName}`, dbReview.includes(eventName), eventName);
 });
 
-check('spec-gaps.current', 'SPEC_GAPS reflects post-WO-054 with no active gaps', specGaps.includes('No active gaps as of post-`WO-054` production PHI persistence/database operations review intake'), 'SPEC_GAPS.md');
+check(
+  'spec-gaps.current',
+  'SPEC_GAPS reflects post-WO-054 or later post-P11 planning/control with no active gaps',
+  specGaps.includes('No active gaps as of post-`WO-054` production PHI persistence/database operations review intake') ||
+    specGaps.includes('No active gaps as of post-`WO-055` production Azure storage/deletion/restore review intake'),
+  'SPEC_GAPS.md'
+);
 check('spec-gaps.deferred-db', 'SPEC_GAPS preserves production PHI persistence/database operations as deferred before live use', specGaps.includes('Production PHI persistence and database operations') && specGaps.includes('future approved database implementation work order'), 'SPEC_GAPS.md');
 check('runlog.wo054', 'RUN_LOG records WO-054 evidence', runLog.includes('WO-054 production PHI persistence and database operations review intake'), 'RUN_LOG.md');
 check('package.script', 'package.json exposes PHI database review readiness script', packageJson.scripts?.['persistence:phi-db-review-readiness'] === 'node scripts/validate-phi-db-review-readiness.js', packageJson.scripts?.['persistence:phi-db-review-readiness']);

@@ -26,7 +26,7 @@ function check(id, description, passed, evidence) {
 }
 
 const completedBaseline = Array.from({ length: 33 }, (_, index) => `WO-${String(index).padStart(3, '0')}`);
-const futureWorkOrders = Array.from({ length: 22 }, (_, index) => `WO-${String(index + 33).padStart(3, '0')}`);
+const futureWorkOrders = Array.from({ length: 23 }, (_, index) => `WO-${String(index + 33).padStart(3, '0')}`);
 const knownStatuses = new Set(['done', 'todo', 'planned', 'in_progress', 'blocked']);
 const checkpointNeedles = ['P6.5', 'P7', 'P7.5', 'P8', 'P8.5', 'P9', 'P10', 'P11'];
 const requiredFields = [
@@ -66,7 +66,7 @@ check(
 
 check(
   'status.future-present',
-  'WO-033 through WO-054 are represented in repo_status.json',
+  'WO-033 through WO-055 are represented in repo_status.json',
   futureWorkOrders.every((workOrder) => repoStatus.work_orders?.[workOrder]),
   futureWorkOrders.filter((workOrder) => !repoStatus.work_orders?.[workOrder])
 );
@@ -162,7 +162,8 @@ check(
     specGaps.includes('No active gaps as of post-`WO-051` claim/payer decision gate and P11 review') ||
     specGaps.includes('No active gaps as of post-`WO-052` post-P11 continuation rails review') ||
     specGaps.includes('No active gaps as of post-`WO-053` production identity/account lifecycle review intake') ||
-    specGaps.includes('No active gaps as of post-`WO-054` production PHI persistence/database operations review intake'),
+    specGaps.includes('No active gaps as of post-`WO-054` production PHI persistence/database operations review intake') ||
+    specGaps.includes('No active gaps as of post-`WO-055` production Azure storage/deletion/restore review intake'),
   'SPEC_GAPS.md active gaps section'
 );
 
