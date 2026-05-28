@@ -602,14 +602,34 @@ describe('schedule appointment lifecycle API', () => {
       .set('x-aura-role', 'clinician')
       .expect(201);
 
+    const previousStorageExportFlag = process.env.AURA_ENABLE_STORAGE_BACKED_EXPORTS;
+    process.env.AURA_ENABLE_STORAGE_BACKED_EXPORTS = 'true';
     const finalNotePdf = await request(app.getHttpServer())
       .post(`/api/v1/notes/${noteId}/exports/final-note-pdf`)
       .set('x-aura-role', 'clinician')
+      .set('x-aura-user-id', 'user-clinician-synthetic-001')
       .expect(201);
     const summaryCopy = await request(app.getHttpServer())
       .post(`/api/v1/notes/${noteId}/exports/patient-summary-copy`)
       .set('x-aura-role', 'clinician')
+      .set('x-aura-user-id', 'user-clinician-synthetic-001')
       .expect(201);
+    if (previousStorageExportFlag === undefined) {
+      delete process.env.AURA_ENABLE_STORAGE_BACKED_EXPORTS;
+    } else {
+      process.env.AURA_ENABLE_STORAGE_BACKED_EXPORTS = previousStorageExportFlag;
+    }
+    const delivered = await request(app.getHttpServer())
+      .post(`/api/v1/notes/${noteId}/exports/${finalNotePdf.body.data.artifact.exportArtifactId}/download`)
+      .set('x-aura-role', 'clinician')
+      .set('x-aura-user-id', 'user-clinician-synthetic-001')
+      .send({ signedDownloadToken: finalNotePdf.body.data.artifact.signedDownloadToken })
+      .expect(201);
+    await request(app.getHttpServer())
+      .post(`/api/v1/notes/${noteId}/exports/${finalNotePdf.body.data.artifact.exportArtifactId}/download`)
+      .set('x-aura-role', 'billing_staff')
+      .send({ signedDownloadToken: finalNotePdf.body.data.artifact.signedDownloadToken })
+      .expect(403);
     const writebackFailed = await request(app.getHttpServer())
       .post(`/api/v1/notes/${noteId}/ehr-writeback`)
       .set('x-aura-role', 'clinician')
@@ -618,6 +638,9 @@ describe('schedule appointment lifecycle API', () => {
     const finalized = await request(app.getHttpServer()).get(`/api/v1/notes/finalized/${noteId}`).set('x-aura-role', 'ma').expect(200);
 
     assert.match(finalNotePdf.body.data.artifact.content, /^%PDF-1\.4 synthetic/);
+    assert.equal(finalNotePdf.body.data.artifact.deliveryMode, 'storage_backed');
+    assert.equal(delivered.body.data.download.serverMediated, true);
+    assert.equal(delivered.body.data.download.publicUrl, null);
     assert.equal(summaryCopy.body.data.artifact.patientSummaryInternalDetailsExcluded, true);
     assert.equal(writebackFailed.body.data.writeback.status, 'failed');
     assert.equal(finalized.body.data.readOnly, true);

@@ -2,7 +2,7 @@
   "project": "AURA Note v1",
   "mode": "production_build_in_progress",
   "current_checkpoint": "P8",
-  "next_work_order": "WO-042",
+  "next_work_order": "WO-043",
   "work_orders": {
     "WO-000": "done",
     "WO-001": "done",
@@ -46,8 +46,8 @@
     "WO-039": "done",
     "WO-040": "done",
     "WO-041": "done",
-    "WO-042": "todo",
-    "WO-043": "planned",
+    "WO-042": "done",
+    "WO-043": "todo",
     "WO-044": "planned",
     "WO-045": "planned",
     "WO-046": "planned",
@@ -57,7 +57,7 @@
     "WO-050": "planned",
     "WO-051": "planned"
   },
-  "last_updated_by": "Codex WO-041 production identity/config governance",
-  "last_updated_at": "2026-05-28T00:19:17Z",
-  "notes": "WO-041 added synthetic/browser/API-testable production-shaped identity, tenant administration, secrets/config validation, and high-risk feature-flag governance. OIDC/SAML/ClinicOS delegated identity remain adapter states and fail closed until configured; disabled users, expired sessions, missing purpose-of-use, tenant/site spoofing, and unauthorized platform operations are denied; secret validation is metadata-only with no returned values; high-risk flags default disabled and require approval evidence before metadata-only enablement. AURA Note is not production-ready; live IdP credentials, production secret stores, live ClinicOS delegation, production PHI storage, production object storage execution, production deletion, live EHR/ClinicOS sync, live AI, medical-necessity determination, charge finalization, claim submission, and production launch approval remain future work."
+  "last_updated_by": "Codex WO-042 secure storage/download/retention/restore controls",
+  "last_updated_at": "2026-05-28T00:58:00Z",
+  "notes": "WO-042 added synthetic/browser/API/worker-testable server-mediated secure downloads, Azure Blob-oriented storage adapter boundaries, raw-audio deletion approval plus recovery-window controls, and backup/restore readiness metadata. Export and audit download tokens are tenant/site/requester/permission/expiry scoped and never public URLs; patient-summary downloads preserve internal-detail exclusion; audit exports remain redacted with includePhi=false; raw-audio deletion requires feature flag, approval token, approval ID, and open recovery-window evidence; transcript purge count remains zero; restore execution remains disabled. AURA Note is not production-ready; live Azure credentials, PHI-bearing object payloads, production deletion, production restore execution, live EHR/ClinicOS sync, live AI, medical-necessity determination, charge finalization, claim submission, and production launch approval remain future work."
 }

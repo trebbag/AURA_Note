@@ -7,6 +7,7 @@ import {
   type AuditEventDto,
   type AuditExportRequestDto,
   type AuditExportResponseDto,
+  type BackupRestoreReadinessResponseDto,
   type DeploymentEnvironmentDto,
   type FeatureFlagDecisionDto,
   type ObservabilityStatusDto,
@@ -14,6 +15,7 @@ import {
   type RunbookIndexItemDto,
   type SupportFailureStateDto,
   type SupportStatusResponseDto,
+  type SecureDownloadResponseDto,
   type StructuredLogEntryDto
 } from '@aura-note/contracts';
 import {
@@ -26,7 +28,7 @@ import {
   type AccessContext,
   type FeatureFlagDecision
 } from '@aura-note/security';
-import { InMemoryObjectStorageAdapter, buildStorageKey, syntheticChecksum } from '@aura-note/storage';
+import { InMemoryObjectStorageAdapter, buildStorageKey, evaluateBackupRestoreReadiness, syntheticChecksum } from '@aura-note/storage';
 
 const TENANT_ID = 'tenant-synthetic-primary';
 const SITE_ID = 'site-synthetic-primary';
@@ -43,6 +45,8 @@ interface RequestContext {
 @Injectable()
 export class SupportService {
   private sequence = 1;
+  private readonly storage = new InMemoryObjectStorageAdapter();
+  private readonly auditExports = new Map<string, AuditExportResponseDto['auditExport']>();
 
   getStatus(headers: Record<string, string | string[] | undefined>): ApiEnvelope<SupportStatusResponseDto> {
     const context = this.createRequestContext(headers);
@@ -194,6 +198,106 @@ export class SupportService {
     );
   }
 
+  deliverAuditExportDownload(
+    auditExportId: string,
+    signedDownloadToken: string,
+    headers: Record<string, string | string[] | undefined>
+  ): ApiEnvelope<SecureDownloadResponseDto> {
+    const context = this.createRequestContext(headers);
+    if (!canPerform('audit:export', context.access)) {
+      throw new ForbiddenException('role cannot download audit export');
+    }
+    const auditExport = this.auditExports.get(auditExportId);
+    if (!auditExport || auditExport.deliveryMode !== 'storage_backed' || !auditExport.storageKey) {
+      throw new BadRequestException('storage-backed audit export download is not available');
+    }
+
+    const delivered = this.storage.deliverSignedDownload({
+      token: signedDownloadToken,
+      tenantId: TENANT_ID,
+      siteId: SITE_ID,
+      requestedByUserId: context.actorUserId,
+      permission: 'audit:export',
+      nowIso: new Date().toISOString(),
+      traceId: context.traceId
+    });
+
+    return createApiEnvelope(
+      {
+        download: {
+          ...delivered,
+          deliveryMode: 'storage_backed',
+          storageProvider: 'azure_blob'
+        },
+        auditEvent: this.createAuditEvent('storage.object_deliver', 'AuditExport', auditExportId, context),
+        domainEvents: [
+          createEventEnvelope({
+            eventId: this.nextId('evt'),
+            eventType: 'storage.object_delivered.v1',
+            tenantId: TENANT_ID,
+            siteId: SITE_ID,
+            producer: 'aura-note-api',
+            traceId: context.traceId,
+            idempotencyKey: context.idempotencyKey ?? this.nextId('idem'),
+            sensitivity: 'restricted',
+            retentionClass: 'audit',
+            payload: {
+              auditExportId,
+              storageKey: delivered.storageKey,
+              contentLengthBytes: delivered.contentLengthBytes,
+              serverMediated: true,
+              publicUrl: null
+            }
+          })
+        ]
+      },
+      this.createMeta(context)
+    );
+  }
+
+  getBackupRestoreReadiness(headers: Record<string, string | string[] | undefined>): ApiEnvelope<BackupRestoreReadinessResponseDto> {
+    const context = this.createRequestContext(headers);
+    if (!canPerform('config:view', context.access)) {
+      throw new ForbiddenException('role cannot view backup restore readiness');
+    }
+
+    const readiness = evaluateBackupRestoreReadiness({
+      azureSoftDeleteEnabled: process.env.AURA_AZURE_BLOB_SOFT_DELETE_ENABLED === 'true',
+      azureVersioningEnabled: process.env.AURA_AZURE_BLOB_VERSIONING_ENABLED === 'true',
+      databaseBackupConfigured: process.env.AURA_DATABASE_BACKUP_CONFIGURED === 'true',
+      restoreDrillEvidenceRecorded: process.env.AURA_RESTORE_DRILL_EVIDENCE_RECORDED === 'true',
+      evidenceRetentionDays: Number(process.env.AURA_EVIDENCE_RETENTION_DAYS ?? '365'),
+      productionRestoreExecutionApproved: false,
+      traceId: context.traceId
+    });
+
+    return createApiEnvelope(
+      {
+        readiness,
+        auditEvent: this.createAuditEvent('restore.readiness_check', 'BackupRestoreReadiness', 'restore-readiness-synthetic', context),
+        domainEvents: [
+          createEventEnvelope({
+            eventId: this.nextId('evt'),
+            eventType: 'restore.readiness_checked.v1',
+            tenantId: TENANT_ID,
+            siteId: SITE_ID,
+            producer: 'aura-note-api',
+            traceId: context.traceId,
+            idempotencyKey: context.idempotencyKey ?? this.nextId('idem'),
+            sensitivity: 'restricted',
+            retentionClass: 'audit',
+            payload: {
+              status: readiness.status,
+              missing: readiness.missing,
+              restoreExecutionEnabled: false
+            }
+          })
+        ]
+      },
+      this.createMeta(context)
+    );
+  }
+
   private featureFlags(): FeatureFlagDecisionDto[] {
     const flags: FeatureFlagDecision[] = buildExternalIntegrationFeatureFlags({
       externalAiEnabled: process.env.AURA_ENABLE_EXTERNAL_AI === 'true',
@@ -222,7 +326,6 @@ export class SupportService {
     }
 
     const content = input.records.map((record) => JSON.stringify(record)).join('\n');
-    const storage = new InMemoryObjectStorageAdapter(() => input.requestedAt);
     const storageKey = buildStorageKey({
       tenantId: TENANT_ID,
       siteId: SITE_ID,
@@ -230,7 +333,7 @@ export class SupportService {
       recordId: input.auditExportId,
       fileName: `${input.auditExportId}.jsonl`
     });
-    const stored = storage.putObject({
+    const stored = this.storage.putObject({
       tenantId: TENANT_ID,
       siteId: SITE_ID,
       storageKey,
@@ -239,7 +342,7 @@ export class SupportService {
       retentionClass: 'audit',
       traceId: input.context.traceId
     });
-    const signed = storage.createSignedDownload({
+    const signed = this.storage.createSignedDownload({
       tenantId: TENANT_ID,
       siteId: SITE_ID,
       storageKey,
@@ -249,7 +352,7 @@ export class SupportService {
       traceId: input.context.traceId
     });
 
-    return {
+    const delivery = {
       deliveryMode: 'storage_backed' as const,
       storageProvider: 'azure_blob' as const,
       storageKey: stored.storageKey,
@@ -260,6 +363,21 @@ export class SupportService {
       signedDownloadExpiresAt: signed.signedDownloadExpiresAt,
       downloadEnabled: true
     };
+    this.auditExports.set(input.auditExportId, {
+      auditExportId: input.auditExportId,
+      status: 'ready_synthetic',
+      requestedByUserId: input.context.actorUserId,
+      requestedAt: input.requestedAt,
+      traceId: input.context.traceId,
+      format: 'jsonl',
+      includePhi: false,
+      redacted: true,
+      retentionClass: 'audit',
+      recordCount: input.records.length,
+      records: [],
+      ...delivery
+    });
+    return delivery;
   }
 
   private retentionPolicies(evaluatedAt: string): RetentionPolicyStatusDto[] {

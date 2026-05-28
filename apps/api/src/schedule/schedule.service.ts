@@ -76,7 +76,8 @@ import {
   type VisitSessionControlResponseDto,
   type VisitSessionDto,
   type RecordingPermissionResponseDto,
-  type RecordingRetentionResponseDto
+  type RecordingRetentionResponseDto,
+  type SecureDownloadResponseDto
 } from '@aura-note/contracts';
 import {
   approveRecordingException,
@@ -137,6 +138,7 @@ interface RequestContext {
 export class ScheduleService {
   private sequence = 1;
   private readonly repository = createInMemoryScheduleStateRepository();
+  private readonly storage = new InMemoryObjectStorageAdapter();
 
   listAppointments(context: RequestContext): ApiEnvelope<ScheduleViewDto> {
     if (!canPerform('schedule:view', context.access)) {
@@ -1789,6 +1791,69 @@ export class ScheduleService {
     return this.generateExportArtifact(noteId, context, 'structured_export', 'export.structured_final_note_generate');
   }
 
+  deliverExportDownload(
+    noteId: string,
+    exportArtifactId: string,
+    signedDownloadToken: string,
+    context: RequestContext
+  ): ApiEnvelope<SecureDownloadResponseDto> {
+    const stored = this.getSignedFinalizedNote(noteId, context);
+    const artifact = stored.finalization.exportArtifacts.find((candidate) => candidate.exportArtifactId === exportArtifactId);
+    if (!artifact) {
+      throw new NotFoundException('export artifact not found');
+    }
+    if (artifact.deliveryMode !== 'storage_backed' || !artifact.signedDownloadAvailable) {
+      throw new BadRequestException('storage-backed download is not available for this artifact');
+    }
+
+    const permission: 'patient_summary:export' | 'final_note:export' =
+      artifact.artifactType === 'patient_summary_pdf' || artifact.artifactType === 'patient_summary_copy'
+        ? 'patient_summary:export'
+        : 'final_note:export';
+    if (!canPerform(permission, context.access)) {
+      throw new ForbiddenException('role cannot download this finalized artifact');
+    }
+    if ((artifact.artifactType === 'patient_summary_pdf' || artifact.artifactType === 'patient_summary_copy') && artifact.patientSummaryInternalDetailsExcluded !== true) {
+      throw new BadRequestException('patient summary download requires internal-detail exclusion evidence');
+    }
+
+    const delivered = this.storage.deliverSignedDownload({
+      token: signedDownloadToken,
+      tenantId: TENANT_ID,
+      siteId: SITE_ID,
+      requestedByUserId: context.actorUserId,
+      permission,
+      nowIso: new Date().toISOString(),
+      traceId: context.traceId
+    });
+
+    return createApiEnvelope(
+      {
+        download: {
+          ...delivered,
+          deliveryMode: 'storage_backed',
+          storageProvider: 'azure_blob',
+          ...(artifact.artifactType === 'patient_summary_pdf' || artifact.artifactType === 'patient_summary_copy'
+            ? { patientSummaryInternalDetailsExcluded: true as const }
+            : {})
+        },
+        auditEvent: this.createAuditEvent('storage.object_deliver', 'ExportArtifact', artifact.exportArtifactId, context),
+        domainEvents: [
+          this.createDomainEventForNote(stored, context, 'storage.object_delivered.v1', {
+            exportArtifactId: artifact.exportArtifactId,
+            artifactType: artifact.artifactType,
+            storageKey: delivered.storageKey,
+            contentLengthBytes: delivered.contentLengthBytes,
+            permission,
+            serverMediated: true,
+            publicUrl: null
+          })
+        ]
+      },
+      this.createMeta(context)
+    );
+  }
+
   requestEhrWriteback(
     noteId: string,
     request: EhrWritebackRequestDto,
@@ -2086,7 +2151,6 @@ export class ScheduleService {
       };
     }
 
-    const storage = new InMemoryObjectStorageAdapter(() => input.generatedAt);
     const storageKey = buildStorageKey({
       tenantId: TENANT_ID,
       siteId: SITE_ID,
@@ -2094,7 +2158,7 @@ export class ScheduleService {
       recordId: input.exportArtifactId,
       fileName: input.fileName
     });
-    const stored = storage.putObject({
+    const stored = this.storage.putObject({
       tenantId: TENANT_ID,
       siteId: SITE_ID,
       storageKey,
@@ -2103,7 +2167,7 @@ export class ScheduleService {
       retentionClass,
       traceId: input.context.traceId
     });
-    const signed = storage.createSignedDownload({
+    const signed = this.storage.createSignedDownload({
       tenantId: TENANT_ID,
       siteId: SITE_ID,
       storageKey,

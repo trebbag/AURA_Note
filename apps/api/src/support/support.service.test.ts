@@ -101,11 +101,68 @@ describe('SupportService', () => {
       assert.equal(response.data.auditExport.signedDownloadAvailable, true);
       assert.equal(response.data.auditExport.signedDownloadToken?.startsWith('dl-'), true);
       assert.equal(response.data.domainEvents[0]?.payload.deliveryMode, 'storage_backed');
+
+      const delivered = service.deliverAuditExportDownload(
+        response.data.auditExport.auditExportId,
+        response.data.auditExport.signedDownloadToken ?? 'missing-token',
+        complianceHeaders
+      );
+      assert.equal(delivered.data.download.status, 'delivered_synthetic');
+      assert.equal(delivered.data.download.serverMediated, true);
+      assert.equal(delivered.data.download.publicUrl, null);
+      assert.equal(delivered.data.domainEvents[0]?.eventType, 'storage.object_delivered.v1');
+
+      assert.throws(
+        () =>
+          service.deliverAuditExportDownload(
+            response.data.auditExport.auditExportId,
+            response.data.auditExport.signedDownloadToken ?? 'missing-token',
+            supportHeaders
+          ),
+        ForbiddenException
+      );
     } finally {
       if (previous === undefined) {
         delete process.env.AURA_ENABLE_AUDIT_EXPORT_DOWNLOAD;
       } else {
         process.env.AURA_ENABLE_AUDIT_EXPORT_DOWNLOAD = previous;
+      }
+    }
+  });
+
+  it('reports synthetic backup and restore readiness without enabling production restore execution', () => {
+    const previous = {
+      softDelete: process.env.AURA_AZURE_BLOB_SOFT_DELETE_ENABLED,
+      versioning: process.env.AURA_AZURE_BLOB_VERSIONING_ENABLED,
+      dbBackup: process.env.AURA_DATABASE_BACKUP_CONFIGURED,
+      restoreDrill: process.env.AURA_RESTORE_DRILL_EVIDENCE_RECORDED,
+      retentionDays: process.env.AURA_EVIDENCE_RETENTION_DAYS
+    };
+    process.env.AURA_AZURE_BLOB_SOFT_DELETE_ENABLED = 'true';
+    process.env.AURA_AZURE_BLOB_VERSIONING_ENABLED = 'true';
+    process.env.AURA_DATABASE_BACKUP_CONFIGURED = 'true';
+    process.env.AURA_RESTORE_DRILL_EVIDENCE_RECORDED = 'true';
+    process.env.AURA_EVIDENCE_RETENTION_DAYS = '365';
+    try {
+      const service = new SupportService();
+      const response = service.getBackupRestoreReadiness(complianceHeaders);
+
+      assert.equal(response.data.readiness.status, 'ready_synthetic');
+      assert.equal(response.data.readiness.restoreExecutionEnabled, false);
+      assert.equal(response.data.domainEvents[0]?.eventType, 'restore.readiness_checked.v1');
+    } finally {
+      for (const [key, value] of Object.entries({
+        AURA_AZURE_BLOB_SOFT_DELETE_ENABLED: previous.softDelete,
+        AURA_AZURE_BLOB_VERSIONING_ENABLED: previous.versioning,
+        AURA_DATABASE_BACKUP_CONFIGURED: previous.dbBackup,
+        AURA_RESTORE_DRILL_EVIDENCE_RECORDED: previous.restoreDrill,
+        AURA_EVIDENCE_RETENTION_DAYS: previous.retentionDays
+      })) {
+        if (value === undefined) {
+          delete process.env[key];
+        } else {
+          process.env[key] = value;
+        }
       }
     }
   });

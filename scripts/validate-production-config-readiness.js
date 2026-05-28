@@ -37,6 +37,8 @@ const browserSpec = read('apps/web/e2e/aura-note-routes.spec.ts');
 const openapi = read('packages/contracts/openapi/aura-note.v1.yaml');
 const runLog = read('RUN_LOG.md');
 const status = JSON.parse(read('repo_status.json'));
+const nextWorkOrderNumber = Number.parseInt(String(status.next_work_order || '').replace('WO-', ''), 10);
+const hasAdvancedPastWo041 = status.work_orders?.['WO-041'] === 'done' && Number.isFinite(nextWorkOrderNumber) && nextWorkOrderNumber >= 42;
 const committedEnvLikeFiles = listFiles('.').filter((file) => {
   const base = path.basename(file);
   return (base === '.env' || base.startsWith('.env.')) && base !== '.env.example';
@@ -121,9 +123,9 @@ check(
 );
 check(
   'status.wo041',
-  'repo_status marks WO-041 done and advances to WO-042',
-  status.work_orders?.['WO-041'] === 'done' && status.next_work_order === 'WO-042',
-  'repo_status.json'
+  'repo_status marks WO-041 done and has advanced to WO-042 or later',
+  hasAdvancedPastWo041,
+  { nextWorkOrder: status.next_work_order, wo041: status.work_orders?.['WO-041'] }
 );
 check(
   'runlog.wo041',

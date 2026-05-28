@@ -191,6 +191,7 @@ describe('worker scaffold', () => {
         destructiveDeletionEnabled: true,
         approvalToken: 'approval-token-synthetic',
         approvalId: 'approval-retention-synthetic-001',
+        recoveryWindowEndsAt: '2026-06-09T15:00:00.000Z',
         traceId: 'trace-retention-worker-002'
       }
     );
@@ -200,6 +201,58 @@ describe('worker scaffold', () => {
     assert.equal(deleted.transcriptPurgeCount, 0);
     assert.equal(storage.headObject(storageKey), undefined);
     assert.equal(deleted.domainEvents[0]?.payload.transcriptPurgeCount, 0);
+  });
+
+  it('blocks raw-audio object deletion when recovery-window evidence is missing or expired', () => {
+    const storage = new InMemoryObjectStorageAdapter(() => '2026-06-02T15:00:00.000Z');
+    const storageKey = buildStorageKey({
+      tenantId: 'tenant-synthetic-primary',
+      siteId: 'site-synthetic-primary',
+      recordClass: 'raw-audio',
+      recordId: 'recording-recovery-001',
+      fileName: 'raw-audio.bin'
+    });
+    storage.putObject({
+      tenantId: 'tenant-synthetic-primary',
+      siteId: 'site-synthetic-primary',
+      storageKey,
+      body: 'synthetic raw audio bytes',
+      contentType: 'application/octet-stream',
+      retentionClass: 'audio_ephemeral',
+      traceId: 'trace-retention-worker-003'
+    });
+
+    const result = evaluateStorageBackedRetentionDeletion(
+      [
+        {
+          recordingId: 'recording-recovery-001',
+          noteId: 'note-001',
+          retentionClass: 'audio_ephemeral',
+          capturedAt: '2026-05-26T15:00:00.000Z',
+          purgeAfter: '2026-06-02T15:00:00.000Z',
+          purgeEligible: false,
+          storageProvider: 'in_memory',
+          storageKey,
+          checksum: 'synthetic-checksum',
+          contentLengthBytes: 25
+        }
+      ],
+      [{ noteId: 'note-001', transcriptId: 'transcript-001', retentionPolicy: 'indefinite', segments: [] }],
+      '2026-06-02T15:00:00.000Z',
+      storage,
+      {
+        destructiveDeletionEnabled: true,
+        approvalToken: 'approval-token-synthetic',
+        approvalId: 'approval-retention-synthetic-002',
+        recoveryWindowEndsAt: '2026-06-02T14:59:00.000Z',
+        traceId: 'trace-retention-worker-003'
+      }
+    );
+
+    assert.equal(result.deletionResults?.[0]?.deletionResult, 'blocked_recovery_window');
+    assert.equal(result.deletionResults?.[0]?.deleted, false);
+    assert.notEqual(storage.headObject(storageKey), undefined);
+    assert.equal(result.transcriptPurgeCount, 0);
   });
 
   it('preserves writeback failure and disabled queue states for UI/support review', () => {

@@ -81,3 +81,13 @@ Live external AI with PHI remains blocked until private/BAA model pathway, priva
 `WO-041` adds a governed high-risk feature-flag model that keeps `AURA_ENABLE_EXTERNAL_AI` disabled by default. Enabling the flag in synthetic admin evidence requires approval metadata and still results in `metadata_only_no_live_execution`; it does not call external AI or authorize PHI transfer.
 
 External AI remains blocked until `WO-046` adds production AI gateway governance, model/prompt configuration records, evaluation harnesses, PHI-scrubber hardening, output schema validation, source-linked evidence, durable governance events, and explicit private/BAA model approval.
+
+## WO-042 storage and PHI posture
+
+`WO-042` does not change the external AI boundary. Storage-backed export, audit export, raw-audio deletion, and restore-readiness evidence remain synthetic/local and do not authorize PHI-bearing object storage or PHI transfer to AI.
+
+- Secure download tokens are server mediated and never public URLs.
+- Audit export bundles remain redacted with `includePhi=false`.
+- Patient-summary downloads preserve internal-detail exclusion evidence.
+- Raw-audio deletion evidence contains object metadata, checksums/eTags, approval ID, recovery-window status, and trace ID only.
+- Transcript objects are not deleted and transcript content is not sent to external AI.

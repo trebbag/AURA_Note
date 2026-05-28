@@ -258,3 +258,15 @@ These events are audit-safe metadata for synthetic standalone operations. Billin
 The implemented event family now includes `identity.adapter_status_checked.v1`, `identity.session_evaluated.v1`, `identity.user_updated.v1`, `config.validation_completed.v1`, and `feature_flag.updated.v1`.
 
 These events are audit-safe metadata for identity adapter status, fail-closed session evaluation, workforce user active/disabled status, production-shaped config validation, secret-source metadata checks, and high-risk feature-flag changes. They do not contain secrets, raw tokens, production URLs, raw PHI, transcript content, billing details, coaching output, or final-note payloads. OIDC, SAML, ClinicOS delegated identity, external AI, production storage, retention deletion, EHR writeback, patient-facing estimates, and claim submission remain disabled unless later work orders add governed live execution evidence.
+
+## WO-042 secure storage and restore event evidence
+
+`WO-042` adds implemented synthetic/local API behavior for storage-backed delivery and restore posture:
+
+- `POST /api/v1/notes/{noteId}/exports/{exportArtifactId}/download`
+- `POST /api/v1/support/audit-exports/{auditExportId}/download`
+- `GET /api/v1/support/backup-restore/readiness`
+
+The event family now includes `storage.download_requested.v1`, `storage.download_denied.v1`, `storage.object_delivered.v1`, `storage.object_missing.v1`, `backup.posture_checked.v1`, and `restore.readiness_checked.v1`.
+
+`storage.object_delivered.v1` is emitted only after token, tenant, site, requester, role, and object checks pass. The payload is audit-safe metadata: storage key, content length, permission, server-mediated status, and `publicUrl: null`. Raw object contents, transcript text, billing details, coaching output, secrets, and production URLs are not event payloads. Raw-audio deletion remains represented through `retention.scan_completed.v1` with deletion evidence and `transcriptPurgeCount: 0`.

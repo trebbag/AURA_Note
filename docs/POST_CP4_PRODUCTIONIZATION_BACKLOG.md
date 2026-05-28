@@ -6,7 +6,7 @@ CP-4 closes the defined AURA Note v1 synthetic, local-first work-order package. 
 
 Before any tranche below becomes implementation work, promote it into a numbered `work_orders/WO-###` file and update `repo_status.json` deliberately.
 
-The sequential post-`WO-032` production build plan is maintained in `docs/PRODUCTION_BUILD_PLAN.md`. That plan defines `WO-033` through `WO-051`, checkpoint gates, per-work-order completion criteria, and overall launch-readiness criteria. `WO-033` is the re-rail/control work order; `WO-034` adds durable local visit capture runtime evidence; `WO-035` adds durable local review-panel runtime evidence; `WO-036` adds durable local finalization/output/writeback runtime evidence; `WO-037` closes P7 durable runtime metadata and broad RLS evidence; `WO-038` adds standalone patient, chart context, and schedule completion; `WO-039` closes P7.5 with standalone worklists, billing review, settings/admin/integrations, templates/dot phrases, estimate configuration, and rules catalog; `WO-040` closes P8.5 with browser audio capture and mock transcription candidate evidence. The next active production-build tranche is `WO-041`.
+The sequential post-`WO-032` production build plan is maintained in `docs/PRODUCTION_BUILD_PLAN.md`. That plan defines `WO-033` through `WO-051`, checkpoint gates, per-work-order completion criteria, and overall launch-readiness criteria. `WO-033` is the re-rail/control work order; `WO-034` adds durable local visit capture runtime evidence; `WO-035` adds durable local review-panel runtime evidence; `WO-036` adds durable local finalization/output/writeback runtime evidence; `WO-037` closes P7 durable runtime metadata and broad RLS evidence; `WO-038` adds standalone patient, chart context, and schedule completion; `WO-039` closes P7.5 with standalone worklists, billing review, settings/admin/integrations, templates/dot phrases, estimate configuration, and rules catalog; `WO-040` closes P8.5 with browser audio capture and mock transcription candidate evidence; `WO-041` adds production-shaped identity/config governance. The next active production-build tranche is `WO-042`.
 
 ## Safety boundary
 
@@ -489,3 +489,28 @@ Do not implement these tranches directly from this backlog. Promote one tranche 
 **Known risks:**
 
 - Production IdP selection, MFA, account recovery, access reviews, production secret manager selection, live ClinicOS delegation, and live feature enablement require founder/security review.
+
+## Follow-on Tranche P8-02 — Secure Storage, Retention, Backup, And Restore Controls
+
+**Promotion status:** Promoted to `WO-042` as server-mediated secure download, Azure Blob adapter boundary, raw-audio deletion approval/recovery control, and backup/restore readiness evidence.
+
+**Objective:** Harden storage-backed delivery and retention deletion controls without enabling live Azure credentials, PHI-bearing object payloads, live destructive deletion, or production restore execution.
+
+**Candidate scope:**
+
+- Add tenant/site/requester/permission scoped server-mediated download validation.
+- Keep download URLs non-public and metadata-only in tests.
+- Require patient-summary internal-detail exclusion before patient-summary download delivery.
+- Require feature flag, approval token, approval ID, and recovery-window evidence before raw-audio object deletion.
+- Preserve indefinite transcript retention.
+- Add backup/restore readiness metadata for Azure soft-delete/versioning, database backups, restore drills, and evidence retention.
+
+**Acceptance evidence:**
+
+- `pnpm storage:secure-download-readiness` passes locally and in CI.
+- `pnpm retention:production-readiness` passes locally and in CI.
+- Full local gate continues to pass.
+
+**Known risks:**
+
+- Production Azure account/container policy, customer-managed keys, legal hold, real backup schedule, production restore-drill execution, and PHI-bearing object delivery require founder/security/privacy review.

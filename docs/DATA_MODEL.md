@@ -582,3 +582,15 @@ P7 is now complete as local synthetic durable runtime evidence. This is not prod
 - `GovernedFeatureFlag` records default-disabled high-risk capability state, approval requirements, metadata-only runtime effect, and `liveExecutionEnabled=false`.
 
 These records are synthetic/local control-plane evidence. Production identity/session/config persistence, production secret manager records, live IdP credentials, live ClinicOS identity delegation, production PHI identity linkage, and account recovery operations remain deferred until founder/security review.
+
+## WO-042 storage and restore model status
+
+`WO-042` extends the storage/export/retention model with production-shaped metadata only:
+
+- `ExportArtifactDto` storage-backed records carry `storageProvider`, `storageKey`, `contentLengthBytes`, checksum, retention class, signed-download availability, and expiry metadata.
+- `AuditExportDto` carries the same storage metadata while preserving `includePhi: false` and redacted JSONL semantics.
+- `SecureDownloadDeliveryDto` records server-mediated delivery evidence: tenant/site-scoped storage key, content type, checksum/eTag, permission, expiry, `publicUrl: null`, and trace ID.
+- `StorageDeletionEvidenceDto` records raw-audio deletion result, approval ID, checksum/eTag, recovery-window status, trace ID, and deletion timestamp. Transcript deletion remains out of scope.
+- `BackupRestoreReadinessDto` records required Azure Blob soft-delete/versioning, database backup, restore-drill, and evidence-retention posture without enabling production restore execution.
+
+These are synthetic/local records. Production Azure account policy, customer-managed keys, legal hold, real backup schedules, production restore drills, and PHI-bearing payload storage remain deferred.

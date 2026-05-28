@@ -360,3 +360,15 @@ CI runs these after the persistence gates and before acceptance readiness. Produ
 - readiness scripts verify DTOs, permissions, routes, tests, OpenAPI operations, status/run-log evidence, no live identity provider, no raw token return, no secret-value return, no `.env` files, and no high-risk live execution.
 
 These tests prove synthetic P8 identity/config governance readiness only. Production SSO, production secret manager integration, live ClinicOS delegation, production account recovery, live vendor execution, and PHI-bearing production identity linkage remain outside the test scope until later approval.
+
+## WO-042 secure storage, retention, and restore tests
+
+`WO-042` adds the `pnpm storage:secure-download-readiness` and `pnpm retention:production-readiness` gates:
+
+- storage adapter tests cover tenant/site/requester/permission scoped server-mediated download delivery, wrong-site/wrong-permission denial, no public URLs, Azure config validation, and backup/restore readiness metadata;
+- API unit and e2e tests cover finalized export download delivery, patient-summary internal-detail exclusion, wrong-role denial, audit-export download delivery, support denial, and backup/restore readiness responses;
+- worker tests cover raw-audio deletion approval, recovery-window blocking, deletion evidence, and transcript non-deletion;
+- browser tests cover support status states for secure downloads, deletion approval, recovery-window evidence, and restore-readiness blocked posture;
+- readiness scripts verify server-mediated delivery, public URL denial, no live Azure execution, recovery-window controls, soft-delete/versioning posture, and production restore execution disabled.
+
+These tests prove synthetic P8 storage/retention/restore control evidence only. They do not enable real Azure credentials, PHI-bearing object storage, live destructive deletion, transcript deletion, production restore execution, charge finalization, or claim submission.

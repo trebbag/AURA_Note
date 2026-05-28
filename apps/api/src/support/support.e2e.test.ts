@@ -45,6 +45,8 @@ describe('Support hardening API e2e', () => {
     await app.init();
 
     try {
+      const previousAuditDownloadFlag = process.env.AURA_ENABLE_AUDIT_EXPORT_DOWNLOAD;
+      process.env.AURA_ENABLE_AUDIT_EXPORT_DOWNLOAD = 'true';
       const response = await request(app.getHttpServer())
         .post('/api/v1/support/audit-exports')
         .set('x-aura-role', 'compliance_privacy_lead')
@@ -59,10 +61,29 @@ describe('Support hardening API e2e', () => {
           includePhi: false
         })
         .expect(201);
+      if (previousAuditDownloadFlag === undefined) {
+        delete process.env.AURA_ENABLE_AUDIT_EXPORT_DOWNLOAD;
+      } else {
+        process.env.AURA_ENABLE_AUDIT_EXPORT_DOWNLOAD = previousAuditDownloadFlag;
+      }
 
       assert.equal(response.body.data.auditExport.includePhi, false);
-      assert.equal(response.body.data.auditExport.downloadEnabled, false);
+      assert.equal(response.body.data.auditExport.downloadEnabled, true);
+      const delivered = await request(app.getHttpServer())
+        .post(`/api/v1/support/audit-exports/${response.body.data.auditExport.auditExportId}/download`)
+        .set('x-aura-role', 'compliance_privacy_lead')
+        .set('x-aura-user-id', 'user-compliance-e2e-001')
+        .send({ signedDownloadToken: response.body.data.auditExport.signedDownloadToken })
+        .expect(201);
+      assert.equal(delivered.body.data.download.serverMediated, true);
+      assert.equal(delivered.body.data.download.publicUrl, null);
       assert.equal(response.body.data.domainEvents[0].eventType, 'audit.export_requested.v1');
+
+      const restore = await request(app.getHttpServer())
+        .get('/api/v1/support/backup-restore/readiness')
+        .set('x-aura-role', 'compliance_privacy_lead')
+        .expect(200);
+      assert.equal(restore.body.data.readiness.restoreExecutionEnabled, false);
 
       await request(app.getHttpServer())
         .post('/api/v1/support/audit-exports')
