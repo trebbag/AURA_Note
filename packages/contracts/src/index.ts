@@ -90,6 +90,12 @@ export type CoreEventType =
   | 'note.signed.v1'
   | 'note.dispatched.v1'
   | 'export.generated.v1'
+  | 'storage.download_requested.v1'
+  | 'storage.download_denied.v1'
+  | 'storage.object_delivered.v1'
+  | 'storage.object_missing.v1'
+  | 'backup.posture_checked.v1'
+  | 'restore.readiness_checked.v1'
   | 'ehr_writeback.queued.v1'
   | 'ehr_writeback.failed.v1'
   | 'ehr.adapter_status_checked.v1'
@@ -981,6 +987,33 @@ export interface ExportArtifactDto {
   signedDownloadExpiresAt?: string;
 }
 
+export interface SecureDownloadRequestDto {
+  signedDownloadToken: string;
+}
+
+export interface SecureDownloadDeliveryDto {
+  status: 'delivered_synthetic';
+  storageProvider: StorageProviderDto;
+  storageKey: string;
+  contentType: string;
+  contentLengthBytes: number;
+  checksum: string;
+  eTag: string;
+  signedDownloadExpiresAt: string;
+  deliveryMode: 'storage_backed';
+  serverMediated: true;
+  publicUrl: null;
+  permission: 'final_note:export' | 'patient_summary:export' | 'audit:export';
+  patientSummaryInternalDetailsExcluded?: true;
+  traceId: string;
+}
+
+export interface SecureDownloadResponseDto {
+  download: SecureDownloadDeliveryDto;
+  auditEvent: AuditEventDto;
+  domainEvents: Array<AuraNoteEvent<Record<string, unknown>>>;
+}
+
 export type EhrWritebackTarget = 'final_note' | 'patient_summary' | 'both';
 export type EhrWritebackScaffoldMode = 'not_configured' | 'mock_queue' | 'simulate_failure' | 'unsupported_by_vendor';
 
@@ -1706,6 +1739,23 @@ export interface SupportStatusResponseDto {
 
 export interface AuditExportResponseDto {
   auditExport: AuditExportDto;
+  auditEvent: AuditEventDto;
+  domainEvents: Array<AuraNoteEvent<Record<string, unknown>>>;
+}
+
+export interface BackupRestoreReadinessDto {
+  status: 'ready_synthetic' | 'blocked_review';
+  objectStorageSoftDeleteRequired: true;
+  objectStorageVersioningRequired: true;
+  databaseBackupRequired: true;
+  restoreExecutionEnabled: false;
+  evidenceRetentionDays: number;
+  missing: string[];
+  traceId: string;
+}
+
+export interface BackupRestoreReadinessResponseDto {
+  readiness: BackupRestoreReadinessDto;
   auditEvent: AuditEventDto;
   domainEvents: Array<AuraNoteEvent<Record<string, unknown>>>;
 }

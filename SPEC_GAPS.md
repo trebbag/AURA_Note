@@ -4,13 +4,13 @@ This file tracks missing, conflicting, unsafe, or deliberately deferred product 
 
 ## Active gaps
 
-No active gaps as of post-`WO-041` production identity/config governance review on 2026-05-27.
+No active gaps as of post-`WO-042` secure storage/download/retention/restore controls review on 2026-05-28.
 
-The repo remains not production-ready. The items below are deferred production decisions rather than active blockers for the current production identity/config governance scope.
+The repo remains not production-ready. The items below are deferred production decisions rather than active blockers for the current secure storage/download/retention/restore controls scope.
 
 ## Deferred production decisions
 
-These items must stay visible and must be resolved before the related production work can be declared complete. They are not blockers for the completed WO-041 production identity/config governance tranche because the active work remains synthetic/local and explicitly excludes live IdP credentials, live ClinicOS delegation, live PHI, live EHR/ClinicOS synchronization, live transcription credentials, autonomous billing, and production launch behavior.
+These items must stay visible and must be resolved before the related production work can be declared complete. They are not blockers for the completed `WO-042` tranche because the active work remains synthetic/local and explicitly excludes live Azure credentials, PHI-bearing object payloads, live destructive deletion, production restore execution, live IdP credentials, live ClinicOS delegation, live EHR/ClinicOS synchronization, live transcription credentials, autonomous billing, and production launch behavior.
 
 ### Deferred Decision — Production identity provider and account lifecycle
 
@@ -28,10 +28,10 @@ These items must stay visible and must be resolved before the related production
 
 ### Deferred Decision — Production Azure Blob storage and destructive deletion
 
-- **Related future work:** `WO-042`
+- **Related future work:** post-`WO-042` security/privacy/founder review before live use
 - **Status:** deferred
-- **Decision needed before live use:** Azure credential source, private container policy, soft-delete/versioning configuration, backup/restore drill, deletion approval workflow, recovery window, and evidence retention.
-- **Safe current posture:** production-shaped adapter boundary and deterministic fake storage tests; no PHI-bearing production object delivery or destructive production deletion.
+- **Decision needed before live use:** Azure account/container policy, credential source, customer-managed keys, private networking, legal hold, soft-delete/versioning configuration, backup/restore drill cadence, deletion approval authority, recovery window, and evidence retention.
+- **Safe current posture:** `WO-042` adds production-shaped adapter boundary, deterministic fake storage tests, server-mediated token validation, recovery-window-gated deletion evidence, and restore-readiness metadata only; no PHI-bearing production object delivery, public URLs, destructive production deletion, or production restore execution.
 
 ### Deferred Decision — Live transcription provider and PHI-bearing audio transport
 

@@ -52,6 +52,31 @@ export interface SignedDownloadMetadata {
   traceId: string;
 }
 
+export interface DeliverSignedDownloadInput {
+  token: string;
+  tenantId: string;
+  siteId: string;
+  requestedByUserId: string;
+  permission: SignedDownloadInput['permission'];
+  nowIso: string;
+  traceId: string;
+}
+
+export interface SignedDownloadDeliveryEvidence {
+  status: 'delivered_synthetic';
+  storageProvider: ObjectStorageProvider;
+  storageKey: string;
+  contentType: string;
+  contentLengthBytes: number;
+  checksum: string;
+  eTag: string;
+  signedDownloadExpiresAt: string;
+  permission: SignedDownloadInput['permission'];
+  serverMediated: true;
+  publicUrl: null;
+  traceId: string;
+}
+
 export interface DeleteObjectInput {
   tenantId: string;
   siteId: string;
@@ -78,6 +103,7 @@ export interface ObjectStorageAdapter {
   headObject(storageKey: string): StoredObjectMetadata | undefined;
   createSignedDownload(input: SignedDownloadInput): SignedDownloadMetadata;
   validateSignedDownload(token: string, tenantId: string, nowIso: string): SignedDownloadMetadata;
+  deliverSignedDownload(input: DeliverSignedDownloadInput): SignedDownloadDeliveryEvidence;
   deleteObject(input: DeleteObjectInput): ObjectDeletionEvidence;
 }
 
@@ -164,6 +190,43 @@ export class InMemoryObjectStorageAdapter implements ObjectStorageAdapter {
       throw new Error('storage download token expired');
     }
     return toSignedDownloadMetadata(metadata);
+  }
+
+  deliverSignedDownload(input: DeliverSignedDownloadInput): SignedDownloadDeliveryEvidence {
+    const token = this.tokens.get(input.token);
+    if (!token || token.tenantId !== input.tenantId) {
+      throw new Error('storage download denied for wrong tenant');
+    }
+    if (token.siteId !== input.siteId) {
+      throw new Error('storage download denied for wrong site');
+    }
+    if (token.permission !== input.permission) {
+      throw new Error('storage download denied for wrong permission');
+    }
+    if (token.requestedByUserId !== input.requestedByUserId) {
+      throw new Error('storage download denied for wrong requester');
+    }
+    if (new Date(token.signedDownloadExpiresAt) <= new Date(input.nowIso)) {
+      throw new Error('storage download token expired');
+    }
+    const object = this.objects.get(token.storageKey);
+    if (!object || object.tenantId !== input.tenantId || object.siteId !== input.siteId) {
+      throw new Error('storage object missing for download');
+    }
+    return {
+      status: 'delivered_synthetic',
+      storageProvider: object.storageProvider,
+      storageKey: object.storageKey,
+      contentType: object.contentType,
+      contentLengthBytes: object.contentLengthBytes,
+      checksum: object.checksum,
+      eTag: object.eTag,
+      signedDownloadExpiresAt: token.signedDownloadExpiresAt,
+      permission: token.permission,
+      serverMediated: true,
+      publicUrl: null,
+      traceId: input.traceId
+    };
   }
 
   deleteObject(input: DeleteObjectInput): ObjectDeletionEvidence {
@@ -289,6 +352,47 @@ export function syntheticChecksum(content: string): string {
     hash = (hash * 31 + content.charCodeAt(index)) >>> 0;
   }
   return `synthetic-${hash.toString(16).padStart(8, '0')}`;
+}
+
+export interface BackupRestorePostureInput {
+  azureSoftDeleteEnabled: boolean;
+  azureVersioningEnabled: boolean;
+  databaseBackupConfigured: boolean;
+  restoreDrillEvidenceRecorded: boolean;
+  evidenceRetentionDays: number;
+  productionRestoreExecutionApproved: boolean;
+  traceId: string;
+}
+
+export interface BackupRestoreReadinessEvidence {
+  status: 'ready_synthetic' | 'blocked_review';
+  objectStorageSoftDeleteRequired: true;
+  objectStorageVersioningRequired: true;
+  databaseBackupRequired: true;
+  restoreExecutionEnabled: false;
+  evidenceRetentionDays: number;
+  missing: string[];
+  traceId: string;
+}
+
+export function evaluateBackupRestoreReadiness(input: BackupRestorePostureInput): BackupRestoreReadinessEvidence {
+  const missing: string[] = [];
+  if (!input.azureSoftDeleteEnabled) missing.push('AZURE_BLOB_SOFT_DELETE_ENABLED');
+  if (!input.azureVersioningEnabled) missing.push('AZURE_BLOB_VERSIONING_ENABLED');
+  if (!input.databaseBackupConfigured) missing.push('DATABASE_BACKUP_CONFIGURED');
+  if (!input.restoreDrillEvidenceRecorded) missing.push('RESTORE_DRILL_EVIDENCE_RECORDED');
+  if (input.evidenceRetentionDays < 365) missing.push('EVIDENCE_RETENTION_DAYS>=365');
+
+  return {
+    status: missing.length === 0 ? 'ready_synthetic' : 'blocked_review',
+    objectStorageSoftDeleteRequired: true,
+    objectStorageVersioningRequired: true,
+    databaseBackupRequired: true,
+    restoreExecutionEnabled: false,
+    evidenceRetentionDays: input.evidenceRetentionDays,
+    missing,
+    traceId: input.traceId
+  };
 }
 
 function assertTenantStorageKey(tenantId: string, storageKey: string): void {

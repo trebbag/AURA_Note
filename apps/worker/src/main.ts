@@ -258,6 +258,13 @@ export function evaluateStorageBackedRetentionDeletion(
 ): RetentionJobResultDto {
   const base = evaluateRetentionJobRun(rawAudioRecords, transcriptRecords, nowIso, options.traceId);
   const evaluatedRawAudio = evaluateRawAudioRetention(rawAudioRecords, nowIso);
+  const recoveryWindowOpen =
+    typeof options.recoveryWindowEndsAt === 'string' && new Date(options.recoveryWindowEndsAt) > new Date(nowIso);
+  const destructiveDeletionAuthorized =
+    options.destructiveDeletionEnabled &&
+    Boolean(options.approvalToken) &&
+    Boolean(options.approvalId) &&
+    recoveryWindowOpen;
   const deletionResults = evaluatedRawAudio
     .filter((record): record is RawAudioRetentionMetadataDto & { storageKey: string } => record.purgeEligible && Boolean(record.storageKey))
     .map((record) => {
@@ -270,6 +277,18 @@ export function evaluateStorageBackedRetentionDeletion(
           ...(record.checksum ? { checksum: record.checksum } : {}),
           ...(options.approvalId ? { approvalId: options.approvalId } : {}),
           recoveryWindowStatus: 'recoverable' as const,
+          traceId: options.traceId ?? 'trace-retention-worker-synthetic'
+        };
+      }
+      if (!recoveryWindowOpen) {
+        return {
+          storageProvider: record.storageProvider ?? 'in_memory',
+          storageKey: record.storageKey,
+          deleted: false,
+          deletionResult: 'blocked_recovery_window' as const,
+          ...(record.checksum ? { checksum: record.checksum } : {}),
+          approvalId: options.approvalId,
+          recoveryWindowStatus: 'expired' as const,
           traceId: options.traceId ?? 'trace-retention-worker-synthetic'
         };
       }
@@ -287,7 +306,10 @@ export function evaluateStorageBackedRetentionDeletion(
     ...base,
     policies: base.policies.map((policy) =>
       policy.recordClass === 'audio_ephemeral'
-        ? { ...policy, destructivePurgeEnabled: options.destructiveDeletionEnabled && Boolean(options.approvalToken) && Boolean(options.approvalId) }
+        ? {
+            ...policy,
+            destructivePurgeEnabled: destructiveDeletionAuthorized
+          }
         : policy
     ),
     deletionResults,
@@ -298,7 +320,7 @@ export function evaluateStorageBackedRetentionDeletion(
         ...event.payload,
         rawAudioDeletedCount: deletionResults.filter((result) => result.deleted).length,
         transcriptPurgeCount: 0,
-        destructivePurgeEnabled: options.destructiveDeletionEnabled && Boolean(options.approvalToken) && Boolean(options.approvalId),
+        destructivePurgeEnabled: destructiveDeletionAuthorized,
         approvalId: options.approvalId ?? null
       }
     }))

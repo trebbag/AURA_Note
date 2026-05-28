@@ -690,6 +690,40 @@ describe('ScheduleService', () => {
       assert.equal(notePdf.data.artifact.signedDownloadToken?.startsWith('dl-'), true);
       assert.equal(summaryPdf.data.artifact.patientSummaryInternalDetailsExcluded, true);
       assert.equal(summaryPdf.data.artifact.deliveryMode, 'storage_backed');
+
+      const delivered = service.deliverExportDownload(
+        appointment.noteId,
+        summaryPdf.data.artifact.exportArtifactId,
+        summaryPdf.data.artifact.signedDownloadToken ?? 'missing-token',
+        clinician
+      );
+      assert.equal(delivered.data.download.status, 'delivered_synthetic');
+      assert.equal(delivered.data.download.serverMediated, true);
+      assert.equal(delivered.data.download.publicUrl, null);
+      assert.equal(delivered.data.download.patientSummaryInternalDetailsExcluded, true);
+      assert.equal(delivered.data.domainEvents[0]?.eventType, 'storage.object_delivered.v1');
+
+      const billing = service.createRequestContext({ 'x-aura-role': 'billing_staff', 'x-aura-linked-visit': 'true' });
+      assert.throws(
+        () =>
+          service.deliverExportDownload(
+            appointment.noteId,
+            notePdf.data.artifact.exportArtifactId,
+            notePdf.data.artifact.signedDownloadToken ?? 'missing-token',
+            billing
+          ),
+        ForbiddenException
+      );
+      assert.throws(
+        () =>
+          service.deliverExportDownload(
+            appointment.noteId,
+            notePdf.data.artifact.exportArtifactId,
+            'dl-wrong-token',
+            clinician
+          ),
+        /wrong tenant/
+      );
     } finally {
       if (previous === undefined) {
         delete process.env.AURA_ENABLE_STORAGE_BACKED_EXPORTS;

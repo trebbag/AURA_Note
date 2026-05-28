@@ -46,6 +46,8 @@ jobs:
       - run: pnpm identity:production-readiness
       - run: pnpm config:production-readiness
       - run: pnpm storage:azure-adapter-readiness
+      - run: pnpm storage:secure-download-readiness
       - run: pnpm retention:storage-deletion-readiness
+      - run: pnpm retention:production-readiness
       - run: pnpm production:readiness
       - run: pnpm acceptance:readiness

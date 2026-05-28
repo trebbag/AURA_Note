@@ -114,3 +114,10 @@ These invariants apply in both modes:
 - ClinicOS-integrated identity is represented as a delegated adapter state, but remains disabled until configured and cannot bypass AURA Note tenant/site/role/purpose checks;
 - OIDC and SAML are adapter boundaries only, with no real credentials, no raw token return, and no live SSO claim;
 - high-risk feature flags default disabled in both modes and require approval evidence before metadata-only enablement.
+
+`WO-042` adds production-shaped storage/download/retention/restore controls for both modes:
+
+- standalone mode uses AURA Note tenant storage configuration and deterministic in-memory object storage for tests;
+- ClinicOS-integrated mode may map storage object metadata and retention evidence through adapter boundaries later, but AURA Note remains authoritative for token issue, token validation, download delivery, deletion approval, and restore-readiness permission checks;
+- missing ClinicOS storage delegation fails closed and cannot expose a public URL or bypass AURA Note RBAC/ABAC;
+- raw-audio deletion remains approval/recovery-window gated and transcript retention remains indefinite in both modes.

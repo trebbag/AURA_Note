@@ -8,6 +8,7 @@ import {
   type AiGatewayInvocationResponseDto,
   type AiGatewayStatusDto,
   type AuditExportResponseDto,
+  type BackupRestoreReadinessResponseDto,
   type ClinicOsIntegrationStatusDto,
   type ClinicOsMapVisitResponseDto,
   type CoachingDashboardDto,
@@ -45,7 +46,8 @@ import {
   type TranscriptionJobResponseDto,
   type VisitSessionControlResponseDto,
   type ScheduleAppointmentDto,
-  type TenantScopeDecisionDto
+  type TenantScopeDecisionDto,
+  type SecureDownloadResponseDto
 } from './index';
 
 describe('API envelope', () => {
@@ -1583,5 +1585,96 @@ describe('storage-backed delivery contracts', () => {
 
     assert.equal(result.deletionResults?.[0]?.deleted, true);
     assert.equal(result.transcriptPurgeCount, 0);
+  });
+
+  it('represents server-mediated secure download and backup/restore readiness evidence', () => {
+    const download: SecureDownloadResponseDto = {
+      download: {
+        status: 'delivered_synthetic',
+        storageProvider: 'azure_blob',
+        storageKey: 'tenants/tenant-synthetic-primary/sites/site-synthetic-primary/exports/export-001/note.pdf',
+        contentType: 'application/pdf',
+        contentLengthBytes: 128,
+        checksum: 'synthetic-001',
+        eTag: 'etag-synthetic-001',
+        signedDownloadExpiresAt: '2026-05-27T16:00:00.000Z',
+        deliveryMode: 'storage_backed',
+        serverMediated: true,
+        publicUrl: null,
+        permission: 'final_note:export',
+        traceId: 'trace-storage-download-001'
+      },
+      auditEvent: {
+        auditEventId: 'audit-storage-download-001',
+        tenantId: 'tenant-synthetic-primary',
+        siteId: 'site-synthetic-primary',
+        actorUserId: 'user-clinician-synthetic-001',
+        action: 'storage.object_deliver',
+        entityType: 'ExportArtifact',
+        entityId: 'export-001',
+        traceId: 'trace-storage-download-001',
+        createdAt: '2026-05-27T15:50:00.000Z'
+      },
+      domainEvents: [
+        createEventEnvelope({
+          eventId: 'evt-storage-download-001',
+          eventType: 'storage.object_delivered.v1',
+          tenantId: 'tenant-synthetic-primary',
+          siteId: 'site-synthetic-primary',
+          producer: 'aura-note-api',
+          traceId: 'trace-storage-download-001',
+          idempotencyKey: 'idem-storage-download-001',
+          sensitivity: 'restricted',
+          retentionClass: 'audit',
+          payload: {
+            storageKey: 'tenants/tenant-synthetic-primary/sites/site-synthetic-primary/exports/export-001/note.pdf',
+            publicUrl: null
+          }
+        })
+      ]
+    };
+    const readiness: BackupRestoreReadinessResponseDto = {
+      readiness: {
+        status: 'ready_synthetic',
+        objectStorageSoftDeleteRequired: true,
+        objectStorageVersioningRequired: true,
+        databaseBackupRequired: true,
+        restoreExecutionEnabled: false,
+        evidenceRetentionDays: 365,
+        missing: [],
+        traceId: 'trace-restore-001'
+      },
+      auditEvent: {
+        auditEventId: 'audit-restore-001',
+        tenantId: 'tenant-synthetic-primary',
+        siteId: 'site-synthetic-primary',
+        actorUserId: 'user-admin-synthetic-001',
+        action: 'restore.readiness_check',
+        entityType: 'BackupRestoreReadiness',
+        entityId: 'restore-readiness-synthetic',
+        traceId: 'trace-restore-001',
+        createdAt: '2026-05-27T15:50:00.000Z'
+      },
+      domainEvents: [
+        createEventEnvelope({
+          eventId: 'evt-restore-001',
+          eventType: 'restore.readiness_checked.v1',
+          tenantId: 'tenant-synthetic-primary',
+          siteId: 'site-synthetic-primary',
+          producer: 'aura-note-api',
+          traceId: 'trace-restore-001',
+          idempotencyKey: 'idem-restore-001',
+          sensitivity: 'restricted',
+          retentionClass: 'audit',
+          payload: { status: 'ready_synthetic', restoreExecutionEnabled: false }
+        })
+      ]
+    };
+
+    assert.equal(download.download.serverMediated, true);
+    assert.equal(download.download.publicUrl, null);
+    assert.equal(download.domainEvents[0]?.eventType, 'storage.object_delivered.v1');
+    assert.equal(readiness.readiness.restoreExecutionEnabled, false);
+    assert.equal(readiness.domainEvents[0]?.eventType, 'restore.readiness_checked.v1');
   });
 });

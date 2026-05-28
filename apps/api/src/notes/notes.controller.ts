@@ -14,6 +14,7 @@ import type {
   RecordMicrophonePermissionRequestDto,
   RecordingExceptionRequestDto,
   RebeautifyRequestDto,
+  SecureDownloadRequestDto,
   SuggestionDecisionRequestDto
 } from '@aura-note/contracts';
 import { ScheduleService } from '../schedule/schedule.service';
@@ -395,6 +396,21 @@ export class NotesController {
     @Headers() headers: Record<string, string | string[] | undefined>
   ) {
     return this.scheduleService.exportStructuredFinalNote(noteId, this.scheduleService.createRequestContext(headers));
+  }
+
+  @Post('notes/:noteId/exports/:exportArtifactId/download')
+  deliverExportDownload(
+    @Param('noteId') noteId: string,
+    @Param('exportArtifactId') exportArtifactId: string,
+    @Body() body: SecureDownloadRequestDto,
+    @Headers() headers: Record<string, string | string[] | undefined>
+  ) {
+    return this.scheduleService.deliverExportDownload(
+      noteId,
+      exportArtifactId,
+      body.signedDownloadToken,
+      this.scheduleService.createRequestContext(headers)
+    );
   }
 
   @Post('notes/:noteId/ehr-writeback')

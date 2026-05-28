@@ -16,8 +16,8 @@ const featureFlags = [
   },
   {
     key: 'Audit export download',
-    state: 'disabled',
-    detail: 'Audit export is redacted JSONL metadata only until storage delivery is configured.'
+    state: 'permission-gated',
+    detail: 'Server-mediated signed downloads are token, tenant, role, and expiration checked; public URLs remain disabled.'
   }
 ];
 
@@ -31,7 +31,23 @@ const failureStates = [
   { component: 'External AI', state: 'disabled', mode: 'Deterministic draft candidates only' },
   { component: 'EHR writeback', state: 'metadata-only', mode: 'Manual copy/PDF/export fallback' },
   { component: 'Structured logs', state: 'ready', mode: 'Request-correlated and redacted' },
-  { component: 'Audit export', state: 'ready_synthetic', mode: 'Redacted JSONL metadata response' }
+  { component: 'Audit export', state: 'ready_synthetic', mode: 'Redacted JSONL plus secure download evidence' },
+  { component: 'Storage download', state: 'denied states covered', mode: 'expired, wrong tenant, wrong role, missing object' }
+];
+
+const storageDownloadStates = [
+  { label: 'Download unavailable', state: 'storage-disabled', mode: 'Inline synthetic metadata only' },
+  { label: 'Ready', state: 'token issued', mode: '15 minute server-mediated token' },
+  { label: 'Expired', state: 'denied', mode: 'Token expiry prevents delivery' },
+  { label: 'Wrong role', state: 'denied', mode: 'Billing/support cannot bypass artifact permissions' },
+  { label: 'Missing object', state: 'failed', mode: 'No payload returned; audit-safe denial only' }
+];
+
+const restoreStates = [
+  { label: 'Raw audio deletion', state: 'approval required', mode: 'Feature flag, approval, and recovery window required' },
+  { label: 'Recovery window', state: 'recoverable', mode: 'Soft-delete/versioning evidence required before deletion' },
+  { label: 'Transcript retention', state: 'indefinite', mode: 'Transcript purge count remains zero' },
+  { label: 'Restore readiness', state: 'blocked until review', mode: 'Restore execution disabled; metadata check only' }
 ];
 
 const observabilitySinks = [
@@ -150,6 +166,34 @@ export default function SupportStatusPage() {
         </section>
       </section>
 
+      <section className="support-grid" aria-label="Secure storage and restore states">
+        <section className="support-panel">
+          <h2>Secure Downloads</h2>
+          <div className="analytics-list">
+            {storageDownloadStates.map((state) => (
+              <div key={state.label}>
+                <span>{state.label}</span>
+                <strong>{state.state}</strong>
+                <small>{state.mode}</small>
+              </div>
+            ))}
+          </div>
+        </section>
+
+        <section className="support-panel">
+          <h2>Retention and Restore</h2>
+          <div className="analytics-list">
+            {restoreStates.map((state) => (
+              <div key={state.label}>
+                <span>{state.label}</span>
+                <strong>{state.state}</strong>
+                <small>{state.mode}</small>
+              </div>
+            ))}
+          </div>
+        </section>
+      </section>
+
       <section className="support-grid" aria-label="Feature flags and retention">
         <section className="support-panel">
           <h2>Feature Flags</h2>
@@ -194,10 +238,10 @@ export default function SupportStatusPage() {
             </div>
             <div>
               <dt>Delivery</dt>
-              <dd>metadata-only</dd>
+              <dd>server-mediated</dd>
             </div>
           </dl>
-          <p>Compliance users can request a redacted synthetic bundle; downloadable production storage is feature-flag disabled.</p>
+          <p>Compliance users can request a redacted synthetic bundle; downloadable delivery remains short-lived, permission checked, and never public.</p>
         </section>
 
         <section className="support-panel">

@@ -4,6 +4,7 @@ import {
   AzureBlobObjectStorageAdapter,
   InMemoryObjectStorageAdapter,
   buildStorageKey,
+  evaluateBackupRestoreReadiness,
   validateAzureBlobStorageConfig
 } from './index';
 
@@ -136,6 +137,75 @@ describe('in-memory object storage adapter', () => {
     assert.throws(() => adapter.validateSignedDownload(signed.signedDownloadToken, tenantId, '2026-05-27T16:01:00.000Z'), /expired/);
   });
 
+  it('delivers signed downloads only through tenant, site, role permission, and requester scoped tokens', () => {
+    const adapter = new InMemoryObjectStorageAdapter();
+    const storageKey = buildStorageKey({
+      tenantId,
+      siteId,
+      recordClass: 'exports',
+      recordId: 'export-synthetic-002',
+      fileName: 'patient-summary.pdf'
+    });
+    adapter.putObject({
+      tenantId,
+      siteId,
+      storageKey,
+      body: '%PDF-1.4 synthetic patient summary without internal details',
+      contentType: 'application/pdf',
+      retentionClass: 'standard',
+      traceId: 'trace-storage-test-005'
+    });
+    const signed = adapter.createSignedDownload({
+      tenantId,
+      siteId,
+      storageKey,
+      requestedByUserId: 'user-clinician-synthetic-001',
+      permission: 'patient_summary:export',
+      expiresAt: '2026-05-27T16:00:00.000Z',
+      traceId: 'trace-storage-test-005'
+    });
+
+    const delivered = adapter.deliverSignedDownload({
+      token: signed.signedDownloadToken,
+      tenantId,
+      siteId,
+      requestedByUserId: 'user-clinician-synthetic-001',
+      permission: 'patient_summary:export',
+      nowIso: '2026-05-27T15:50:00.000Z',
+      traceId: 'trace-storage-test-005'
+    });
+
+    assert.equal(delivered.status, 'delivered_synthetic');
+    assert.equal(delivered.serverMediated, true);
+    assert.equal(delivered.publicUrl, null);
+    assert.throws(
+      () =>
+        adapter.deliverSignedDownload({
+          token: signed.signedDownloadToken,
+          tenantId,
+          siteId: 'site-other',
+          requestedByUserId: 'user-clinician-synthetic-001',
+          permission: 'patient_summary:export',
+          nowIso: '2026-05-27T15:50:00.000Z',
+          traceId: 'trace-storage-test-005'
+        }),
+      /wrong site/
+    );
+    assert.throws(
+      () =>
+        adapter.deliverSignedDownload({
+          token: signed.signedDownloadToken,
+          tenantId,
+          siteId,
+          requestedByUserId: 'user-clinician-synthetic-001',
+          permission: 'audit:export',
+          nowIso: '2026-05-27T15:50:00.000Z',
+          traceId: 'trace-storage-test-005'
+        }),
+      /wrong permission/
+    );
+  });
+
   it('deletes storage objects only with tenant/site match and approval evidence', () => {
     const adapter = new InMemoryObjectStorageAdapter(() => '2026-05-27T15:55:00.000Z');
     const storageKey = buildStorageKey({
@@ -167,5 +237,38 @@ describe('in-memory object storage adapter', () => {
     assert.equal(deleted.deletionResult, 'deleted');
     assert.equal(deleted.approvalId, 'approval-retention-synthetic-001');
     assert.equal(adapter.headObject(storageKey), undefined);
+  });
+});
+
+describe('backup and restore readiness evidence', () => {
+  it('requires Azure soft-delete, versioning, database backups, restore drills, and evidence retention before production restore execution', () => {
+    const blocked = evaluateBackupRestoreReadiness({
+      azureSoftDeleteEnabled: false,
+      azureVersioningEnabled: true,
+      databaseBackupConfigured: false,
+      restoreDrillEvidenceRecorded: false,
+      evidenceRetentionDays: 90,
+      productionRestoreExecutionApproved: false,
+      traceId: 'trace-restore-test-001'
+    });
+
+    assert.equal(blocked.status, 'blocked_review');
+    assert.equal(blocked.restoreExecutionEnabled, false);
+    assert.equal(blocked.missing.includes('AZURE_BLOB_SOFT_DELETE_ENABLED'), true);
+    assert.equal(blocked.missing.includes('DATABASE_BACKUP_CONFIGURED'), true);
+
+    const ready = evaluateBackupRestoreReadiness({
+      azureSoftDeleteEnabled: true,
+      azureVersioningEnabled: true,
+      databaseBackupConfigured: true,
+      restoreDrillEvidenceRecorded: true,
+      evidenceRetentionDays: 365,
+      productionRestoreExecutionApproved: false,
+      traceId: 'trace-restore-test-002'
+    });
+
+    assert.equal(ready.status, 'ready_synthetic');
+    assert.equal(ready.missing.length, 0);
+    assert.equal(ready.restoreExecutionEnabled, false);
   });
 });

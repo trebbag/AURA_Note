@@ -244,3 +244,15 @@ Production Azure Blob use requires soft delete, versioning, private containers, 
 - High-risk feature flags for live transcription, external AI, EHR writeback, production storage, retention deletion, patient-facing estimates, and claim submission default disabled and require approval evidence before metadata-only enablement.
 
 This is not production SSO or live feature execution. Real IdP credentials, production secret stores, live ClinicOS delegation, live vendor execution, PHI-bearing storage, medical-necessity determination, charge finalization, and claim submission remain deferred.
+
+## WO-042 secure storage, retention deletion, and restore controls
+
+`WO-042` hardens the production-shaped storage boundary without enabling live Azure credentials or production PHI payloads:
+
+- Final-note, patient-summary, structured export, and audit-export storage delivery uses the `ObjectStorageAdapter` boundary and deterministic in-memory execution in tests. Azure Blob remains the production-oriented adapter shape.
+- Secure downloads are server mediated. Tokens are short lived, tenant scoped, site scoped, requester scoped, permission scoped, and never represented as public URLs.
+- Final-note downloads require `final_note:export`; patient-summary downloads require `patient_summary:export` and preserve internal-detail exclusion evidence; audit-export downloads require `audit:export`.
+- Raw-audio deletion requires destructive deletion enabled, approval token, approval ID, and an open recovery-window timestamp. Transcript purge count remains zero.
+- Backup/restore readiness is metadata-only. Azure Blob soft-delete/versioning, database backup configuration, restore-drill evidence, and evidence retention are checked, but production restore execution remains disabled pending review.
+
+This is not live Azure storage, production deletion execution, production restore execution, or approval to store PHI-bearing objects.
