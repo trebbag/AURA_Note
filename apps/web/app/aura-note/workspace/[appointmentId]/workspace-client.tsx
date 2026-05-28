@@ -4,6 +4,7 @@ import { useMemo, useState } from 'react';
 
 type TimerState = 'not_started' | 'running' | 'paused' | 'stopped';
 type RecordingState = 'not_started' | 'recording' | 'paused' | 'stopped' | 'exception_approved';
+type MicrophoneState = 'prompt_required' | 'granted' | 'denied' | 'unsupported';
 type SuggestionStatus = 'candidate' | 'accepted' | 'removed';
 
 interface WorkspaceClientProps {
@@ -14,6 +15,10 @@ interface TranscriptSegment {
   sequence: number;
   speakerRole: 'clinician' | 'patient';
   text: string;
+  confidence?: number;
+  sourceChunkId?: string;
+  speakerLabel?: string;
+  corrected?: boolean;
 }
 
 interface Suggestion {
@@ -57,6 +62,10 @@ export function WorkspaceClient({ appointmentId }: WorkspaceClientProps) {
   const [recordingState, setRecordingState] = useState<RecordingState>('not_started');
   const [seconds, setSeconds] = useState(0);
   const [exceptionReason, setExceptionReason] = useState('');
+  const [microphoneState, setMicrophoneState] = useState<MicrophoneState>('prompt_required');
+  const [recordingChunks, setRecordingChunks] = useState<string[]>([]);
+  const [transcriptionStatus, setTranscriptionStatus] = useState('mock provider ready / live provider disabled');
+  const [correctionHistory, setCorrectionHistory] = useState<string[]>([]);
   const [transcriptSegments, setTranscriptSegments] = useState<TranscriptSegment[]>([]);
   const [suggestions, setSuggestions] = useState<Suggestion[]>(initialSuggestions);
   const [visitSelections, setVisitSelections] = useState<Suggestion[]>([]);
@@ -101,13 +110,68 @@ export function WorkspaceClient({ appointmentId }: WorkspaceClientProps) {
     setRecordingState('exception_approved');
   }
 
+  async function requestMicrophonePermission() {
+    if (!('mediaDevices' in navigator) || !navigator.mediaDevices?.getUserMedia) {
+      setMicrophoneState('unsupported');
+      return;
+    }
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      stream.getTracks().forEach((track) => track.stop());
+      setMicrophoneState('granted');
+    } catch {
+      setMicrophoneState('denied');
+    }
+  }
+
+  function demoPermissionDenied() {
+    setMicrophoneState('denied');
+  }
+
+  function appendMetadataChunk() {
+    if (recordingState !== 'recording') return;
+    setRecordingChunks((current) => [...current, `metadata-only chunk ${current.length + 1}`]);
+  }
+
+  function processMockTranscription() {
+    if (recordingChunks.length === 0) {
+      setTranscriptionStatus('mock transcription blocked until metadata-only chunk exists');
+      return;
+    }
+    setTranscriptSegments((current) => [
+      ...current,
+      ...recordingChunks.slice(current.length).map((chunk, index) => ({
+        sequence: current.length + index + 1,
+        speakerRole: index % 2 === 0 ? 'clinician' as const : 'patient' as const,
+        text: `Synthetic mock transcript from ${chunk}`,
+        confidence: 0.91,
+        sourceChunkId: chunk,
+        speakerLabel: `Speaker ${index + 1} placeholder`
+      }))
+    ]);
+    setTranscriptionStatus('processed by deterministic mock provider / live provider disabled');
+  }
+
+  function correctFirstTranscriptSegment() {
+    setTranscriptSegments((current) =>
+      current.map((segment, index) =>
+        index === 0
+          ? { ...segment, text: 'Synthetic corrected transcript segment', corrected: true }
+          : segment
+      )
+    );
+    setCorrectionHistory((current) => [...current, 'Synthetic clinician correction recorded']);
+  }
+
   function appendTranscript() {
     setTranscriptSegments((current) => [
       ...current,
       {
         sequence: current.length + 1,
         speakerRole: current.length % 2 === 0 ? 'clinician' : 'patient',
-        text: `Synthetic mock transcript segment ${current.length + 1}`
+        text: `Synthetic mock transcript segment ${current.length + 1}`,
+        confidence: 0.9,
+        speakerLabel: `Speaker ${current.length + 1} placeholder`
       }
     ]);
   }
@@ -156,7 +220,7 @@ export function WorkspaceClient({ appointmentId }: WorkspaceClientProps) {
     {
       label: 'Transcript',
       state: transcriptSegments.length > 0 ? 'ready' : 'empty',
-      detail: `${transcriptSegments.length} mock segment${transcriptSegments.length === 1 ? '' : 's'} retained indefinitely.`
+      detail: `${transcriptSegments.length} mock segment${transcriptSegments.length === 1 ? '' : 's'} retained indefinitely; ${correctionHistory.length} correction${correctionHistory.length === 1 ? '' : 's'}.`
     },
     {
       label: 'Compliance & Quality Review',
@@ -224,13 +288,64 @@ export function WorkspaceClient({ appointmentId }: WorkspaceClientProps) {
       </section>
 
       <section className="controls-bar secondary-controls" aria-label="Recording and transcript controls">
+        <button type="button" onClick={requestMicrophonePermission}>
+          Request Microphone
+        </button>
+        <button type="button" onClick={demoPermissionDenied}>
+          Demo Permission Denied
+        </button>
         <button type="button" disabled={recordingState === 'exception_approved'} onClick={approveException}>
           Approve Exception
+        </button>
+        <button type="button" disabled={recordingState !== 'recording'} onClick={appendMetadataChunk}>
+          Append Metadata Chunk
+        </button>
+        <button type="button" disabled={recordingChunks.length === 0} onClick={processMockTranscription}>
+          Process Mock Transcription
+        </button>
+        <button type="button" disabled={transcriptSegments.length === 0} onClick={correctFirstTranscriptSegment}>
+          Correct Transcript
         </button>
         <button type="button" disabled={!editorUnlocked} onClick={appendTranscript}>
           Append Mock Transcript
         </button>
         <span>{exceptionReason || 'No recording exception active'}</span>
+      </section>
+
+      <section className="status-band" aria-label="Audio capture and transcription status">
+        <div>
+          <h2>Audio Capture Candidate</h2>
+          <p>
+            Browser microphone access requires explicit user action. This WO-040 route stores metadata-only chunks, keeps raw PHI audio
+            payload storage disabled, and uses deterministic mock transcription only.
+          </p>
+        </div>
+        <dl>
+          <div>
+            <dt>Microphone</dt>
+            <dd>{microphoneState}</dd>
+          </div>
+          <div>
+            <dt>Transport</dt>
+            <dd>metadata_only_synthetic</dd>
+          </div>
+          <div>
+            <dt>Chunks</dt>
+            <dd>{recordingChunks.length}</dd>
+          </div>
+          <div>
+            <dt>Provider</dt>
+            <dd>{transcriptionStatus}</dd>
+          </div>
+          <div>
+            <dt>Raw audio retention</dt>
+            <dd>one week / raw payload disabled</dd>
+          </div>
+          <div>
+            <dt>Transcript retention</dt>
+            <dd>indefinite</dd>
+          </div>
+        </dl>
       </section>
 
       <section className="review-board" aria-label="Suggestions and review panels" aria-live="polite">
@@ -275,6 +390,23 @@ export function WorkspaceClient({ appointmentId }: WorkspaceClientProps) {
               </span>
             ))}
           </div>
+        </article>
+
+        <article aria-label="Transcript segments">
+          <h2>Transcript Segments</h2>
+          {transcriptSegments.length === 0 ? <p>No transcript segments yet.</p> : null}
+          {transcriptSegments.map((segment) => (
+            <div key={`${segment.sequence}-${segment.text}`} className="suggestion-row">
+              <div>
+                <strong>{segment.speakerLabel ?? segment.speakerRole}</strong>
+                <span>
+                  {Math.round((segment.confidence ?? 0) * 100)}% / {segment.sourceChunkId ?? 'manual mock'} /{' '}
+                  {segment.corrected ? 'corrected' : 'uncorrected'}
+                </span>
+              </div>
+              <p>{segment.text}</p>
+            </div>
+          ))}
         </article>
 
         <article>

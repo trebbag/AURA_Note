@@ -7,6 +7,8 @@ import type {
   EhrWritebackQueueDto,
   RawAudioRetentionMetadataDto,
   RetentionJobResultDto,
+  RecordingChunkMetadataDto,
+  TranscriptSegmentDto,
   TranscriptViewDto
 } from '@aura-note/contracts';
 import { createEventEnvelope } from '@aura-note/contracts';
@@ -20,6 +22,8 @@ export function getWorkerStatus() {
     implementedJobs: [
       'raw_audio_retention_candidate_scan',
       'transcript_retention_indefinite_scan',
+      'mock_transcription_job_processor',
+      'transcript_correction_history_projection',
       'export_artifact_status_scan',
       'ehr_writeback_queue_status_scan',
       'ehr_adapter_health_check_scan',
@@ -31,6 +35,69 @@ export function getWorkerStatus() {
       'support_status_health_snapshot'
     ],
     jobsDeferredToWorkOrders: ['live_ai_provider_queue', 'live_ehr_writeback', 'production_analytics_warehouse', 'destructive_storage_purge']
+  };
+}
+
+export interface MockTranscriptionWorkerResult {
+  jobId: string;
+  status: 'processed';
+  providerId: 'deterministic-mock-transcription';
+  liveProviderCalled: false;
+  transcript: TranscriptViewDto;
+}
+
+export function processMockTranscriptionWorkerJob(
+  noteId: string,
+  chunks: RecordingChunkMetadataDto[],
+  nowIso = '2026-05-27T00:00:00.000Z'
+): MockTranscriptionWorkerResult {
+  if (!noteId.trim()) {
+    throw new Error('mock transcription worker requires note identifier');
+  }
+  if (chunks.length === 0) {
+    throw new Error('mock transcription worker requires accepted chunk metadata');
+  }
+  const acceptedChunks = chunks.filter((chunk) => chunk.accepted && chunk.rawPhiAudioStored === false);
+  if (acceptedChunks.length !== chunks.length) {
+    throw new Error('mock transcription worker only accepts metadata-only chunks with no raw PHI audio stored');
+  }
+
+  const segments: TranscriptSegmentDto[] = acceptedChunks.map((chunk, index) => ({
+    transcriptSegmentId: `segment-${chunk.chunkId}`,
+    noteId,
+    sequence: index + 1,
+    speakerRole: index % 2 === 0 ? 'clinician' : 'patient',
+    text: `Synthetic worker transcript from chunk ${chunk.sequence}`,
+    source: 'mock_transcription',
+    sourceChunkId: chunk.chunkId,
+    confidence: 0.91,
+    speakerLabel: `Speaker ${index + 1} placeholder`,
+    providerName: 'deterministic_mock',
+    createdAt: nowIso
+  }));
+
+  return {
+    jobId: `mock-transcription-job-${noteId}`,
+    status: 'processed',
+    providerId: 'deterministic-mock-transcription',
+    liveProviderCalled: false,
+    transcript: {
+      noteId,
+      transcriptId: `transcript-${noteId}`,
+      retentionPolicy: 'indefinite',
+      segments,
+      providerStatus: {
+        providerId: 'deterministic-mock-transcription',
+        mode: 'mock_only',
+        configured: true,
+        liveProviderCallsEnabled: false,
+        baaRequiredBeforeLiveUse: true,
+        supportsDiarization: false,
+        speakerLabelMode: 'placeholder',
+        confidenceMetadataAvailable: true,
+        disabledReason: 'Live transcription providers are disabled in the worker candidate.'
+      }
+    }
   };
 }
 

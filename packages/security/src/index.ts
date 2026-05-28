@@ -29,6 +29,11 @@ export type Permission =
   | 'rules_catalog:view'
   | 'rules_catalog:manage'
   | 'visit:start'
+  | 'recording:control'
+  | 'recording:chunk'
+  | 'transcription:process'
+  | 'transcription_provider:view'
+  | 'transcript:correct'
   | 'draft_note:view'
   | 'finalization:manage'
   | 'final_note:view'
@@ -473,6 +478,16 @@ export function canPerform(permission: Permission, ctx: AccessContext): boolean 
       return ctx.authorizedAdmin || ['admin', 'clinic_manager', 'compliance_privacy_lead'].includes(ctx.role);
     case 'visit:start':
       return ctx.authorizedAdmin || (ctx.role === 'clinician' && ctx.linkedToVisit);
+    case 'recording:control':
+      return ctx.authorizedAdmin || (ctx.role === 'clinician' && ctx.treatingClinician && ctx.linkedToVisit);
+    case 'recording:chunk':
+      return ctx.authorizedAdmin || (ctx.role === 'clinician' && ctx.treatingClinician && ctx.linkedToVisit);
+    case 'transcription:process':
+      return ctx.authorizedAdmin || ctx.role === 'service_account' || (ctx.role === 'clinician' && ctx.treatingClinician && ctx.linkedToVisit);
+    case 'transcription_provider:view':
+      return ctx.authorizedAdmin || ['clinician', 'admin', 'clinic_manager', 'compliance_privacy_lead'].includes(ctx.role);
+    case 'transcript:correct':
+      return ctx.authorizedAdmin || (ctx.role === 'clinician' && ctx.treatingClinician && ctx.linkedToVisit);
     case 'draft_note:view':
       return ctx.authorizedAdmin || (ctx.treatingClinician && ctx.linkedToVisit);
     case 'finalization:manage':
@@ -596,6 +611,10 @@ export function redactForbiddenPhiKeys(value: unknown): unknown {
       forbiddenPhiKeySet.has(key) ? '[REDACTED]' : redactForbiddenPhiKeys(child)
     ])
   );
+}
+
+export function containsForbiddenPhiText(value: unknown): boolean {
+  return scanForForbiddenPhiText(value).containsForbiddenPhiText;
 }
 
 export function redactForbiddenPhiText(value: unknown): unknown {

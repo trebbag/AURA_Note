@@ -40,10 +40,17 @@ export type CoreEventType =
   | 'visit.resumed.v1'
   | 'visit.stopped.v1'
   | 'recording.started.v1'
+  | 'microphone.permission_recorded.v1'
+  | 'recording.chunk_received.v1'
   | 'recording.exception_approved.v1'
   | 'recording.stopped.v1'
   | 'raw_audio.retention_scheduled.v1'
+  | 'transcription.provider_status_checked.v1'
+  | 'transcription.job_queued.v1'
+  | 'transcription.job_processed.v1'
+  | 'transcription.job_failed.v1'
   | 'transcript.segment_appended.v1'
+  | 'transcript.segment_corrected.v1'
   | 'suggestions.evaluated.v1'
   | 'suggestion.accepted.v1'
   | 'suggestion.removed.v1'
@@ -206,6 +213,98 @@ export interface RawAudioRetentionMetadataDto {
   contentLengthBytes?: number;
 }
 
+export type MicrophonePermissionStateDto = 'prompt_required' | 'granted' | 'denied' | 'unsupported';
+export type RecordingTransportModeDto = 'metadata_only_synthetic';
+export type TranscriptionProviderModeDto = 'mock_only' | 'external_disabled';
+export type TranscriptionJobStatusDto = 'queued' | 'processed' | 'failed';
+
+export interface RecordingPermissionDto {
+  appointmentId: string;
+  noteId: string;
+  permissionState: MicrophonePermissionStateDto;
+  userGestureConfirmed: boolean;
+  browserSupported: boolean;
+  liveAudioCaptureEnabled: false;
+  rawPhiAudioStored: false;
+  recordedAt: string;
+}
+
+export interface RecordMicrophonePermissionRequestDto {
+  permissionState: MicrophonePermissionStateDto;
+  userGestureConfirmed: boolean;
+  browserSupported: boolean;
+}
+
+export interface RecordingChunkMetadataDto {
+  chunkId: string;
+  appointmentId: string;
+  noteId: string;
+  visitSessionId: string;
+  sequence: number;
+  capturedAt: string;
+  durationMs: number;
+  contentLengthBytes: number;
+  checksum: string;
+  transportMode: RecordingTransportModeDto;
+  rawPhiAudioStored: false;
+  accepted: boolean;
+  duplicate: boolean;
+  idempotencyKey?: string;
+  storageProvider?: StorageProviderDto;
+  storageKey?: string;
+}
+
+export interface AppendRecordingChunkRequestDto {
+  sequence: number;
+  durationMs: number;
+  contentLengthBytes: number;
+  checksum?: string;
+}
+
+export interface TranscriptionProviderStatusDto {
+  providerId: string;
+  mode: TranscriptionProviderModeDto;
+  configured: boolean;
+  liveProviderCallsEnabled: false;
+  baaRequiredBeforeLiveUse: true;
+  supportsDiarization: false;
+  speakerLabelMode: 'placeholder';
+  confidenceMetadataAvailable: true;
+  disabledReason?: string;
+}
+
+export interface TranscriptionJobDto {
+  transcriptionJobId: string;
+  appointmentId: string;
+  noteId: string;
+  providerId: string;
+  providerMode: TranscriptionProviderModeDto;
+  status: TranscriptionJobStatusDto;
+  queuedAt: string;
+  processedAt?: string;
+  failedReason?: string;
+  sourceChunkIds: string[];
+  segmentCount: number;
+  liveProviderCalled: false;
+}
+
+export interface TranscriptCorrectionDto {
+  correctionId: string;
+  transcriptSegmentId: string;
+  noteId: string;
+  previousText: string;
+  correctedText: string;
+  correctionReason: string;
+  correctedByUserId: string;
+  correctedAt: string;
+  auditSafe: true;
+}
+
+export interface CorrectTranscriptSegmentRequestDto {
+  correctedText: string;
+  correctionReason: string;
+}
+
 export interface TranscriptSegmentDto {
   transcriptSegmentId: string;
   noteId: string;
@@ -214,6 +313,11 @@ export interface TranscriptSegmentDto {
   text: string;
   source: 'mock_transcription';
   createdAt: string;
+  confidence?: number;
+  sourceChunkId?: string;
+  speakerLabel?: string;
+  providerName?: 'deterministic_mock';
+  corrected?: boolean;
 }
 
 export interface AppendTranscriptSegmentRequestDto {
@@ -226,6 +330,8 @@ export interface TranscriptViewDto {
   transcriptId: string;
   retentionPolicy: 'indefinite';
   segments: TranscriptSegmentDto[];
+  corrections?: TranscriptCorrectionDto[];
+  providerStatus?: TranscriptionProviderStatusDto;
 }
 
 export interface VisitSessionControlResponseDto {
@@ -234,6 +340,45 @@ export interface VisitSessionControlResponseDto {
   visitSession: VisitSessionDto;
   rawAudioRetention?: RawAudioRetentionMetadataDto;
   transcript?: TranscriptViewDto;
+  auditEvent: AuditEventDto;
+  domainEvents: Array<AuraNoteEvent<Record<string, unknown>>>;
+}
+
+export interface RecordingPermissionResponseDto {
+  permission: RecordingPermissionDto;
+  providerStatus: TranscriptionProviderStatusDto;
+  auditEvent: AuditEventDto;
+  domainEvents: Array<AuraNoteEvent<Record<string, unknown>>>;
+}
+
+export interface RecordingChunkResponseDto {
+  recordingChunk: RecordingChunkMetadataDto;
+  rawAudioRetention: RawAudioRetentionMetadataDto;
+  auditEvent: AuditEventDto;
+  domainEvents: Array<AuraNoteEvent<Record<string, unknown>>>;
+}
+
+export interface TranscriptionJobResponseDto {
+  transcriptionJob: TranscriptionJobDto;
+  providerStatus: TranscriptionProviderStatusDto;
+  transcript: TranscriptViewDto;
+  auditEvent: AuditEventDto;
+  domainEvents: Array<AuraNoteEvent<Record<string, unknown>>>;
+}
+
+export interface TranscriptCorrectionResponseDto {
+  transcript: TranscriptViewDto;
+  correction: TranscriptCorrectionDto;
+  auditEvent: AuditEventDto;
+  domainEvents: Array<AuraNoteEvent<Record<string, unknown>>>;
+}
+
+export interface RecordingRetentionResponseDto {
+  rawAudioRetention?: RawAudioRetentionMetadataDto;
+  recordingChunks: RecordingChunkMetadataDto[];
+  transcriptRetentionPolicy: 'indefinite';
+  transcriptPurgeCount: 0;
+  rawAudioPayloadStored: false;
   auditEvent: AuditEventDto;
   domainEvents: Array<AuraNoteEvent<Record<string, unknown>>>;
 }

@@ -4,13 +4,13 @@ This file tracks missing, conflicting, unsafe, or deliberately deferred product 
 
 ## Active gaps
 
-No active gaps as of post-`WO-039` standalone operations and P7.5 review on 2026-05-27.
+No active gaps as of post-`WO-040` browser audio capture and transcription candidate / P8.5 review on 2026-05-27.
 
 The repo remains not production-ready. The items below are deferred production decisions rather than active blockers for the current rails work order.
 
 ## Deferred production decisions
 
-These items must stay visible and must be resolved before the related production work can be declared complete. They are not blockers for the completed P7.5 rails or the next P8.5 audio/transcription candidate because the active work remains synthetic/local and explicitly excludes live PHI, live EHR/ClinicOS synchronization, autonomous billing, and production launch behavior.
+These items must stay visible and must be resolved before the related production work can be declared complete. They are not blockers for the completed P8.5 audio/transcription candidate because the active work remains synthetic/local and explicitly excludes live PHI, live EHR/ClinicOS synchronization, live transcription credentials, autonomous billing, and production launch behavior.
 
 ### Deferred Decision — Production identity provider and account lifecycle
 
@@ -33,12 +33,12 @@ These items must stay visible and must be resolved before the related production
 - **Decision needed before live use:** Azure credential source, private container policy, soft-delete/versioning configuration, backup/restore drill, deletion approval workflow, recovery window, and evidence retention.
 - **Safe current posture:** production-shaped adapter boundary and deterministic fake storage tests; no PHI-bearing production object delivery or destructive production deletion.
 
-### Deferred Decision — Live transcription provider
+### Deferred Decision — Live transcription provider and PHI-bearing audio transport
 
-- **Related future work:** `WO-040`
+- **Related future work:** post-`WO-040` provider governance, `WO-042`, `WO-046`
 - **Status:** deferred
 - **Decision needed before live use:** transcription vendor, BAA/privacy review, audio transport constraints, diarization support, confidence metadata, correction retention, and failure-handling policy.
-- **Safe current posture:** mock transcription and metadata scaffolds only.
+- **Safe current posture:** browser permission UX, metadata-only recording chunks, deterministic mock transcription, and correction history only; no live provider calls and no raw PHI audio payload storage.
 
 ### Deferred Decision — External AI provider and PHI governance
 

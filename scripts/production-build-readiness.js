@@ -142,7 +142,8 @@ check(
   'SPEC_GAPS explicitly reflects no active gaps after the latest production-build rails review',
     specGaps.includes('No active gaps as of post-`WO-032` / production-build re-rail review') ||
     specGaps.includes('No active gaps as of post-`WO-038` standalone patient/chart/schedule review') ||
-    specGaps.includes('No active gaps as of post-`WO-039` standalone operations and P7.5 review'),
+    specGaps.includes('No active gaps as of post-`WO-039` standalone operations and P7.5 review') ||
+    specGaps.includes('No active gaps as of post-`WO-040` browser audio capture and transcription candidate / P8.5 review'),
   'SPEC_GAPS.md active gaps section'
 );
 

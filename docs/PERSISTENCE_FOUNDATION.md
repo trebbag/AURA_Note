@@ -292,6 +292,12 @@ This remains synthetic/local readiness evidence. It is not production PHI databa
 - final-note PDF, patient-summary PDF, copy, structured export, and audit export DTOs can now carry storage provider, storage key, checksum, content length, delivery mode, signed download token, and expiry metadata;
 - signed download evidence uses short-lived permission-checked metadata tokens and explicitly returns no public URL;
 - raw-audio retention deletion can delete storage objects only when destructive deletion is enabled and approval evidence is present;
+
+## WO-040 audio/transcription persistence posture
+
+`WO-040` adds browser/API/worker-testable audio and transcription candidate behavior without broadening production persistence. Recording chunks are metadata-only synthetic records attached to the existing schedule/workspace runtime, transcript segments carry mock provider/source/confidence metadata, and correction history is represented as audit-safe metadata.
+
+The durable local visit-capture adapter from `WO-034` remains the persistence evidence for visit session, recording asset, transcript, and transcript segment state. `WO-040` does not enable raw PHI audio payload storage, live transcription-provider persistence, production object storage execution, or destructive production deletion. Broader production storage, backup/restore, and deletion controls remain in `WO-042`.
 - transcript purge count remains zero because transcript retention is indefinite.
 
 Production backup/restore execution remains blocked pending security/privacy review. Required production posture is Azure Blob soft delete plus versioning for recovery, database point-in-time backup for metadata, immutable audit evidence retention for deletion approvals, and restore drills before PHI-bearing production use.

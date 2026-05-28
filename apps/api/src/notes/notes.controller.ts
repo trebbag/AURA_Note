@@ -1,14 +1,17 @@
 import { Body, Controller, Get, Headers, Inject, Param, Post } from '@nestjs/common';
 import type {
   AddVisitSelectionRequestDto,
+  AppendRecordingChunkRequestDto,
   ApprovalRequestDto,
   BillingAttestRequestDto,
+  CorrectTranscriptSegmentRequestDto,
   EhrWritebackRequestDto,
   AppendTranscriptSegmentRequestDto,
   CompareEditUpdateRequestDto,
   CreateHistoryGapTaskRequestDto,
   FinalizationSelectionDecisionRequestDto,
   FinalizationSuggestionDecisionRequestDto,
+  RecordMicrophonePermissionRequestDto,
   RecordingExceptionRequestDto,
   RebeautifyRequestDto,
   SuggestionDecisionRequestDto
@@ -76,6 +79,59 @@ export class NotesController {
     );
   }
 
+  @Post('documentation-workspace/appointments/:appointmentId/recording/permission')
+  recordMicrophonePermission(
+    @Param('appointmentId') appointmentId: string,
+    @Body() body: RecordMicrophonePermissionRequestDto,
+    @Headers() headers: Record<string, string | string[] | undefined>
+  ) {
+    return this.scheduleService.recordMicrophonePermission(
+      appointmentId,
+      body,
+      this.scheduleService.createRequestContext(headers)
+    );
+  }
+
+  @Post('documentation-workspace/appointments/:appointmentId/recording/chunks')
+  appendRecordingChunk(
+    @Param('appointmentId') appointmentId: string,
+    @Body() body: AppendRecordingChunkRequestDto,
+    @Headers() headers: Record<string, string | string[] | undefined>
+  ) {
+    return this.scheduleService.appendRecordingChunk(
+      appointmentId,
+      body,
+      this.scheduleService.createRequestContext(headers)
+    );
+  }
+
+  @Get('documentation-workspace/appointments/:appointmentId/recording/retention')
+  getRecordingRetention(
+    @Param('appointmentId') appointmentId: string,
+    @Headers() headers: Record<string, string | string[] | undefined>
+  ) {
+    return this.scheduleService.getRecordingRetention(appointmentId, this.scheduleService.createRequestContext(headers));
+  }
+
+  @Get('documentation-workspace/appointments/:appointmentId/transcription/provider-status')
+  getTranscriptionProviderStatus(
+    @Param('appointmentId') appointmentId: string,
+    @Headers() headers: Record<string, string | string[] | undefined>
+  ) {
+    return this.scheduleService.getTranscriptionProviderStatus(
+      appointmentId,
+      this.scheduleService.createRequestContext(headers)
+    );
+  }
+
+  @Post('documentation-workspace/appointments/:appointmentId/transcription/jobs/mock')
+  processMockTranscriptionJob(
+    @Param('appointmentId') appointmentId: string,
+    @Headers() headers: Record<string, string | string[] | undefined>
+  ) {
+    return this.scheduleService.processMockTranscriptionJob(appointmentId, this.scheduleService.createRequestContext(headers));
+  }
+
   @Get('documentation-workspace/appointments/:appointmentId/transcript')
   getTranscript(@Param('appointmentId') appointmentId: string, @Headers() headers: Record<string, string | string[] | undefined>) {
     return this.scheduleService.getTranscriptByAppointment(appointmentId, this.scheduleService.createRequestContext(headers));
@@ -89,6 +145,21 @@ export class NotesController {
   ) {
     return this.scheduleService.appendTranscriptSegment(
       appointmentId,
+      body,
+      this.scheduleService.createRequestContext(headers)
+    );
+  }
+
+  @Post('documentation-workspace/appointments/:appointmentId/transcript/segments/:transcriptSegmentId/correction')
+  correctTranscriptSegment(
+    @Param('appointmentId') appointmentId: string,
+    @Param('transcriptSegmentId') transcriptSegmentId: string,
+    @Body() body: CorrectTranscriptSegmentRequestDto,
+    @Headers() headers: Record<string, string | string[] | undefined>
+  ) {
+    return this.scheduleService.correctTranscriptSegment(
+      appointmentId,
+      transcriptSegmentId,
       body,
       this.scheduleService.createRequestContext(headers)
     );

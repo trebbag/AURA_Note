@@ -119,7 +119,7 @@ Post-CP4 productionization candidates are documented in `docs/POST_CP4_PRODUCTIO
 
 `WO-038` through `WO-039` form the P7.5 standalone product completion candidate. They complete standalone patient/chart/schedule/worklist/settings/template/estimate/rules-catalog surfaces so core v1 operation does not depend on ClinicOS. P7.5 is complete once `WO-039` is implemented, tested, and merged.
 
-`WO-040` forms the P8.5 audio and transcription candidate. It adds browser microphone capture, recording transport, transcription adapters, mock provider coverage, retention metadata, correction history, and provider-governance boundaries. Live transcription providers and production PHI audio storage remain disabled unless a later governance work order explicitly authorizes them.
+`WO-040` forms the P8.5 audio and transcription candidate. It adds browser microphone capture, metadata-only recording transport, transcription adapters, mock provider coverage, retention metadata, correction history, and provider-governance boundaries. Live transcription providers and production PHI audio storage remain disabled unless a later governance work order explicitly authorizes them. P8.5 is complete once `WO-040` is implemented, tested, merged, and recorded in the checkpoint report.
 
 `WO-041` through `WO-043` form the P8 production platform candidate. They harden identity, tenant administration, config/secrets, feature flags, Azure storage/download/retention/backup/restore, observability, support operations, and status views.
 

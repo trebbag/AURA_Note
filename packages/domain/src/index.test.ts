@@ -23,6 +23,7 @@ import {
   createAppointmentLifecycle,
   createAppointmentNoteInvariant,
   createRawAudioRetentionMetadata,
+  createTranscriptCorrection,
   createTranscriptRetentionMetadata,
   evaluateLowConfidenceOverride,
   getNextWizardStep,
@@ -37,7 +38,9 @@ import {
   validateStandalonePatientDraft,
   validateTemplateDefinition,
   validateDotPhrase,
+  validateRecordingChunkMetadata,
   estimateConfigurationIsSafe,
+  mockTranscriptionCanProcessChunk,
   rulesCatalogEntryIsSafe,
   canAccessBillingTranscriptForReview,
   type CoachingSignal
@@ -253,6 +256,59 @@ describe('retention metadata', () => {
 
     assert.equal(metadata.retentionClass, 'transcript');
     assert.equal(metadata.retentionPolicy, 'indefinite');
+  });
+});
+
+describe('audio capture and transcript correction helpers', () => {
+  it('accepts metadata-only recording chunks and rejects raw audio payload evidence', () => {
+    assert.deepEqual(
+      validateRecordingChunkMetadata({
+        sequence: 1,
+        durationMs: 15000,
+        contentLengthBytes: 0,
+        checksum: 'metadata-only-001',
+        idempotencyKey: 'idem-audio-001'
+      }),
+      []
+    );
+    assert.equal(
+      validateRecordingChunkMetadata({
+        sequence: 1,
+        durationMs: 15000,
+        contentLengthBytes: 42,
+        checksum: 'metadata-only-001'
+      }).some((error) => /must not persist raw audio bytes/.test(error)),
+      true
+    );
+    assert.equal(
+      mockTranscriptionCanProcessChunk({
+        sequence: 1,
+        durationMs: 15000,
+        contentLengthBytes: 0,
+        checksum: 'metadata-only-001'
+      }),
+      true
+    );
+  });
+
+  it('creates audit-safe transcript correction history', () => {
+    const correction = createTranscriptCorrection({
+      previousText: 'Synthetic prior transcript segment',
+      correctedText: 'Synthetic corrected transcript segment',
+      correctionReason: 'Synthetic clinician correction'
+    });
+
+    assert.equal(correction.auditSafe, true);
+    assert.equal(correction.correctedText, 'Synthetic corrected transcript segment');
+    assert.throws(
+      () =>
+        createTranscriptCorrection({
+          previousText: '',
+          correctedText: 'Synthetic corrected transcript segment',
+          correctionReason: 'Synthetic clinician correction'
+        }),
+      /requires previous text/
+    );
   });
 });
 

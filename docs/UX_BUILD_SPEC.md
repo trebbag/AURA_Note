@@ -68,6 +68,8 @@ The first CP-1 notes shell adds browser-testable routes for `/aura-note/drafts`,
 
 The Documentation Workspace now includes browser-testable Start Visit, Pause, Resume, Stop, approved recording exception, and mock transcript append controls. These controls are synthetic CP-1 scaffolds and do not connect to microphones, audio storage, external transcription, or external AI. The backend mirrors the same lifecycle with visit-session control endpoints, raw-audio retention metadata, and indefinitely retained mock transcript segments.
 
+`WO-040` extends the same workspace with a P8.5 audio capture candidate area. Users can request browser microphone permission, see denied/unsupported/demo states, append metadata-only recording chunks while normal recording is active, process deterministic mock transcription, view confidence/source/speaker-label/correction metadata, and record a transcript correction. The UI must keep raw audio payload storage, live transcription, external AI transcript use, and production deletion visibly disabled unless later governance enables them.
+
 ### WO-005 implementation status
 
 The Documentation Workspace now includes deterministic mock Suggestions, Visit Selections, Compliance & Quality Review, and History Gap Review controls. Suggestion cards are draft-only and human-review-required. Diagnosis candidates below 75 percent require override metadata before acceptance. History Gap questions can create MA follow-up blocker tasks, and those blockers disable Finalize-facing controls in the CP-1 shell.

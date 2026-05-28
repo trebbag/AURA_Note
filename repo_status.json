@@ -1,8 +1,8 @@
 {
   "project": "AURA Note v1",
   "mode": "production_build_in_progress",
-  "current_checkpoint": "P8.5",
-  "next_work_order": "WO-040",
+  "current_checkpoint": "P8",
+  "next_work_order": "WO-041",
   "work_orders": {
     "WO-000": "done",
     "WO-001": "done",
@@ -44,8 +44,8 @@
     "WO-037": "done",
     "WO-038": "done",
     "WO-039": "done",
-    "WO-040": "todo",
-    "WO-041": "planned",
+    "WO-040": "done",
+    "WO-041": "todo",
     "WO-042": "planned",
     "WO-043": "planned",
     "WO-044": "planned",
@@ -57,7 +57,7 @@
     "WO-050": "planned",
     "WO-051": "planned"
   },
-  "last_updated_by": "Codex WO-039 standalone operations completion",
-  "last_updated_at": "2026-05-27T23:20:00Z",
-  "notes": "WO-039 added synthetic/local standalone task inbox, MA follow-up worklist, billing review queue with triggered-review transcript restrictions, settings/admin/integrations center, templates and dot phrases, internal-only estimate configuration, rules catalog seeds, OpenAPI/DTO/event updates, browser operations route coverage, and pnpm standalone:operations-readiness. P7.5 is complete as synthetic/browser/API-testable standalone product evidence. AURA Note is not production-ready; browser audio capture, live transcription, production identity, live storage, live EHR/ClinicOS sync, live AI, production PHI storage, production deletion, medical-necessity determination, charge finalization, and claim submission remain future work."
+  "last_updated_by": "Codex WO-040 audio transcription candidate",
+  "last_updated_at": "2026-05-27T23:45:08Z",
+  "notes": "WO-040 added synthetic/browser/API/worker-testable audio and transcription candidate behavior: explicit microphone permission states, metadata-only recording chunks, mock transcription provider/job flow, transcript confidence/source/speaker metadata, correction history, one-week raw-audio metadata with no raw payload storage, indefinite transcript retention, OpenAPI/DTO/event updates, browser route coverage, and pnpm audio:transcription-readiness. P8.5 is complete as synthetic audio/transcription candidate evidence only. AURA Note is not production-ready; production identity, live transcription credentials, production PHI audio storage, production object storage execution, production deletion, live EHR/ClinicOS sync, live AI, medical-necessity determination, charge finalization, claim submission, and production launch approval remain future work."
 }
