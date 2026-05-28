@@ -1,0 +1,78 @@
+# Post-P11 Continuation Plan
+
+## Current state
+
+AURA Note has completed `WO-000` through `WO-052` as synthetic/local and decision-package evidence. The current active checkpoint remains P11. No production launch, live vendor use, production PHI storage, production credential use, live claim submission, clearinghouse integration, payer integration, denial automation, payment posting, charge finalization, medical-necessity determination, or patient-facing financial conclusion is approved or implemented.
+
+`next_work_order` intentionally remains `null` until a specific future tranche is approved and promoted into `repo_status.json` as `todo` or `in_progress`.
+
+## Continuation rule
+
+Post-P11 work must start with a named work order and must be one of the following:
+
+- **Planning/control tranche:** may update plans, work-order definitions, readiness scripts, runbooks, and status semantics. It must not implement live behavior.
+- **Synthetic implementation tranche:** may add browser/API-testable local behavior using synthetic data and disabled vendor boundaries. It must not claim production readiness.
+- **Governed live-integration tranche:** may only begin after founder approval plus the required billing, compliance, privacy, security, legal, vendor, credential, rollback, incident-response, and PHI-governance decisions are documented.
+
+## Candidate future tranche families
+
+### Production identity and account lifecycle live review
+
+- Required decisions: production IdP, SSO protocol, MFA, account recovery, disabled-user source of truth, session timeout, audit retention, break-glass posture, support role limits, and ClinicOS delegation rules.
+- Required evidence before implementation: security/privacy approval, credential-source plan, staging environment, role-denial tests, access-review runbook, and incident-response runbook.
+- Safe current posture: production-shaped identity remains synthetic and fail-closed.
+
+### Production PHI persistence and database operations review
+
+- Required decisions: production database host, encryption/KMS, backup cadence, restore drills, RLS expansion policy, data-retention policy, migration approvals, rollback policy, data export policy, and support access policy.
+- Required evidence before implementation: security/privacy approval, backup/restore evidence plan, operational owner, local-to-staging promotion runbook, and tenant-isolation test plan.
+- Safe current posture: local PostgreSQL evidence remains synthetic/local; production PHI storage is not enabled.
+
+### Production Azure storage, deletion, and restore review
+
+- Required decisions: Azure account/container, soft delete/versioning, legal hold, immutability, customer-managed keys, signed download TTLs, recovery windows, deletion approval authority, restore drill cadence, and evidence retention.
+- Required evidence before implementation: storage security review, no-public-url tests, deletion-approval tests, backup/restore runbook, and incident escalation path.
+- Safe current posture: Azure adapter and deletion behavior are local/fake readiness evidence only.
+
+### Live transcription provider review
+
+- Required decisions: provider, BAA/private path, audio chunking strategy, raw-audio retention, transcript correction policy, diarization reliability posture, retry/dead-letter policy, user consent/notice requirements, and failure fallback.
+- Required evidence before implementation: privacy/security approval, synthetic provider contract tests, no-raw-PHI-leakage tests, retention deletion tests, and operational support path.
+- Safe current posture: browser audio and transcription remain metadata-only/mock-provider evidence.
+
+### External AI private/BAA pathway review
+
+- Required decisions: model/provider, BAA/private deployment path, prompt registry ownership, evaluation thresholds, PHI scrub/de-identification policy, source freshness rules, drift monitoring, incident response, and live credential source.
+- Required evidence before implementation: AI governance approval, eval harness thresholds, prompt/model versioning, no-raw-PHI-to-external-AI tests, output validation, and human-review gates.
+- Safe current posture: external AI remains disabled; outputs remain draft/candidate/suggestion-only.
+
+### Production EHR writeback credentialing review
+
+- Required decisions: production athenahealth credentialing, writeback scope, approval role, idempotency key strategy, retry/dead-letter policy, reconciliation owner, rollback/support path, and attachment/task semantics.
+- Required evidence before implementation: vendor sandbox approval, staging credentials, writeback payload redaction strategy, permission-denial tests, and audit/event contracts.
+- Safe current posture: writeback queue remains metadata-only and no live delivery is enabled.
+
+### ClinicOS live integration review
+
+- Required decisions: live ClinicOS module contracts, M03/M04/M17/M21/M23/M24/M25/M26 event schemas, delegated identity posture, tenant/user mapping, event-bus delivery, replay/reconciliation owner, and degraded-mode policy.
+- Required evidence before implementation: ClinicOS integration approval, service-account governance, adapter contract tests, no-permission-bypass tests, and event audit contracts.
+- Safe current posture: ClinicOS mode remains mock/degraded and cannot bypass AURA Note permissions.
+
+### Claim, clearinghouse, payer, denial, and payment review
+
+- Required decisions: whether live claim submission belongs in v1 or later, clearinghouse/payer strategy, claim approval role, billing compliance owner, medical-necessity boundary, denial/payment scope, void/reversal policy, payer acknowledgement/reconciliation, and patient-facing financial language.
+- Required evidence before implementation: founder, billing, compliance, privacy, security, and legal approval; no-autonomous-submission tests; human approval workflow; audit/event contracts; rollback/reversal runbook; and payer credential plan.
+- Safe current posture: draft claim preview remains internal and `submittedClaim=false`.
+
+## Activation checklist for any future work order
+
+- The work order file exists under `work_orders/`.
+- `repo_status.json` marks the work order `todo` or `in_progress` and sets `next_work_order` to that ID.
+- The production plan references the work order and includes objective, scope, out-of-scope, UX, API, data, event/audit, RBAC/ABAC, standalone, ClinicOS, AI/PHI/security, testing, gates, definition of done, stop conditions, and risks/deferred decisions.
+- `SPEC_GAPS.md` records any unresolved product, legal, clinical, billing, privacy, security, or vendor decision.
+- Readiness scripts distinguish planning evidence, synthetic/local readiness, and production launch readiness.
+- The tranche does not enable live credentials or live PHI paths until the active work order explicitly requires and governs them.
+
+## Current recommendation
+
+Keep the repo stopped at P11 until a specific future tranche is selected. The safest next implementation-oriented tranche would be a planning/control work order that promotes one of the candidate families above into a fully specified `WO-053` without enabling live behavior.

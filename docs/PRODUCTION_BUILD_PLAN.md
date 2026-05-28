@@ -515,6 +515,29 @@ This gate does not authorize live EHR writeback, live AI, live transcription, pr
 
 **Implementation status as of `WO-051`:** complete as a synthetic/local P11 decision package. The repo now includes `docs/CLAIM_PAYER_DECISION_GATE.md`, `docs/runbooks/WO-051_CLAIM_PAYER_DECISION_RUNBOOK.md`, support-status claim/payer decision gate states, and `pnpm claim-decision:readiness`. This closes P11 as a decision gate only: `submittedClaim=false`, `claimSubmissionEnabled=false`, no clearinghouse API, no payer API, no denial automation, no payment posting, no charge finalization, no medical-necessity determination, and no patient-facing financial conclusion are enabled. Any future live claim work requires a new founder-approved work order plus billing, compliance, privacy, security, and legal decisions.
 
+## WO-052 — Post-P11 Continuation Rails And Tranche Intake
+
+- **Objective:** Establish post-P11 continuation rails and candidate tranche intake criteria without activating a new implementation work order.
+- **Why this exists:** P11 intentionally stops with `next_work_order: null`; continuing safely requires a planning/control layer before future live or production-facing work is promoted.
+- **Prerequisites:** `WO-051` complete and merged; P11 checkpoint recorded; no active blockers for completed synthetic/local scope.
+- **In scope:** `docs/POST_P11_CONTINUATION_PLAN.md`, post-P11 candidate tranche families, activation checklist, readiness verifier, status/index/run-log/checkpoint updates.
+- **Out of scope:** live production behavior, live vendor behavior, production PHI storage, live claim/payer work, production launch approval, or runtime product behavior.
+- **UX requirements:** no new UX route; preserve the Frontend Runtime Integration Gate for any later production-intended screen work.
+- **Backend/API requirements:** no new endpoint; future backend work must be tenant-scoped, permission-checked, audit/event emitting, and idempotent where needed.
+- **Data model/persistence requirements:** no schema change; future data work must name affected tables, RLS posture, rollback, backup/restore, and synthetic/live boundary.
+- **Event/audit requirements:** no new runtime event; future state-changing behavior must add audit/event contracts before completion.
+- **RBAC/ABAC requirements:** no matrix change; future work must name roles, permissions, purpose-of-use, tenant/site scope, and denial tests.
+- **Standalone-mode behavior:** standalone remains authoritative and cannot become dependent on ClinicOS without a defined degraded mode.
+- **ClinicOS-integrated behavior:** future ClinicOS work remains adapter-scoped and cannot bypass AURA Note permissions, audit, human review, or tenant/site isolation.
+- **AI/PHI/security requirements:** no raw PHI, production credentials, external AI, real payer data, real patient data, production connection string, `.env`, private key, or autonomous clinical/coding/billing behavior.
+- **Testing requirements:** post-P11 readiness verifier plus production readiness, acceptance readiness, status output, and whitespace checks.
+- **Required scripts/gates:** `pnpm post-p11:readiness`; `pnpm production:readiness`; `pnpm acceptance:readiness`; `node scripts/status.js`; `git diff --check`.
+- **Definition of Done:** post-P11 continuation plan exists; `WO-052` is indexed and marked done; `next_work_order` remains `null`; readiness scripts pass; no live production, vendor, claim, PHI, or launch behavior is authorized.
+- **Stop conditions:** a requested future implementation lacks required founder/compliance/security/legal/vendor decisions or would imply production readiness without evidence.
+- **Risks and deferred decisions:** future implementation still depends on deferred decisions in `SPEC_GAPS.md`; this work order organizes intake only and is not approval to implement live behavior.
+
+**Implementation status as of `WO-052`:** complete as a planning/control tranche only. The repo now includes `docs/POST_P11_CONTINUATION_PLAN.md`, `work_orders/WO-052_post_p11_continuation_rails.md`, and `pnpm post-p11:readiness`. `next_work_order` remains `null`; no live production, vendor, claim, PHI, or launch behavior is authorized.
+
 ## Overall production-launch criteria
 
 AURA Note can be called production-launch-ready only when all of the following are true:

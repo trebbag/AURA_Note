@@ -4,13 +4,13 @@ This file tracks missing, conflicting, unsafe, or deliberately deferred product 
 
 ## Active gaps
 
-No active gaps as of post-`WO-051` claim/payer decision gate and P11 review on 2026-05-28.
+No active gaps as of post-`WO-052` post-P11 continuation rails review on 2026-05-28.
 
 The repo remains not production-ready. The items below are deferred production decisions rather than active blockers for the current post-`WO-051` synthetic/local decision-gate scope.
 
 ## Deferred production decisions
 
-These items must stay visible and must be resolved before the related production work can be declared complete. They are not blockers for the completed `WO-051` tranche because the active work remains synthetic/local and explicitly excludes legal certification claims, production deployment, production launch approval, live SIEM/APM vendors, production observability credentials, PHI-bearing logs, live Azure credentials, PHI-bearing object payloads, live destructive deletion, production restore execution, live IdP credentials, live ClinicOS delegation, live ClinicOS event-bus sync, raw ClinicOS payload storage, live EHR/ClinicOS synchronization, production EHR credentials, raw EHR payload storage, live EHR writeback delivery, live transcription credentials, live external AI credentials, production prompt stores, autonomous billing, charge finalization, medical-necessity determination, claim submission, denial automation, payment posting, patient-facing financial conclusions, and production launch behavior.
+These items must stay visible and must be resolved before the related production work can be declared complete. They are not blockers for the completed `WO-052` planning/control tranche because the active work remains synthetic/local and explicitly excludes legal certification claims, production deployment, production launch approval, live SIEM/APM vendors, production observability credentials, PHI-bearing logs, live Azure credentials, PHI-bearing object payloads, live destructive deletion, production restore execution, live IdP credentials, live ClinicOS delegation, live ClinicOS event-bus sync, raw ClinicOS payload storage, live EHR/ClinicOS synchronization, production EHR credentials, raw EHR payload storage, live EHR writeback delivery, live transcription credentials, live external AI credentials, production prompt stores, autonomous billing, charge finalization, medical-necessity determination, claim submission, denial automation, payment posting, patient-facing financial conclusions, and production launch behavior.
 
 ### Deferred Decision — Production SIEM/APM vendor and operational monitoring posture
 

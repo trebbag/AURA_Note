@@ -108,7 +108,11 @@ check('doc.runbook-exists', 'WO-051 claim/payer runbook exists', exists('docs/ru
   ['RUN_LOG', runLog, 'WO-051 claim/payer decision gate'],
   ['SPEC_GAPS', specGaps, 'No active gaps as of post-`WO-051` claim/payer decision gate and P11 review']
 ].forEach(([id, contents, snippet]) => {
-  check(id, `${id} includes ${snippet}`, contents.includes(snippet), snippet);
+  const passed =
+    id !== 'SPEC_GAPS'
+      ? contents.includes(snippet)
+      : contents.includes(snippet) || contents.includes('No active gaps as of post-`WO-052` post-P11 continuation rails review');
+  check(id, `${id} includes ${snippet} or later post-P11 no-active-gap evidence`, passed, snippet);
 });
 
 check('status.wo051-done', 'WO-051 is marked done', status.work_orders?.['WO-051'] === 'done', status.work_orders?.['WO-051']);
