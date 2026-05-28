@@ -398,6 +398,8 @@ This gate does not authorize live EHR writeback, live AI, live transcription, pr
 - **Stop conditions:** PHI/model/BAA decision required for live provider use.
 - **Risks and deferred decisions:** private/BAA model path requires legal/security/vendor approval.
 
+**Implementation status as of `WO-046`:** complete as synthetic/browser/API-testable AI Gateway governance hardening evidence. The implemented gate is `pnpm ai:governance-readiness`. API behavior includes prompt registry metadata, mock/private-BAA-placeholder/external-disabled model configuration records, deterministic evaluation runs, source-linked output validation, unsafe-output rejection, support-role denial for governance actions, cross-tenant denial, and audit/domain events. The browser route `/aura-note/ai-governance` exposes disabled, permission-denied, read-only, evaluation-failed, unsafe-output-rejected, and demo states. Live external AI, production prompt stores, production model credentials, raw PHI model payloads, autonomous finalization, medical-necessity determination, charge finalization, and claim submission remain deferred.
+
 ## WO-047 — Security, Privacy, Compliance, And Threat-Model Remediation
 
 - **Objective:** Convert implementation evidence into security/privacy/compliance review artifacts and fix blocking findings.

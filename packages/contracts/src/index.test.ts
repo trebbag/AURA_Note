@@ -5,8 +5,10 @@ import {
   createEventEnvelope,
   isStateChangingEvent,
   type AiContextPackageDto,
+  type AiEvaluationRunResponseDto,
   type AiGatewayInvocationResponseDto,
   type AiGatewayStatusDto,
+  type AiOutputValidationResponseDto,
   type AuditExportResponseDto,
   type BackupRestoreReadinessResponseDto,
   type ClinicOsEventPublishResponseDto,
@@ -735,14 +737,47 @@ describe('AI gateway contracts', () => {
           promptVersion: '2026-05-26.cp3',
           purpose: 'suggestions',
           outputType: 'suggestion',
+          description: 'Draft-only suggestion candidate generation over deidentified context.',
           sourceLinkRequired: true,
-          humanReviewRequired: true
+          humanReviewRequired: true,
+          schemaVersion: 'aura-note-ai-output-schema-v1',
+          riskLabel: 'moderate',
+          active: true
         }
-      ]
+      ],
+      modelConfigurations: [
+        {
+          modelConfigId: 'aura-note-mock-model-config-v1',
+          modelMode: 'mock',
+          modelVersion: 'mock-aura-note-p9',
+          policyMode: 'mock_only',
+          credentialSource: 'none',
+          privateBaaApproved: false,
+          liveInvocationEnabled: false,
+          externalEndpointConfigured: false,
+          configuredAt: '2026-05-28T00:00:00.000Z'
+        }
+      ],
+      evaluationCases: [
+        {
+          evalCaseId: 'eval-suggestions-source-linked-v1',
+          purpose: 'suggestions',
+          outputType: 'suggestion',
+          syntheticOnly: true,
+          expectedPromptId: 'aura-note-suggestions-v1',
+          sourceEvidenceIds: ['evidence-001'],
+          expectedValidationStatus: 'accepted'
+        }
+      ],
+      liveModelCredentialPresent: false,
+      rawPhiToExternalAiAllowed: false,
+      humanReviewRequiredForAllOutputs: true
     };
 
     assert.equal(status.externalAiEnabled, false);
     assert.equal(status.promptRegistry[0]?.humanReviewRequired, true);
+    assert.equal(status.modelConfigurations?.[0]?.liveInvocationEnabled, false);
+    assert.equal(status.rawPhiToExternalAiAllowed, false);
   });
 
   it('represents an invocation with deidentified context and governance events', () => {
@@ -827,6 +862,98 @@ describe('AI gateway contracts', () => {
     assert.equal(invocation.contextPackage.deidentified, true);
     assert.equal(invocation.response.humanReviewRequired, true);
     assert.equal(invocation.domainEvents[0]?.eventType, 'ai.request_prepared.v1');
+  });
+
+  it('represents governance evaluation and unsafe output validation metadata', () => {
+    const evaluation: AiEvaluationRunResponseDto = {
+      results: [
+        {
+          evalCaseId: 'eval-billing-preview-candidate-only-v1',
+          purpose: 'billing_preview',
+          outputType: 'candidate',
+          promptId: 'aura-note-billing-preview-v1',
+          promptVersion: '2026-05-26.cp3',
+          modelVersion: 'mock-aura-note-p9',
+          modelMode: 'mock',
+          policyMode: 'mock_only',
+          validationStatus: 'accepted',
+          riskLabel: 'moderate',
+          humanReviewRequired: true,
+          sourceEvidenceIds: ['evidence-001'],
+          unsafeReasons: [],
+          prohibitedActionDetected: false,
+          rawPhiDetected: false,
+          liveModelCalled: false,
+          passed: true,
+          traceId: 'trace-eval-001',
+          completedAt: '2026-05-28T00:00:00.000Z'
+        }
+      ],
+      allPassed: true,
+      liveModelCalled: false,
+      auditEvent: {
+        auditEventId: 'audit-ai-eval-001',
+        tenantId: 'tenant-001',
+        action: 'ai.evaluation_run',
+        entityType: 'AiGatewayEvaluation',
+        entityId: 'eval-run-001',
+        traceId: 'trace-eval-001',
+        createdAt: '2026-05-28T00:00:00.000Z'
+      },
+      domainEvents: [
+        createEventEnvelope({
+          eventId: 'evt-ai-eval-001',
+          eventType: 'ai.evaluation_run_completed.v1',
+          tenantId: 'tenant-001',
+          siteId: 'site-001',
+          producer: 'aura-note-api',
+          traceId: 'trace-eval-001',
+          idempotencyKey: 'idem-ai-eval-001',
+          sensitivity: 'restricted',
+          retentionClass: 'audit',
+          payload: { liveModelCalled: false }
+        })
+      ]
+    };
+    const rejected: AiOutputValidationResponseDto = {
+      validation: {
+        validationStatus: 'rejected',
+        riskLabel: 'unsafe',
+        unsafeReasons: ['prohibited autonomous action requested'],
+        prohibitedActionDetected: true,
+        rawPhiDetected: false,
+        humanReviewRequired: true
+      },
+      auditEvent: {
+        auditEventId: 'audit-ai-output-001',
+        tenantId: 'tenant-001',
+        action: 'ai.output_validated',
+        entityType: 'AiGatewayOutput',
+        entityId: 'ai-output-001',
+        traceId: 'trace-output-001',
+        createdAt: '2026-05-28T00:00:00.000Z'
+      },
+      domainEvents: [
+        createEventEnvelope({
+          eventId: 'evt-ai-output-001',
+          eventType: 'ai.output_rejected.v1',
+          tenantId: 'tenant-001',
+          siteId: 'site-001',
+          producer: 'aura-note-api',
+          traceId: 'trace-output-001',
+          idempotencyKey: 'idem-ai-output-001',
+          sensitivity: 'restricted',
+          retentionClass: 'audit',
+          payload: { prohibitedActionDetected: true }
+        })
+      ]
+    };
+
+    assert.equal(evaluation.allPassed, true);
+    assert.equal(evaluation.liveModelCalled, false);
+    assert.equal(evaluation.domainEvents[0]?.eventType, 'ai.evaluation_run_completed.v1');
+    assert.equal(rejected.validation.validationStatus, 'rejected');
+    assert.equal(rejected.domainEvents[0]?.eventType, 'ai.output_rejected.v1');
   });
 });
 

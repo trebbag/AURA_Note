@@ -108,3 +108,13 @@ No raw PHI is sent to external AI or live EHR vendors as part of `WO-044`. No pr
 `WO-045` maps ClinicOS M23 Copilot Runtime and M24 AI Governance as metadata-only module boundaries. AI/governance delegation remains disabled for live use; AURA Note remains authoritative for PHI scrubbing, purpose-of-use, source freshness, role checks, and human-review gates. ClinicOS status, mapping, and publication records must keep `payloadStored=false` and must not include raw prompts, transcripts, final notes, billing details, coaching output, or raw ClinicOS messages.
 
 No raw PHI is sent to ClinicOS, external AI, EHR vendors, analytics vendors, or storage vendors as part of `WO-045`. Live M23/M24 delegation, live event-bus delivery, private/BAA model configuration, model evaluation thresholds, and AI governance operations remain deferred to `WO-046` and later security/privacy/founder review.
+
+## WO-046 AI Gateway governance and evaluation harness
+
+`WO-046` hardens the AI Gateway as synthetic/local production-review evidence without enabling live external AI. The gateway now records prompt registry metadata, model configuration records for mock/private-BAA-placeholder/external-disabled modes, deterministic evaluation cases for suggestions, note drafting, patient summaries, billing-preview candidates, and coaching feedback, plus output validation metadata.
+
+The AI Gateway rejects unsafe output shapes that attempt autonomous diagnosis, final code/charge behavior, claim submission, order placement, medical-necessity determination, or patient-facing financial conclusions. All accepted AI output remains draft/candidate/suggestion-only, source-linked, confidence/risk labeled where applicable, and `humanReviewRequired=true`.
+
+PHI handling remains fail-closed: forbidden PHI keys, obvious PHI-like free text, nested payloads, and evidence excerpts are rejected by default or redacted only in explicit redaction mode before mock invocation. Events and evaluation evidence store metadata only: prompt/model versions, context package IDs, source evidence IDs, redacted/rejected paths, validation status, and trace IDs. They do not store raw prompt text, raw note text, raw transcript text, raw EHR/ClinicOS payloads, real model output, production chart data, patient identifiers, secrets, or production endpoint URLs.
+
+External AI remains disabled until a later private/BAA model pathway, tenant policy, live credential source, monitoring, drift response, and security/privacy/founder approval are implemented.

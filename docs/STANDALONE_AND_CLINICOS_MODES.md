@@ -144,3 +144,11 @@ In standalone mode, AURA Note remains authoritative for tenant/site context, sch
 In ClinicOS-integrated mode, AURA Note maps metadata to M03 VisitGraph, M04 WorkOS/tasks, M17 NP Cockpit, M21 Charge Integrity, M23 Copilot Runtime, M24 AI Governance, M25 Integration Hub, and M26 Data Cloud through adapter boundaries only. `WO-045` adds visible module boundaries, stale/degraded mapping review, failed/degraded event publication metadata, and service-account/cross-tenant denial evidence. ClinicOS context cannot bypass AURA Note permissions, human-review gates, PHI boundaries, writeback approval, or finalization blockers.
 
 `WO-045` does not enable live ClinicOS credentials, production event-bus delivery, raw ClinicOS payload storage, live delegated identity, live EHR/writeback through ClinicOS, charge finalization, medical-necessity determination, or claim submission.
+
+## WO-046 AI governance mode behavior
+
+In standalone mode, AURA Note owns the local AI governance metadata: prompt registry, model configuration records, deterministic evaluation cases, source-linked validation evidence, unsafe-output rejection, PHI rejection/redaction, and human-review-required gates. External AI remains disabled and standalone workflows continue to use deterministic mock evidence.
+
+In ClinicOS-integrated mode, future AI request/governance metadata may map to M23 Copilot Runtime and M24 AI Governance through adapter boundaries only. `WO-046` keeps AURA Note authoritative for PHI scrubbing, purpose-of-use, source freshness, role checks, output validation, and human-review gates. Missing or degraded ClinicOS AI governance delegation fails closed and cannot enable live external AI calls or bypass AURA Note permissions.
+
+`WO-046` does not enable live external AI, production model credentials, production prompt stores, raw PHI model payloads, autonomous diagnosis, final code or charge behavior, medical-necessity determination, order placement, claim submission, or patient-facing financial conclusions.

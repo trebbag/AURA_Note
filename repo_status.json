@@ -2,7 +2,7 @@
   "project": "AURA Note v1",
   "mode": "production_build_in_progress",
   "current_checkpoint": "P9",
-  "next_work_order": "WO-046",
+  "next_work_order": "WO-047",
   "work_orders": {
     "WO-000": "done",
     "WO-001": "done",
@@ -50,14 +50,14 @@
     "WO-043": "done",
     "WO-044": "done",
     "WO-045": "done",
-    "WO-046": "todo",
-    "WO-047": "planned",
+    "WO-046": "done",
+    "WO-047": "todo",
     "WO-048": "planned",
     "WO-049": "planned",
     "WO-050": "planned",
     "WO-051": "planned"
   },
-  "last_updated_by": "Codex WO-045 ClinicOS integration hardening",
-  "last_updated_at": "2026-05-28T03:18:00Z",
-  "notes": "WO-045 completed P9 synthetic/browser/API-testable ClinicOS integration hardening evidence. The API now exposes metadata-only ClinicOS module boundaries, mapping upsert/review, stale mapping detection, failed/degraded publication metadata, role denial, cross-tenant denial, and AURA Note permission-boundary evidence. The browser route /aura-note/integrations/clinicos exposes disabled, degraded, failed, stale, permission-denied, read-only, and demo states. No live ClinicOS credentials, production event bus, raw ClinicOS payload storage, production patient data, live writeback, autonomous clinical/coding/billing behavior, medical-necessity determination, charge finalization, or claim submission was introduced. Next active work is WO-046 AI Gateway production governance and evaluation harness."
+  "last_updated_by": "Codex WO-046 AI Gateway production governance and evaluation harness",
+  "last_updated_at": "2026-05-28T03:45:00Z",
+  "notes": "WO-046 completed P9 synthetic/browser/API-testable AI Gateway governance hardening evidence. The API now exposes prompt/model metadata, deterministic governance evaluation runs, unsafe output validation/rejection, source-linked evidence, human-review-required labels, role denial, cross-tenant denial, and no-live-model/no-raw-PHI-to-external-AI evidence. The browser route /aura-note/ai-governance exposes empty, loading, ready, saving, failed, permission-denied, disabled, read-only, evaluation-failed, unsafe-output-rejected, and demo states. No live model credentials, production prompt store, raw PHI, live external AI, autonomous clinical/coding/billing behavior, medical-necessity determination, charge finalization, or claim submission was introduced. Next active work is WO-047 security, privacy, compliance, and threat-model remediation."
 }

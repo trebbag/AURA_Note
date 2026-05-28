@@ -425,3 +425,15 @@ These tests prove synthetic P9 EHR sandbox/writeback queue readiness only. They 
 - the readiness script verifies contracts, OpenAPI, routes, tests, status/run-log evidence, no live ClinicOS credentials, no raw payload storage, and no prohibited clinical/billing behavior.
 
 These tests prove synthetic P9 ClinicOS integration-hardening readiness only. They do not enable production ClinicOS credentials, live event-bus delivery, raw ClinicOS payload storage, live delegated identity, live EHR/writeback through ClinicOS, charge finalization, medical-necessity determination, or claim submission.
+
+## WO-046 AI Gateway governance readiness
+
+`WO-046` adds the `pnpm ai:governance-readiness` gate:
+
+- AI Gateway package tests cover prompt/model governance metadata, nested PHI rejection/redaction, evidence excerpt redaction, deterministic evaluation cases, unsafe output validation, external-disabled provider behavior, source-linked evidence, and human-review-required labels;
+- contracts tests cover AI status DTO extensions, model configuration metadata, evaluation run DTOs, output validation DTOs, and new event types;
+- API service and e2e tests cover prompt/model/evaluation status, deterministic evaluation runs, unsafe output rejection, role denial for support users, cross-tenant denial, and no-live-model/no-raw-PHI-to-external-AI evidence;
+- browser tests cover `/aura-note/ai-governance` prompt, model, evaluation, validation, permission-denied, disabled, read-only, evaluation-failed, unsafe-output-rejected, and demo states;
+- the readiness script verifies contracts, OpenAPI, routes, tests, status/run-log evidence, no live model credential, no raw PHI, no production prompt store, no prohibited autonomous behavior, and external AI disabled by default.
+
+These tests prove synthetic P9 AI governance readiness only. They do not enable live external AI, production model credentials, production prompt stores, PHI-bearing model payloads, medical-necessity determination, charge finalization, autonomous coding/billing, claim submission, or production launch approval.

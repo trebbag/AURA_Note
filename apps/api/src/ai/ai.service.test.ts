@@ -30,6 +30,9 @@ describe('AI API service', () => {
     assert.equal(status.data.externalAiEnabled, false);
     assert.equal(status.data.providerMode, 'mock');
     assert.equal(status.data.promptRegistry.some((entry) => entry.purpose === 'suggestions'), true);
+    assert.equal(status.data.modelConfigurations?.every((config) => config.liveInvocationEnabled === false), true);
+    assert.equal(status.data.evaluationCases?.some((evalCase) => evalCase.purpose === 'billing_preview'), true);
+    assert.equal(status.data.rawPhiToExternalAiAllowed, false);
   });
 
   it('rejects raw PHI before model invocation and emits PHI rejection metadata', async () => {
@@ -126,6 +129,62 @@ describe('AI API service', () => {
           'x-aura-linked-visit': 'true',
           'x-aura-tenant-id': 'tenant-other'
         }),
+      ForbiddenException
+    );
+  });
+
+  it('runs deterministic governance evaluations without live model calls', async () => {
+    const service = new AiService();
+    const response = await service.runEvaluations(
+      { evalCaseIds: ['eval-suggestions-source-linked-v1', 'eval-billing-preview-candidate-only-v1'] },
+      {
+        'x-aura-role': 'compliance_privacy_lead',
+        'x-aura-purpose-of-use': 'audit',
+        'x-trace-id': 'trace-ai-eval-api-001',
+        'idempotency-key': 'idem-ai-eval-001'
+      }
+    );
+
+    assert.equal(response.data.allPassed, true);
+    assert.equal(response.data.liveModelCalled, false);
+    assert.equal(response.data.results.length, 2);
+    assert.equal(response.data.results.every((result) => result.humanReviewRequired === true), true);
+    assert.equal(response.data.domainEvents[0]?.eventType, 'ai.evaluation_run_completed.v1');
+  });
+
+  it('rejects unsafe output shapes through validation endpoint evidence', () => {
+    const service = new AiService();
+    const response = service.validateOutput(
+      {
+        outputType: 'candidate',
+        output: { submitsClaim: true, finalizesCharge: true },
+        sourceEvidenceIds: ['evidence-synthetic-001']
+      },
+      {
+        'x-aura-role': 'authorized_admin',
+        'x-aura-purpose-of-use': 'audit',
+        'x-trace-id': 'trace-ai-validation-api-001'
+      }
+    );
+
+    assert.equal(response.data.validation.validationStatus, 'rejected');
+    assert.equal(response.data.validation.prohibitedActionDetected, true);
+    assert.equal(response.data.domainEvents[0]?.eventType, 'ai.output_rejected.v1');
+  });
+
+  it('denies governance metadata operations to support users', async () => {
+    const service = new AiService();
+
+    await assert.rejects(
+      () =>
+        service.runEvaluations(
+          { evalCaseIds: ['eval-suggestions-source-linked-v1'] },
+          {
+            'x-aura-role': 'support',
+            'x-aura-purpose-of-use': 'support',
+            'x-trace-id': 'trace-ai-support-denied-001'
+          }
+        ),
       ForbiddenException
     );
   });

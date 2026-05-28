@@ -387,6 +387,19 @@ The route is integration-review evidence, not a live EHR console. It does not ex
 
 The route is integration-review evidence, not a live ClinicOS console. It does not build ClinicOS modules, expose raw ClinicOS payloads, deliver event-bus messages, enable delegated identity, bypass AURA Note permissions, finalize charges, determine medical necessity, or submit claims.
 
+## AI governance readiness
+
+`WO-046` adds `/aura-note/ai-governance` as a browser-testable synthetic shell for AI Gateway governance hardening:
+
+- prompt registry states for suggestions, note drafting, patient summaries, billing-preview candidates, and coaching feedback;
+- model configuration states for mock, private-BAA placeholder, and external-disabled modes;
+- deterministic evaluation harness states for passed and evaluation-failed synthetic cases;
+- output validation states for accepted metadata and unsafe-output-rejected behavior;
+- visible empty, loading, ready, saving, failed, permission-denied, disabled, read-only, evaluation-failed, unsafe-output-rejected, and demo fixture states;
+- explicit messaging that external AI is disabled, live model credentials are absent, raw PHI is not allowed to external AI, and human review is required for all outputs.
+
+The route is AI governance-review evidence, not a live AI operations console. It does not expose raw prompts, raw transcripts, raw final notes, billing details, coaching output, production model payloads, production PHI, live model credentials, or patient identifiers. It does not authorize autonomous diagnosis, code finalization, charge finalization, medical-necessity determination, order placement, claim submission, or patient-facing financial conclusions.
+
 ## Required accessibility and UX states
 
 Every screen must have empty, loading, ready, saving, blocked, failed, permission-denied, and read-only states.

@@ -627,3 +627,14 @@ These records remain synthetic/local API metadata. `WO-044` does not add new pro
 - `ClinicOsIntegrationStatusDto` records screen states, `rawPayloadsStored=false`, `liveClinicOsSyncEnabled=false`, and explicit AURA Note permission-boundary evidence.
 
 These records remain synthetic/local API metadata mapped to the existing P7 `ModeMapping`, `IntegrationConnection`, and `DomainEvent` shape. `WO-045` does not add live ClinicOS credentials, production event-bus payload persistence, raw ClinicOS message storage, live delegated identity, production patient data, charge finalization, medical-necessity determination, or claim submission.
+
+## WO-046 AI governance and evaluation model status
+
+`WO-046` extends AI Gateway metadata contracts without adding live model payload persistence:
+
+- `AiPromptRegistryEntryDto` records prompt ID, version, purpose, output type, schema version, risk label, active state, source-link requirement, and human-review requirement.
+- `AiModelConfigurationDto` records mock/private-BAA-placeholder/external-disabled mode, model version, policy mode, credential source metadata, approval state, and `liveInvocationEnabled=false`.
+- `AiEvaluationCaseDto` and `AiEvaluationResultDto` record deterministic synthetic eval case IDs, purpose, output type, prompt/model metadata, source evidence IDs, validation status, risk label, unsafe reasons, trace ID, and `liveModelCalled=false`.
+- `AiOutputValidationResultDto` records accepted/rejected status, risk label, prohibited-action detection, raw-PHI detection, unsafe reasons, and `humanReviewRequired=true`.
+
+These records remain synthetic/local API metadata mapped to audit/domain-event evidence. `WO-046` does not add production prompt stores, raw prompt persistence, raw model response persistence, production model credentials, raw PHI transfer to AI, live external AI execution, autonomous finalization, medical-necessity determination, charge finalization, or claim submission.

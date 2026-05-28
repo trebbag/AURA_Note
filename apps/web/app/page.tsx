@@ -26,6 +26,9 @@ export default function HomePage() {
           <a href="/aura-note/integrations/clinicos">ClinicOS Integration</a>
         </li>
         <li>
+          <a href="/aura-note/ai-governance">AI Governance</a>
+        </li>
+        <li>
           <a href="/aura-note/support/status">Support Hardening Status</a>
         </li>
         <li>Finalization Wizard</li>

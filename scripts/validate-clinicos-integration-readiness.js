@@ -54,8 +54,9 @@ for (const [relativePath, snippet, label] of prohibitedSnippets) {
 }
 
 const status = JSON.parse(read('repo_status.json'));
-if (status.next_work_order !== 'WO-046' || status.work_orders?.['WO-045'] !== 'done') {
-  throw new Error('repo_status.json must mark WO-045 done and WO-046 next before ClinicOS readiness passes');
+const activeOrder = ['WO-046', 'WO-047', 'WO-048', 'WO-049', 'WO-050', 'WO-051'];
+if (!activeOrder.includes(status.next_work_order) || status.work_orders?.['WO-045'] !== 'done') {
+  throw new Error('repo_status.json must mark WO-045 done and next_work_order advanced to WO-046 or later before ClinicOS readiness passes');
 }
 
 console.log('ClinicOS integration readiness verified: metadata-only boundaries, stale/degraded states, permissions, tests, docs, and status are present.');
