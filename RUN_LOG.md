@@ -719,3 +719,13 @@ Codex must append a dated entry after each work order or meaningful implementati
 - **Open SPEC_GAPs:** None active for the synthetic/local WO-051 scope.
 - **Safety boundary:** `submittedClaim=false`, `claimSubmissionEnabled=false`, `chargeFinalizationEnabled=false`, `medicalNecessityDeterminationEnabled=false`, `denialAutomationEnabled=false`, `paymentPostingEnabled=false`, and `patientFinancialConclusionEnabled=false`. No live claim submission, clearinghouse API, payer API, autonomous billing behavior, production payer credential, or real payer/patient payload was introduced.
 - **Next step:** Run focused and full gates, open the `WO-051` PR, confirm GitHub Actions, merge when green, then stop at P11 until the founder approves a new tranche.
+
+## 2026-05-28T14:35:00Z — WO-051 GitHub API blocker
+
+- **Work order:** `WO-051` — Claim submission and payer integration decision gate.
+- **Summary:** Draft PR #54 was created at `https://github.com/trebbag/AURA_Note/pull/54` after the local full gate and focused readiness checks passed.
+- **Blocker:** GitHub API access failed three consecutive times while attempting to inspect PR checks and watch GitHub Actions: `error connecting to api.github.com`. Earlier branch push succeeded after a transient DNS failure, so the implementation branch and draft PR exist remotely.
+- **Actions taken:** Retried GitHub PR status/checks through `gh pr view 54 --json ...` twice and `gh pr checks 54 --watch --interval 10` once. Stopped before merge because CI status could not be verified through the API.
+- **Tests not run:** GitHub Actions could not be confirmed locally due to GitHub API connectivity. No code, docs, or status files beyond this blocker note were changed after the PR was opened.
+- **Current state:** Local branch contains commit `46ae85b` (`feat: add claim payer decision gate`). The repo remains at P11 with `next_work_order: null`. Merge is blocked only on GitHub API/CI visibility.
+- **Next step:** When GitHub API connectivity is restored, run `gh pr checks 54 --watch --interval 10`; if checks pass, mark the PR ready and merge it, then stop at P11 until a founder-approved new tranche exists.
