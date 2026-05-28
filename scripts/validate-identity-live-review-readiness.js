@@ -63,7 +63,13 @@ check('identity-review.exists', 'Production identity review document exists', ex
   check(`identity-review.event.${eventName}`, `Identity review includes future event ${eventName}`, identityReview.includes(eventName), eventName);
 });
 
-check('spec-gaps.current', 'SPEC_GAPS reflects post-WO-053 with no active gaps', specGaps.includes('No active gaps as of post-`WO-053` production identity/account lifecycle review intake'), 'SPEC_GAPS.md');
+check(
+  'spec-gaps.current',
+  'SPEC_GAPS reflects post-WO-053 or later post-P11 planning/control with no active gaps',
+  specGaps.includes('No active gaps as of post-`WO-053` production identity/account lifecycle review intake') ||
+    specGaps.includes('No active gaps as of post-`WO-054` production PHI persistence/database operations review intake'),
+  'SPEC_GAPS.md'
+);
 check('spec-gaps.deferred-identity', 'SPEC_GAPS preserves production identity as deferred before live use', specGaps.includes('Production identity provider and account lifecycle') && specGaps.includes('future approved identity implementation work order'), 'SPEC_GAPS.md');
 check('runlog.wo053', 'RUN_LOG records WO-053 evidence', runLog.includes('WO-053 production identity and account lifecycle review intake'), 'RUN_LOG.md');
 check('package.script', 'package.json exposes identity live-review readiness script', packageJson.scripts?.['identity:live-review-readiness'] === 'node scripts/validate-identity-live-review-readiness.js', packageJson.scripts?.['identity:live-review-readiness']);

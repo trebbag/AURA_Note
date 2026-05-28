@@ -668,3 +668,44 @@ Deferred decisions remain tracked in `SPEC_GAPS.md`, including production identi
 ## Next recommended batch
 
 No implementation work order is active. The next safest planning/control candidate is production PHI persistence and database operations review, but it should not be promoted without explicit selection.
+
+---
+
+# Post-P11 Production PHI Database Operations Review Intake
+
+## Completed work orders
+
+- `WO-054` — Production PHI persistence and database operations review intake.
+
+## Acceptance evidence
+
+- `WO-054` added `docs/PRODUCTION_PHI_PERSISTENCE_DATABASE_OPERATIONS_REVIEW.md` with required future database decisions, acceptance criteria, event/audit inventory, standalone behavior, and ClinicOS data-boundary requirements.
+- `WO-054` added `work_orders/WO-054_production_phi_persistence_database_ops_review_intake.md` so the intake is reviewable and bounded.
+- `pnpm persistence:phi-db-review-readiness` verifies that the tranche remains planning/control only and does not enable production PHI storage, production database credentials, live migrations, runtime repository changes, support database access, backup/restore execution, or launch behavior.
+- `repo_status.json` records `WO-054: done` while preserving the P11 checkpoint and no active next work order.
+
+## Tests and gates
+
+- `pnpm persistence:phi-db-review-readiness`
+- `pnpm post-p11:readiness`
+- `pnpm production:readiness`
+- `pnpm acceptance:readiness`
+- `node scripts/status.js`
+- `git diff --check`
+
+## Open risks
+
+- Production database host, encryption/KMS, database role model, migration approvals, backup cadence, restore drills, RLS expansion, tenant/site isolation evidence, support database access, data export/offboarding, retention policy, and incident response remain deferred decisions.
+- `WO-054` is a planning/control tranche only. It does not approve production PHI storage, production credentials, live migrations, production database operations, support database access, backup/restore execution, or production launch.
+
+## Active SPEC_GAPs
+
+None active as of the post-`WO-054` production PHI persistence/database operations review intake.
+
+## Deferred production decisions
+
+Deferred decisions remain tracked in `SPEC_GAPS.md`, including production PHI persistence and database operations, production Azure storage/deletion/restore controls, production SIEM/APM and monitoring posture, live transcription provider, external AI governance, production EHR credentialing/writeback, ClinicOS live integration, revenue estimate policy, production rules licensing/certification, future claim/payer implementation strategy, and production launch approval.
+
+## Next recommended batch
+
+No implementation work order is active. The next safest planning/control candidate is production Azure storage, deletion, and restore review, but it should not be promoted without explicit selection.

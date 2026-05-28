@@ -4,13 +4,13 @@ This file tracks missing, conflicting, unsafe, or deliberately deferred product 
 
 ## Active gaps
 
-No active gaps as of post-`WO-053` production identity/account lifecycle review intake on 2026-05-28.
+No active gaps as of post-`WO-054` production PHI persistence/database operations review intake on 2026-05-28.
 
-The repo remains not production-ready. The items below are deferred production decisions rather than active blockers for the current post-`WO-053` planning/control scope.
+The repo remains not production-ready. The items below are deferred production decisions rather than active blockers for the current post-`WO-054` planning/control scope.
 
 ## Deferred production decisions
 
-These items must stay visible and must be resolved before the related production work can be declared complete. They are not blockers for the completed `WO-053` planning/control tranche because the active work remains synthetic/local and explicitly excludes legal certification claims, production deployment, production launch approval, live SIEM/APM vendors, production observability credentials, PHI-bearing logs, live Azure credentials, PHI-bearing object payloads, live destructive deletion, production restore execution, live IdP credentials, live OIDC/SAML, live ClinicOS delegation, live ClinicOS event-bus sync, raw ClinicOS payload storage, live EHR/ClinicOS synchronization, production EHR credentials, raw EHR payload storage, live EHR writeback delivery, live transcription credentials, live external AI credentials, production prompt stores, autonomous billing, charge finalization, medical-necessity determination, claim submission, denial automation, payment posting, patient-facing financial conclusions, and production launch behavior.
+These items must stay visible and must be resolved before the related production work can be declared complete. They are not blockers for the completed `WO-054` planning/control tranche because the active work remains synthetic/local and explicitly excludes legal certification claims, production deployment, production launch approval, live SIEM/APM vendors, production observability credentials, PHI-bearing logs, live Azure credentials, PHI-bearing object payloads, live destructive deletion, production restore execution, live IdP credentials, live OIDC/SAML, live ClinicOS delegation, live ClinicOS event-bus sync, raw ClinicOS payload storage, live EHR/ClinicOS synchronization, production database credentials, production PHI database storage, live migrations, production backup/restore execution, support database access, production EHR credentials, raw EHR payload storage, live EHR writeback delivery, live transcription credentials, live external AI credentials, production prompt stores, autonomous billing, charge finalization, medical-necessity determination, claim submission, denial automation, payment posting, patient-facing financial conclusions, and production launch behavior.
 
 ### Deferred Decision — Production SIEM/APM vendor and operational monitoring posture
 
@@ -28,10 +28,10 @@ These items must stay visible and must be resolved before the related production
 
 ### Deferred Decision — Production PHI persistence and database operations
 
-- **Related future work:** `WO-034` through `WO-037`
+- **Related future work:** `WO-034` through `WO-037`; `WO-054`; future approved database implementation work order before live use
 - **Status:** deferred
 - **Decision needed before live use:** production database roles, RLS coverage review, backup/restore operations, migration approval/rollback process, PHI storage policy, and tenant data isolation review.
-- **Safe current posture:** local synthetic PostgreSQL evidence only; broad workflow runtime still migrates in controlled work orders.
+- **Safe current posture:** local synthetic PostgreSQL evidence only; `WO-054` captures the live-readiness intake and future acceptance criteria. No production database host, production credential, live migration, production PHI storage, backup/restore execution, support database access, or launch behavior is enabled.
 
 ### Deferred Decision — Production Azure Blob storage and destructive deletion
 

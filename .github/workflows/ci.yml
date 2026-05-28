@@ -40,6 +40,7 @@ jobs:
       - run: pnpm persistence:review-panel-adapter
       - run: pnpm persistence:finalization-output-adapter
       - run: pnpm persistence:durable-runtime-readiness
+      - run: pnpm persistence:phi-db-review-readiness
       - run: pnpm standalone:patient-schedule-readiness
       - run: pnpm standalone:operations-readiness
       - run: pnpm audio:transcription-readiness
