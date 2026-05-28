@@ -68,3 +68,7 @@ AURA Note must enforce role permissions and relationship-to-patient constraints.
 ## WO-044 EHR writeback queue access
 
 `WO-044` adds `ehr_writeback:view`, `ehr_writeback:approve`, and `ehr_writeback:manage` permission checks. Treating clinicians linked to the visit and authorized admins can approve writeback metadata. Authorized admins, admins, clinic managers, compliance/privacy leads, and service accounts can manage retry, dead-letter, and reconciliation metadata. Support users can view operational queue metadata only; support cannot approve or manage writeback actions and cannot access raw writeback payloads or external job identifiers. ClinicOS-integrated mode cannot bypass these AURA Note permission checks.
+
+## WO-045 ClinicOS integration access
+
+`WO-045` hardens `clinicos_adapter:view` and `clinicos_mapping:write`. Treating clinicians, admins, clinic managers, compliance/privacy leads, support users, service accounts, and authorized admins may view ClinicOS operational metadata. Support users remain metadata-only and cannot view raw payloads, transcripts, final notes, billing details, coaching outputs, or event-bus messages. Only authorized admins and service accounts may record ClinicOS mapping or publication metadata, and those requests still pass tenant/site scope, purpose-of-use, audit, and idempotency checks. Ordinary clinicians cannot write ClinicOS mappings even when linked to the visit. Cross-tenant and cross-site service-account attempts are denied before metadata is exposed.

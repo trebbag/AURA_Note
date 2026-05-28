@@ -5,6 +5,7 @@ import {
   ClinicOsModeResolver,
   MockClinicOsAdapter,
   STANDALONE_MODE_SETTINGS,
+  getClinicOsModuleBoundaries,
   resolveTargetModules
 } from './index';
 
@@ -72,6 +73,8 @@ describe('ClinicOS mock adapter', () => {
     assert.equal((await enabled.publishAuraNoteEvent({ eventType: 'ai.request_prepared.v1' })).status, 'queued');
     assert.equal((await disabled.publishAuraNoteEvent({ eventType: 'visit.started.v1' })).status, 'skipped_disabled');
     assert.equal((await unavailable.publishAuraNoteEvent({ eventType: 'ehr.chart_context_loaded.v1' })).status, 'failed_unavailable');
+    assert.equal((await enabled.getPublishedEvents())[0]?.payloadStored, false);
+    assert.equal((await enabled.getPublishedEvents())[0]?.permissionBoundaryEnforced, true);
   });
 
   it('maps AURA Note events to the correct ClinicOS module families', () => {
@@ -80,5 +83,16 @@ describe('ClinicOS mock adapter', () => {
     assert.deepEqual(resolveTargetModules('billing_attestation.completed.v1'), ['M21']);
     assert.deepEqual(resolveTargetModules('history_gap.task_created.v1'), ['M04']);
     assert.deepEqual(resolveTargetModules('visit.started.v1'), ['M03', 'M17']);
+  });
+
+  it('describes all ClinicOS module boundaries without permission delegation', () => {
+    const boundaries = getClinicOsModuleBoundaries(CLINICOS_MOCK_MODE_SETTINGS.sourceOfTruth);
+
+    assert.deepEqual(
+      boundaries.map((boundary) => boundary.moduleId),
+      ['M03', 'M04', 'M17', 'M21', 'M23', 'M24', 'M25', 'M26']
+    );
+    assert.equal(boundaries.every((boundary) => boundary.permissionBoundary === 'aura_note_authoritative'), true);
+    assert.equal(boundaries.find((boundary) => boundary.moduleId === 'M24')?.maps, 'prompt, policy, and review metadata');
   });
 });

@@ -269,3 +269,11 @@ No live SIEM/APM exporter, production observability credential, PHI-bearing log 
 The writeback queue records `liveProductionWritebackEnabled=false`, `payloadStored=false`, and `liveDeliveryEnabled=false`. Support users receive operational metadata only and cannot see external job identifiers or writeback payloads. The athenahealth adapter refuses unapproved writeback attempts even in configured sandbox mode.
 
 No live production EHR credential, raw EHR payload persistence, production patient data, live writeback delivery, autonomous note submission, medical-necessity determination, charge finalization, or claim submission is enabled by this work. Production credentialing, writeback scope, vendor error taxonomy, reconciliation ownership, rollback support, and live launch approval remain deferred.
+
+## WO-045 ClinicOS integration hardening backend status
+
+`WO-045` hardens the ClinicOS-integrated mode boundary without enabling live ClinicOS sync. The ClinicOS integration API now exposes metadata-only module boundaries for M03 VisitGraph, M04 WorkOS/tasks, M17 NP Cockpit, M21 Charge Integrity, M23 Copilot Runtime, M24 AI Governance, M25 Integration Hub, and M26 Data Cloud. Mapping and publication operations remain tenant/site scoped through the local synthetic request context, permission checked by AURA Note RBAC/ABAC, audit logged, event emitting, and synthetic-only.
+
+The ClinicOS status and action responses record `rawPayloadsStored=false`, `liveClinicOsSyncEnabled=false`, and `permissionsStillEnforcedByAuraNote=true`. Service accounts can write metadata only inside the tenant/site boundary; ordinary clinicians cannot write mappings; support users can view operational metadata only. Stale/degraded mapping review and failed/degraded publication evidence are represented as audit-safe metadata.
+
+No live ClinicOS credential, production event bus, raw ClinicOS payload persistence, production patient data, live EHR/writeback delivery through ClinicOS, autonomous clinical/coding/billing behavior, medical-necessity determination, charge finalization, or claim submission is enabled by this work. Live ClinicOS module contracts, delegated identity, event-bus delivery semantics, replay/reconciliation ownership, and operational ownership remain deferred.

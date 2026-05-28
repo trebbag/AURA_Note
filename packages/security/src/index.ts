@@ -582,7 +582,10 @@ export function canPerform(permission: Permission, ctx: AccessContext): boolean 
     case 'ehr_writeback:manage':
       return ctx.authorizedAdmin || ['admin', 'clinic_manager', 'compliance_privacy_lead', 'service_account'].includes(ctx.role);
     case 'clinicos_adapter:view':
-      return ctx.authorizedAdmin || ['clinician', 'admin', 'clinic_manager', 'compliance_privacy_lead'].includes(ctx.role);
+      return (
+        ctx.authorizedAdmin ||
+        ['clinician', 'admin', 'clinic_manager', 'compliance_privacy_lead', 'support', 'service_account'].includes(ctx.role)
+      );
     case 'clinicos_mapping:write':
       return ctx.authorizedAdmin || ctx.role === 'service_account';
     case 'ai_gateway:invoke':

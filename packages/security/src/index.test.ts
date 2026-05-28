@@ -329,6 +329,26 @@ describe('final note and coaching access', () => {
     assert.equal(canPerform('ehr_writeback:queue', linkedClinician), true);
     assert.equal(canPerform('clinicos_adapter:view', linkedClinician), true);
     assert.equal(canPerform('clinicos_mapping:write', linkedClinician), false);
+    assert.equal(
+      canPerform('clinicos_adapter:view', {
+        ...linkedClinician,
+        role: 'support',
+        treatingClinician: false,
+        linkedToPatient: false,
+        linkedToVisit: false
+      }),
+      true
+    );
+    assert.equal(
+      canPerform('clinicos_mapping:write', {
+        ...linkedClinician,
+        role: 'support',
+        treatingClinician: false,
+        linkedToPatient: false,
+        linkedToVisit: false
+      }),
+      false
+    );
     assert.equal(canPerform('ai_gateway:invoke', linkedClinician), true);
     assert.equal(canPerform('final_note:export', linkedBilling), false);
     assert.equal(canPerform('patient_summary:export', linkedBilling), false);

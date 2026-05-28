@@ -64,11 +64,12 @@ for (const check of checks) {
 }
 
 const status = JSON.parse(read('repo_status.json'));
+const nextWorkOrderNumber = Number.parseInt(String(status.next_work_order || '').replace('WO-', ''), 10);
 if (status.work_orders?.['WO-044'] !== 'done') {
   failures.push({ id: 'status.wo044', path: 'repo_status.json', missing: 'WO-044 done' });
 }
-if (status.next_work_order !== 'WO-045') {
-  failures.push({ id: 'status.next', path: 'repo_status.json', missing: 'next_work_order WO-045' });
+if (!Number.isFinite(nextWorkOrderNumber) || nextWorkOrderNumber < 45) {
+  failures.push({ id: 'status.next', path: 'repo_status.json', missing: 'next_work_order advanced to WO-045 or later' });
 }
 
 const forbidden = ['LIVE_ATHENAHEALTH', 'ATHENAHEALTH_CLIENT_SECRET=', 'PRODUCTION_EHR_URL=', 'submittedClaim = true'];

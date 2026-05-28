@@ -174,11 +174,26 @@ export function createSyntheticClinicOsStatus(
         clinicosObjectId: 'clinicos-m03-visitgraph-synthetic-001',
         sourceOfTruth: 'clinicos',
         status: 'active',
+        traceId: 'trace-clinicos-synthetic-001',
+        lastCheckedAt: '2026-05-26T18:30:00.000Z',
         createdAt: '2026-05-26T18:30:00.000Z'
       }
     ],
     publishedEvents: [],
+    moduleBoundaries: [
+      {
+        moduleId: 'M03',
+        moduleName: 'VisitGraph',
+        maps: 'appointment and visit context',
+        sourceOfTruth: 'clinicos',
+        delegationEnabled: true,
+        permissionBoundary: 'aura_note_authoritative'
+      }
+    ],
     permissionsStillEnforcedByAuraNote: true,
+    rawPayloadsStored: false,
+    liveClinicOsSyncEnabled: false,
+    states: ['empty', 'loading', 'ready', 'saving', 'failed', 'permission-denied', 'read-only'],
     auditEvent: {
       auditEventId: 'audit-clinicos-synthetic-001',
       tenantId: syntheticIds.tenantId,

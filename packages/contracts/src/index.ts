@@ -115,6 +115,9 @@ export type CoreEventType =
   | 'clinicos.mode_resolved.v1'
   | 'clinicos.mapping_recorded.v1'
   | 'clinicos.event_published.v1'
+  | 'clinicos.event_publication_failed.v1'
+  | 'clinicos.mapping_stale_detected.v1'
+  | 'clinicos.permission_denied.v1'
   | 'clinicos.unavailable.v1'
   | 'ai.request_prepared.v1'
   | 'ai.context_scrubbed.v1'
@@ -1404,7 +1407,8 @@ export type AuraNoteHostModeDto = 'standalone' | 'clinicos_integrated' | 'ehr_em
 export type ClinicOsModuleIdDto = 'M03' | 'M04' | 'M17' | 'M21' | 'M23' | 'M24' | 'M25' | 'M26';
 export type ClinicOsAvailabilityDto = 'available' | 'disabled' | 'unavailable' | 'degraded';
 export type ClinicOsSourceOfTruthDto = 'aura_note' | 'clinicos' | 'ehr' | 'hybrid';
-export type ClinicOsMappingStatusDto = 'active' | 'pending' | 'unavailable' | 'failed';
+export type ClinicOsMappingStatusDto = 'active' | 'pending' | 'stale' | 'degraded' | 'unavailable' | 'failed';
+export type ClinicOsPublishedEventStatusDto = 'queued' | 'sent_mock' | 'skipped_disabled' | 'failed_unavailable' | 'degraded';
 
 export interface ClinicOsModeContextDto {
   enabled: boolean;
@@ -1433,6 +1437,11 @@ export interface ClinicOsMappingRecordDto {
   clinicosObjectId: string;
   sourceOfTruth: ClinicOsSourceOfTruthDto;
   status: ClinicOsMappingStatusDto;
+  staleReason?: string;
+  degradedReason?: string;
+  traceId: string;
+  lastCheckedAt: string;
+  lastPublishedAt?: string;
   createdAt: string;
 }
 
@@ -1442,15 +1451,32 @@ export interface ClinicOsPublishedEventDto {
   siteId: string;
   eventType: string;
   targetModules: ClinicOsModuleIdDto[];
-  status: 'queued' | 'skipped_disabled' | 'failed_unavailable';
+  status: ClinicOsPublishedEventStatusDto;
+  payloadStored: false;
+  permissionBoundaryEnforced: true;
+  degradedReason?: string;
+  failedReason?: string;
   createdAt: string;
+}
+
+export interface ClinicOsModuleBoundaryDto {
+  moduleId: ClinicOsModuleIdDto;
+  moduleName: string;
+  maps: string;
+  sourceOfTruth: ClinicOsSourceOfTruthDto;
+  delegationEnabled: boolean;
+  permissionBoundary: 'aura_note_authoritative';
 }
 
 export interface ClinicOsIntegrationStatusDto {
   modeContext: ClinicOsModeContextDto;
+  moduleBoundaries: ClinicOsModuleBoundaryDto[];
   mappings: ClinicOsMappingRecordDto[];
   publishedEvents: ClinicOsPublishedEventDto[];
   permissionsStillEnforcedByAuraNote: true;
+  rawPayloadsStored: false;
+  liveClinicOsSyncEnabled: false;
+  states: string[];
   auditEvent: AuditEventDto;
   domainEvents: Array<AuraNoteEvent<Record<string, unknown>>>;
 }
@@ -1465,6 +1491,36 @@ export interface ClinicOsMapVisitResponseDto {
   visitGraphId?: string;
   m17ContextId?: string;
   mappings: ClinicOsMappingRecordDto[];
+  publishedEvent: ClinicOsPublishedEventDto;
+  auditEvent: AuditEventDto;
+  domainEvents: Array<AuraNoteEvent<Record<string, unknown>>>;
+}
+
+export interface ClinicOsMappingUpsertRequestDto {
+  localObjectType: ClinicOsMappingRecordDto['localObjectType'];
+  localObjectId: string;
+  clinicosModuleId: ClinicOsModuleIdDto;
+  clinicosObjectId?: string;
+  sourceOfTruth?: ClinicOsSourceOfTruthDto;
+  status?: ClinicOsMappingStatusDto;
+  reason?: string;
+}
+
+export interface ClinicOsMappingUpsertResponseDto {
+  modeContext: ClinicOsModeContextDto;
+  mapping: ClinicOsMappingRecordDto;
+  auditEvent: AuditEventDto;
+  domainEvents: Array<AuraNoteEvent<Record<string, unknown>>>;
+}
+
+export interface ClinicOsEventPublishRequestDto {
+  eventType: string;
+  targetModules?: ClinicOsModuleIdDto[];
+  localObjectId?: string;
+}
+
+export interface ClinicOsEventPublishResponseDto {
+  modeContext: ClinicOsModeContextDto;
   publishedEvent: ClinicOsPublishedEventDto;
   auditEvent: AuditEventDto;
   domainEvents: Array<AuraNoteEvent<Record<string, unknown>>>;

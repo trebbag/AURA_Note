@@ -375,6 +375,18 @@ The route is security-review evidence, not a production admin console. It does n
 
 The route is integration-review evidence, not a live EHR console. It does not expose PHI-bearing writeback payloads, call live production EHRs, store production credentials, submit notes autonomously, finalize charges, determine medical necessity, or submit claims.
 
+## ClinicOS integration hardening
+
+`WO-045` adds `/aura-note/integrations/clinicos` as a browser-testable synthetic shell for ClinicOS integration hardening:
+
+- module-boundary states for M03 VisitGraph, M04 WorkOS/tasks, M17 NP Cockpit, M21 Charge Integrity, M23 Copilot Runtime, M24 AI Governance, M25 Integration Hub, and M26 Data Cloud;
+- mapping review states for active, stale, degraded, unavailable, and failed mappings;
+- publication metadata states for queued, skipped-disabled, degraded, and failed-unavailable events;
+- visible disabled, degraded, failed, empty, loading, ready, saving, permission-denied, stale mapping, read-only, and demo fixture states;
+- explicit messaging that `payloadStored=false`, `liveClinicOsSyncEnabled=false`, and AURA Note permissions remain authoritative.
+
+The route is integration-review evidence, not a live ClinicOS console. It does not build ClinicOS modules, expose raw ClinicOS payloads, deliver event-bus messages, enable delegated identity, bypass AURA Note permissions, finalize charges, determine medical necessity, or submit claims.
+
 ## Required accessibility and UX states
 
 Every screen must have empty, loading, ready, saving, blocked, failed, permission-denied, and read-only states.

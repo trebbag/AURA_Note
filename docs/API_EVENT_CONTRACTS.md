@@ -289,3 +289,13 @@ New event types are `support.status_checked.v1`, `observability.status_checked.v
 - Existing EHR status and chart-context contracts remain intact and continue to use disabled/mock/sandbox-safe adapter behavior by default.
 
 New event types are `ehr.writeback_approval_recorded.v1`, `ehr.writeback_retry_scheduled.v1`, `ehr.writeback_dead_lettered.v1`, `ehr.writeback_reconciliation_checked.v1`, and `ehr.writeback_disabled.v1`. Payloads are metadata-only and must not include raw EHR payloads, production patient identifiers, final-note text, transcript text, billing details, credentials, production URLs, charge finalization, medical-necessity determinations, or claim submission evidence.
+
+## WO-045 ClinicOS integration hardening contracts
+
+`WO-045` hardens the P9 ClinicOS integration API/event surface:
+
+- `GET /integrations/clinicos/status` now returns module boundaries for M03, M04, M17, M21, M23, M24, M25, and M26, metadata-only mapping/publication state, explicit screen states, `rawPayloadsStored=false`, `liveClinicOsSyncEnabled=false`, and `permissionsStillEnforcedByAuraNote=true`.
+- `POST /integrations/clinicos/mappings` records metadata-only module mapping review evidence, including active, stale, degraded, unavailable, and failed mapping states.
+- `POST /integrations/clinicos/events/publish` records metadata-only event publication status, including queued, skipped-disabled, degraded, and failed-unavailable states.
+
+New event types are `clinicos.event_publication_failed.v1`, `clinicos.mapping_stale_detected.v1`, and `clinicos.permission_denied.v1` alongside the existing ClinicOS mode, mapping, publication, and unavailable events. Payloads are audit-safe metadata only and must not include raw ClinicOS payloads, transcripts, final notes, billing details, coaching output, credentials, production URLs, live event-bus payloads, charge finalization, medical-necessity determinations, or claim submission evidence.

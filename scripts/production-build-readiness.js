@@ -147,7 +147,8 @@ check(
     specGaps.includes('No active gaps as of post-`WO-041` production identity/config governance review') ||
     specGaps.includes('No active gaps as of post-`WO-042` secure storage/download/retention/restore controls review') ||
     specGaps.includes('No active gaps as of post-`WO-043` production observability/support operations/status views and P8 review') ||
-    specGaps.includes('No active gaps as of post-`WO-044` EHR sandbox integration/writeback queue hardening'),
+    specGaps.includes('No active gaps as of post-`WO-044` EHR sandbox integration/writeback queue hardening') ||
+    specGaps.includes('No active gaps as of post-`WO-045` ClinicOS integration hardening'),
   'SPEC_GAPS.md active gaps section'
 );
 

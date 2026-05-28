@@ -375,6 +375,8 @@ This gate does not authorize live EHR writeback, live AI, live transcription, pr
 - **Stop conditions:** missing ClinicOS contract detail blocks a mapping; add `SPEC_GAP`.
 - **Risks and deferred decisions:** live ClinicOS availability and module contracts may evolve.
 
+**Implementation status as of `WO-045`:** complete as synthetic/browser/API-testable ClinicOS integration hardening evidence. The implemented gate is `pnpm clinicos:integration-readiness`. API behavior includes metadata-only module boundaries, mapping upsert/review, stale mapping detection, failed/degraded publication metadata, support/service-account role boundaries, cross-tenant denial, and audit/domain events. The browser route `/aura-note/integrations/clinicos` exposes disabled, degraded, failed, stale mapping, permission-denied, read-only, and demo states. Live ClinicOS credentials, production event-bus delivery, raw ClinicOS payload storage, and live delegated identity remain deferred.
+
 ## WO-046 — AI Gateway Production Governance And Evaluation Harness
 
 - **Objective:** Prepare AI gateway for production review without enabling raw PHI to external AI.
