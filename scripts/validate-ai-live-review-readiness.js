@@ -78,7 +78,13 @@ check('ai-review.exists', 'Production AI private/BAA pathway review document exi
   check(`ai-review.event.${eventName}`, `AI review includes future event ${eventName}`, aiReview.includes(eventName), eventName);
 });
 
-check('spec-gaps.current', 'SPEC_GAPS reflects post-WO-057 with no active gaps', specGaps.includes('No active gaps as of post-`WO-057` external AI private/BAA pathway review intake'), 'SPEC_GAPS.md');
+check(
+  'spec-gaps.current',
+  'SPEC_GAPS reflects post-WO-057 or later post-P11 planning/control with no active gaps',
+  specGaps.includes('No active gaps as of post-`WO-057` external AI private/BAA pathway review intake') ||
+    specGaps.includes('No active gaps as of post-`WO-058` production EHR writeback credentialing review intake'),
+  'SPEC_GAPS.md'
+);
 check('spec-gaps.deferred-ai', 'SPEC_GAPS preserves external AI provider and PHI governance as deferred before live use', specGaps.includes('External AI provider and PHI governance') && specGaps.includes('future approved AI implementation work order'), 'SPEC_GAPS.md');
 check('runlog.wo057', 'RUN_LOG records WO-057 evidence', runLog.includes('WO-057 external AI private/BAA pathway review intake'), 'RUN_LOG.md');
 check('package.script', 'package.json exposes AI live review readiness script', packageJson.scripts?.['ai:live-review-readiness'] === 'node scripts/validate-ai-live-review-readiness.js', packageJson.scripts?.['ai:live-review-readiness']);

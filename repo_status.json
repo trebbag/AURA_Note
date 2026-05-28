@@ -61,9 +61,10 @@
     "WO-054": "done",
     "WO-055": "done",
     "WO-056": "done",
-    "WO-057": "done"
+    "WO-057": "done",
+    "WO-058": "done"
   },
-  "last_updated_by": "Codex WO-057 external AI private/BAA pathway review intake",
-  "last_updated_at": "2026-05-28T19:42:50Z",
-  "notes": "WO-057 completed a post-P11 planning/control intake for external AI private/BAA pathway review. The repo now includes a production AI private/BAA pathway review document, required future decisions, acceptance criteria, event/audit inventory, and AI live review readiness validation. next_work_order remains null. No live AI credential, raw-PHI-to-external-AI path, live model call, production prompt store, support AI PHI content access, autonomous finalization, runtime AI behavior, or production launch behavior is authorized or introduced."
+  "last_updated_by": "Codex WO-058 production EHR writeback credentialing review intake",
+  "last_updated_at": "2026-05-28T20:01:53Z",
+  "notes": "WO-058 completed a post-P11 planning/control intake for production EHR writeback credentialing review. The repo now includes a production EHR writeback credentialing review document, required future decisions, acceptance criteria, event/audit inventory, and EHR live review readiness validation. next_work_order remains null. No production EHR credential, raw EHR payload storage, live writeback delivery, writeback without human approval, autonomous finalization, claim submission, runtime EHR behavior, or production launch behavior is authorized or introduced."
 }

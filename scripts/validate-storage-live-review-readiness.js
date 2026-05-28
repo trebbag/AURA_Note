@@ -77,7 +77,8 @@ check(
   'SPEC_GAPS reflects post-WO-055 or later post-P11 planning/control with no active gaps',
   specGaps.includes('No active gaps as of post-`WO-055` production Azure storage/deletion/restore review intake') ||
     specGaps.includes('No active gaps as of post-`WO-056` live transcription provider review intake') ||
-    specGaps.includes('No active gaps as of post-`WO-057` external AI private/BAA pathway review intake'),
+    specGaps.includes('No active gaps as of post-`WO-057` external AI private/BAA pathway review intake') ||
+    specGaps.includes('No active gaps as of post-`WO-058` production EHR writeback credentialing review intake'),
   'SPEC_GAPS.md'
 );
 check('spec-gaps.deferred-storage', 'SPEC_GAPS preserves production Azure storage/deletion/restore as deferred before live use', specGaps.includes('Production Azure Blob storage and destructive deletion') && specGaps.includes('future approved storage implementation work order'), 'SPEC_GAPS.md');

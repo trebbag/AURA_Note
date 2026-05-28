@@ -66,6 +66,7 @@ Codex must complete work orders sequentially unless a checkpoint or blocker stop
 - `WO-055` — Production Azure storage, deletion, and restore review intake.
 - `WO-056` — Live transcription provider review intake.
 - `WO-057` — External AI private/BAA pathway review intake.
+- `WO-058` — Production EHR writeback credentialing review intake.
 
 ## Work order rules
 
@@ -145,4 +146,6 @@ Post-CP4 productionization candidates are documented in `docs/POST_CP4_PRODUCTIO
 
 `WO-056` is complete as a post-P11 planning/control intake tranche for live transcription provider review. It promotes the fourth candidate future tranche family into a fully specified decision package and readiness verifier without enabling live transcription credentials, PHI-bearing audio transport, live provider calls, production raw-audio storage, PHI-bearing support transcript access, runtime transcription behavior, or launch behavior.
 
-`WO-057` is complete as a post-P11 planning/control intake tranche for external AI private/BAA pathway review. It promotes the fifth candidate future tranche family into a fully specified decision package and readiness verifier without enabling live AI credentials, raw-PHI-to-external-AI paths, live model calls, production prompt stores, support AI PHI content access, autonomous finalization, runtime AI behavior, or launch behavior. No further numbered implementation work order is active until the founder approves a specific new tranche.
+`WO-057` is complete as a post-P11 planning/control intake tranche for external AI private/BAA pathway review. It promotes the fifth candidate future tranche family into a fully specified decision package and readiness verifier without enabling live AI credentials, raw-PHI-to-external-AI paths, live model calls, production prompt stores, support AI PHI content access, autonomous finalization, runtime AI behavior, or launch behavior.
+
+`WO-058` is complete as a post-P11 planning/control intake tranche for production EHR writeback credentialing review. It promotes the sixth candidate future tranche family into a fully specified decision package and readiness verifier without enabling production EHR credentials, raw EHR payload storage, live writeback delivery, writeback without human approval, autonomous finalization, runtime EHR behavior, claim submission, or launch behavior. No further numbered implementation work order is active until the founder approves a specific new tranche.
