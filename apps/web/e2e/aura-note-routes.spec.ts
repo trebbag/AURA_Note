@@ -182,6 +182,14 @@ test.describe('AURA Note route accessibility smoke suite', () => {
     await expect(page.getByRole('region', { name: 'Launch operations readiness' })).toContainText('Access review drill');
     await expect(page.getByRole('region', { name: 'Launch operations readiness' })).toContainText('synthetic_load_baseline');
     await expect(page.getByRole('region', { name: 'Launch operations readiness' })).toContainText('no production traffic');
+    await expect(page.getByRole('region', { name: 'Pilot launch gate' })).toContainText('Pilot Launch Gate');
+    await expect(page.getByRole('region', { name: 'Pilot launch gate' })).toContainText('Tenant Onboarding');
+    await expect(page.getByRole('region', { name: 'Pilot launch gate' })).toContainText('Role Training');
+    await expect(page.getByRole('region', { name: 'Pilot launch gate' })).toContainText('Disabled Feature Inventory');
+    await expect(page.getByRole('region', { name: 'Pilot launch gate' })).toContainText('First-Week Monitoring');
+    await expect(page.getByRole('region', { name: 'Pilot launch gate' })).toContainText('Go/No-Go Approvals');
+    await expect(page.getByRole('region', { name: 'Pilot launch gate' })).toContainText('productionLaunchApproved=false');
+    await expect(page.getByRole('region', { name: 'Pilot smoke and rollback' })).toContainText('submittedClaim=false');
     await expect(page.getByRole('region', { name: 'Feature flags and retention' })).toContainText('External AI');
     await expect(page.getByRole('region', { name: 'Audit and failure states' })).toContainText('server-mediated');
     await expect(page.getByRole('region', { name: 'Audit and failure states' })).toContainText('PHI');

@@ -84,3 +84,7 @@ AURA Note must enforce role permissions and relationship-to-patient constraints.
 ## WO-049 launch operations access
 
 `WO-049` documents `launch_operations:view` and future `launch_operations:record` posture for operational rehearsal evidence. Authorized admin, compliance/privacy lead, clinic manager, support, and service-account contexts may view metadata-only launch operations evidence. Recording production launch approval remains out of scope. Support users remain metadata-only and cannot access transcripts, final notes, billing details, coaching outputs, raw prompts, raw EHR/ClinicOS payloads, audit export payloads, production credentials, or PHI-bearing logs. ClinicOS-integrated mode cannot bypass AURA Note launch operations permissions.
+
+## WO-050 beta pilot launch gate access
+
+`WO-050` documents `launch_pilot:view` and future `launch_pilot:record` posture for the beta-pilot decision package. Authorized admin, compliance/privacy lead, clinic manager, support metadata-only, and service-account contexts may view pilot launch metadata. Recording future pilot evidence is restricted to authorized admin, release/security owner, compliance/privacy lead, and approved service-account contexts. Founder, clinical, compliance/privacy, and security signoff placeholders are visible as metadata only and do not grant production launch authority.

@@ -56,7 +56,7 @@ check(
   status.work_orders?.['WO-048'] && status.work_orders?.['WO-048'] !== 'planned',
   { nextWorkOrder: status.next_work_order, wo048: status.work_orders?.['WO-048'] }
 );
-check('status.p10-next', 'repo_status current checkpoint advances to P10 after P9 completion', status.current_checkpoint === 'P10', status.current_checkpoint);
+check('status.p10-or-later', 'repo_status current checkpoint advances to P10 or later after P9 completion', ['P10', 'P11'].includes(status.current_checkpoint), status.current_checkpoint);
 check('checkpoint.p9', 'P9 checkpoint report records WO-044 through WO-047', ['P9', 'WO-044', 'WO-045', 'WO-046', 'WO-047'].every((snippet) => checkpointReport.includes(snippet)), 'CHECKPOINT_REPORT.md');
 check('runlog.wo047', 'RUN_LOG records WO-047 evidence', runLog.includes('WO-047 security privacy compliance and threat-model remediation'), 'RUN_LOG.md');
 check(
@@ -64,7 +64,8 @@ check(
   'SPEC_GAPS records no active WO-047-or-later gaps',
   specGaps.includes('No active gaps as of post-`WO-047` security/privacy/compliance and P9 review') ||
     specGaps.includes('No active gaps as of post-`WO-048` frontend runtime integration gate review') ||
-    specGaps.includes('No active gaps as of post-`WO-049` launch operations readiness review'),
+    specGaps.includes('No active gaps as of post-`WO-049` launch operations readiness review') ||
+    specGaps.includes('No active gaps as of post-`WO-050` beta pilot launch gate and P10 review'),
   'SPEC_GAPS.md'
 );
 check('work-order.next-file', 'WO-048 work-order file exists for the next tranche', fs.readdirSync(path.join(root, 'work_orders')).some((file) => file.startsWith('WO-048_')), 'work_orders');

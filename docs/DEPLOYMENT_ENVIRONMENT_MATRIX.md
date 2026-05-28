@@ -4,6 +4,8 @@ This matrix documents the `WO-018` deployment posture for AURA Note v1. It is a 
 
 `WO-049` extends this matrix with launch-operations rehearsal evidence in `docs/LAUNCH_OPERATIONS_READINESS.md` and `docs/runbooks/WO-049_LAUNCH_OPS_RUNBOOK.md`. The updated launch path keeps production blocked by default, requires `pnpm launch:ops-readiness`, and still requires founder/clinical/compliance/security approval before any limited launch.
 
+`WO-050` extends this matrix with beta-pilot decision-package evidence in `docs/PILOT_LAUNCH_READINESS.md` and `docs/runbooks/WO-050_BETA_PILOT_RUNBOOK.md`. The launch decision path requires `pnpm launch:readiness`, keeps `productionLaunchApproved=false`, and preserves `submittedClaim=false` until explicit approval.
+
 | Environment | Readiness | Data allowed | Required secret classes | External integrations |
 | --- | --- | --- | --- | --- |
 | Local | Ready local | Synthetic only | None required by default | None. |

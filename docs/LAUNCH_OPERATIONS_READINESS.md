@@ -58,3 +58,7 @@ Support escalation must identify:
 - patient-safety escalation path.
 
 These are placeholders until a founder-approved launch package assigns named people. Until then, launch operations remain synthetic and `productionLaunchReady=false`.
+
+## WO-050 beta pilot gate
+
+`WO-050` adds the beta-pilot decision package on top of this operational readiness evidence. It adds tenant onboarding, role training, disabled feature inventory, first-week monitoring, rollback, go/no-go, and founder/clinical/compliance/security approval placeholders. It keeps `productionLaunchApproved=false`, `submittedClaim=false`, and all live vendors disabled until explicit approval.

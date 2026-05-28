@@ -1,8 +1,8 @@
 {
   "project": "AURA Note v1",
   "mode": "production_build_in_progress",
-  "current_checkpoint": "P10",
-  "next_work_order": "WO-050",
+  "current_checkpoint": "P11",
+  "next_work_order": "WO-051",
   "work_orders": {
     "WO-000": "done",
     "WO-001": "done",
@@ -54,10 +54,10 @@
     "WO-047": "done",
     "WO-048": "done",
     "WO-049": "done",
-    "WO-050": "todo",
-    "WO-051": "planned"
+    "WO-050": "done",
+    "WO-051": "todo"
   },
-  "last_updated_by": "Codex WO-049 launch operations readiness",
-  "last_updated_at": "2026-05-28T04:41:55Z",
-  "notes": "WO-049 completed synthetic/local P10 launch operations readiness evidence. The repo now includes launch operations readiness documentation, a WO-049 runbook, support-status launch drill states, a deterministic synthetic performance baseline, and a launch operations readiness verifier wired into CI. This is operational rehearsal only: no production deployment, production launch approval, production PHI, live credentials, live external AI, live EHR/ClinicOS sync, live storage delivery, destructive production deletion, autonomous clinical/coding/billing behavior, medical-necessity determination, charge finalization, or claim submission was introduced."
+  "last_updated_by": "Codex WO-050 beta pilot launch gate",
+  "last_updated_at": "2026-05-28T05:09:07Z",
+  "notes": "WO-050 completed synthetic/local P10 beta-pilot and limited-launch decision-package evidence. The repo now includes pilot launch readiness documentation, a WO-050 runbook, support-status pilot launch gate states, a deterministic synthetic pilot smoke harness, pilot readiness and launch readiness gates, and the P10 checkpoint report. This is a decision package only: productionLaunchApproved=false, productionLaunchReady=false, submittedClaim=false, and no production deployment, production PHI, live credentials, live external AI, live EHR/ClinicOS sync, live transcription, live storage delivery, destructive production deletion, autonomous clinical/coding/billing behavior, medical-necessity determination, charge finalization, or claim submission was introduced."
 }
