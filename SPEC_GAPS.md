@@ -4,13 +4,13 @@ This file tracks missing, conflicting, unsafe, or deliberately deferred product 
 
 ## Active gaps
 
-No active gaps as of post-`WO-055` production Azure storage/deletion/restore review intake on 2026-05-28.
+No active gaps as of post-`WO-056` live transcription provider review intake on 2026-05-28.
 
-The repo remains not production-ready. The items below are deferred production decisions rather than active blockers for the current post-`WO-055` planning/control scope.
+The repo remains not production-ready. The items below are deferred production decisions rather than active blockers for the current post-`WO-056` planning/control scope.
 
 ## Deferred production decisions
 
-These items must stay visible and must be resolved before the related production work can be declared complete. They are not blockers for the completed `WO-055` planning/control tranche because the active work remains synthetic/local and explicitly excludes legal certification claims, production deployment, production launch approval, live SIEM/APM vendors, production observability credentials, PHI-bearing logs, live Azure credentials, PHI-bearing object payloads, public object URLs, live destructive deletion, production restore execution, PHI-bearing audit exports, live IdP credentials, live OIDC/SAML, live ClinicOS delegation, live ClinicOS event-bus sync, raw ClinicOS payload storage, live EHR/ClinicOS synchronization, production database credentials, production PHI database storage, live migrations, production backup/restore execution, support database access, production EHR credentials, raw EHR payload storage, live EHR writeback delivery, live transcription credentials, live external AI credentials, production prompt stores, autonomous billing, charge finalization, medical-necessity determination, claim submission, denial automation, payment posting, patient-facing financial conclusions, and production launch behavior.
+These items must stay visible and must be resolved before the related production work can be declared complete. They are not blockers for the completed `WO-056` planning/control tranche because the active work remains synthetic/local and explicitly excludes legal certification claims, production deployment, production launch approval, live SIEM/APM vendors, production observability credentials, PHI-bearing logs, live Azure credentials, PHI-bearing object payloads, public object URLs, live destructive deletion, production restore execution, PHI-bearing audit exports, live IdP credentials, live OIDC/SAML, live ClinicOS delegation, live ClinicOS event-bus sync, raw ClinicOS payload storage, live EHR/ClinicOS synchronization, production database credentials, production PHI database storage, live migrations, production backup/restore execution, support database access, production EHR credentials, raw EHR payload storage, live EHR writeback delivery, live transcription credentials, live transcription provider calls, PHI-bearing audio transport, production raw-audio storage, PHI-bearing support transcript access, live external AI credentials, production prompt stores, autonomous billing, charge finalization, medical-necessity determination, claim submission, denial automation, payment posting, patient-facing financial conclusions, and production launch behavior.
 
 ### Deferred Decision — Production SIEM/APM vendor and operational monitoring posture
 
@@ -42,10 +42,10 @@ These items must stay visible and must be resolved before the related production
 
 ### Deferred Decision — Live transcription provider and PHI-bearing audio transport
 
-- **Related future work:** post-`WO-040` provider governance, `WO-042`, `WO-046`
+- **Related future work:** `WO-056`; future approved transcription implementation work order before live use
 - **Status:** deferred
 - **Decision needed before live use:** transcription vendor, BAA/privacy review, audio transport constraints, diarization support, confidence metadata, correction retention, and failure-handling policy.
-- **Safe current posture:** browser permission UX, metadata-only recording chunks, deterministic mock transcription, and correction history only; no live provider calls and no raw PHI audio payload storage.
+- **Safe current posture:** browser permission UX, metadata-only recording chunks, deterministic mock transcription, and correction history only. `WO-056` captures the live-readiness intake and future acceptance criteria. No live transcription credential, PHI-bearing audio transport, live provider call, production raw-audio storage, PHI-bearing support transcript access, or launch behavior is enabled.
 
 ### Deferred Decision — External AI provider and PHI governance
 

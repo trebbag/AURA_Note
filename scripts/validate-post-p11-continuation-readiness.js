@@ -48,7 +48,8 @@ check(
   specGaps.includes('No active gaps as of post-`WO-052` post-P11 continuation rails review') ||
     specGaps.includes('No active gaps as of post-`WO-053` production identity/account lifecycle review intake') ||
     specGaps.includes('No active gaps as of post-`WO-054` production PHI persistence/database operations review intake') ||
-    specGaps.includes('No active gaps as of post-`WO-055` production Azure storage/deletion/restore review intake'),
+    specGaps.includes('No active gaps as of post-`WO-055` production Azure storage/deletion/restore review intake') ||
+    specGaps.includes('No active gaps as of post-`WO-056` live transcription provider review intake'),
   'SPEC_GAPS.md'
 );
 check('runlog.wo052', 'RUN_LOG records WO-052 evidence', runLog.includes('WO-052 post-P11 continuation rails'), 'RUN_LOG.md');

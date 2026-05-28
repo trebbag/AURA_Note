@@ -71,7 +71,8 @@ check(
   'spec-gaps.current',
   'SPEC_GAPS reflects post-WO-054 or later post-P11 planning/control with no active gaps',
   specGaps.includes('No active gaps as of post-`WO-054` production PHI persistence/database operations review intake') ||
-    specGaps.includes('No active gaps as of post-`WO-055` production Azure storage/deletion/restore review intake'),
+    specGaps.includes('No active gaps as of post-`WO-055` production Azure storage/deletion/restore review intake') ||
+    specGaps.includes('No active gaps as of post-`WO-056` live transcription provider review intake'),
   'SPEC_GAPS.md'
 );
 check('spec-gaps.deferred-db', 'SPEC_GAPS preserves production PHI persistence/database operations as deferred before live use', specGaps.includes('Production PHI persistence and database operations') && specGaps.includes('future approved database implementation work order'), 'SPEC_GAPS.md');
