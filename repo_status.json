@@ -1,8 +1,8 @@
 {
   "project": "AURA Note v1",
   "mode": "production_build_in_progress",
-  "current_checkpoint": "P8",
-  "next_work_order": "WO-043",
+  "current_checkpoint": "P9",
+  "next_work_order": "WO-044",
   "work_orders": {
     "WO-000": "done",
     "WO-001": "done",
@@ -47,8 +47,8 @@
     "WO-040": "done",
     "WO-041": "done",
     "WO-042": "done",
-    "WO-043": "todo",
-    "WO-044": "planned",
+    "WO-043": "done",
+    "WO-044": "todo",
     "WO-045": "planned",
     "WO-046": "planned",
     "WO-047": "planned",
@@ -57,7 +57,7 @@
     "WO-050": "planned",
     "WO-051": "planned"
   },
-  "last_updated_by": "Codex WO-042 secure storage/download/retention/restore controls",
-  "last_updated_at": "2026-05-28T00:58:00Z",
-  "notes": "WO-042 added synthetic/browser/API/worker-testable server-mediated secure downloads, Azure Blob-oriented storage adapter boundaries, raw-audio deletion approval plus recovery-window controls, and backup/restore readiness metadata. Export and audit download tokens are tenant/site/requester/permission/expiry scoped and never public URLs; patient-summary downloads preserve internal-detail exclusion; audit exports remain redacted with includePhi=false; raw-audio deletion requires feature flag, approval token, approval ID, and open recovery-window evidence; transcript purge count remains zero; restore execution remains disabled. AURA Note is not production-ready; live Azure credentials, PHI-bearing object payloads, production deletion, production restore execution, live EHR/ClinicOS sync, live AI, medical-necessity determination, charge finalization, claim submission, and production launch approval remain future work."
+  "last_updated_by": "Codex WO-043 production observability/support operations/status views",
+  "last_updated_at": "2026-05-28T01:30:00Z",
+  "notes": "WO-043 completed P8 synthetic/browser/API-testable production observability and support operations evidence. Support status now reports P8, local redacted logs/metrics/traces, disabled SIEM/APM vendor placeholders, operational readiness with productionLaunchReady=false, and support operational evidence for incident runbook views, degraded-mode acknowledgements, and access-review records. No live SIEM/APM vendor, production credentials, PHI-bearing logs, production launch approval, live EHR/ClinicOS sync, live AI, medical-necessity determination, charge finalization, or claim submission was introduced. Next active work is WO-044 EHR sandbox integration and writeback queue hardening."
 }

@@ -487,6 +487,17 @@ No table should be treated as production-ready merely because it exists in the s
 
 The P8.5 audio candidate keeps raw audio payloads out of the repo/runtime while adding typed metadata needed for later production review:
 
+## WO-043 observability and support operations metadata status
+
+`WO-043` keeps production observability/support operations as audit-safe metadata. The modeled records are:
+
+- observability sink status for local logs, metrics, traces, audit-export metadata, and disabled SIEM/APM placeholders;
+- operational readiness evidence with `vendorSinksConfigured=false` and `productionLaunchReady=false`;
+- support operational evidence for incident runbook viewed, degraded-mode acknowledged, and access-review recorded actions;
+- support status snapshots with request/trace correlation and PHI-safe log/metric/trace probes.
+
+No raw log stream, PHI-bearing payload, production credential, production URL, private key, final note, transcript, billing detail, coaching output, or writeback payload is stored for this work order. Future production observability persistence and vendor retention windows require security/privacy/founder review.
+
 - `RecordingPermission` records browser support, permission state, explicit user gesture evidence, capture mode, `liveAudioCaptureEnabled = false`, and `rawPhiAudioStored = false`;
 - `RecordingChunkMetadata` records sequence, capture window, duration, checksum, synthetic storage key, retention class, source trace, and `transportMode = metadata_only_synthetic`;
 - `TranscriptionProviderStatus` records the deterministic mock provider as active and real providers as disabled/config-gated;

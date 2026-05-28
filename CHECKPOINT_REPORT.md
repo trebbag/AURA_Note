@@ -399,3 +399,55 @@ Deferred production decisions remain tracked in `SPEC_GAPS.md`, including produc
 ## Next recommended batch
 
 Begin P8 with `WO-041` production identity, tenant administration, secrets, configuration, and feature flags. Keep production IdP credentials, production account recovery, live PHI storage, live transcription, live EHR/ClinicOS synchronization, live AI, autonomous clinical/coding/billing behavior, and claim submission disabled unless later review explicitly authorizes them.
+
+---
+
+# P8 — Production Platform Candidate
+
+## Completed work orders
+
+- `WO-041` — Production identity, tenant administration, secrets, configuration, and feature flags.
+- `WO-042` — Azure storage, secure downloads, retention deletion, backup, and restore controls.
+- `WO-043` — Production observability, support operations, and status views.
+
+## Acceptance evidence
+
+- `WO-041` added production-shaped local identity/config governance: OIDC/SAML/ClinicOS delegated modes fail closed until configured, disabled/expired/missing-purpose/spoofed sessions are denied, high-risk feature flags require approval evidence, and secret validation returns metadata only.
+- `WO-042` added Azure Blob-oriented storage boundaries, server-mediated secure downloads, tenant/site/requester/permission/expiry token checks, redacted audit export delivery metadata, raw-audio deletion approval/recovery-window controls, transcript non-deletion, and backup/restore readiness metadata.
+- `WO-043` added P8 support status, local redacted logs/metrics/traces, disabled SIEM/APM placeholders, operational readiness with `productionLaunchReady=false`, support operational evidence for incident runbook views, degraded-mode acknowledgements, and access-review records, and browser-visible support/status states.
+- Support users remain limited to operational metadata and cannot access audit export downloads, transcripts, final notes, billing details, coaching outputs, writeback payloads, or PHI-bearing artifacts.
+- Standalone mode remains authoritative for operational status metadata. ClinicOS-integrated operational delegation is a future adapter-bound path and cannot bypass AURA Note permissions.
+
+## Tests and gates
+
+- `pnpm identity:production-readiness`
+- `pnpm config:production-readiness`
+- `pnpm storage:azure-adapter-readiness`
+- `pnpm storage:secure-download-readiness`
+- `pnpm retention:storage-deletion-readiness`
+- `pnpm retention:production-readiness`
+- `pnpm observability:production-readiness`
+- `pnpm --filter @aura-note/security test`
+- `pnpm --filter @aura-note/contracts test`
+- `pnpm --filter @aura-note/api test`
+- `pnpm --filter @aura-note/api test:e2e`
+- `pnpm --filter @aura-note/web test:e2e`
+- Full local gate is recorded in `RUN_LOG.md` for `WO-043`.
+- GitHub Actions must pass before merge.
+
+## Open risks
+
+- P8 is synthetic/browser/API-testable production platform control evidence, not production launch readiness.
+- Production IdP selection, secret manager selection, live ClinicOS delegation, Azure account/container policy, customer-managed keys, legal hold, real backup schedules, production restore drills, SIEM/APM vendor selection, production exporter credentials, log retention windows, alert thresholds, on-call ownership, support break-glass, live EHR/ClinicOS synchronization, live AI, charge finalization, medical-necessity determination, claim submission, and production launch approval remain future work.
+
+## Active SPEC_GAPs
+
+None active as of the post-`WO-043` P8 review.
+
+## Deferred production decisions
+
+Deferred production decisions remain tracked in `SPEC_GAPS.md`, including production identity, production PHI database posture, production Azure storage/deletion/restore, production SIEM/APM vendor and monitoring posture, live transcription provider and PHI-bearing audio transport, external AI governance, live EHR writeback, ClinicOS live integration, revenue estimate policy, production rules licensing/certification, and claim/payer strategy.
+
+## Next recommended batch
+
+Begin P9 with `WO-044` EHR sandbox integration and writeback queue hardening. Keep live production EHR credentials, production patient records, autonomous note/writeback submission, charge finalization, medical-necessity determination, claim submission, and production launch approval disabled unless later review explicitly authorizes them.

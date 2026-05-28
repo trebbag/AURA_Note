@@ -28,6 +28,8 @@ import {
   type BillingReviewQueueItemDto,
   type EstimateConfigurationDto,
   type OperationalTaskDto,
+  type OperationalEvidenceResponseDto,
+  type OperationalReadinessResponseDto,
   type PlatformActionResponseDto,
   type PlatformAdminViewDto,
   type ProductionConfigValidationDto,
@@ -422,7 +424,7 @@ describe('support hardening contracts', () => {
   it('represents feature-flagged support status with PHI-safe structured logging', () => {
     const status: SupportStatusDto = {
       service: 'aura-note',
-      checkpoint: 'CP-4',
+      checkpoint: 'P8',
       mode: 'standalone',
       generatedAt: '2026-05-26T19:30:00.000Z',
       overallHealth: 'ok',
@@ -551,6 +553,98 @@ describe('support hardening contracts', () => {
     assert.equal(status.runbooks[0]?.productionApprovalRequired, true);
     assert.equal(status.retention[0]?.destructivePurgeEnabled, false);
     assert.equal(status.auditExport.downloadEnabled, false);
+  });
+
+  it('represents P8 operational readiness and support evidence contracts', () => {
+    const readiness: OperationalReadinessResponseDto = {
+      readiness: {
+        status: 'ready_synthetic',
+        checkpoint: 'P8',
+        observabilityReadyLocal: true,
+        vendorSinksConfigured: false,
+        supportOperationsReady: true,
+        incidentRunbooksReady: true,
+        accessReviewEvidenceReady: true,
+        productionLaunchReady: false,
+        missing: ['production_siem_apm_vendor_configuration', 'production_launch_approval'],
+        traceId: 'trace-ops-001'
+      },
+      auditEvent: {
+        auditEventId: 'audit-ops-001',
+        tenantId: 'tenant-001',
+        action: 'operational.readiness_check',
+        entityType: 'OperationalReadiness',
+        entityId: 'p8-operational-readiness',
+        traceId: 'trace-ops-001',
+        createdAt: '2026-05-28T01:20:00.000Z'
+      },
+      domainEvents: [
+        {
+          eventId: 'evt-ops-001',
+          eventType: 'operational.readiness_checked.v1',
+          schemaVersion: 'v1',
+          eventTime: '2026-05-28T01:20:00.000Z',
+          tenantId: 'tenant-001',
+          siteId: 'site-001',
+          producer: 'aura-note-api',
+          traceId: 'trace-ops-001',
+          idempotencyKey: 'idem-ops-001',
+          sensitivity: 'restricted',
+          retentionClass: 'audit',
+          payload: {
+            productionLaunchReady: false
+          }
+        }
+      ]
+    };
+    const evidence: OperationalEvidenceResponseDto = {
+      evidence: {
+        evidenceId: 'ops-evidence-001',
+        actionType: 'incident_runbook_viewed',
+        subjectId: 'WO-018',
+        status: 'recorded_synthetic',
+        tenantId: 'tenant-001',
+        siteId: 'site-001',
+        actorUserId: 'user-support-001',
+        requestId: 'req-ops-001',
+        traceId: 'trace-ops-001',
+        recordedAt: '2026-05-28T01:20:00.000Z',
+        phiSafe: true,
+        launchReadinessClaimed: false
+      },
+      auditEvent: {
+        auditEventId: 'audit-ops-002',
+        tenantId: 'tenant-001',
+        action: 'support.operational_evidence_record',
+        entityType: 'OperationalEvidence',
+        entityId: 'ops-evidence-001',
+        traceId: 'trace-ops-001',
+        createdAt: '2026-05-28T01:20:00.000Z'
+      },
+      domainEvents: [
+        {
+          eventId: 'evt-ops-002',
+          eventType: 'incident.runbook_viewed.v1',
+          schemaVersion: 'v1',
+          eventTime: '2026-05-28T01:20:00.000Z',
+          tenantId: 'tenant-001',
+          siteId: 'site-001',
+          producer: 'aura-note-api',
+          traceId: 'trace-ops-001',
+          idempotencyKey: 'idem-ops-002',
+          sensitivity: 'restricted',
+          retentionClass: 'audit',
+          payload: {
+            phiSafe: true
+          }
+        }
+      ]
+    };
+
+    assert.equal(readiness.readiness.productionLaunchReady, false);
+    assert.equal(readiness.readiness.vendorSinksConfigured, false);
+    assert.equal(evidence.evidence.phiSafe, true);
+    assert.equal(evidence.evidence.launchReadinessClaimed, false);
   });
 
   it('represents redacted metadata-only audit export requests', () => {

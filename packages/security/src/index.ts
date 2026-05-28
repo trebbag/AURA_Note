@@ -58,6 +58,7 @@ export type Permission =
   | 'coaching_own:view'
   | 'coaching_dashboard:view'
   | 'support_status:view'
+  | 'support_operations:record'
   | 'audit:view'
   | 'audit:export';
 
@@ -200,7 +201,7 @@ export interface ProductionIdentityGuardDecision {
 
 export interface ObservabilitySinkStatus {
   sinkId: string;
-  kind: 'log' | 'metric' | 'trace' | 'audit_export';
+  kind: 'log' | 'metric' | 'trace' | 'audit_export' | 'siem' | 'apm';
   adapter: 'local_development' | 'disabled_production_placeholder';
   status: 'ready_local' | 'disabled_until_configured';
   redacted: true;
@@ -584,6 +585,11 @@ export function canPerform(permission: Permission, ctx: AccessContext): boolean 
         ctx.authorizedAdmin ||
         ['support', 'service_account', 'clinic_manager', 'compliance_privacy_lead'].includes(ctx.role)
       );
+    case 'support_operations:record':
+      return (
+        ctx.authorizedAdmin ||
+        ['support', 'service_account', 'clinic_manager', 'compliance_privacy_lead'].includes(ctx.role)
+      );
     case 'audit:view':
       return ctx.authorizedAdmin || ctx.role === 'compliance_privacy_lead';
     case 'audit:export':
@@ -832,13 +838,23 @@ export function buildLocalObservabilitySnapshot(options: {
       },
       {
         sinkId: 'production-siem-placeholder',
-        kind: 'log',
+        kind: 'siem',
         adapter: 'disabled_production_placeholder',
         status: 'disabled_until_configured',
         redacted: true,
         requestCorrelated: true,
         delivery: 'not_configured',
         disabledReason: 'Production log/SIEM vendor is not selected and no credentials are committed.'
+      },
+      {
+        sinkId: 'production-apm-placeholder',
+        kind: 'apm',
+        adapter: 'disabled_production_placeholder',
+        status: 'disabled_until_configured',
+        redacted: true,
+        requestCorrelated: true,
+        delivery: 'not_configured',
+        disabledReason: 'Production APM vendor is not selected and no credentials are committed.'
       }
     ],
     metricProbes: [

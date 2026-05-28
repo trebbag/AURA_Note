@@ -54,7 +54,8 @@ const observabilitySinks = [
   { label: 'Structured logs', state: 'ready local', mode: 'console, redacted, request-correlated' },
   { label: 'Metrics', state: 'ready local', mode: 'in-memory latency and queue probes' },
   { label: 'Traces', state: 'ready local', mode: 'in-memory span probes with redacted attributes' },
-  { label: 'Production SIEM', state: 'disabled', mode: 'vendor and credentials not configured' }
+  { label: 'Production SIEM', state: 'disabled', mode: 'vendor and credentials not configured' },
+  { label: 'Production APM', state: 'disabled', mode: 'vendor and credentials not configured' }
 ];
 
 const deploymentEnvironments = [
@@ -69,6 +70,13 @@ const runbooks = [
   { label: 'Incident triage', state: 'documented', mode: 'severity, containment, and evidence capture' },
   { label: 'Audit and retention', state: 'documented', mode: 'metadata export and non-destructive review' },
   { label: 'Disabled integrations', state: 'documented', mode: 'AI, EHR, ClinicOS, analytics, and download checks' }
+];
+
+const operationalEvidence = [
+  { label: 'Readiness check', state: 'ready_synthetic', mode: 'P8 local evidence; productionLaunchReady=false' },
+  { label: 'Incident runbook viewed', state: 'recorded_synthetic', mode: 'audit-safe runbook view evidence' },
+  { label: 'Degraded mode acknowledged', state: 'recorded_synthetic', mode: 'safe fallback acknowledged without PHI' },
+  { label: 'Access review evidence', state: 'recorded_synthetic', mode: 'metadata-only review evidence' }
 ];
 
 export default function SupportStatusPage() {
@@ -87,7 +95,7 @@ export default function SupportStatusPage() {
       </header>
 
       <section className="status-band">
-        <p>CP-4 hardening is synthetic, local-first, and explicitly guarded from live PHI, AI, EHR, analytics, or storage side effects.</p>
+        <p>P8 platform hardening is synthetic, local-first, and explicitly guarded from live PHI, AI, EHR, analytics, observability, or storage side effects.</p>
         <dl>
           <div>
             <dt>Overall</dt>
@@ -95,7 +103,7 @@ export default function SupportStatusPage() {
           </div>
           <div>
             <dt>Checkpoint</dt>
-            <dd>CP-4</dd>
+            <dd>P8</dd>
           </div>
           <div>
             <dt>Logs</dt>
@@ -163,6 +171,40 @@ export default function SupportStatusPage() {
             </div>
           </dl>
           <p>Production deployment remains blocked until security, privacy, secret management, and observability vendor decisions are reviewed.</p>
+        </section>
+      </section>
+
+      <section className="support-grid" aria-label="Operational evidence states">
+        <section className="support-panel">
+          <h2>Operational Evidence</h2>
+          <div className="analytics-list">
+            {operationalEvidence.map((item) => (
+              <div key={item.label}>
+                <span>{item.label}</span>
+                <strong>{item.state}</strong>
+                <small>{item.mode}</small>
+              </div>
+            ))}
+          </div>
+        </section>
+
+        <section className="support-panel">
+          <h2>Support Access</h2>
+          <dl className="state-grid">
+            <div>
+              <dt>Support users</dt>
+              <dd>metadata only</dd>
+            </div>
+            <div>
+              <dt>Audit export</dt>
+              <dd>privacy lead only</dd>
+            </div>
+            <div>
+              <dt>Production launch</dt>
+              <dd>false</dd>
+            </div>
+          </dl>
+          <p>Support operations can record audit-safe evidence, but cannot access transcripts, final notes, billing detail, coaching outputs, or PHI-bearing payloads.</p>
         </section>
       </section>
 

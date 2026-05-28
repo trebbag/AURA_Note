@@ -121,3 +121,10 @@ These invariants apply in both modes:
 - ClinicOS-integrated mode may map storage object metadata and retention evidence through adapter boundaries later, but AURA Note remains authoritative for token issue, token validation, download delivery, deletion approval, and restore-readiness permission checks;
 - missing ClinicOS storage delegation fails closed and cannot expose a public URL or bypass AURA Note RBAC/ABAC;
 - raw-audio deletion remains approval/recovery-window gated and transcript retention remains indefinite in both modes.
+## WO-043 observability and support operations mode behavior
+
+In standalone mode, AURA Note owns the local observability/support operations metadata: redacted logs, metric probes, trace probes, operational readiness, degraded-mode acknowledgement, access-review evidence, and incident runbook evidence.
+
+In ClinicOS-integrated mode, future operational status may be mapped to ClinicOS/Integration Hub, but `WO-043` keeps AURA Note authoritative for support access, redaction, PHI boundaries, audit evidence, and permission checks. Missing ClinicOS operational delegation fails closed and does not reduce AURA Note RBAC/ABAC enforcement.
+
+`WO-043` does not enable live SIEM/APM exporters, production observability credentials, PHI-bearing logs, production launch approval, live EHR/ClinicOS sync, live AI, charge finalization, medical-necessity determination, or claim submission.

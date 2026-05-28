@@ -372,3 +372,16 @@ These tests prove synthetic P8 identity/config governance readiness only. Produc
 - readiness scripts verify server-mediated delivery, public URL denial, no live Azure execution, recovery-window controls, soft-delete/versioning posture, and production restore execution disabled.
 
 These tests prove synthetic P8 storage/retention/restore control evidence only. They do not enable real Azure credentials, PHI-bearing object storage, live destructive deletion, transcript deletion, production restore execution, charge finalization, or claim submission.
+
+## WO-043 production observability/support operations readiness
+
+Required focused evidence:
+
+- `pnpm --filter @aura-note/security test` covers SIEM/APM placeholder metadata, PHI-safe observability probes, and support-operations permission checks.
+- `pnpm --filter @aura-note/contracts test` covers P8 operational readiness and support evidence DTOs/events.
+- `pnpm --filter @aura-note/api test` covers support status P8 evidence, operational readiness, operational evidence recording, role denial, and PHI rejection.
+- `pnpm --filter @aura-note/api test:e2e` covers support status, operational readiness, operational evidence, and denial paths through HTTP.
+- `pnpm --filter @aura-note/web test:e2e` covers support/status operational evidence states and no-launch posture.
+- `pnpm observability:production-readiness` is the WO-043 readiness gate.
+
+These tests prove synthetic P8 observability/support operations evidence only. They do not enable live SIEM/APM vendors, production observability credentials, PHI-bearing logs, production launch approval, live EHR/ClinicOS synchronization, live AI, charge finalization, medical-necessity determination, or claim submission.

@@ -33,6 +33,7 @@
     "audio:transcription-readiness": "node scripts/validate-audio-transcription-readiness.js",
     "identity:production-readiness": "node scripts/validate-production-identity-readiness.js",
     "config:production-readiness": "node scripts/validate-production-config-readiness.js",
+    "observability:production-readiness": "pnpm --filter @aura-note/security test && pnpm --filter @aura-note/api test && node scripts/validate-observability-production-readiness.js",
     "storage:azure-adapter-readiness": "pnpm --filter @aura-note/storage test && pnpm --filter @aura-note/storage typecheck && node scripts/validate-azure-storage-adapter-readiness.js",
     "storage:secure-download-readiness": "pnpm --filter @aura-note/storage test && pnpm --filter @aura-note/api test && node scripts/validate-secure-download-readiness.js",
     "retention:storage-deletion-readiness": "pnpm --filter @aura-note/worker test && node scripts/validate-storage-retention-readiness.js",

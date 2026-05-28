@@ -6,7 +6,7 @@ CP-4 closes the defined AURA Note v1 synthetic, local-first work-order package. 
 
 Before any tranche below becomes implementation work, promote it into a numbered `work_orders/WO-###` file and update `repo_status.json` deliberately.
 
-The sequential post-`WO-032` production build plan is maintained in `docs/PRODUCTION_BUILD_PLAN.md`. That plan defines `WO-033` through `WO-051`, checkpoint gates, per-work-order completion criteria, and overall launch-readiness criteria. `WO-033` is the re-rail/control work order; `WO-034` adds durable local visit capture runtime evidence; `WO-035` adds durable local review-panel runtime evidence; `WO-036` adds durable local finalization/output/writeback runtime evidence; `WO-037` closes P7 durable runtime metadata and broad RLS evidence; `WO-038` adds standalone patient, chart context, and schedule completion; `WO-039` closes P7.5 with standalone worklists, billing review, settings/admin/integrations, templates/dot phrases, estimate configuration, and rules catalog; `WO-040` closes P8.5 with browser audio capture and mock transcription candidate evidence; `WO-041` adds production-shaped identity/config governance. The next active production-build tranche is `WO-042`.
+The sequential post-`WO-032` production build plan is maintained in `docs/PRODUCTION_BUILD_PLAN.md`. That plan defines `WO-033` through `WO-051`, checkpoint gates, per-work-order completion criteria, and overall launch-readiness criteria. `WO-033` is the re-rail/control work order; `WO-034` adds durable local visit capture runtime evidence; `WO-035` adds durable local review-panel runtime evidence; `WO-036` adds durable local finalization/output/writeback runtime evidence; `WO-037` closes P7 durable runtime metadata and broad RLS evidence; `WO-038` adds standalone patient, chart context, and schedule completion; `WO-039` closes P7.5 with standalone worklists, billing review, settings/admin/integrations, templates/dot phrases, estimate configuration, and rules catalog; `WO-040` closes P8.5 with browser audio capture and mock transcription candidate evidence; `WO-041` adds production-shaped identity/config governance; `WO-042` adds secure storage, retention deletion approval/recovery, and backup/restore readiness; `WO-043` closes P8 with production observability/support operations evidence. The next active production-build tranche is `WO-044`.
 
 ## Safety boundary
 
@@ -514,3 +514,19 @@ Do not implement these tranches directly from this backlog. Promote one tranche 
 **Known risks:**
 
 - Production Azure account/container policy, customer-managed keys, legal hold, real backup schedule, production restore-drill execution, and PHI-bearing object delivery require founder/security/privacy review.
+
+## Follow-on Tranche P8-03 — Production Observability And Support Operations
+
+**Promotion status:** Promoted to `WO-043` and completed as synthetic P8 evidence.
+
+**Objective:** Harden production-shaped observability, support operations, operational status views, and runbook evidence without enabling live SIEM/APM vendors, PHI-bearing log payloads, or production launch claims.
+
+**Acceptance evidence:**
+
+- `pnpm observability:production-readiness` passes locally and in CI.
+- Support status includes P8, local redacted logs/metrics/traces, disabled SIEM/APM placeholders, operational readiness, operational evidence, and no-launch posture.
+- Full local gate continues to pass.
+
+**Known risks:**
+
+- SIEM/APM vendor selection, production exporter endpoints, credential source, log retention, alert thresholds, on-call ownership, support break-glass, and production launch approval require founder/security/privacy review.

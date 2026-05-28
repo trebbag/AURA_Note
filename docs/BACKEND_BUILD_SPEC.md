@@ -256,3 +256,8 @@ This is not production SSO or live feature execution. Real IdP credentials, prod
 - Backup/restore readiness is metadata-only. Azure Blob soft-delete/versioning, database backup configuration, restore-drill evidence, and evidence retention are checked, but production restore execution remains disabled pending review.
 
 This is not live Azure storage, production deletion execution, production restore execution, or approval to store PHI-bearing objects.
+## WO-043 production observability/support operations backend status
+
+`WO-043` completes the P8 production platform candidate as synthetic backend evidence. The support API now reports P8 operational status with local redacted structured logs, metrics, and trace probes; disabled SIEM/APM production placeholders; server-mediated storage/download posture; retention/restore posture; and safe degraded-mode metadata. `GET /support/operations/readiness` returns audit-safe P8 readiness with `productionLaunchReady=false` and `vendorSinksConfigured=false`. `POST /support/operations/evidence` records audit-safe incident runbook view, degraded-mode acknowledgement, and access-review evidence. These actions are tenant/site scoped through the local synthetic request context, permission checked by `support_operations:record`, audit logged, and event emitting.
+
+No live SIEM/APM exporter, production observability credential, PHI-bearing log payload, production launch approval, live EHR/ClinicOS synchronization, live AI, medical-necessity determination, charge finalization, or claim submission is enabled by this work.

@@ -96,6 +96,12 @@ export type CoreEventType =
   | 'storage.object_missing.v1'
   | 'backup.posture_checked.v1'
   | 'restore.readiness_checked.v1'
+  | 'observability.status_checked.v1'
+  | 'support.status_checked.v1'
+  | 'incident.runbook_viewed.v1'
+  | 'degraded_mode.acknowledged.v1'
+  | 'access_review.evidence_recorded.v1'
+  | 'operational.readiness_checked.v1'
   | 'ehr_writeback.queued.v1'
   | 'ehr_writeback.failed.v1'
   | 'ehr.adapter_status_checked.v1'
@@ -1556,7 +1562,7 @@ export interface StructuredLogEntryDto {
 
 export interface ObservabilitySinkStatusDto {
   sinkId: string;
-  kind: 'log' | 'metric' | 'trace' | 'audit_export';
+  kind: 'log' | 'metric' | 'trace' | 'audit_export' | 'siem' | 'apm';
   adapter: 'local_development' | 'disabled_production_placeholder';
   status: 'ready_local' | 'disabled_until_configured';
   redacted: true;
@@ -1664,7 +1670,7 @@ export interface SupportFailureStateDto {
 
 export interface SupportStatusDto {
   service: 'aura-note';
-  checkpoint: 'CP-4';
+  checkpoint: 'CP-4' | 'P8';
   mode: AppMode;
   generatedAt: string;
   overallHealth: 'ok' | 'degraded';
@@ -1735,6 +1741,58 @@ export interface AuditExportDto {
 export interface SupportStatusResponseDto {
   status: SupportStatusDto;
   auditEvent: AuditEventDto;
+  domainEvents?: Array<AuraNoteEvent<Record<string, unknown>>>;
+}
+
+export type OperationalEvidenceActionDto =
+  | 'incident_runbook_viewed'
+  | 'degraded_mode_acknowledged'
+  | 'access_review_recorded';
+
+export interface OperationalEvidenceRequestDto {
+  actionType: OperationalEvidenceActionDto;
+  subjectId: string;
+  note?: string;
+}
+
+export interface OperationalEvidenceDto {
+  evidenceId: string;
+  actionType: OperationalEvidenceActionDto;
+  subjectId: string;
+  status: 'recorded_synthetic';
+  tenantId: string;
+  siteId: string;
+  actorUserId: string;
+  requestId: string;
+  traceId: string;
+  recordedAt: string;
+  phiSafe: true;
+  launchReadinessClaimed: false;
+}
+
+export interface OperationalEvidenceResponseDto {
+  evidence: OperationalEvidenceDto;
+  auditEvent: AuditEventDto;
+  domainEvents: Array<AuraNoteEvent<Record<string, unknown>>>;
+}
+
+export interface OperationalReadinessDto {
+  status: 'ready_synthetic' | 'blocked_review';
+  checkpoint: 'P8';
+  observabilityReadyLocal: boolean;
+  vendorSinksConfigured: false;
+  supportOperationsReady: boolean;
+  incidentRunbooksReady: boolean;
+  accessReviewEvidenceReady: boolean;
+  productionLaunchReady: false;
+  missing: string[];
+  traceId: string;
+}
+
+export interface OperationalReadinessResponseDto {
+  readiness: OperationalReadinessDto;
+  auditEvent: AuditEventDto;
+  domainEvents: Array<AuraNoteEvent<Record<string, unknown>>>;
 }
 
 export interface AuditExportResponseDto {

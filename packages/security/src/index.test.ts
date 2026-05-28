@@ -693,7 +693,27 @@ describe('structured log redaction and feature flags', () => {
     assert.equal(scanForForbiddenPhiKeys(metric.labels).containsForbiddenPhi, false);
     assert.equal(scanForForbiddenPhiKeys(trace.attributes).containsForbiddenPhi, false);
     assert.equal(snapshot.sinks.some((sink) => sink.status === 'disabled_until_configured'), true);
+    assert.equal(snapshot.sinks.some((sink) => sink.kind === 'siem' && sink.delivery === 'not_configured'), true);
+    assert.equal(snapshot.sinks.some((sink) => sink.kind === 'apm' && sink.delivery === 'not_configured'), true);
     assert.equal(snapshot.metricProbes.every((probe) => probe.phiSafe), true);
     assert.equal(snapshot.traceProbes.every((probe) => probe.phiSafe), true);
+  });
+
+  it('limits support operations evidence recording to operational roles', () => {
+    const support = {
+      role: 'support' as const,
+      linkedToPatient: false,
+      linkedToVisit: false,
+      treatingClinician: false,
+      billingReviewTriggered: false,
+      authorizedAdmin: false
+    };
+    const clinician = {
+      ...support,
+      role: 'clinician' as const
+    };
+
+    assert.equal(canPerform('support_operations:record', support), true);
+    assert.equal(canPerform('support_operations:record', clinician), false);
   });
 });

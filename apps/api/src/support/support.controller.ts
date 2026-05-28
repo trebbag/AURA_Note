@@ -1,5 +1,5 @@
 import { Body, Controller, Get, Headers, Inject, Param, Post } from '@nestjs/common';
-import type { AuditExportRequestDto, SecureDownloadRequestDto } from '@aura-note/contracts';
+import type { AuditExportRequestDto, OperationalEvidenceRequestDto, SecureDownloadRequestDto } from '@aura-note/contracts';
 import { SupportService } from './support.service';
 
 @Controller('support')
@@ -31,5 +31,18 @@ export class SupportController {
   @Get('backup-restore/readiness')
   getBackupRestoreReadiness(@Headers() headers: Record<string, string | string[] | undefined>) {
     return this.supportService.getBackupRestoreReadiness(headers);
+  }
+
+  @Get('operations/readiness')
+  getOperationalReadiness(@Headers() headers: Record<string, string | string[] | undefined>) {
+    return this.supportService.getOperationalReadiness(headers);
+  }
+
+  @Post('operations/evidence')
+  recordOperationalEvidence(
+    @Headers() headers: Record<string, string | string[] | undefined>,
+    @Body() body: OperationalEvidenceRequestDto
+  ) {
+    return this.supportService.recordOperationalEvidence(headers, body);
   }
 }
