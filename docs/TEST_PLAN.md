@@ -437,3 +437,14 @@ These tests prove synthetic P9 ClinicOS integration-hardening readiness only. Th
 - the readiness script verifies contracts, OpenAPI, routes, tests, status/run-log evidence, no live model credential, no raw PHI, no production prompt store, no prohibited autonomous behavior, and external AI disabled by default.
 
 These tests prove synthetic P9 AI governance readiness only. They do not enable live external AI, production model credentials, production prompt stores, PHI-bearing model payloads, medical-necessity determination, charge finalization, autonomous coding/billing, claim submission, or production launch approval.
+
+## WO-047 security/privacy/compliance review readiness
+
+`WO-047` adds the `pnpm security:review-readiness` gate:
+
+- verifies the P9 review package and threat model exist and preserve no-certification/no-launch wording;
+- verifies RBAC/ABAC and AI/PHI governance docs record the P9 review boundary;
+- verifies `repo_status.json`, `RUN_LOG.md`, `SPEC_GAPS.md`, `CHECKPOINT_REPORT.md`, `work_orders/README.md`, and CI include the security review evidence;
+- runs package security tests and API tests before the static verifier.
+
+This gate proves synthetic/local P9 review readiness only. It does not certify HIPAA compliance, SOC 2 readiness, legal compliance, production security approval, production privacy approval, production launch approval, live vendor readiness, or production PHI handling.

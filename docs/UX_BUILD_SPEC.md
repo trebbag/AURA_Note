@@ -400,6 +400,16 @@ The route is integration-review evidence, not a live ClinicOS console. It does n
 
 The route is AI governance-review evidence, not a live AI operations console. It does not expose raw prompts, raw transcripts, raw final notes, billing details, coaching output, production model payloads, production PHI, live model credentials, or patient identifiers. It does not authorize autonomous diagnosis, code finalization, charge finalization, medical-necessity determination, order placement, claim submission, or patient-facing financial conclusions.
 
+## P9 security/privacy/compliance UX review
+
+`WO-047` does not add new production UX behavior. It reviews the current browser-testable surfaces and records that sensitive views must preserve metadata-only, disabled, permission-denied, read-only, failed, and degraded states through P10:
+
+- support/compliance views must not expose transcripts, final notes, billing details, coaching outputs, raw prompts, raw EHR/ClinicOS messages, or PHI-bearing logs;
+- AI governance views must remain review evidence only and cannot imply live model operation or approval;
+- EHR and ClinicOS integration views must keep live delivery/sync disabled until later approval;
+- storage and retention states must keep production delivery/deletion blocked without approval, recovery, backup/restore, and audit evidence;
+- patient-facing views must not expose internal billing, revenue, confidence, coaching, or payer-optimization details.
+
 ## Required accessibility and UX states
 
 Every screen must have empty, loading, ready, saving, blocked, failed, permission-denied, and read-only states.

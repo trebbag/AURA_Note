@@ -530,3 +530,19 @@ Do not implement these tranches directly from this backlog. Promote one tranche 
 **Known risks:**
 
 - SIEM/APM vendor selection, production exporter endpoints, credential source, log retention, alert thresholds, on-call ownership, support break-glass, and production launch approval require founder/security/privacy review.
+
+## Follow-on Tranche P9-04 — Security, Privacy, Compliance, And Threat Model Review
+
+**Promotion status:** Promoted to `WO-047` and completed as synthetic P9 review evidence.
+
+**Objective:** Convert P8/P8.5/P9 implementation evidence into a P9 security/privacy/compliance review package and threat model without claiming legal certification or production launch readiness.
+
+**Acceptance evidence:**
+
+- `pnpm security:review-readiness` passes locally and in CI.
+- `docs/COMPLIANCE_SECURITY_PRIVACY_REVIEW_PACKAGE.md` and `docs/THREAT_MODEL.md` cover P9 tenant isolation, RBAC/ABAC, AI/PHI, EHR, ClinicOS, storage/download, retention, observability/support, and claim-submission boundaries.
+- P9 checkpoint report records `WO-044` through `WO-047`.
+
+**Known risks:**
+
+- External counsel, formal HIPAA/security/privacy review, BAA/vendor review, incident response ownership, production access-review cadence, launch approval, and founder/clinical/compliance/security signoff remain deferred.

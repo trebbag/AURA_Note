@@ -118,3 +118,9 @@ The AI Gateway rejects unsafe output shapes that attempt autonomous diagnosis, f
 PHI handling remains fail-closed: forbidden PHI keys, obvious PHI-like free text, nested payloads, and evidence excerpts are rejected by default or redacted only in explicit redaction mode before mock invocation. Events and evaluation evidence store metadata only: prompt/model versions, context package IDs, source evidence IDs, redacted/rejected paths, validation status, and trace IDs. They do not store raw prompt text, raw note text, raw transcript text, raw EHR/ClinicOS payloads, real model output, production chart data, patient identifiers, secrets, or production endpoint URLs.
 
 External AI remains disabled until a later private/BAA model pathway, tenant policy, live credential source, monitoring, drift response, and security/privacy/founder approval are implemented.
+
+## WO-047 security/privacy/compliance review
+
+`WO-047` reviewed the P9 AI/PHI boundary together with EHR, ClinicOS, storage, retention, observability, audit, and support surfaces. No new P9 AI/PHI blocker was found in the current synthetic/local scope. The review confirms that live external AI remains disabled, raw PHI remains rejected by default, explicit redaction mode remains metadata-only/mock-only, and unsafe output validation continues to reject autonomous diagnosis, final coding/charging, claim submission, orders, medical-necessity determination, and patient-facing financial conclusions.
+
+The review does not approve live AI use. Private/BAA model selection, live credential source, tenant policy, evaluation thresholds, monitoring, drift response, incident response, and founder/security/privacy approval remain deferred production decisions.
