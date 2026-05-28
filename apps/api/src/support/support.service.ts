@@ -11,6 +11,10 @@ import {
   type DeploymentEnvironmentDto,
   type FeatureFlagDecisionDto,
   type ObservabilityStatusDto,
+  type OperationalEvidenceActionDto,
+  type OperationalEvidenceRequestDto,
+  type OperationalEvidenceResponseDto,
+  type OperationalReadinessResponseDto,
   type RetentionPolicyStatusDto,
   type RunbookIndexItemDto,
   type SupportFailureStateDto,
@@ -25,6 +29,8 @@ import {
   createSyntheticLocalSession,
   createStructuredLogEntry,
   redactForStructuredLog,
+  scanForForbiddenPhiKeys,
+  scanForForbiddenPhiText,
   type AccessContext,
   type FeatureFlagDecision
 } from '@aura-note/security';
@@ -76,7 +82,7 @@ export class SupportService {
       {
         status: {
           service: 'aura-note',
-          checkpoint: 'CP-4',
+          checkpoint: 'P8',
           mode: APP_MODE,
           generatedAt,
           overallHealth: featureFlags.some((flag) => flag.enabled) ? 'degraded' : 'ok',
@@ -104,7 +110,160 @@ export class SupportService {
             node20ActionWarningAcceptedUntil: 'WO-013'
           }
         },
-        auditEvent: this.createAuditEvent('support.status_check', 'SupportStatus', 'cp4-hardening', context)
+        auditEvent: this.createAuditEvent('support.status_check', 'SupportStatus', 'p8-operations', context),
+        domainEvents: [
+          createEventEnvelope({
+            eventId: this.nextId('evt'),
+            eventType: 'support.status_checked.v1',
+            tenantId: TENANT_ID,
+            siteId: SITE_ID,
+            producer: 'aura-note-api',
+            traceId: context.traceId,
+            idempotencyKey: context.idempotencyKey ?? this.nextId('idem'),
+            sensitivity: 'restricted',
+            retentionClass: 'audit',
+            payload: {
+              checkpoint: 'P8',
+              overallHealth: featureFlags.some((flag) => flag.enabled) ? 'degraded' : 'ok',
+              requestCorrelated: true,
+              phiSafe: true
+            }
+          }),
+          createEventEnvelope({
+            eventId: this.nextId('evt'),
+            eventType: 'observability.status_checked.v1',
+            tenantId: TENANT_ID,
+            siteId: SITE_ID,
+            producer: 'aura-note-api',
+            traceId: context.traceId,
+            idempotencyKey: context.idempotencyKey ?? this.nextId('idem'),
+            sensitivity: 'restricted',
+            retentionClass: 'audit',
+            payload: {
+              localSinksReady: true,
+              productionSinksConfigured: false,
+              requestCorrelated: true,
+              phiSafe: true
+            }
+          })
+        ]
+      },
+      this.createMeta(context)
+    );
+  }
+
+  getOperationalReadiness(headers: Record<string, string | string[] | undefined>): ApiEnvelope<OperationalReadinessResponseDto> {
+    const context = this.createRequestContext(headers);
+    if (!canPerform('support_status:view', context.access)) {
+      throw new ForbiddenException('role cannot view operational readiness');
+    }
+
+    const now = new Date().toISOString();
+    const observability = this.observability(now, context);
+    const localSinksReady = observability.sinks
+      .filter((sink) => sink.adapter === 'local_development')
+      .every((sink) => sink.redacted && sink.requestCorrelated && sink.status === 'ready_local');
+    const productionSinksConfigured = observability.sinks
+      .filter((sink) => sink.adapter === 'disabled_production_placeholder')
+      .every((sink) => sink.status !== 'disabled_until_configured');
+    const incidentRunbooksReady = this.runbooks().some((runbook) => runbook.covers.includes('incident_triage'));
+    const accessReviewEvidenceReady = true;
+    const missing = [
+      ...(productionSinksConfigured ? [] : ['production_siem_apm_vendor_configuration']),
+      'production_launch_approval'
+    ];
+
+    return createApiEnvelope(
+      {
+        readiness: {
+          status: localSinksReady && incidentRunbooksReady && accessReviewEvidenceReady ? 'ready_synthetic' : 'blocked_review',
+          checkpoint: 'P8',
+          observabilityReadyLocal: localSinksReady,
+          vendorSinksConfigured: false,
+          supportOperationsReady: true,
+          incidentRunbooksReady,
+          accessReviewEvidenceReady,
+          productionLaunchReady: false,
+          missing,
+          traceId: context.traceId
+        },
+        auditEvent: this.createAuditEvent('operational.readiness_check', 'OperationalReadiness', 'p8-operational-readiness', context),
+        domainEvents: [
+          createEventEnvelope({
+            eventId: this.nextId('evt'),
+            eventType: 'operational.readiness_checked.v1',
+            tenantId: TENANT_ID,
+            siteId: SITE_ID,
+            producer: 'aura-note-api',
+            traceId: context.traceId,
+            idempotencyKey: context.idempotencyKey ?? this.nextId('idem'),
+            sensitivity: 'restricted',
+            retentionClass: 'audit',
+            payload: {
+              checkpoint: 'P8',
+              observabilityReadyLocal: localSinksReady,
+              vendorSinksConfigured: false,
+              productionLaunchReady: false,
+              missing
+            }
+          })
+        ]
+      },
+      this.createMeta(context)
+    );
+  }
+
+  recordOperationalEvidence(
+    headers: Record<string, string | string[] | undefined>,
+    body: OperationalEvidenceRequestDto
+  ): ApiEnvelope<OperationalEvidenceResponseDto> {
+    const context = this.createRequestContext(headers);
+    if (!canPerform('support_operations:record', context.access)) {
+      throw new ForbiddenException('role cannot record operational evidence');
+    }
+    this.validateOperationalEvidenceRequest(body);
+
+    const now = new Date().toISOString();
+    const evidenceId = this.nextId('ops-evidence');
+    const eventType = this.eventTypeForOperationalEvidence(body.actionType);
+
+    return createApiEnvelope(
+      {
+        evidence: {
+          evidenceId,
+          actionType: body.actionType,
+          subjectId: body.subjectId,
+          status: 'recorded_synthetic',
+          tenantId: TENANT_ID,
+          siteId: SITE_ID,
+          actorUserId: context.actorUserId,
+          requestId: context.requestId,
+          traceId: context.traceId,
+          recordedAt: now,
+          phiSafe: true,
+          launchReadinessClaimed: false
+        },
+        auditEvent: this.createAuditEvent('support.operational_evidence_record', 'OperationalEvidence', evidenceId, context),
+        domainEvents: [
+          createEventEnvelope({
+            eventId: this.nextId('evt'),
+            eventType,
+            tenantId: TENANT_ID,
+            siteId: SITE_ID,
+            producer: 'aura-note-api',
+            traceId: context.traceId,
+            idempotencyKey: context.idempotencyKey ?? this.nextId('idem'),
+            sensitivity: 'restricted',
+            retentionClass: 'audit',
+            payload: {
+              evidenceId,
+              actionType: body.actionType,
+              subjectId: body.subjectId,
+              phiSafe: true,
+              launchReadinessClaimed: false
+            }
+          })
+        ]
       },
       this.createMeta(context)
     );
@@ -530,8 +689,39 @@ export class SupportService {
         status: 'ok',
         operatorMessage: 'Structured logs are request-correlated and PHI-redacted.',
         safeDegradedMode: 'Unsafe PHI-like fields are replaced or omitted before log persistence.'
+      },
+      {
+        component: 'clinicos_sync',
+        status: 'disabled',
+        operatorMessage: 'ClinicOS operational delegation is disabled until configured.',
+        safeDegradedMode: 'AURA Note local support metadata remains authoritative.'
       }
     ];
+  }
+
+  private validateOperationalEvidenceRequest(body: OperationalEvidenceRequestDto): void {
+    if (!body || !['incident_runbook_viewed', 'degraded_mode_acknowledged', 'access_review_recorded'].includes(body.actionType)) {
+      throw new BadRequestException('operational evidence actionType is not supported');
+    }
+    if (!body.subjectId || body.subjectId.length > 120) {
+      throw new BadRequestException('operational evidence subjectId is required');
+    }
+    const phiKeyScan = scanForForbiddenPhiKeys(body);
+    const phiTextScan = scanForForbiddenPhiText(body);
+    if (phiKeyScan.containsForbiddenPhi || phiTextScan.containsForbiddenPhiText) {
+      throw new BadRequestException('operational evidence must not contain PHI');
+    }
+  }
+
+  private eventTypeForOperationalEvidence(actionType: OperationalEvidenceActionDto) {
+    switch (actionType) {
+      case 'incident_runbook_viewed':
+        return 'incident.runbook_viewed.v1' as const;
+      case 'degraded_mode_acknowledged':
+        return 'degraded_mode.acknowledged.v1' as const;
+      case 'access_review_recorded':
+        return 'access_review.evidence_recorded.v1' as const;
+    }
   }
 
   private validateAuditExportRequest(body: AuditExportRequestDto): void {

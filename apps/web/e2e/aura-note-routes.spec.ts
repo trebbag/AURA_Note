@@ -149,6 +149,8 @@ test.describe('AURA Note route accessibility smoke suite', () => {
     await expect(page.getByRole('region', { name: 'Operational runbooks' })).toContainText('not configured');
     await expect(page.getByRole('region', { name: 'Secure storage and restore states' })).toContainText('server-mediated');
     await expect(page.getByRole('region', { name: 'Secure storage and restore states' })).toContainText('recovery window required');
+    await expect(page.getByRole('region', { name: 'Operational evidence states' })).toContainText('productionLaunchReady=false');
+    await expect(page.getByRole('region', { name: 'Operational evidence states' })).toContainText('metadata only');
     await expect(page.getByRole('region', { name: 'Feature flags and retention' })).toContainText('External AI');
     await expect(page.getByRole('region', { name: 'Audit and failure states' })).toContainText('server-mediated');
     await expect(page.getByRole('region', { name: 'Audit and failure states' })).toContainText('PHI');

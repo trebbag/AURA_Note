@@ -4,13 +4,20 @@ This file tracks missing, conflicting, unsafe, or deliberately deferred product 
 
 ## Active gaps
 
-No active gaps as of post-`WO-042` secure storage/download/retention/restore controls review on 2026-05-28.
+No active gaps as of post-`WO-043` production observability/support operations/status views and P8 review on 2026-05-28.
 
-The repo remains not production-ready. The items below are deferred production decisions rather than active blockers for the current secure storage/download/retention/restore controls scope.
+The repo remains not production-ready. The items below are deferred production decisions rather than active blockers for the current production observability/support operations/status views scope.
 
 ## Deferred production decisions
 
-These items must stay visible and must be resolved before the related production work can be declared complete. They are not blockers for the completed `WO-042` tranche because the active work remains synthetic/local and explicitly excludes live Azure credentials, PHI-bearing object payloads, live destructive deletion, production restore execution, live IdP credentials, live ClinicOS delegation, live EHR/ClinicOS synchronization, live transcription credentials, autonomous billing, and production launch behavior.
+These items must stay visible and must be resolved before the related production work can be declared complete. They are not blockers for the completed `WO-043` tranche because the active work remains synthetic/local and explicitly excludes live SIEM/APM vendors, production observability credentials, PHI-bearing logs, live Azure credentials, PHI-bearing object payloads, live destructive deletion, production restore execution, live IdP credentials, live ClinicOS delegation, live EHR/ClinicOS synchronization, live transcription credentials, autonomous billing, and production launch behavior.
+
+### Deferred Decision — Production SIEM/APM vendor and operational monitoring posture
+
+- **Related future work:** post-`WO-043` security/privacy/founder review before live use; `WO-049`
+- **Status:** deferred
+- **Decision needed before live use:** SIEM/APM vendor selection, production exporter endpoints, credential source, log/metric/trace retention windows, alert thresholds, on-call ownership, SLO/SLA targets, incident severity taxonomy, support break-glass policy, and access-review cadence.
+- **Safe current posture:** `WO-043` adds local redacted logs/metrics/traces, disabled SIEM/APM placeholders, support operational evidence, and readiness metadata only; no live observability vendor, PHI-bearing log, production credential, or production launch approval is enabled.
 
 ### Deferred Decision — Production identity provider and account lifecycle
 

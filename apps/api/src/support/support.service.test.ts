@@ -23,13 +23,15 @@ describe('SupportService', () => {
     const service = new SupportService();
     const response = service.getStatus(supportHeaders);
 
-    assert.equal(response.data.status.checkpoint, 'CP-4');
+    assert.equal(response.data.status.checkpoint, 'P8');
     assert.equal(response.data.status.logging.sample.phiSafe, true);
     assert.equal(response.data.status.retention.some((policy) => policy.recordClass === 'audio_ephemeral'), true);
     assert.equal(response.data.status.retention.some((policy) => policy.retentionRule === 'indefinite'), true);
     assert.equal(response.data.status.featureFlags.every((flag) => flag.defaultValue === false), true);
     assert.equal(response.data.status.featureFlags.every((flag) => flag.enabled === false), true);
     assert.equal(response.data.status.observability.sinks.some((sink) => sink.kind === 'trace'), true);
+    assert.equal(response.data.status.observability.sinks.some((sink) => sink.kind === 'siem'), true);
+    assert.equal(response.data.status.observability.sinks.some((sink) => sink.kind === 'apm'), true);
     assert.equal(response.data.status.observability.sinks.some((sink) => sink.status === 'disabled_until_configured'), true);
     assert.equal(response.data.status.observability.metricProbes.every((probe) => probe.phiSafe), true);
     assert.equal(response.data.status.deployment.some((environment) => environment.environment === 'production'), true);
@@ -39,6 +41,8 @@ describe('SupportService', () => {
     );
     assert.equal(response.data.status.runbooks.some((runbook) => runbook.runbookId === 'WO-018'), true);
     assert.equal(response.data.status.auditExport.downloadEnabled, false);
+    assert.equal(response.data.domainEvents?.some((event) => event.eventType === 'support.status_checked.v1'), true);
+    assert.equal(response.data.domainEvents?.some((event) => event.eventType === 'observability.status_checked.v1'), true);
   });
 
   it('denies support status to ordinary clinicians', () => {
@@ -165,6 +169,51 @@ describe('SupportService', () => {
         }
       }
     }
+  });
+
+  it('reports operational readiness and records PHI-safe support evidence', () => {
+    const service = new SupportService();
+    const readiness = service.getOperationalReadiness(supportHeaders);
+
+    assert.equal(readiness.data.readiness.checkpoint, 'P8');
+    assert.equal(readiness.data.readiness.observabilityReadyLocal, true);
+    assert.equal(readiness.data.readiness.vendorSinksConfigured, false);
+    assert.equal(readiness.data.readiness.productionLaunchReady, false);
+    assert.equal(readiness.data.domainEvents[0]?.eventType, 'operational.readiness_checked.v1');
+
+    const incident = service.recordOperationalEvidence(supportHeaders, {
+      actionType: 'incident_runbook_viewed',
+      subjectId: 'WO-018_OBSERVABILITY_DEPLOYMENT_RUNBOOK',
+      note: 'synthetic runbook view evidence only'
+    });
+    assert.equal(incident.data.evidence.status, 'recorded_synthetic');
+    assert.equal(incident.data.evidence.phiSafe, true);
+    assert.equal(incident.data.evidence.launchReadinessClaimed, false);
+    assert.equal(incident.data.domainEvents[0]?.eventType, 'incident.runbook_viewed.v1');
+
+    const accessReview = service.recordOperationalEvidence(complianceHeaders, {
+      actionType: 'access_review_recorded',
+      subjectId: 'quarterly-access-review-synthetic'
+    });
+    assert.equal(accessReview.data.domainEvents[0]?.eventType, 'access_review.evidence_recorded.v1');
+
+    assert.throws(
+      () =>
+        service.recordOperationalEvidence({ 'x-aura-role': 'clinician' }, {
+          actionType: 'degraded_mode_acknowledged',
+          subjectId: 'external-ai-disabled'
+        }),
+      ForbiddenException
+    );
+    assert.throws(
+      () =>
+        service.recordOperationalEvidence(supportHeaders, {
+          actionType: 'degraded_mode_acknowledged',
+          subjectId: 'external-ai-disabled',
+          note: 'call 555-121-1212 for details'
+        }),
+      BadRequestException
+    );
   });
 
   it('denies audit export to support users and rejects PHI-including requests', () => {

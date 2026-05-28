@@ -19,10 +19,12 @@ describe('Support hardening API e2e', () => {
         .set('x-trace-id', 'trace-support-e2e-001')
         .expect(200);
 
-      assert.equal(allowed.body.data.status.checkpoint, 'CP-4');
+      assert.equal(allowed.body.data.status.checkpoint, 'P8');
       assert.equal(allowed.body.data.status.auditExport.downloadEnabled, false);
       assert.equal(allowed.body.data.status.logging.sample.requestId, 'req-support-e2e-001');
       assert.equal(allowed.body.data.status.observability.sinks.some((sink: { kind: string }) => sink.kind === 'metric'), true);
+      assert.equal(allowed.body.data.status.observability.sinks.some((sink: { kind: string }) => sink.kind === 'siem'), true);
+      assert.equal(allowed.body.data.domainEvents.some((event: { eventType: string }) => event.eventType === 'support.status_checked.v1'), true);
       assert.equal(
         allowed.body.data.status.deployment.some(
           (environment: { environment: string; productionDataAllowed: boolean }) =>
@@ -33,6 +35,33 @@ describe('Support hardening API e2e', () => {
       assert.equal(allowed.body.data.status.runbooks.some((runbook: { runbookId: string }) => runbook.runbookId === 'WO-018'), true);
 
       await request(app.getHttpServer()).get('/api/v1/support/status').set('x-aura-role', 'clinician').expect(403);
+
+      const readiness = await request(app.getHttpServer())
+        .get('/api/v1/support/operations/readiness')
+        .set('x-aura-role', 'support')
+        .expect(200);
+      assert.equal(readiness.body.data.readiness.checkpoint, 'P8');
+      assert.equal(readiness.body.data.readiness.productionLaunchReady, false);
+
+      const evidence = await request(app.getHttpServer())
+        .post('/api/v1/support/operations/evidence')
+        .set('x-aura-role', 'support')
+        .set('x-request-id', 'req-support-evidence-e2e-001')
+        .set('x-trace-id', 'trace-support-evidence-e2e-001')
+        .send({
+          actionType: 'degraded_mode_acknowledged',
+          subjectId: 'external-ai-disabled',
+          note: 'synthetic degraded-mode acknowledgement'
+        })
+        .expect(201);
+      assert.equal(evidence.body.data.evidence.phiSafe, true);
+      assert.equal(evidence.body.data.domainEvents[0].eventType, 'degraded_mode.acknowledged.v1');
+
+      await request(app.getHttpServer())
+        .post('/api/v1/support/operations/evidence')
+        .set('x-aura-role', 'clinician')
+        .send({ actionType: 'incident_runbook_viewed', subjectId: 'WO-018' })
+        .expect(403);
     } finally {
       await app.close();
     }

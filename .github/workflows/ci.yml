@@ -45,6 +45,7 @@ jobs:
       - run: pnpm audio:transcription-readiness
       - run: pnpm identity:production-readiness
       - run: pnpm config:production-readiness
+      - run: pnpm observability:production-readiness
       - run: pnpm storage:azure-adapter-readiness
       - run: pnpm storage:secure-download-readiness
       - run: pnpm retention:storage-deletion-readiness

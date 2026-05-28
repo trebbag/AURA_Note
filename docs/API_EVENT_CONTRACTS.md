@@ -270,3 +270,12 @@ These events are audit-safe metadata for identity adapter status, fail-closed se
 The event family now includes `storage.download_requested.v1`, `storage.download_denied.v1`, `storage.object_delivered.v1`, `storage.object_missing.v1`, `backup.posture_checked.v1`, and `restore.readiness_checked.v1`.
 
 `storage.object_delivered.v1` is emitted only after token, tenant, site, requester, role, and object checks pass. The payload is audit-safe metadata: storage key, content length, permission, server-mediated status, and `publicUrl: null`. Raw object contents, transcript text, billing details, coaching output, secrets, and production URLs are not event payloads. Raw-audio deletion remains represented through `retention.scan_completed.v1` with deletion evidence and `transcriptPurgeCount: 0`.
+## WO-043 observability and support operations contracts
+
+`WO-043` adds the P8 operational support API/event surface:
+
+- `GET /support/operations/readiness` returns synthetic P8 readiness evidence for local observability, support operations, incident runbooks, access-review evidence, and explicit non-launch posture.
+- `POST /support/operations/evidence` records audit-safe support operational evidence for incident runbook views, degraded-mode acknowledgements, and access-review records.
+- `GET /support/status` now includes P8 domain-event evidence for support status and observability status checks.
+
+New event types are `support.status_checked.v1`, `observability.status_checked.v1`, `operational.readiness_checked.v1`, `incident.runbook_viewed.v1`, `degraded_mode.acknowledged.v1`, and `access_review.evidence_recorded.v1`. Payloads are metadata-only and must not include PHI-bearing logs, secrets, production URLs, final notes, transcripts, billing details, coaching outputs, or writeback payloads.
