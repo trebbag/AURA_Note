@@ -24,6 +24,12 @@ export type Permission =
   | 'billing_review:update'
   | 'settings:view'
   | 'settings:manage'
+  | 'identity:view'
+  | 'identity:manage'
+  | 'config:view'
+  | 'config:manage'
+  | 'feature_flag:view'
+  | 'feature_flag:manage'
   | 'template:manage'
   | 'estimate_config:manage'
   | 'rules_catalog:view'
@@ -72,7 +78,7 @@ export interface AccessContext {
   breakGlassActive?: boolean;
 }
 
-export type IdentityProviderMode = 'local_synthetic' | 'clinicos_delegate' | 'oidc_delegate';
+export type IdentityProviderMode = 'local_synthetic' | 'clinicos_delegate' | 'oidc_delegate' | 'saml_delegate';
 
 export type PurposeOfUse = 'treatment' | 'payment' | 'operations' | 'support' | 'audit' | 'coaching' | 'break_glass';
 
@@ -173,6 +179,23 @@ export interface FeatureFlagDecision {
     | 'audit_export_download';
   defaultValue: false;
   disabledReason?: string;
+}
+
+export interface ProductionIdentityGuardInput {
+  access: AccessContext;
+  expectedTenantId: string;
+  expectedSiteId: string;
+  userStatus: 'active' | 'disabled';
+  expiresAt: string;
+  now: string;
+  delegatedIdentityConfigured: boolean;
+  requiredPurpose?: PurposeOfUse;
+}
+
+export interface ProductionIdentityGuardDecision {
+  allowed: boolean;
+  reason?: string;
+  failClosed: true;
 }
 
 export interface ObservabilitySinkStatus {
@@ -281,7 +304,7 @@ const roles: Role[] = [
 
 const roleSet = new Set<Role>(roles);
 
-const identityProviderModes = new Set<IdentityProviderMode>(['local_synthetic', 'clinicos_delegate', 'oidc_delegate']);
+const identityProviderModes = new Set<IdentityProviderMode>(['local_synthetic', 'clinicos_delegate', 'oidc_delegate', 'saml_delegate']);
 
 function headerValue(value: string | string[] | undefined): string | undefined {
   return Array.isArray(value) ? value[0] : value;
@@ -398,6 +421,28 @@ export function authorizeTenantScope(access: AccessContext, resource: TenantScop
   return { allowed: true };
 }
 
+export function evaluateProductionIdentityGuard(input: ProductionIdentityGuardInput): ProductionIdentityGuardDecision {
+  if (input.userStatus === 'disabled') {
+    return { allowed: false, reason: 'disabled user blocked', failClosed: true };
+  }
+  if (!input.access.purposeOfUse) {
+    return { allowed: false, reason: 'purpose-of-use is required', failClosed: true };
+  }
+  if (input.requiredPurpose && input.access.purposeOfUse !== input.requiredPurpose) {
+    return { allowed: false, reason: 'purpose-of-use mismatch', failClosed: true };
+  }
+  if (input.access.tenantId !== input.expectedTenantId || input.access.siteId !== input.expectedSiteId) {
+    return { allowed: false, reason: 'spoofed tenant or site denied', failClosed: true };
+  }
+  if (Date.parse(input.expiresAt) <= Date.parse(input.now)) {
+    return { allowed: false, reason: 'session expired', failClosed: true };
+  }
+  if (input.access.identityProviderMode && input.access.identityProviderMode !== 'local_synthetic' && !input.delegatedIdentityConfigured) {
+    return { allowed: false, reason: 'delegated identity provider is not configured', failClosed: true };
+  }
+  return { allowed: true, failClosed: true };
+}
+
 export function canViewTranscript(ctx: AccessContext): boolean {
   if (ctx.authorizedAdmin) return true;
   if (ctx.treatingClinician && ctx.linkedToVisit) return true;
@@ -468,6 +513,18 @@ export function canPerform(permission: Permission, ctx: AccessContext): boolean 
       return ctx.authorizedAdmin || ['admin', 'clinic_manager', 'compliance_privacy_lead'].includes(ctx.role);
     case 'settings:manage':
       return ctx.authorizedAdmin || ['admin', 'clinic_manager'].includes(ctx.role);
+    case 'identity:view':
+      return ctx.authorizedAdmin || ['admin', 'clinic_manager', 'compliance_privacy_lead'].includes(ctx.role);
+    case 'identity:manage':
+      return ctx.authorizedAdmin || ['admin'].includes(ctx.role);
+    case 'config:view':
+      return ctx.authorizedAdmin || ['admin', 'clinic_manager', 'compliance_privacy_lead', 'support'].includes(ctx.role);
+    case 'config:manage':
+      return ctx.authorizedAdmin || ctx.role === 'admin';
+    case 'feature_flag:view':
+      return ctx.authorizedAdmin || ['admin', 'clinic_manager', 'compliance_privacy_lead'].includes(ctx.role);
+    case 'feature_flag:manage':
+      return ctx.authorizedAdmin || ctx.role === 'admin';
     case 'template:manage':
       return ctx.authorizedAdmin || ['clinician', 'admin', 'clinic_manager'].includes(ctx.role);
     case 'estimate_config:manage':

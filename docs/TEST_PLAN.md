@@ -348,3 +348,15 @@ CI now runs `pnpm persistence:review-panel-adapter` after visit-capture persiste
 These tests prove synthetic P8.5 readiness only. Live microphones with payload persistence, live transcription vendors, production object storage, production deletion execution, external AI transcript processing, and production PHI use remain outside the test scope until later work orders authorize them.
 
 CI runs these after the persistence gates and before acceptance readiness. Production Azure credentials, production backup/restore execution, and PHI-bearing object payload tests remain deferred.
+
+## WO-041 production identity/config tests
+
+`WO-041` adds the `pnpm identity:production-readiness` and `pnpm config:production-readiness` gates:
+
+- contracts cover platform admin, session evaluation, secret-source metadata, config validation, and governed high-risk feature flags;
+- security tests cover platform identity/config/feature-flag permissions plus disabled-user, missing-purpose, spoofed tenant/site, expired-session, and delegated-identity fail-closed decisions;
+- API service and E2E tests cover platform admin visibility, clinician/support denial, session evaluation denial states, workforce user disabling, production missing-secret validation, high-risk flag approval requirements, and metadata-only enablement;
+- browser tests cover `/aura-note/platform` identity/session, config/secret, feature-flag, permission, disabled-user, expired-session, unsafe-config, and approval-required states;
+- readiness scripts verify DTOs, permissions, routes, tests, OpenAPI operations, status/run-log evidence, no live identity provider, no raw token return, no secret-value return, no `.env` files, and no high-risk live execution.
+
+These tests prove synthetic P8 identity/config governance readiness only. Production SSO, production secret manager integration, live ClinicOS delegation, production account recovery, live vendor execution, and PHI-bearing production identity linkage remain outside the test scope until later approval.

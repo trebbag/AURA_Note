@@ -31,6 +31,8 @@
     "standalone:patient-schedule-readiness": "node scripts/validate-standalone-patient-schedule-readiness.js",
     "standalone:operations-readiness": "node scripts/validate-standalone-operations-readiness.js",
     "audio:transcription-readiness": "node scripts/validate-audio-transcription-readiness.js",
+    "identity:production-readiness": "node scripts/validate-production-identity-readiness.js",
+    "config:production-readiness": "node scripts/validate-production-config-readiness.js",
     "storage:azure-adapter-readiness": "pnpm --filter @aura-note/storage test && pnpm --filter @aura-note/storage typecheck && node scripts/validate-azure-storage-adapter-readiness.js",
     "retention:storage-deletion-readiness": "pnpm --filter @aura-note/worker test && node scripts/validate-storage-retention-readiness.js",
     "production:readiness": "node scripts/production-build-readiness.js",

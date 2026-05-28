@@ -351,6 +351,18 @@ The page is functional scaffolding for review and does not implement live AI coa
 
 The route is operational scaffold fidelity, not a production support console. It does not expose PHI, enable live integrations, deliver audit files, or perform destructive retention actions.
 
+## Production platform controls
+
+`WO-041` adds `/aura-note/platform` as a browser-testable synthetic shell for production-shaped platform governance:
+
+- identity adapter states for local dev, OIDC, SAML, and ClinicOS delegated identity;
+- disabled-user, expired-session, missing-purpose, permission-denied, unsafe-config, blocked, failed, saving, ready, empty, and demo fixture states;
+- config and secret-source posture showing metadata-only validation and `secretValuesReturned=false`;
+- high-risk feature flags for live transcription, external AI, EHR writeback, production storage, retention deletion, patient-facing estimates, and claim submission defaulting disabled;
+- visible approval-required and `metadata_only_no_live_execution` states.
+
+The route is security-review evidence, not a production admin console. It does not enable production SSO, return secrets or raw tokens, enable live ClinicOS delegation, execute live vendor behavior, expose PHI, or perform destructive production actions.
+
 ## Required accessibility and UX states
 
 Every screen must have empty, loading, ready, saving, blocked, failed, permission-denied, and read-only states.

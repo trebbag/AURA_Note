@@ -46,6 +46,11 @@ const routeExpectations = [
     nav: true
   },
   {
+    path: '/aura-note/platform',
+    heading: 'Production Platform Controls',
+    nav: true
+  },
+  {
     path: '/aura-note/support/status',
     heading: 'Production Hardening Status',
     nav: true
@@ -180,10 +185,36 @@ test.describe('AURA Note route accessibility smoke suite', () => {
     await expect(page.getByRole('region', { name: 'Operational summary' })).toContainText('Claim submission remains disabled.');
   });
 
+  test('production platform route exposes fail-closed identity, config, and high-risk flag controls', async ({ page }) => {
+    await page.goto('/aura-note/platform');
+
+    await expect(page.getByRole('region', { name: 'Production platform readiness' })).toContainText('Production-Shaped Controls');
+    await expect(page.getByRole('article', { name: 'Identity and sessions' })).toContainText('clinicos_delegate: fail closed');
+    await expect(page.getByRole('article', { name: 'Config and secrets' })).toContainText('secretValuesReturned=false');
+    await expect(page.getByRole('article', { name: 'Feature flag governance' })).toContainText('Claim submission: disabled');
+    await expect(page.getByRole('region', { name: 'Screen states' })).toContainText('expired-session');
+
+    await page.getByRole('button', { name: 'Disable User' }).click();
+    await expect(page.getByRole('article', { name: 'Identity and sessions' })).toContainText('disabled user blocked');
+    await page.getByRole('button', { name: 'Expire Session' }).click();
+    await expect(page.getByRole('article', { name: 'Identity and sessions' })).toContainText('session expired');
+    await page.getByRole('button', { name: 'Missing Purpose' }).click();
+    await expect(page.getByRole('article', { name: 'Identity and sessions' })).toContainText('purpose-of-use is required');
+
+    await page.getByRole('button', { name: 'Validate Production Config' }).click();
+    await expect(page.getByRole('article', { name: 'Config and secrets' })).toContainText('fail-closed missing OIDC_CLIENT_SECRET');
+
+    await page.getByRole('button', { name: 'Attempt Enable Without Approval' }).click();
+    await expect(page.getByRole('article', { name: 'Feature flag governance' })).toContainText('approval required');
+    await page.getByRole('button', { name: 'Record Approval' }).click();
+    await expect(page.getByRole('article', { name: 'Feature flag governance' })).toContainText('metadata_only_no_live_execution');
+    await expect(page.getByRole('region', { name: 'Platform summary' })).toContainText('Production SSO');
+  });
+
   test('core shells remain responsive without horizontal overflow on mobile width', async ({ page }) => {
     await page.setViewportSize({ width: 390, height: 844 });
 
-    for (const path of ['/aura-note/schedule', '/aura-note/operations', '/aura-note/workspace/appt-demo-001', '/aura-note/finalized/note-demo-finalized-001']) {
+    for (const path of ['/aura-note/schedule', '/aura-note/operations', '/aura-note/platform', '/aura-note/workspace/appt-demo-001', '/aura-note/finalized/note-demo-finalized-001']) {
       await page.goto(path);
       await expect(page.getByRole('main')).toBeVisible();
 

@@ -1090,6 +1090,95 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/CoachingDashboardResponse'
+  /platform/admin:
+    get:
+      operationId: getProductionPlatformAdmin
+      description: WO-041 synthetic production-shaped identity, tenant admin, config, and feature-flag platform view. This does not enable production SSO or return secrets.
+      responses:
+        '200':
+          description: Synthetic production platform administration view.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PlatformAdminResponse'
+  /platform/identity/session-evaluations:
+    post:
+      operationId: evaluateProductionIdentitySession
+      description: Evaluate disabled-user, expired-session, purpose-of-use, delegated identity, and tenant/site spoofing paths without returning raw tokens.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SessionEvaluationRequest'
+      responses:
+        '201':
+          description: Fail-closed synthetic session evaluation result.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PlatformActionResponse'
+  /platform/identity/users/{userId}:
+    patch:
+      operationId: updateWorkforceUserStatus
+      description: Update synthetic workforce user active/disabled status with audit evidence.
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateWorkforceUserRequest'
+      responses:
+        '200':
+          description: Synthetic workforce user update response.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PlatformActionResponse'
+  /platform/config/validate:
+    post:
+      operationId: validateProductionPlatformConfig
+      description: Validate production-shaped config metadata and secret-source presence without accepting or returning secret values.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ProductionConfigValidationRequest'
+      responses:
+        '201':
+          description: Fail-closed synthetic production config validation result.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PlatformActionResponse'
+  /platform/feature-flags/{key}:
+    patch:
+      operationId: updateGovernedFeatureFlag
+      description: Update a high-risk feature flag metadata state. Approval evidence is required before metadata-only enablement, and live execution remains disabled.
+      parameters:
+        - name: key
+          in: path
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateGovernedFeatureFlagRequest'
+      responses:
+        '200':
+          description: Synthetic governed feature-flag update response.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PlatformActionResponse'
   /support/status:
     get:
       operationId: getSupportStatus
@@ -1224,6 +1313,219 @@ components:
         code: { type: string }
         message: { type: string }
         severity: { type: string, enum: [info, warning, error] }
+    IdentityAdapterStatusView:
+      type: object
+      required: [adapterId, kind, identityProviderMode, status, configured, liveCredentialPresent, delegatedIdentityAllowed]
+      properties:
+        adapterId: { type: string }
+        kind: { type: string, enum: [local_dev, oidc, saml, clinicos_delegate] }
+        identityProviderMode: { type: string, enum: [local_synthetic, clinicos_delegate, oidc_delegate, saml_delegate] }
+        status: { type: string, enum: [ready_local, disabled_until_configured, unsupported_without_credentials] }
+        configured: { type: boolean }
+        liveCredentialPresent: { type: boolean, enum: [false] }
+        delegatedIdentityAllowed: { type: boolean }
+        disabledReason: { type: string }
+    WorkforceUserAdmin:
+      type: object
+      required: [userId, tenantId, siteIds, role, status, allowedPurposes, disabledUserBlocked, syntheticOnly]
+      properties:
+        userId: { type: string }
+        tenantId: { type: string }
+        siteIds:
+          type: array
+          items: { type: string }
+        role: { type: string, enum: [clinician, ma, billing_staff, admin, authorized_admin, clinic_manager, compliance_privacy_lead, support, service_account] }
+        status: { type: string, enum: [active, disabled] }
+        allowedPurposes:
+          type: array
+          items: { type: string, enum: [treatment, payment, operations, support, audit, coaching, break_glass] }
+        disabledUserBlocked: { type: boolean }
+        syntheticOnly: { type: boolean, enum: [true] }
+    SecretSourceStatus:
+      type: object
+      required: [secretName, source, configured, valueReturned, requiredFor]
+      properties:
+        secretName: { type: string }
+        source: { type: string, enum: [not_configured, environment_reference, secret_manager_reference] }
+        configured: { type: boolean }
+        valueReturned: { type: boolean, enum: [false] }
+        requiredFor: { type: string, enum: [identity_provider, live_transcription, external_ai, ehr_writeback, production_storage, retention_deletion, patient_facing_estimates, claim_submission] }
+    GovernedFeatureFlag:
+      type: object
+      required: [key, enabled, defaultValue, governs, highRisk, approvalRequired, runtimeEffect, liveExecutionEnabled, visibleToAdmins]
+      properties:
+        key: { type: string }
+        enabled: { type: boolean }
+        defaultValue: { type: boolean, enum: [false] }
+        governs: { type: string, enum: [live_transcription, external_ai, ehr_writeback, production_storage, retention_deletion, patient_facing_estimates, claim_submission] }
+        highRisk: { type: boolean, enum: [true] }
+        approvalRequired: { type: boolean, enum: [true] }
+        approvalId: { type: string }
+        runtimeEffect: { type: string, enum: [disabled, metadata_only_no_live_execution] }
+        liveExecutionEnabled: { type: boolean, enum: [false] }
+        visibleToAdmins: { type: boolean, enum: [true] }
+    PlatformAdminView:
+      type: object
+      required: [tenant, sites, identityAdapters, users, sessionPolicies, secretSources, featureFlags, modeMappings, states, demoFixture]
+      properties:
+        tenant:
+          type: object
+          required: [tenantId, displayName, standaloneOwned]
+          properties:
+            tenantId: { type: string }
+            displayName: { type: string }
+            standaloneOwned: { type: boolean, enum: [true] }
+        sites:
+          type: array
+          items:
+            type: object
+            required: [siteId, displayName, status]
+            properties:
+              siteId: { type: string }
+              displayName: { type: string }
+              status: { type: string, enum: [active] }
+        identityAdapters:
+          type: array
+          items:
+            $ref: '#/components/schemas/IdentityAdapterStatusView'
+        users:
+          type: array
+          items:
+            $ref: '#/components/schemas/WorkforceUserAdmin'
+        sessionPolicies:
+          type: object
+          required: [expirationEnforced, disabledUsersFailClosed, purposeOfUseRequired, spoofedTenantDenied]
+          properties:
+            expirationEnforced: { type: boolean, enum: [true] }
+            disabledUsersFailClosed: { type: boolean, enum: [true] }
+            purposeOfUseRequired: { type: boolean, enum: [true] }
+            spoofedTenantDenied: { type: boolean, enum: [true] }
+        secretSources:
+          type: array
+          items:
+            $ref: '#/components/schemas/SecretSourceStatus'
+        featureFlags:
+          type: array
+          items:
+            $ref: '#/components/schemas/GovernedFeatureFlag'
+        modeMappings:
+          type: array
+          items:
+            type: object
+            required: [localObject, clinicosTarget, status]
+            properties:
+              localObject: { type: string }
+              clinicosTarget: { type: string }
+              status: { type: string, enum: [safe_degraded, not_configured] }
+        states:
+          type: array
+          items: { type: string }
+        demoFixture: { type: boolean, enum: [true] }
+    SessionEvaluationRequest:
+      type: object
+      required: [userId, sessionId, tenantId, siteId, identityProviderMode, expiresAt]
+      properties:
+        userId: { type: string }
+        sessionId: { type: string }
+        tenantId: { type: string }
+        siteId: { type: string }
+        identityProviderMode: { type: string, enum: [local_synthetic, clinicos_delegate, oidc_delegate, saml_delegate] }
+        purposeOfUse: { type: string, enum: [treatment, payment, operations, support, audit, coaching, break_glass] }
+        expiresAt: { type: string, format: date-time }
+        disabled: { type: boolean }
+    SessionEvaluation:
+      type: object
+      required: [allowed, userId, sessionId, identityProviderMode, expiresAt, evaluatedAt, failClosed, rawTokenReturned]
+      properties:
+        allowed: { type: boolean }
+        denialReason: { type: string }
+        userId: { type: string }
+        sessionId: { type: string }
+        identityProviderMode: { type: string, enum: [local_synthetic, clinicos_delegate, oidc_delegate, saml_delegate] }
+        purposeOfUse: { type: string, enum: [treatment, payment, operations, support, audit, coaching, break_glass] }
+        expiresAt: { type: string, format: date-time }
+        evaluatedAt: { type: string, format: date-time }
+        failClosed: { type: boolean, enum: [true] }
+        rawTokenReturned: { type: boolean, enum: [false] }
+    ProductionConfigValidationRequest:
+      type: object
+      required: [environment, secretSources]
+      properties:
+        environment: { type: string, enum: [local, staging, production] }
+        secretSources:
+          type: array
+          items:
+            $ref: '#/components/schemas/SecretSourceStatus'
+        highRiskFlags:
+          type: array
+          items:
+            type: object
+            required: [key, enabled]
+            properties:
+              key: { type: string }
+              enabled: { type: boolean }
+              approvalId: { type: string }
+    ProductionConfigValidation:
+      type: object
+      required: [environment, valid, failClosed, errors, warnings, secretValuesReturned, productionCredentialsRequired]
+      properties:
+        environment: { type: string, enum: [local, staging, production] }
+        valid: { type: boolean }
+        failClosed: { type: boolean, enum: [true] }
+        errors:
+          type: array
+          items: { type: string }
+        warnings:
+          type: array
+          items: { type: string }
+        secretValuesReturned: { type: boolean, enum: [false] }
+        productionCredentialsRequired: { type: boolean }
+    UpdateWorkforceUserRequest:
+      type: object
+      required: [status, reason]
+      properties:
+        status: { type: string, enum: [active, disabled] }
+        reason: { type: string }
+    UpdateGovernedFeatureFlagRequest:
+      type: object
+      required: [enabled, reason]
+      properties:
+        enabled: { type: boolean }
+        approvalId: { type: string }
+        reason: { type: string }
+    PlatformActionResponse:
+      type: object
+      required: [data, meta]
+      properties:
+        data:
+          type: object
+          properties:
+            platform:
+              $ref: '#/components/schemas/PlatformAdminView'
+            sessionDecision:
+              $ref: '#/components/schemas/SessionEvaluation'
+            configValidation:
+              $ref: '#/components/schemas/ProductionConfigValidation'
+            featureFlag:
+              $ref: '#/components/schemas/GovernedFeatureFlag'
+            user:
+              $ref: '#/components/schemas/WorkforceUserAdmin'
+            auditEvent:
+              $ref: '#/components/schemas/AuditEvent'
+            domainEvents:
+              type: array
+              items:
+                $ref: '#/components/schemas/AuraNoteEvent'
+        meta:
+          $ref: '#/components/schemas/ApiMeta'
+    PlatformAdminResponse:
+      type: object
+      required: [data, meta]
+      properties:
+        data:
+          $ref: '#/components/schemas/PlatformAdminView'
+        meta:
+          $ref: '#/components/schemas/ApiMeta'
     Appointment:
       type: object
       required: [appointmentId, tenantId, siteId, safePatientId, clinicianId, noteId, state, startsAt, durationMinutes, visitType, modality, source, mode]

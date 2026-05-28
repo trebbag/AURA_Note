@@ -107,3 +107,10 @@ These invariants apply in both modes:
 - `WO-038` through `WO-039` complete standalone patient, chart, schedule, worklist, settings, template, estimate, and rules-catalog behavior so AURA Note can operate without ClinicOS.
 - `WO-045` hardens ClinicOS-integrated mode through M03 VisitGraph, M04 WorkOS/tasks, M17 NP Cockpit, M21 Charge Integrity, M23 Copilot Runtime, M24 AI Governance, M25 Integration Hub, and M26 Data Cloud adapter boundaries.
 - In every future work order, ClinicOS-provided identity, schedule, task, AI governance, integration, or analytics context must still pass AURA Note permission checks before data is returned or state is changed.
+
+`WO-041` adds production-shaped identity/config governance for both modes:
+
+- standalone mode owns synthetic tenant/site/user/session/config/feature-flag administration through AURA Note APIs and `/aura-note/platform`;
+- ClinicOS-integrated identity is represented as a delegated adapter state, but remains disabled until configured and cannot bypass AURA Note tenant/site/role/purpose checks;
+- OIDC and SAML are adapter boundaries only, with no real credentials, no raw token return, and no live SSO claim;
+- high-risk feature flags default disabled in both modes and require approval evidence before metadata-only enablement.

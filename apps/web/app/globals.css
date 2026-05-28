@@ -228,6 +228,14 @@ textarea {
   gap: 10px;
 }
 
+.state-grid > *,
+.status-band dd,
+.appointment-form strong,
+.appointment-form span {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
 .compact-list,
 .patient-context,
 .action-row,

@@ -570,3 +570,15 @@ The runtime implementation for `WO-039` is synthetic/local. It reuses the P7 dur
 - `pnpm persistence:durable-runtime-readiness` is the broad durable runtime evidence gate.
 
 P7 is now complete as local synthetic durable runtime evidence. This is not production database approval and does not enable production PHI storage, live vendor synchronization, live AI, medical-necessity determination, charge finalization, or claim submission.
+
+## WO-041 production identity/config model status
+
+`WO-041` represents the production platform control plane as typed DTOs and synthetic runtime records:
+
+- `IdentityAdapterStatusView` covers local dev, OIDC, SAML, and ClinicOS delegated identity adapter posture, including configured status, disabled reason, and `liveCredentialPresent=false`.
+- `WorkforceUserAdmin` covers tenant/site user role, active/disabled status, allowed purposes of use, and disabled-user fail-closed behavior.
+- `SessionEvaluation` records fail-closed session decisions without returning raw tokens.
+- `SecretSourceStatus` records source metadata only for IdP, Azure storage, transcription, and other high-risk capability prerequisites, with `valueReturned=false`.
+- `GovernedFeatureFlag` records default-disabled high-risk capability state, approval requirements, metadata-only runtime effect, and `liveExecutionEnabled=false`.
+
+These records are synthetic/local control-plane evidence. Production identity/session/config persistence, production secret manager records, live IdP credentials, live ClinicOS identity delegation, production PHI identity linkage, and account recovery operations remain deferred until founder/security review.

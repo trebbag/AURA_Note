@@ -121,7 +121,7 @@ Post-CP4 productionization candidates are documented in `docs/POST_CP4_PRODUCTIO
 
 `WO-040` forms the P8.5 audio and transcription candidate. It adds browser microphone capture, metadata-only recording transport, transcription adapters, mock provider coverage, retention metadata, correction history, and provider-governance boundaries. Live transcription providers and production PHI audio storage remain disabled unless a later governance work order explicitly authorizes them. P8.5 is complete once `WO-040` is implemented, tested, merged, and recorded in the checkpoint report.
 
-`WO-041` through `WO-043` form the P8 production platform candidate. They harden identity, tenant administration, config/secrets, feature flags, Azure storage/download/retention/backup/restore, observability, support operations, and status views.
+`WO-041` through `WO-043` form the P8 production platform candidate. `WO-041` is complete as synthetic production-shaped identity/config/feature-flag governance evidence. `WO-042` is the next active work order for Azure storage/download/retention/backup/restore controls, followed by `WO-043` observability, support operations, and status views.
 
 `WO-044` through `WO-047` form the P9 integration and AI candidate. They harden EHR, ClinicOS, AI governance/evaluation, and security/privacy/compliance evidence without enabling prohibited autonomous behavior.
 

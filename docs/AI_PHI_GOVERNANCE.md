@@ -75,3 +75,9 @@ AI invocation, output generation, review, approval, rejection, prompt version ch
 `WO-033` preserves external AI as disabled and re-sequences production AI work into `WO-046`. That future work order must add prompt registry/versioning, model configuration records, evaluation harnesses, PHI scrubber/de-identification hardening, output schema validation, source-linked evidence, durable AI governance events, and regression tests proving no raw PHI is sent to external AI.
 
 Live external AI with PHI remains blocked until private/BAA model pathway, privacy/security review, tenant policy, source freshness rules, monitoring, and incident response are approved and implemented. AI outputs remain draft/candidate/suggestion-only.
+
+## WO-041 feature-flag governance
+
+`WO-041` adds a governed high-risk feature-flag model that keeps `AURA_ENABLE_EXTERNAL_AI` disabled by default. Enabling the flag in synthetic admin evidence requires approval metadata and still results in `metadata_only_no_live_execution`; it does not call external AI or authorize PHI transfer.
+
+External AI remains blocked until `WO-046` adds production AI gateway governance, model/prompt configuration records, evaluation harnesses, PHI-scrubber hardening, output schema validation, source-linked evidence, durable governance events, and explicit private/BAA model approval.

@@ -126,8 +126,8 @@ check(
 );
 check(
   'status.wo040',
-  'repo_status marks WO-040 done and advances to WO-041',
-  status.work_orders?.['WO-040'] === 'done' && status.next_work_order === 'WO-041',
+  'repo_status marks WO-040 done and has advanced beyond WO-040',
+  status.work_orders?.['WO-040'] === 'done' && status.next_work_order !== 'WO-040',
   'repo_status.json'
 );
 check(
