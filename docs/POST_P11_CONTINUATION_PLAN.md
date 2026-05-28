@@ -2,7 +2,7 @@
 
 ## Current state
 
-AURA Note has completed `WO-000` through `WO-052` as synthetic/local and decision-package evidence. The current active checkpoint remains P11. No production launch, live vendor use, production PHI storage, production credential use, live claim submission, clearinghouse integration, payer integration, denial automation, payment posting, charge finalization, medical-necessity determination, or patient-facing financial conclusion is approved or implemented.
+AURA Note has completed `WO-000` through `WO-054` as synthetic/local, decision-package, and planning/control evidence. The current active checkpoint remains P11. No production launch, live vendor use, production PHI storage, production database credential use, production identity credential use, live claim submission, clearinghouse integration, payer integration, denial automation, payment posting, charge finalization, medical-necessity determination, or patient-facing financial conclusion is approved or implemented.
 
 `next_work_order` intentionally remains `null` until a specific future tranche is approved and promoted into `repo_status.json` as `todo` or `in_progress`.
 
@@ -25,6 +25,7 @@ Post-P11 work must start with a named work order and must be one of the followin
 
 ### Production PHI persistence and database operations review
 
+- Promoted as `WO-054` for planning/control intake only.
 - Required decisions: production database host, encryption/KMS, backup cadence, restore drills, RLS expansion policy, data-retention policy, migration approvals, rollback policy, data export policy, and support access policy.
 - Required evidence before implementation: security/privacy approval, backup/restore evidence plan, operational owner, local-to-staging promotion runbook, and tenant-isolation test plan.
 - Safe current posture: local PostgreSQL evidence remains synthetic/local; production PHI storage is not enabled.
@@ -76,4 +77,4 @@ Post-P11 work must start with a named work order and must be one of the followin
 
 ## Current recommendation
 
-`WO-053` promoted the first candidate family, production identity and account lifecycle live review, into a planning/control intake without enabling live behavior. Keep the repo stopped at P11 until a specific next tranche is selected. The next safest planning/control candidate is production PHI persistence and database operations review, but it should not be promoted until explicitly selected.
+`WO-053` promoted the first candidate family, production identity and account lifecycle live review, into a planning/control intake without enabling live behavior. `WO-054` promoted the second candidate family, production PHI persistence and database operations review, into a planning/control intake without enabling live behavior. Keep the repo stopped at P11 until a specific next tranche is selected. The next safest planning/control candidate is production Azure storage, deletion, and restore review, but it should not be promoted until explicitly selected.

@@ -28,6 +28,7 @@
     "persistence:review-panel-adapter": "node scripts/verify-review-panel-adapter.js",
     "persistence:finalization-output-adapter": "node scripts/verify-finalization-output-adapter.js",
     "persistence:durable-runtime-readiness": "node scripts/verify-durable-runtime-readiness.js",
+    "persistence:phi-db-review-readiness": "node scripts/validate-phi-db-review-readiness.js",
     "standalone:patient-schedule-readiness": "node scripts/validate-standalone-patient-schedule-readiness.js",
     "standalone:operations-readiness": "node scripts/validate-standalone-operations-readiness.js",
     "audio:transcription-readiness": "node scripts/validate-audio-transcription-readiness.js",

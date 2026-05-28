@@ -561,6 +561,29 @@ This gate does not authorize live EHR writeback, live AI, live transcription, pr
 
 **Implementation status as of `WO-053`:** complete as a planning/control tranche only. The repo now includes `docs/PRODUCTION_IDENTITY_ACCOUNT_LIFECYCLE_REVIEW.md`, `work_orders/WO-053_production_identity_account_lifecycle_review_intake.md`, and `pnpm identity:live-review-readiness`. `next_work_order` remains `null`; no live OIDC/SAML, production IdP credential, ClinicOS delegated identity, production PHI access, runtime identity behavior, or production launch behavior is authorized.
 
+## WO-054 — Production PHI Persistence And Database Operations Review Intake
+
+- **Objective:** Promote production PHI persistence and database operations review into a planning/control decision package without enabling production PHI storage or runtime database changes.
+- **Why this exists:** Production PHI persistence requires governed database host, encryption, migration, backup/restore, tenant-isolation, RLS, support-access, and incident-response decisions before live implementation.
+- **Prerequisites:** `WO-053` complete and merged; P11 retained; no active SPEC_GAP blocks planning/control work.
+- **In scope:** production PHI database operations review document, database host/encryption/KMS/backup/restore/RLS/migration/support-access/data-export/retention/incident decisions, future acceptance criteria, event/audit inventory, readiness verifier, CI/status/docs updates.
+- **Out of scope:** production database provisioning, production credentials, `.env` files, live migrations, runtime repository replacement, production PHI storage, new runtime RLS policies, backup/restore execution, support database access, or production launch approval.
+- **UX requirements:** no new route; future operational UX must expose environment, migration, backup, restore, tenant-isolation, support-access, degraded, failed, and read-only states through authorized surfaces before launch readiness.
+- **Backend/API requirements:** no new endpoint; future database operations must be tenant-scoped, permission-checked, purpose-bound, idempotent where needed, audit/event emitting, and fail-closed when context/approval/credentials are missing.
+- **Data model/persistence requirements:** no schema change; future work must define production database roles, migration approval/run/rollback evidence, backup/restore evidence, tenant-isolation evidence, RLS coverage, support-access evidence, data export evidence, and retention records.
+- **Event/audit requirements:** inventory future database events including migration approved/applied/rolled back, backup completed, restore drill completed, RLS policy verified, tenant isolation verified, support database access opened/closed, data export approved/completed, retention policy changed, and database incident recorded.
+- **RBAC/ABAC requirements:** preserve current role boundaries and require future authorized-admin/compliance/privacy/support-scope controls plus denial tests for ordinary clinicians, MAs, billing staff, and unscoped support users.
+- **Standalone-mode behavior:** standalone remains synthetic/local for PHI persistence until a future approved implementation work order enables production database operation.
+- **ClinicOS-integrated behavior:** ClinicOS-integrated mode cannot bypass AURA Note database permissions, tenant/site isolation, RLS posture, audit, support-access controls, or retention policy.
+- **AI/PHI/security requirements:** no real PHI, credentials, tokens, production URLs, `.env`, private keys, production database calls, backup/restore execution, or external AI change.
+- **Testing requirements:** PHI database review readiness verifier plus post-P11, production, acceptance, status, and whitespace gates.
+- **Required scripts/gates:** `pnpm persistence:phi-db-review-readiness`; `pnpm post-p11:readiness`; `pnpm production:readiness`; `pnpm acceptance:readiness`; `node scripts/status.js`; `git diff --check`.
+- **Definition of Done:** decision package exists, `WO-054` is indexed and marked done, `next_work_order` remains `null`, readiness scripts pass, and no production PHI storage, production database credential, live migration, runtime database change, support database access, backup/restore execution, or launch behavior is authorized.
+- **Stop conditions:** real database host selection, live credentials, PHI storage, live migration, backup/restore execution, support access, or legal/security/privacy policy is required before implementation.
+- **Risks and deferred decisions:** production database host, encryption/KMS, backup cadence, restore drills, RLS expansion, migration approvals, rollback policy, tenant export/offboarding, support access, retention policy, and incident response remain deferred.
+
+**Implementation status as of `WO-054`:** complete as a planning/control tranche only. The repo now includes `docs/PRODUCTION_PHI_PERSISTENCE_DATABASE_OPERATIONS_REVIEW.md`, `work_orders/WO-054_production_phi_persistence_database_ops_review_intake.md`, and `pnpm persistence:phi-db-review-readiness`. `next_work_order` remains `null`; no production PHI storage, production database credential, live migration, runtime repository replacement, support database access, backup/restore execution, or production launch behavior is authorized.
+
 ## Overall production-launch criteria
 
 AURA Note can be called production-launch-ready only when all of the following are true:
