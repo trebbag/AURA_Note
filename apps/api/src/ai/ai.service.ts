@@ -1,24 +1,39 @@
 import { BadRequestException, ForbiddenException, Injectable } from '@nestjs/common';
 import {
   AURA_NOTE_AI_SAFETY_POLICY,
+  AI_EVALUATION_CASES,
+  AI_MODEL_CONFIGURATIONS,
   PROMPT_REGISTRY,
   buildAiGovernanceEventPayload,
   createAiGatewayRequest,
+  inspectAiGatewayResponse,
   invokeGovernedMockAi,
   prepareAiContextPackage,
+  runDeterministicAiEvaluationCase,
   type AiContextPackage,
   type AiGatewayRequest as PackageAiGatewayRequest,
-  type AiGatewayResponse as PackageAiGatewayResponse
+  type AiGatewayResponse as PackageAiGatewayResponse,
+  type AiOutputValidationResult
 } from '@aura-note/ai-gateway';
 import {
   createApiEnvelope,
   createEventEnvelope,
   type AiContextPackageDto,
+  type AiEvaluationCaseDto,
+  type AiEvaluationRunRequestDto,
+  type AiEvaluationRunResponseDto,
+  type AiEvaluationResultDto,
   type AiGatewayInvocationRequestDto,
   type AiGatewayInvocationResponseDto,
+  type AiGatewayModelModeDto,
+  type AiGatewayOutputTypeDto,
   type AiGatewayRequestDto,
   type AiGatewayResponseDto,
   type AiGatewayStatusDto,
+  type AiModelConfigurationDto,
+  type AiOutputValidationRequestDto,
+  type AiOutputValidationResponseDto,
+  type AiOutputValidationResultDto,
   type AiPromptRegistryEntryDto,
   type AiSafetyPolicyDto,
   type ApiEnvelope,
@@ -57,11 +72,134 @@ export class AiService {
           promptVersion: entry.promptVersion,
           purpose: entry.purpose,
           outputType: entry.outputType,
+          description: entry.description,
           sourceLinkRequired: entry.sourceLinkRequired,
-          humanReviewRequired: entry.humanReviewRequired
+          humanReviewRequired: entry.humanReviewRequired,
+          schemaVersion: entry.schemaVersion,
+          riskLabel: entry.riskLabel,
+          active: entry.active
         })),
+        modelConfigurations: AI_MODEL_CONFIGURATIONS.map((config): AiModelConfigurationDto => ({ ...config })),
+        evaluationCases: AI_EVALUATION_CASES.map((evalCase): AiEvaluationCaseDto => ({ ...evalCase })),
         providerMode: 'mock',
-        externalAiEnabled: false
+        externalAiEnabled: false,
+        liveModelCredentialPresent: false,
+        rawPhiToExternalAiAllowed: false,
+        humanReviewRequiredForAllOutputs: true
+      },
+      this.createMeta(context)
+    );
+  }
+
+  async runEvaluations(
+    body: AiEvaluationRunRequestDto,
+    headers: Record<string, string | string[] | undefined>
+  ): Promise<ApiEnvelope<AiEvaluationRunResponseDto>> {
+    const context = this.createRequestContext(headers);
+    if (!canPerform('ai_governance:view', context.access)) {
+      throw new ForbiddenException('role cannot run AI governance evaluations');
+    }
+
+    const requestedCaseIds = body.evalCaseIds && body.evalCaseIds.length > 0
+      ? body.evalCaseIds
+      : AI_EVALUATION_CASES.map((evalCase) => evalCase.evalCaseId);
+    const knownCaseIds = new Set(AI_EVALUATION_CASES.map((evalCase) => evalCase.evalCaseId));
+    const unknownCaseIds = requestedCaseIds.filter((caseId) => !knownCaseIds.has(caseId));
+    if (unknownCaseIds.length > 0) {
+      throw new BadRequestException(`unknown AI evaluation cases: ${unknownCaseIds.join(', ')}`);
+    }
+
+    const results = await Promise.all(
+      requestedCaseIds.map((caseId, index) =>
+        runDeterministicAiEvaluationCase({
+          caseId,
+          evidence: this.syntheticEvidence(),
+          traceId: `${context.traceId}-eval-${index + 1}`
+        })
+      )
+    );
+    const allPassed = results.every((result) => result.passed);
+    const eventType = allPassed ? 'ai.evaluation_run_completed.v1' : 'ai.evaluation_run_failed.v1';
+    const event = createEventEnvelope({
+      eventId: this.nextId('evt'),
+      eventType,
+      tenantId: TENANT_ID,
+      siteId: SITE_ID,
+      producer: 'aura-note-api',
+      traceId: context.traceId,
+      idempotencyKey: context.idempotencyKey ?? this.nextId('idem'),
+      sensitivity: 'restricted',
+      retentionClass: 'audit',
+      payload: {
+        evalCaseIds: requestedCaseIds,
+        resultCount: results.length,
+        allPassed,
+        liveModelCalled: false,
+        modelModes: [...new Set(results.map((result) => result.modelMode))]
+      }
+    });
+
+    return createApiEnvelope(
+      {
+        results: results.map((result): AiEvaluationResultDto => ({ ...result })),
+        allPassed,
+        liveModelCalled: false,
+        auditEvent: this.createAuditEvent('ai.evaluation_run', 'AiGatewayEvaluation', this.nextId('eval-run'), context),
+        domainEvents: [event]
+      },
+      this.createMeta(context)
+    );
+  }
+
+  validateOutput(
+    body: AiOutputValidationRequestDto,
+    headers: Record<string, string | string[] | undefined>
+  ): ApiEnvelope<AiOutputValidationResponseDto> {
+    const context = this.createRequestContext(headers);
+    if (!canPerform('ai_governance:view', context.access)) {
+      throw new ForbiddenException('role cannot validate AI governance outputs');
+    }
+
+    const response: PackageAiGatewayResponse<Record<string, unknown>> = {
+      output: body.output,
+      outputType: body.outputType,
+      modelMode: 'mock',
+      modelVersion: 'mock-aura-note-p9',
+      warnings: ['Synthetic output validation only. External AI remains disabled.'],
+      humanReviewRequired: true,
+      sourceEvidenceIds: body.sourceEvidenceIds ?? [],
+      rejected: false
+    };
+    const validation = inspectAiGatewayResponse(response);
+    const eventType = validation.validationStatus === 'rejected' ? 'ai.output_rejected.v1' : 'ai.response_recorded.v1';
+
+    return createApiEnvelope(
+      {
+        validation: this.toValidationDto(validation),
+        auditEvent: this.createAuditEvent('ai.output_validated', 'AiGatewayOutput', this.nextId('ai-output'), context),
+        domainEvents: [
+          createEventEnvelope({
+            eventId: this.nextId('evt'),
+            eventType,
+            tenantId: TENANT_ID,
+            siteId: SITE_ID,
+            producer: 'aura-note-api',
+            traceId: context.traceId,
+            idempotencyKey: context.idempotencyKey ?? this.nextId('idem'),
+            sensitivity: 'restricted',
+            retentionClass: 'audit',
+            payload: {
+              outputType: body.outputType,
+              validationStatus: validation.validationStatus,
+              riskLabel: validation.riskLabel,
+              unsafeReasons: validation.unsafeReasons,
+              prohibitedActionDetected: validation.prohibitedActionDetected,
+              rawPhiDetected: validation.rawPhiDetected,
+              sourceEvidenceIds: body.sourceEvidenceIds ?? [],
+              humanReviewRequired: true
+            }
+          })
+        ]
       },
       this.createMeta(context)
     );
@@ -296,6 +434,34 @@ export class AiService {
       sourceEvidenceIds: response.sourceEvidenceIds,
       rejected: response.rejected
     };
+  }
+
+  private toValidationDto(validation: AiOutputValidationResult): AiOutputValidationResultDto {
+    return {
+      validationStatus: validation.validationStatus,
+      riskLabel: validation.riskLabel,
+      unsafeReasons: validation.unsafeReasons,
+      prohibitedActionDetected: validation.prohibitedActionDetected,
+      rawPhiDetected: validation.rawPhiDetected,
+      humanReviewRequired: validation.humanReviewRequired
+    };
+  }
+
+  private syntheticEvidence() {
+    return [
+      {
+        evidenceId: 'evidence-synthetic-001',
+        evidenceType: 'chart_slice' as const,
+        sourceSystem: 'synthetic_fixture' as const,
+        sourceRef: 'chart-synthetic-001',
+        displayLabel: 'Synthetic chart slice',
+        excerptOrValue: 'Synthetic deidentified value',
+        freshness: 'recent' as const,
+        sourceQuality: 'high' as const,
+        phiClassification: 'deidentified' as const,
+        allowedRoles: ['clinician', 'compliance_privacy_lead']
+      }
+    ];
   }
 
   private createAuditEvent(action: string, entityType: string, entityId: string, context: RequestContext): AuditEventDto {

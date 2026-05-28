@@ -2,13 +2,17 @@ import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
 import {
   AURA_NOTE_AI_SAFETY_POLICY,
+  AI_EVALUATION_CASES,
+  AI_MODEL_CONFIGURATIONS,
   ExternalDisabledModelProvider,
   MockAiModelProvider,
   buildAiGovernanceEventPayload,
   createAiGatewayRequest,
   getPromptRegistryEntry,
   invokeGovernedMockAi,
+  inspectAiGatewayResponse,
   prepareAiContextPackage,
+  runDeterministicAiEvaluationCase,
   scanAiContextForPhi,
   validateAiGatewayResponse,
   type AiEvidenceNode
@@ -107,6 +111,29 @@ describe('AI gateway PHI boundary', () => {
     assert.equal(scan.containsPhi, true);
     assert.equal(scan.paths.includes('summary'), true);
   });
+
+  it('redacts obvious PHI-like evidence text in explicit redaction mode', () => {
+    const prepared = prepareAiContextPackage(
+      {
+        tenantId: 'tenant-synthetic-primary',
+        siteId: 'site-synthetic-primary',
+        safePatientId: 'safe-patient-synthetic-001',
+        clinicalFacts: { finding: 'Synthetic deidentified finding' },
+        evidence: [
+          {
+            ...evidence[0]!,
+            excerptOrValue: 'synthetic@example.invalid'
+          }
+        ],
+        traceId: 'trace-ai-evidence-redact-001'
+      },
+      'redact',
+      '2026-05-28T00:00:00.000Z'
+    );
+
+    assert.equal(prepared.package.redactedPaths.includes('evidence[0].excerptOrValue'), true);
+    assert.equal(prepared.package.evidence[0]?.excerptOrValue, '[REDACTED]');
+  });
 });
 
 describe('AI gateway safety policy', () => {
@@ -155,6 +182,23 @@ describe('AI gateway safety policy', () => {
     );
   });
 
+  it('returns structured output validation evidence for unsafe shapes', () => {
+    const result = inspectAiGatewayResponse({
+      output: { submitsClaim: true, patientFacingFinancialConclusion: true },
+      outputType: 'candidate',
+      modelMode: 'mock',
+      warnings: [],
+      humanReviewRequired: true,
+      sourceEvidenceIds: ['evidence-synthetic-001'],
+      rejected: false
+    });
+
+    assert.equal(result.validationStatus, 'rejected');
+    assert.equal(result.riskLabel, 'unsafe');
+    assert.equal(result.prohibitedActionDetected, true);
+    assert.equal(result.humanReviewRequired, true);
+  });
+
   it('records governance-safe metadata without raw clinical payloads', async () => {
     const prepared = prepareAiContextPackage(
       {
@@ -183,5 +227,22 @@ describe('AI gateway safety policy', () => {
     assert.equal(payload.contextPackageId, 'ai-context-trace-ai-governance-001');
     assert.deepEqual(payload.sourceEvidenceIds, ['evidence-synthetic-001']);
     assert.equal('clinicalFacts' in payload, false);
+  });
+
+  it('runs deterministic evaluation cases without live model calls', async () => {
+    const result = await runDeterministicAiEvaluationCase({
+      caseId: 'eval-billing-preview-candidate-only-v1',
+      evidence,
+      traceId: 'trace-ai-eval-001',
+      nowIso: '2026-05-28T00:05:00.000Z'
+    });
+
+    assert.equal(AI_EVALUATION_CASES.length >= 5, true);
+    assert.equal(AI_MODEL_CONFIGURATIONS.every((config) => config.liveInvocationEnabled === false), true);
+    assert.equal(result.passed, true);
+    assert.equal(result.liveModelCalled, false);
+    assert.equal(result.promptId, 'aura-note-billing-preview-v1');
+    assert.equal(result.validationStatus, 'accepted');
+    assert.equal(result.humanReviewRequired, true);
   });
 });

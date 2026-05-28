@@ -124,6 +124,10 @@ export type CoreEventType =
   | 'ai.phi_rejected.v1'
   | 'ai.response_recorded.v1'
   | 'ai.output_rejected.v1'
+  | 'ai.prompt_config_changed.v1'
+  | 'ai.model_config_changed.v1'
+  | 'ai.evaluation_run_completed.v1'
+  | 'ai.evaluation_run_failed.v1'
   | 'coaching.signal_created.v1'
   | 'coaching.report_generated.v1'
   | 'coaching.dashboard_viewed.v1'
@@ -1532,6 +1536,8 @@ export type AiGatewayModelModeDto = 'mock' | 'private_baa' | 'external_disabled'
 export type AiGatewayPolicyModeDto = 'mock_only' | 'external_disabled' | 'private_baa_governed';
 export type AiPhiHandlingDto = 'reject' | 'redact';
 export type AiHumanReviewStatusDto = 'required' | 'approved_by_human' | 'rejected_by_human';
+export type AiValidationStatusDto = 'accepted' | 'rejected';
+export type AiRiskLabelDto = 'low' | 'moderate' | 'high' | 'unsafe';
 
 export interface AiEvidenceNodeDto {
   evidenceId: string;
@@ -1565,8 +1571,89 @@ export interface AiPromptRegistryEntryDto {
   promptVersion: string;
   purpose: AiGatewayPurposeDto;
   outputType: AiGatewayOutputTypeDto;
+  description?: string;
   sourceLinkRequired: boolean;
   humanReviewRequired: true;
+  schemaVersion?: string;
+  riskLabel?: AiRiskLabelDto;
+  active?: boolean;
+}
+
+export interface AiModelConfigurationDto {
+  modelConfigId: string;
+  modelMode: AiGatewayModelModeDto;
+  modelVersion: string;
+  policyMode: AiGatewayPolicyModeDto;
+  credentialSource: 'none' | 'private_baa_placeholder';
+  privateBaaApproved: boolean;
+  liveInvocationEnabled: false;
+  externalEndpointConfigured: false;
+  configuredAt: string;
+}
+
+export interface AiOutputValidationResultDto {
+  validationStatus: AiValidationStatusDto;
+  riskLabel: AiRiskLabelDto;
+  unsafeReasons: string[];
+  prohibitedActionDetected: boolean;
+  rawPhiDetected: boolean;
+  humanReviewRequired: true;
+}
+
+export interface AiEvaluationCaseDto {
+  evalCaseId: string;
+  purpose: AiGatewayPurposeDto;
+  outputType: AiGatewayOutputTypeDto;
+  syntheticOnly: true;
+  expectedPromptId: string;
+  sourceEvidenceIds: string[];
+  expectedValidationStatus: AiValidationStatusDto;
+}
+
+export interface AiEvaluationResultDto {
+  evalCaseId: string;
+  purpose: AiGatewayPurposeDto;
+  outputType: AiGatewayOutputTypeDto;
+  promptId: string;
+  promptVersion: string;
+  modelVersion: string;
+  modelMode: AiGatewayModelModeDto;
+  policyMode: AiGatewayPolicyModeDto;
+  validationStatus: AiValidationStatusDto;
+  riskLabel: AiRiskLabelDto;
+  humanReviewRequired: true;
+  sourceEvidenceIds: string[];
+  unsafeReasons: string[];
+  prohibitedActionDetected: boolean;
+  rawPhiDetected: boolean;
+  liveModelCalled: false;
+  passed: boolean;
+  traceId: string;
+  completedAt: string;
+}
+
+export interface AiEvaluationRunRequestDto {
+  evalCaseIds?: string[];
+}
+
+export interface AiEvaluationRunResponseDto {
+  results: AiEvaluationResultDto[];
+  allPassed: boolean;
+  liveModelCalled: false;
+  auditEvent: AuditEventDto;
+  domainEvents: Array<AuraNoteEvent<Record<string, unknown>>>;
+}
+
+export interface AiOutputValidationRequestDto {
+  outputType: AiGatewayOutputTypeDto;
+  output: Record<string, unknown>;
+  sourceEvidenceIds?: string[];
+}
+
+export interface AiOutputValidationResponseDto {
+  validation: AiOutputValidationResultDto;
+  auditEvent: AuditEventDto;
+  domainEvents: Array<AuraNoteEvent<Record<string, unknown>>>;
 }
 
 export interface AiSafetyPolicyDto {
@@ -1640,8 +1727,13 @@ export interface AiGatewayResponseDto {
 export interface AiGatewayStatusDto {
   policy: AiSafetyPolicyDto;
   promptRegistry: AiPromptRegistryEntryDto[];
+  modelConfigurations?: AiModelConfigurationDto[];
+  evaluationCases?: AiEvaluationCaseDto[];
   providerMode: AiGatewayModelModeDto;
   externalAiEnabled: false;
+  liveModelCredentialPresent?: false;
+  rawPhiToExternalAiAllowed?: false;
+  humanReviewRequiredForAllOutputs?: true;
 }
 
 export interface AiGatewayInvocationResponseDto {

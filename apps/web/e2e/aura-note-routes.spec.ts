@@ -61,6 +61,11 @@ const routeExpectations = [
     nav: true
   },
   {
+    path: '/aura-note/ai-governance',
+    heading: 'AI Governance Readiness',
+    nav: true
+  },
+  {
     path: '/aura-note/support/status',
     heading: 'Production Hardening Status',
     nav: true
@@ -247,7 +252,7 @@ test.describe('AURA Note route accessibility smoke suite', () => {
   test('core shells remain responsive without horizontal overflow on mobile width', async ({ page }) => {
     await page.setViewportSize({ width: 390, height: 844 });
 
-    for (const path of ['/aura-note/schedule', '/aura-note/operations', '/aura-note/platform', '/aura-note/integrations/ehr', '/aura-note/workspace/appt-demo-001', '/aura-note/finalized/note-demo-finalized-001']) {
+    for (const path of ['/aura-note/schedule', '/aura-note/operations', '/aura-note/platform', '/aura-note/integrations/ehr', '/aura-note/ai-governance', '/aura-note/workspace/appt-demo-001', '/aura-note/finalized/note-demo-finalized-001']) {
       await page.goto(path);
       await expect(page.getByRole('main')).toBeVisible();
 
@@ -272,5 +277,22 @@ test.describe('AURA Note route accessibility smoke suite', () => {
     await page.getByRole('button', { name: 'Failed Closed' }).click();
     await expect(page.getByRole('article', { name: 'Publication metadata' })).toContainText('failed_unavailable');
     await expect(page.getByRole('region', { name: 'ClinicOS safety summary' })).toContainText('does not build ClinicOS modules');
+  });
+
+  test('AI governance route exposes prompt, model, evaluation, validation, and disabled external AI states', async ({ page }) => {
+    await page.goto('/aura-note/ai-governance');
+
+    await expect(page.getByRole('region', { name: 'AI governance readiness' })).toContainText('External AI');
+    await expect(page.getByRole('article', { name: 'Prompt registry' })).toContainText('aura-note-suggestions-v1');
+    await expect(page.getByRole('article', { name: 'Model configuration' })).toContainText('liveInvocationEnabled=false');
+    await expect(page.getByRole('article', { name: 'Evaluation harness' })).toContainText('eval-billing-preview-candidate-only-v1');
+    await expect(page.getByRole('article', { name: 'Output validation' })).toContainText('ai.output_rejected.v1');
+    await expect(page.getByRole('region', { name: 'AI governance route states' })).toContainText('permission-denied');
+
+    await page.getByRole('button', { name: 'Run Evaluations' }).click();
+    await expect(page.getByRole('article', { name: 'Evaluation harness' })).toContainText('allPassed=true liveModelCalled=false');
+    await page.getByRole('button', { name: 'Reject Unsafe Output' }).click();
+    await expect(page.getByRole('article', { name: 'Output validation' })).toContainText('unsafe-output-rejected');
+    await expect(page.getByRole('region', { name: 'AI governance safety summary' })).toContainText('does not autonomously diagnose');
   });
 });

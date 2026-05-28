@@ -1310,6 +1310,44 @@ paths:
                 $ref: '#/components/schemas/AiGatewayInvocationResponse'
         '400':
           description: Raw PHI rejected before model invocation.
+  /ai-gateway/evaluations/run:
+    post:
+      operationId: runAiGatewayGovernanceEvaluations
+      description: WO-046 runs deterministic synthetic AI governance evaluations without live model calls or PHI payloads.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AiEvaluationRunRequest'
+      responses:
+        '201':
+          description: Metadata-only AI evaluation run evidence.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AiEvaluationRunResponse'
+        '403':
+          description: Role cannot run AI governance evaluations.
+  /ai-gateway/outputs/validate:
+    post:
+      operationId: validateAiGatewayOutput
+      description: WO-046 validates synthetic AI output shapes and rejects prohibited autonomous behavior metadata.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AiOutputValidationRequest'
+      responses:
+        '201':
+          description: AI output validation metadata.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AiOutputValidationResponse'
+        '403':
+          description: Role cannot validate AI governance outputs.
   /integrations/ehr/status:
     get:
       operationId: getEhrStatus
@@ -3733,12 +3771,109 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/AiEvidenceNode'
+    AiEvaluationRunRequest:
+      type: object
+      properties:
+        evalCaseIds:
+          type: array
+          items: { type: string }
+    AiOutputValidationRequest:
+      type: object
+      required: [outputType, output]
+      properties:
+        outputType: { type: string, enum: [suggestion, draft, candidate, summary, coaching_feedback] }
+        output: { type: object }
+        sourceEvidenceIds:
+          type: array
+          items: { type: string }
+    AiOutputValidationResult:
+      type: object
+      required: [validationStatus, riskLabel, unsafeReasons, prohibitedActionDetected, rawPhiDetected, humanReviewRequired]
+      properties:
+        validationStatus: { type: string, enum: [accepted, rejected] }
+        riskLabel: { type: string, enum: [low, moderate, high, unsafe] }
+        unsafeReasons:
+          type: array
+          items: { type: string }
+        prohibitedActionDetected: { type: boolean }
+        rawPhiDetected: { type: boolean }
+        humanReviewRequired: { type: boolean, const: true }
+    AiEvaluationResult:
+      type: object
+      required: [evalCaseId, purpose, outputType, promptId, promptVersion, modelVersion, modelMode, policyMode, validationStatus, riskLabel, humanReviewRequired, sourceEvidenceIds, unsafeReasons, prohibitedActionDetected, rawPhiDetected, liveModelCalled, passed, traceId, completedAt]
+      properties:
+        evalCaseId: { type: string }
+        purpose: { type: string, enum: [suggestions, compose_note, patient_summary, billing_preview, coaching] }
+        outputType: { type: string, enum: [suggestion, draft, candidate, summary, coaching_feedback] }
+        promptId: { type: string }
+        promptVersion: { type: string }
+        modelVersion: { type: string }
+        modelMode: { type: string, enum: [mock, private_baa, external_disabled] }
+        policyMode: { type: string, enum: [mock_only, external_disabled, private_baa_governed] }
+        validationStatus: { type: string, enum: [accepted, rejected] }
+        riskLabel: { type: string, enum: [low, moderate, high, unsafe] }
+        humanReviewRequired: { type: boolean, const: true }
+        sourceEvidenceIds:
+          type: array
+          items: { type: string }
+        unsafeReasons:
+          type: array
+          items: { type: string }
+        prohibitedActionDetected: { type: boolean }
+        rawPhiDetected: { type: boolean }
+        liveModelCalled: { type: boolean, const: false }
+        passed: { type: boolean }
+        traceId: { type: string }
+        completedAt: { type: string, format: date-time }
+    AiEvaluationRunResponse:
+      allOf:
+        - type: object
+          properties:
+            data:
+              type: object
+              required: [results, allPassed, liveModelCalled, auditEvent, domainEvents]
+              properties:
+                results:
+                  type: array
+                  items:
+                    $ref: '#/components/schemas/AiEvaluationResult'
+                allPassed: { type: boolean }
+                liveModelCalled: { type: boolean, const: false }
+                auditEvent:
+                  $ref: '#/components/schemas/AuditEvent'
+                domainEvents:
+                  type: array
+                  items:
+                    $ref: '#/components/schemas/AuraNoteEvent'
+            meta:
+              $ref: '#/components/schemas/ApiMeta'
+    AiOutputValidationResponse:
+      allOf:
+        - type: object
+          properties:
+            data:
+              type: object
+              required: [validation, auditEvent, domainEvents]
+              properties:
+                validation:
+                  $ref: '#/components/schemas/AiOutputValidationResult'
+                auditEvent:
+                  $ref: '#/components/schemas/AuditEvent'
+                domainEvents:
+                  type: array
+                  items:
+                    $ref: '#/components/schemas/AuraNoteEvent'
+            meta:
+              $ref: '#/components/schemas/ApiMeta'
     AiGatewayStatus:
       type: object
       required: [policy, promptRegistry, providerMode, externalAiEnabled]
       properties:
         providerMode: { type: string, enum: [mock, private_baa, external_disabled] }
         externalAiEnabled: { type: boolean, const: false }
+        liveModelCredentialPresent: { type: boolean, const: false }
+        rawPhiToExternalAiAllowed: { type: boolean, const: false }
+        humanReviewRequiredForAllOutputs: { type: boolean, const: true }
         policy:
           type: object
           required: [policyId, mode, externalAiEnabled, privateBaaRequired, humanReviewRequired, allowedOutputTypes, prohibitedAutonomousActions]
@@ -3764,8 +3899,42 @@ components:
               promptVersion: { type: string }
               purpose: { type: string, enum: [suggestions, compose_note, patient_summary, billing_preview, coaching] }
               outputType: { type: string, enum: [suggestion, draft, candidate, summary, coaching_feedback] }
+              description: { type: string }
               sourceLinkRequired: { type: boolean }
               humanReviewRequired: { type: boolean, const: true }
+              schemaVersion: { type: string }
+              riskLabel: { type: string, enum: [low, moderate, high, unsafe] }
+              active: { type: boolean }
+        modelConfigurations:
+          type: array
+          items:
+            type: object
+            required: [modelConfigId, modelMode, modelVersion, policyMode, credentialSource, privateBaaApproved, liveInvocationEnabled, externalEndpointConfigured, configuredAt]
+            properties:
+              modelConfigId: { type: string }
+              modelMode: { type: string, enum: [mock, private_baa, external_disabled] }
+              modelVersion: { type: string }
+              policyMode: { type: string, enum: [mock_only, external_disabled, private_baa_governed] }
+              credentialSource: { type: string, enum: [none, private_baa_placeholder] }
+              privateBaaApproved: { type: boolean }
+              liveInvocationEnabled: { type: boolean, const: false }
+              externalEndpointConfigured: { type: boolean, const: false }
+              configuredAt: { type: string, format: date-time }
+        evaluationCases:
+          type: array
+          items:
+            type: object
+            required: [evalCaseId, purpose, outputType, syntheticOnly, expectedPromptId, sourceEvidenceIds, expectedValidationStatus]
+            properties:
+              evalCaseId: { type: string }
+              purpose: { type: string, enum: [suggestions, compose_note, patient_summary, billing_preview, coaching] }
+              outputType: { type: string, enum: [suggestion, draft, candidate, summary, coaching_feedback] }
+              syntheticOnly: { type: boolean, const: true }
+              expectedPromptId: { type: string }
+              sourceEvidenceIds:
+                type: array
+                items: { type: string }
+              expectedValidationStatus: { type: string, enum: [accepted, rejected] }
     AiGatewayStatusResponse:
       allOf:
         - type: object
@@ -4327,7 +4496,7 @@ components:
         eventId: { type: string }
         eventType:
           type: string
-          enum: [appointment.created.v1, note.shell_created.v1, visit.started.v1, visit.paused.v1, visit.resumed.v1, visit.stopped.v1, recording.started.v1, microphone.permission_recorded.v1, recording.chunk_received.v1, recording.exception_approved.v1, recording.stopped.v1, raw_audio.retention_scheduled.v1, transcription.provider_status_checked.v1, transcription.job_queued.v1, transcription.job_processed.v1, transcription.job_failed.v1, transcript.segment_appended.v1, transcript.segment_corrected.v1, suggestions.evaluated.v1, suggestion.accepted.v1, suggestion.removed.v1, visit_selection.added.v1, compliance.evaluated.v1, history_gap.task_created.v1, task.blocker_changed.v1, low_confidence_diagnosis.override_recorded.v1, finalization.started.v1, finalization.selection_decided.v1, finalization.suggestion_decided.v1, finalization.compose_requested.v1, finalization.compose_completed.v1, finalization.compare_edit_updated.v1, finalization.compose_rebeautified.v1, finalization.step_completed.v1, final_note.approved.v1, patient_summary.approved.v1, billing_review.triggered.v1, draft_claim_preview.generated.v1, billing_attestation.completed.v1, final_note.created.v1, patient_summary.finalized.v1, note.signed.v1, note.dispatched.v1, export.generated.v1, storage.download_requested.v1, storage.download_denied.v1, storage.object_delivered.v1, storage.object_missing.v1, backup.posture_checked.v1, restore.readiness_checked.v1, observability.status_checked.v1, support.status_checked.v1, incident.runbook_viewed.v1, degraded_mode.acknowledged.v1, access_review.evidence_recorded.v1, operational.readiness_checked.v1, ehr_writeback.queued.v1, ehr_writeback.failed.v1, ehr.adapter_status_checked.v1, ehr.patient_matched.v1, ehr.chart_context_loaded.v1, ehr.writeback_approval_recorded.v1, ehr.writeback_retry_scheduled.v1, ehr.writeback_dead_lettered.v1, ehr.writeback_reconciliation_checked.v1, ehr.writeback_disabled.v1, clinicos.mode_resolved.v1, clinicos.mapping_recorded.v1, clinicos.event_published.v1, clinicos.event_publication_failed.v1, clinicos.mapping_stale_detected.v1, clinicos.permission_denied.v1, clinicos.unavailable.v1, ai.request_prepared.v1, ai.context_scrubbed.v1, ai.phi_rejected.v1, ai.response_recorded.v1, ai.output_rejected.v1, coaching.signal_created.v1, coaching.report_generated.v1, coaching.dashboard_viewed.v1, retention.scan_completed.v1, audit.export_requested.v1, audit.event_recorded.v1]
+          enum: [appointment.created.v1, note.shell_created.v1, visit.started.v1, visit.paused.v1, visit.resumed.v1, visit.stopped.v1, recording.started.v1, microphone.permission_recorded.v1, recording.chunk_received.v1, recording.exception_approved.v1, recording.stopped.v1, raw_audio.retention_scheduled.v1, transcription.provider_status_checked.v1, transcription.job_queued.v1, transcription.job_processed.v1, transcription.job_failed.v1, transcript.segment_appended.v1, transcript.segment_corrected.v1, suggestions.evaluated.v1, suggestion.accepted.v1, suggestion.removed.v1, visit_selection.added.v1, compliance.evaluated.v1, history_gap.task_created.v1, task.blocker_changed.v1, low_confidence_diagnosis.override_recorded.v1, finalization.started.v1, finalization.selection_decided.v1, finalization.suggestion_decided.v1, finalization.compose_requested.v1, finalization.compose_completed.v1, finalization.compare_edit_updated.v1, finalization.compose_rebeautified.v1, finalization.step_completed.v1, final_note.approved.v1, patient_summary.approved.v1, billing_review.triggered.v1, draft_claim_preview.generated.v1, billing_attestation.completed.v1, final_note.created.v1, patient_summary.finalized.v1, note.signed.v1, note.dispatched.v1, export.generated.v1, storage.download_requested.v1, storage.download_denied.v1, storage.object_delivered.v1, storage.object_missing.v1, backup.posture_checked.v1, restore.readiness_checked.v1, observability.status_checked.v1, support.status_checked.v1, incident.runbook_viewed.v1, degraded_mode.acknowledged.v1, access_review.evidence_recorded.v1, operational.readiness_checked.v1, ehr_writeback.queued.v1, ehr_writeback.failed.v1, ehr.adapter_status_checked.v1, ehr.patient_matched.v1, ehr.chart_context_loaded.v1, ehr.writeback_approval_recorded.v1, ehr.writeback_retry_scheduled.v1, ehr.writeback_dead_lettered.v1, ehr.writeback_reconciliation_checked.v1, ehr.writeback_disabled.v1, clinicos.mode_resolved.v1, clinicos.mapping_recorded.v1, clinicos.event_published.v1, clinicos.event_publication_failed.v1, clinicos.mapping_stale_detected.v1, clinicos.permission_denied.v1, clinicos.unavailable.v1, ai.request_prepared.v1, ai.context_scrubbed.v1, ai.phi_rejected.v1, ai.response_recorded.v1, ai.output_rejected.v1, ai.prompt_config_changed.v1, ai.model_config_changed.v1, ai.evaluation_run_completed.v1, ai.evaluation_run_failed.v1, coaching.signal_created.v1, coaching.report_generated.v1, coaching.dashboard_viewed.v1, retention.scan_completed.v1, audit.export_requested.v1, audit.event_recorded.v1]
         schemaVersion: { type: string, enum: [v1] }
         tenantId: { type: string }
         siteId: { type: string }

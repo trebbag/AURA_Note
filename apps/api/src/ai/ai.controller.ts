@@ -1,5 +1,9 @@
 import { Body, Controller, Get, Headers, Inject, Post } from '@nestjs/common';
-import type { AiGatewayInvocationRequestDto } from '@aura-note/contracts';
+import type {
+  AiEvaluationRunRequestDto,
+  AiGatewayInvocationRequestDto,
+  AiOutputValidationRequestDto
+} from '@aura-note/contracts';
 import { AiService } from './ai.service';
 
 @Controller('ai-gateway')
@@ -17,5 +21,21 @@ export class AiController {
     @Headers() headers: Record<string, string | string[] | undefined>
   ) {
     return this.aiService.invokeMock(body, headers);
+  }
+
+  @Post('evaluations/run')
+  runEvaluations(
+    @Body() body: AiEvaluationRunRequestDto,
+    @Headers() headers: Record<string, string | string[] | undefined>
+  ) {
+    return this.aiService.runEvaluations(body, headers);
+  }
+
+  @Post('outputs/validate')
+  validateOutput(
+    @Body() body: AiOutputValidationRequestDto,
+    @Headers() headers: Record<string, string | string[] | undefined>
+  ) {
+    return this.aiService.validateOutput(body, headers);
   }
 }

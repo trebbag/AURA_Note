@@ -31,6 +31,8 @@ describe('AI gateway API e2e', () => {
 
     assert.equal(status.body.data.externalAiEnabled, false);
     assert.equal(status.body.data.providerMode, 'mock');
+    assert.equal(status.body.data.liveModelCredentialPresent, false);
+    assert.equal(status.body.data.evaluationCases.some((evalCase: { purpose: string }) => evalCase.purpose === 'coaching'), true);
 
     const rejected = await request(app.getHttpServer())
       .post('/api/v1/ai-gateway/mock-invocations')
@@ -85,5 +87,46 @@ describe('AI gateway API e2e', () => {
     assert.equal(response.body.data.response.output.draftOnly, true);
     assert.equal(response.body.data.response.rejected, false);
     assert.equal(response.body.data.domainEvents.some((event: { eventType: string }) => event.eventType === 'ai.response_recorded.v1'), true);
+  });
+
+  it('runs deterministic governance evaluations and rejects unsafe outputs', async () => {
+    const evalRun = await request(app.getHttpServer())
+      .post('/api/v1/ai-gateway/evaluations/run')
+      .set('x-aura-role', 'compliance_privacy_lead')
+      .set('x-aura-purpose-of-use', 'audit')
+      .set('x-trace-id', 'trace-ai-e2e-eval-001')
+      .send({
+        evalCaseIds: ['eval-patient-summary-no-internal-details-v1', 'eval-coaching-role-limited-v1']
+      })
+      .expect(201);
+
+    assert.equal(evalRun.body.data.allPassed, true);
+    assert.equal(evalRun.body.data.liveModelCalled, false);
+    assert.equal(evalRun.body.data.domainEvents[0].eventType, 'ai.evaluation_run_completed.v1');
+
+    const rejected = await request(app.getHttpServer())
+      .post('/api/v1/ai-gateway/outputs/validate')
+      .set('x-aura-role', 'authorized_admin')
+      .set('x-aura-purpose-of-use', 'audit')
+      .set('x-trace-id', 'trace-ai-e2e-validate-001')
+      .send({
+        outputType: 'candidate',
+        output: { determinesMedicalNecessity: true },
+        sourceEvidenceIds: ['evidence-synthetic-001']
+      })
+      .expect(201);
+
+    assert.equal(rejected.body.data.validation.validationStatus, 'rejected');
+    assert.equal(rejected.body.data.validation.riskLabel, 'unsafe');
+    assert.equal(rejected.body.data.domainEvents[0].eventType, 'ai.output_rejected.v1');
+  });
+
+  it('denies governance evaluation runs to support users', async () => {
+    await request(app.getHttpServer())
+      .post('/api/v1/ai-gateway/evaluations/run')
+      .set('x-aura-role', 'support')
+      .set('x-aura-purpose-of-use', 'support')
+      .send({ evalCaseIds: ['eval-suggestions-source-linked-v1'] })
+      .expect(403);
   });
 });

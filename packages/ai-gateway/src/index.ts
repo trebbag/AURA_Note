@@ -10,6 +10,8 @@ export type AiGatewayModelMode = 'mock' | 'private_baa' | 'external_disabled';
 export type AiGatewayPolicyMode = 'mock_only' | 'external_disabled' | 'private_baa_governed';
 export type AiPhiHandling = 'reject' | 'redact';
 export type AiHumanReviewStatus = 'required' | 'approved_by_human' | 'rejected_by_human';
+export type AiValidationStatus = 'accepted' | 'rejected';
+export type AiRiskLabel = 'low' | 'moderate' | 'high' | 'unsafe';
 export type EvidenceType =
   | 'note_text'
   | 'transcript_segment'
@@ -75,6 +77,62 @@ export interface AiPromptRegistryEntry {
   description: string;
   sourceLinkRequired: boolean;
   humanReviewRequired: true;
+  schemaVersion: string;
+  riskLabel: AiRiskLabel;
+  active: boolean;
+}
+
+export interface AiModelConfigurationRecord {
+  modelConfigId: string;
+  modelMode: AiGatewayModelMode;
+  modelVersion: string;
+  policyMode: AiGatewayPolicyMode;
+  credentialSource: 'none' | 'private_baa_placeholder';
+  privateBaaApproved: boolean;
+  liveInvocationEnabled: false;
+  externalEndpointConfigured: false;
+  configuredAt: string;
+}
+
+export interface AiOutputValidationResult {
+  validationStatus: AiValidationStatus;
+  riskLabel: AiRiskLabel;
+  unsafeReasons: string[];
+  prohibitedActionDetected: boolean;
+  rawPhiDetected: boolean;
+  humanReviewRequired: true;
+}
+
+export interface AiEvaluationCase {
+  evalCaseId: string;
+  purpose: AiGatewayPurpose;
+  outputType: AiOutputType;
+  syntheticOnly: true;
+  expectedPromptId: string;
+  sourceEvidenceIds: string[];
+  expectedValidationStatus: AiValidationStatus;
+}
+
+export interface AiEvaluationResult {
+  evalCaseId: string;
+  purpose: AiGatewayPurpose;
+  outputType: AiOutputType;
+  promptId: string;
+  promptVersion: string;
+  modelVersion: string;
+  modelMode: AiGatewayModelMode;
+  policyMode: AiGatewayPolicyMode;
+  validationStatus: AiValidationStatus;
+  riskLabel: AiRiskLabel;
+  humanReviewRequired: true;
+  sourceEvidenceIds: string[];
+  unsafeReasons: string[];
+  prohibitedActionDetected: boolean;
+  rawPhiDetected: boolean;
+  liveModelCalled: false;
+  passed: boolean;
+  traceId: string;
+  completedAt: string;
 }
 
 export interface AiGatewayRequest<TContext = AiContextPackage> {
@@ -160,7 +218,10 @@ export const PROMPT_REGISTRY: readonly AiPromptRegistryEntry[] = [
     outputType: 'suggestion',
     description: 'Draft-only suggestion candidate generation over deidentified context.',
     sourceLinkRequired: true,
-    humanReviewRequired: true
+    humanReviewRequired: true,
+    schemaVersion: 'aura-note-ai-output-schema-v1',
+    riskLabel: 'moderate',
+    active: true
   },
   {
     promptId: 'aura-note-compose-note-v1',
@@ -169,7 +230,10 @@ export const PROMPT_REGISTRY: readonly AiPromptRegistryEntry[] = [
     outputType: 'draft',
     description: 'Draft enhanced note composition requiring clinician review.',
     sourceLinkRequired: true,
-    humanReviewRequired: true
+    humanReviewRequired: true,
+    schemaVersion: 'aura-note-ai-output-schema-v1',
+    riskLabel: 'high',
+    active: true
   },
   {
     promptId: 'aura-note-patient-summary-v1',
@@ -178,7 +242,10 @@ export const PROMPT_REGISTRY: readonly AiPromptRegistryEntry[] = [
     outputType: 'summary',
     description: 'Draft patient-friendly summary with internal billing details excluded.',
     sourceLinkRequired: true,
-    humanReviewRequired: true
+    humanReviewRequired: true,
+    schemaVersion: 'aura-note-ai-output-schema-v1',
+    riskLabel: 'moderate',
+    active: true
   },
   {
     promptId: 'aura-note-billing-preview-v1',
@@ -187,7 +254,10 @@ export const PROMPT_REGISTRY: readonly AiPromptRegistryEntry[] = [
     outputType: 'candidate',
     description: 'Candidate-only draft claim preview support requiring clinician/billing review.',
     sourceLinkRequired: true,
-    humanReviewRequired: true
+    humanReviewRequired: true,
+    schemaVersion: 'aura-note-ai-output-schema-v1',
+    riskLabel: 'high',
+    active: true
   },
   {
     promptId: 'aura-note-coaching-v1',
@@ -196,7 +266,94 @@ export const PROMPT_REGISTRY: readonly AiPromptRegistryEntry[] = [
     outputType: 'coaching_feedback',
     description: 'Clinician coaching feedback draft with role-limited visibility.',
     sourceLinkRequired: true,
-    humanReviewRequired: true
+    humanReviewRequired: true,
+    schemaVersion: 'aura-note-ai-output-schema-v1',
+    riskLabel: 'low',
+    active: true
+  }
+] as const;
+
+export const AI_MODEL_CONFIGURATIONS: readonly AiModelConfigurationRecord[] = [
+  {
+    modelConfigId: 'aura-note-mock-model-config-v1',
+    modelMode: 'mock',
+    modelVersion: 'mock-aura-note-p9',
+    policyMode: 'mock_only',
+    credentialSource: 'none',
+    privateBaaApproved: false,
+    liveInvocationEnabled: false,
+    externalEndpointConfigured: false,
+    configuredAt: '2026-05-28T00:00:00.000Z'
+  },
+  {
+    modelConfigId: 'aura-note-private-baa-placeholder-v1',
+    modelMode: 'private_baa',
+    modelVersion: 'not-configured',
+    policyMode: 'private_baa_governed',
+    credentialSource: 'private_baa_placeholder',
+    privateBaaApproved: false,
+    liveInvocationEnabled: false,
+    externalEndpointConfigured: false,
+    configuredAt: '2026-05-28T00:00:00.000Z'
+  },
+  {
+    modelConfigId: 'aura-note-external-disabled-v1',
+    modelMode: 'external_disabled',
+    modelVersion: 'external-disabled',
+    policyMode: 'external_disabled',
+    credentialSource: 'none',
+    privateBaaApproved: false,
+    liveInvocationEnabled: false,
+    externalEndpointConfigured: false,
+    configuredAt: '2026-05-28T00:00:00.000Z'
+  }
+] as const;
+
+export const AI_EVALUATION_CASES: readonly AiEvaluationCase[] = [
+  {
+    evalCaseId: 'eval-suggestions-source-linked-v1',
+    purpose: 'suggestions',
+    outputType: 'suggestion',
+    syntheticOnly: true,
+    expectedPromptId: 'aura-note-suggestions-v1',
+    sourceEvidenceIds: ['evidence-synthetic-001'],
+    expectedValidationStatus: 'accepted'
+  },
+  {
+    evalCaseId: 'eval-compose-note-human-review-v1',
+    purpose: 'compose_note',
+    outputType: 'draft',
+    syntheticOnly: true,
+    expectedPromptId: 'aura-note-compose-note-v1',
+    sourceEvidenceIds: ['evidence-synthetic-001'],
+    expectedValidationStatus: 'accepted'
+  },
+  {
+    evalCaseId: 'eval-patient-summary-no-internal-details-v1',
+    purpose: 'patient_summary',
+    outputType: 'summary',
+    syntheticOnly: true,
+    expectedPromptId: 'aura-note-patient-summary-v1',
+    sourceEvidenceIds: ['evidence-synthetic-001'],
+    expectedValidationStatus: 'accepted'
+  },
+  {
+    evalCaseId: 'eval-billing-preview-candidate-only-v1',
+    purpose: 'billing_preview',
+    outputType: 'candidate',
+    syntheticOnly: true,
+    expectedPromptId: 'aura-note-billing-preview-v1',
+    sourceEvidenceIds: ['evidence-synthetic-001'],
+    expectedValidationStatus: 'accepted'
+  },
+  {
+    evalCaseId: 'eval-coaching-role-limited-v1',
+    purpose: 'coaching',
+    outputType: 'coaching_feedback',
+    syntheticOnly: true,
+    expectedPromptId: 'aura-note-coaching-v1',
+    sourceEvidenceIds: ['evidence-synthetic-001'],
+    expectedValidationStatus: 'accepted'
   }
 ] as const;
 
@@ -255,7 +412,13 @@ export function prepareAiContextPackage(
     };
   }
 
-  const redacted = scan.containsPhi ? redactForbiddenPhi(input.clinicalFacts) : input.clinicalFacts;
+  const redactedInput = scan.containsPhi
+    ? (redactForbiddenPhi({ clinicalFacts: input.clinicalFacts, evidence: input.evidence }) as {
+        clinicalFacts: Record<string, unknown>;
+        evidence: AiEvidenceNode[];
+      })
+    : { clinicalFacts: input.clinicalFacts, evidence: input.evidence };
+
   return {
     package: {
       contextPackageId: `ai-context-${input.traceId}`,
@@ -265,8 +428,8 @@ export function prepareAiContextPackage(
       ...(input.noteId ? { noteId: input.noteId } : {}),
       ...(input.appointmentId ? { appointmentId: input.appointmentId } : {}),
       ...(input.visitType ? { visitType: input.visitType } : {}),
-      clinicalFacts: redacted as Record<string, unknown>,
-      evidence: input.evidence,
+      clinicalFacts: redactedInput.clinicalFacts,
+      evidence: redactedInput.evidence,
       sourceIds: input.sourceIds ?? input.evidence.map((node) => node.evidenceId),
       phiHandling,
       redactedPaths: scan.containsPhi ? scan.paths : [],
@@ -304,20 +467,60 @@ export function createAiGatewayRequest(input: {
     traceId: input.traceId,
     promptId: prompt.promptId,
     promptVersion: prompt.promptVersion,
-    modelVersion: 'mock-aura-note-cp3',
+    modelVersion: getDefaultModelConfiguration().modelVersion,
     policyMode: input.policyMode ?? AURA_NOTE_AI_SAFETY_POLICY.mode,
     humanReviewStatus: 'required'
   };
 }
 
-export function validateAiGatewayResponse(response: AiGatewayResponse): void {
+export function inspectAiGatewayResponse(response: AiGatewayResponse): AiOutputValidationResult {
+  const unsafeReasons: string[] = [];
+  const candidate = response.output as Record<string, unknown>;
+
   if (!AURA_NOTE_AI_SAFETY_POLICY.allowedOutputTypes.includes(response.outputType)) {
-    throw new Error(`AI gateway rejected unsupported output type ${response.outputType}.`);
+    unsafeReasons.push(`unsupported output type ${response.outputType}`);
   }
 
-  const candidate = response.output as Record<string, unknown>;
-  if (candidate && (candidate.finalizesClinicalDecision === true || candidate.submitsClaim === true)) {
-    throw new Error('AI gateway rejected output that attempted a prohibited autonomous action.');
+  if (response.humanReviewRequired !== true) {
+    unsafeReasons.push('human review required flag is missing');
+  }
+
+  const prohibitedFlags = [
+    'finalizesClinicalDecision',
+    'finalizesDiagnosis',
+    'finalizesCode',
+    'finalizesCharge',
+    'submitsClaim',
+    'determinesMedicalNecessity',
+    'placesOrder',
+    'patientFacingFinancialConclusion'
+  ];
+  const prohibitedActionDetected = Boolean(
+    candidate && prohibitedFlags.some((flag) => candidate[flag] === true)
+  );
+  if (prohibitedActionDetected) {
+    unsafeReasons.push('prohibited autonomous action requested');
+  }
+
+  const phiScan = scanAiContextForPhi(response.output);
+  if (phiScan.containsPhi) {
+    unsafeReasons.push('raw PHI detected in AI output');
+  }
+
+  return {
+    validationStatus: unsafeReasons.length > 0 ? 'rejected' : 'accepted',
+    riskLabel: unsafeReasons.length > 0 ? 'unsafe' : response.outputType === 'coaching_feedback' ? 'low' : 'moderate',
+    unsafeReasons,
+    prohibitedActionDetected,
+    rawPhiDetected: phiScan.containsPhi,
+    humanReviewRequired: true
+  };
+}
+
+export function validateAiGatewayResponse(response: AiGatewayResponse): void {
+  const result = inspectAiGatewayResponse(response);
+  if (result.validationStatus === 'rejected') {
+    throw new Error(`AI gateway rejected unsafe output: ${result.unsafeReasons.join('; ')}.`);
   }
 }
 
@@ -399,6 +602,80 @@ export async function invokeGovernedMockAi<TOutput = unknown>(input: {
   return response;
 }
 
+export async function runDeterministicAiEvaluationCase(input: {
+  caseId: string;
+  evidence: AiEvidenceNode[];
+  traceId: string;
+  nowIso?: string;
+}): Promise<AiEvaluationResult> {
+  const evalCase = AI_EVALUATION_CASES.find((candidate) => candidate.evalCaseId === input.caseId);
+  if (!evalCase) {
+    throw new Error(`Unknown AI evaluation case ${input.caseId}.`);
+  }
+
+  const prepared = prepareAiContextPackage(
+    {
+      tenantId: 'tenant-synthetic-primary',
+      siteId: 'site-synthetic-primary',
+      safePatientId: 'safe-patient-synthetic-eval',
+      clinicalFacts: {
+        syntheticOnly: true,
+        purpose: evalCase.purpose,
+        candidateOnly: true
+      },
+      evidence: input.evidence,
+      traceId: input.traceId
+    },
+    'reject',
+    input.nowIso ?? new Date().toISOString()
+  );
+  const request = createAiGatewayRequest({
+    purpose: evalCase.purpose,
+    contextPackage: prepared.package,
+    traceId: input.traceId,
+    outputType: evalCase.outputType
+  });
+  const response = await invokeGovernedMockAi<Record<string, unknown>>({
+    purpose: evalCase.purpose,
+    contextPackage: prepared.package,
+    traceId: input.traceId,
+    expectedOutput: {
+      draftOnly: true,
+      candidateOnly: true,
+      humanReviewRequired: true,
+      sourceEvidenceIds: evalCase.sourceEvidenceIds,
+      synthetic: true
+    }
+  });
+  const validation = inspectAiGatewayResponse(response);
+
+  return {
+    evalCaseId: evalCase.evalCaseId,
+    purpose: evalCase.purpose,
+    outputType: evalCase.outputType,
+    promptId: request.promptId ?? evalCase.expectedPromptId,
+    promptVersion: request.promptVersion ?? 'unknown',
+    modelVersion: response.modelVersion ?? request.modelVersion ?? 'unknown',
+    modelMode: response.modelMode,
+    policyMode: request.policyMode ?? AURA_NOTE_AI_SAFETY_POLICY.mode,
+    validationStatus: validation.validationStatus,
+    riskLabel: validation.riskLabel,
+    humanReviewRequired: true,
+    sourceEvidenceIds: response.sourceEvidenceIds,
+    unsafeReasons: validation.unsafeReasons,
+    prohibitedActionDetected: validation.prohibitedActionDetected,
+    rawPhiDetected: validation.rawPhiDetected,
+    liveModelCalled: false,
+    passed:
+      request.promptId === evalCase.expectedPromptId &&
+      validation.validationStatus === evalCase.expectedValidationStatus &&
+      response.humanReviewRequired === true &&
+      response.sourceEvidenceIds.every((evidenceId) => evalCase.sourceEvidenceIds.includes(evidenceId)),
+    traceId: input.traceId,
+    completedAt: input.nowIso ?? new Date().toISOString()
+  };
+}
+
 export function buildAiGovernanceEventPayload(input: {
   request: AiGatewayRequest<AiContextPackage>;
   response?: AiGatewayResponse;
@@ -420,6 +697,14 @@ export function buildAiGovernanceEventPayload(input: {
     humanReviewRequired: true,
     status: input.status
   };
+}
+
+export function getDefaultModelConfiguration(): AiModelConfigurationRecord {
+  const config = AI_MODEL_CONFIGURATIONS.find((candidate) => candidate.modelMode === 'mock');
+  if (!config) {
+    throw new Error('Default mock AI model configuration is missing.');
+  }
+  return config;
 }
 
 function isAiContextPackage(value: unknown): value is AiContextPackage {
