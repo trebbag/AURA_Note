@@ -14,6 +14,7 @@ import {
   createSyntheticLocalSession,
   createStructuredLogEntry,
   createTraceProbe,
+  evaluateProductionIdentityGuard,
   redactForStructuredLog,
   redactForbiddenPhi,
   redactForbiddenPhiKeys,
@@ -457,6 +458,111 @@ describe('standalone operations permissions', () => {
     assert.equal(canPerform('rules_catalog:manage', billing), false);
     assert.equal(canPerform('task:view', support), false);
     assert.equal(canPerform('billing_review:view', support), false);
+  });
+});
+
+describe('production platform identity and config controls', () => {
+  const baseContext = {
+    tenantId: 'tenant-synthetic-primary',
+    siteId: 'site-synthetic-primary',
+    actorUserId: 'user-admin-synthetic-001',
+    sessionId: 'session-synthetic-001',
+    linkedToPatient: false,
+    linkedToVisit: false,
+    treatingClinician: false,
+    billingReviewTriggered: false
+  };
+  const admin = {
+    ...baseContext,
+    role: 'admin' as const,
+    authorizedAdmin: true,
+    purposeOfUse: 'operations' as const,
+    identityProviderMode: 'local_synthetic' as const
+  };
+  const clinician = {
+    ...baseContext,
+    actorUserId: 'user-clinician-synthetic-001',
+    role: 'clinician' as const,
+    authorizedAdmin: false,
+    linkedToPatient: true,
+    linkedToVisit: true,
+    treatingClinician: true,
+    purposeOfUse: 'treatment' as const,
+    identityProviderMode: 'local_synthetic' as const
+  };
+  const adminWithoutPurpose = {
+    ...baseContext,
+    role: 'admin' as const,
+    authorizedAdmin: true,
+    identityProviderMode: 'local_synthetic' as const
+  };
+
+  it('limits platform identity, config, and high-risk flag management to authorized admins', () => {
+    assert.equal(canPerform('identity:view', admin), true);
+    assert.equal(canPerform('identity:manage', admin), true);
+    assert.equal(canPerform('config:view', admin), true);
+    assert.equal(canPerform('config:manage', admin), true);
+    assert.equal(canPerform('feature_flag:view', admin), true);
+    assert.equal(canPerform('feature_flag:manage', admin), true);
+
+    assert.equal(canPerform('identity:view', clinician), false);
+    assert.equal(canPerform('identity:manage', clinician), false);
+    assert.equal(canPerform('config:manage', clinician), false);
+    assert.equal(canPerform('feature_flag:manage', clinician), false);
+  });
+
+  it('fails closed for disabled users, missing purpose, spoofed scopes, expired sessions, and delegated identity', () => {
+    const now = '2026-05-27T23:59:00.000Z';
+    const baseInput = {
+      access: admin,
+      expectedTenantId: 'tenant-synthetic-primary',
+      expectedSiteId: 'site-synthetic-primary',
+      userStatus: 'active' as const,
+      expiresAt: '2026-05-28T00:29:00.000Z',
+      now,
+      delegatedIdentityConfigured: false,
+      requiredPurpose: 'operations' as const
+    };
+
+    assert.deepEqual(evaluateProductionIdentityGuard(baseInput), {
+      allowed: true,
+      failClosed: true
+    });
+    assert.match(
+      evaluateProductionIdentityGuard({
+        ...baseInput,
+        userStatus: 'disabled'
+      }).reason ?? '',
+      /disabled user/
+    );
+    assert.match(
+      evaluateProductionIdentityGuard({
+        ...baseInput,
+        access: adminWithoutPurpose,
+      }).reason ?? '',
+      /purpose-of-use is required/
+    );
+    assert.match(
+      evaluateProductionIdentityGuard({
+        ...baseInput,
+        access: { ...admin, tenantId: 'tenant-other' },
+      }).reason ?? '',
+      /spoofed tenant/
+    );
+    assert.match(
+      evaluateProductionIdentityGuard({
+        ...baseInput,
+        expiresAt: '2026-05-27T23:58:00.000Z',
+      }).reason ?? '',
+      /expired/
+    );
+    assert.match(
+      evaluateProductionIdentityGuard({
+        ...baseInput,
+        access: { ...admin, identityProviderMode: 'saml_delegate' },
+      }).reason ?? '',
+      /delegated identity provider/
+    );
   });
 });
 

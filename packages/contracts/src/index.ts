@@ -61,6 +61,11 @@ export type CoreEventType =
   | 'task.blocker_changed.v1'
   | 'billing_review.status_changed.v1'
   | 'settings.integration_updated.v1'
+  | 'identity.adapter_status_checked.v1'
+  | 'identity.session_evaluated.v1'
+  | 'identity.user_updated.v1'
+  | 'config.validation_completed.v1'
+  | 'feature_flag.updated.v1'
   | 'template.created.v1'
   | 'template.updated.v1'
   | 'dot_phrase.updated.v1'
@@ -125,7 +130,7 @@ export interface ApiEnvelope<TData> {
   warnings?: ApiWarning[];
 }
 
-export type IdentityProviderModeDto = 'local_synthetic' | 'clinicos_delegate' | 'oidc_delegate';
+export type IdentityProviderModeDto = 'local_synthetic' | 'clinicos_delegate' | 'oidc_delegate' | 'saml_delegate';
 export type PurposeOfUseDto = 'treatment' | 'payment' | 'operations' | 'support' | 'audit' | 'coaching' | 'break_glass';
 
 export interface LocalAuthSessionDto {
@@ -153,6 +158,158 @@ export interface TenantScopeDecisionDto {
   tenantId: string;
   siteId?: string;
   deniedReason?: string;
+}
+
+export type PlatformEnvironmentDto = 'local' | 'staging' | 'production';
+export type IdentityAdapterKindDto = 'local_dev' | 'oidc' | 'saml' | 'clinicos_delegate';
+export type IdentityAdapterStatusDto = 'ready_local' | 'disabled_until_configured' | 'unsupported_without_credentials';
+export type WorkforceUserStatusDto = 'active' | 'disabled';
+export type SecretSourceKindDto = 'not_configured' | 'environment_reference' | 'secret_manager_reference';
+export type HighRiskFeatureFlagGovernanceDto =
+  | 'live_transcription'
+  | 'external_ai'
+  | 'ehr_writeback'
+  | 'production_storage'
+  | 'retention_deletion'
+  | 'patient_facing_estimates'
+  | 'claim_submission';
+
+export interface IdentityAdapterStatusViewDto {
+  adapterId: string;
+  kind: IdentityAdapterKindDto;
+  identityProviderMode: IdentityProviderModeDto;
+  status: IdentityAdapterStatusDto;
+  configured: boolean;
+  liveCredentialPresent: false;
+  delegatedIdentityAllowed: boolean;
+  disabledReason?: string;
+}
+
+export interface WorkforceUserAdminDto {
+  userId: string;
+  tenantId: string;
+  siteIds: string[];
+  role: LocalAuthSessionDto['role'];
+  status: WorkforceUserStatusDto;
+  allowedPurposes: PurposeOfUseDto[];
+  disabledUserBlocked: boolean;
+  syntheticOnly: true;
+}
+
+export interface SessionEvaluationRequestDto {
+  userId: string;
+  sessionId: string;
+  tenantId: string;
+  siteId: string;
+  identityProviderMode: IdentityProviderModeDto;
+  purposeOfUse?: PurposeOfUseDto;
+  expiresAt: string;
+  disabled?: boolean;
+}
+
+export interface SessionEvaluationDto {
+  allowed: boolean;
+  denialReason?: string;
+  userId: string;
+  sessionId: string;
+  identityProviderMode: IdentityProviderModeDto;
+  purposeOfUse?: PurposeOfUseDto;
+  expiresAt: string;
+  evaluatedAt: string;
+  failClosed: true;
+  rawTokenReturned: false;
+}
+
+export interface SecretSourceStatusDto {
+  secretName: string;
+  source: SecretSourceKindDto;
+  configured: boolean;
+  valueReturned: false;
+  requiredFor: HighRiskFeatureFlagGovernanceDto | 'identity_provider';
+}
+
+export interface ProductionConfigValidationRequestDto {
+  environment: PlatformEnvironmentDto;
+  secretSources: SecretSourceStatusDto[];
+  highRiskFlags?: Array<{
+    key: string;
+    enabled: boolean;
+    approvalId?: string;
+  }>;
+}
+
+export interface ProductionConfigValidationDto {
+  environment: PlatformEnvironmentDto;
+  valid: boolean;
+  failClosed: true;
+  errors: string[];
+  warnings: string[];
+  secretValuesReturned: false;
+  productionCredentialsRequired: boolean;
+}
+
+export interface GovernedFeatureFlagDto {
+  key: string;
+  enabled: boolean;
+  defaultValue: false;
+  governs: HighRiskFeatureFlagGovernanceDto;
+  highRisk: true;
+  approvalRequired: true;
+  approvalId?: string;
+  runtimeEffect: 'disabled' | 'metadata_only_no_live_execution';
+  liveExecutionEnabled: false;
+  visibleToAdmins: true;
+}
+
+export interface UpdateWorkforceUserRequestDto {
+  status: WorkforceUserStatusDto;
+  reason: string;
+}
+
+export interface UpdateGovernedFeatureFlagRequestDto {
+  enabled: boolean;
+  approvalId?: string;
+  reason: string;
+}
+
+export interface PlatformAdminViewDto {
+  tenant: {
+    tenantId: string;
+    displayName: string;
+    standaloneOwned: true;
+  };
+  sites: Array<{
+    siteId: string;
+    displayName: string;
+    status: 'active';
+  }>;
+  identityAdapters: IdentityAdapterStatusViewDto[];
+  users: WorkforceUserAdminDto[];
+  sessionPolicies: {
+    expirationEnforced: true;
+    disabledUsersFailClosed: true;
+    purposeOfUseRequired: true;
+    spoofedTenantDenied: true;
+  };
+  secretSources: SecretSourceStatusDto[];
+  featureFlags: GovernedFeatureFlagDto[];
+  modeMappings: Array<{
+    localObject: string;
+    clinicosTarget: string;
+    status: 'safe_degraded' | 'not_configured';
+  }>;
+  states: string[];
+  demoFixture: true;
+}
+
+export interface PlatformActionResponseDto {
+  platform?: PlatformAdminViewDto;
+  sessionDecision?: SessionEvaluationDto;
+  configValidation?: ProductionConfigValidationDto;
+  featureFlag?: GovernedFeatureFlagDto;
+  user?: WorkforceUserAdminDto;
+  auditEvent: AuditEventDto;
+  domainEvents: Array<AuraNoteEvent<Record<string, unknown>>>;
 }
 
 export interface AppointmentDto {

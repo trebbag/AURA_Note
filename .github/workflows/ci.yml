@@ -43,6 +43,8 @@ jobs:
       - run: pnpm standalone:patient-schedule-readiness
       - run: pnpm standalone:operations-readiness
       - run: pnpm audio:transcription-readiness
+      - run: pnpm identity:production-readiness
+      - run: pnpm config:production-readiness
       - run: pnpm storage:azure-adapter-readiness
       - run: pnpm retention:storage-deletion-readiness
       - run: pnpm production:readiness

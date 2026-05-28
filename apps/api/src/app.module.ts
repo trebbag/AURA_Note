@@ -5,11 +5,12 @@ import { HealthController } from './health.controller';
 import { IntegrationsModule } from './integrations/integrations.module';
 import { NotesModule } from './notes/notes.module';
 import { OperationsModule } from './operations/operations.module';
+import { PlatformModule } from './platform/platform.module';
 import { ScheduleModule } from './schedule/schedule.module';
 import { SupportModule } from './support/support.module';
 
 @Module({
-  imports: [ScheduleModule, NotesModule, OperationsModule, AiModule, IntegrationsModule, CoachingModule, SupportModule],
+  imports: [ScheduleModule, NotesModule, OperationsModule, PlatformModule, AiModule, IntegrationsModule, CoachingModule, SupportModule],
   controllers: [HealthController]
 })
 export class AppModule {}

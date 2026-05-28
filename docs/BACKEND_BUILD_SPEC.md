@@ -234,3 +234,13 @@ Production Azure Blob use requires soft delete, versioning, private containers, 
 - Cross-tenant and cross-site requests are denied before implemented API services perform route behavior.
 - `clinicos_delegate` and `oidc_delegate` modes are reserved adapter boundaries and are denied until provider configuration is specified.
 - Production SSO, MFA, account administration, persistent identity/session storage, and real ClinicOS identity delegation are deferred to later numbered work orders.
+
+`WO-041` adds the P8 production-shaped identity/config governance boundary:
+
+- `PlatformService` exposes synthetic admin, session evaluation, workforce user status, config validation, and high-risk feature-flag operations under `/api/v1/platform`.
+- Session evaluation fails closed for disabled users, expired sessions, missing purpose-of-use, tenant/site spoofing, and unsupported OIDC/SAML/ClinicOS delegated identity.
+- Admin operations are tenant/site scoped, permission checked, reason validated, audit logged, and event emitting.
+- Secret-source checks return metadata only with `secretValuesReturned=false`; production-shaped config validation fails closed when required sources are missing.
+- High-risk feature flags for live transcription, external AI, EHR writeback, production storage, retention deletion, patient-facing estimates, and claim submission default disabled and require approval evidence before metadata-only enablement.
+
+This is not production SSO or live feature execution. Real IdP credentials, production secret stores, live ClinicOS delegation, live vendor execution, PHI-bearing storage, medical-necessity determination, charge finalization, and claim submission remain deferred.

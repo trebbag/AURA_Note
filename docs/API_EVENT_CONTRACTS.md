@@ -244,3 +244,17 @@ These events are synthetic/local, metadata-safe evidence for standalone patient 
 The implemented event family now includes `task.adjudicated.v1`, `task.blocker_changed.v1`, `billing_review.status_changed.v1`, `settings.integration_updated.v1`, `template.created.v1`, `dot_phrase.updated.v1`, `estimate_config.updated.v1`, and `rules_catalog.published.v1`.
 
 These events are audit-safe metadata for synthetic standalone operations. Billing review transcript access is limited to billing staff in a triggered review context; draft claim preview state keeps `submittedClaim=false`; estimate configuration remains internal-only; and rules catalog entries remain source-linked, human-review-required, and prohibited from autonomous finalization or medical-necessity determination.
+
+## WO-041 production identity/config event evidence
+
+`WO-041` adds implemented synthetic/local API behavior for production-shaped platform controls:
+
+- `GET /api/v1/platform/admin`
+- `POST /api/v1/platform/identity/session-evaluations`
+- `PATCH /api/v1/platform/identity/users/{userId}`
+- `POST /api/v1/platform/config/validate`
+- `PATCH /api/v1/platform/feature-flags/{key}`
+
+The implemented event family now includes `identity.adapter_status_checked.v1`, `identity.session_evaluated.v1`, `identity.user_updated.v1`, `config.validation_completed.v1`, and `feature_flag.updated.v1`.
+
+These events are audit-safe metadata for identity adapter status, fail-closed session evaluation, workforce user active/disabled status, production-shaped config validation, secret-source metadata checks, and high-risk feature-flag changes. They do not contain secrets, raw tokens, production URLs, raw PHI, transcript content, billing details, coaching output, or final-note payloads. OIDC, SAML, ClinicOS delegated identity, external AI, production storage, retention deletion, EHR writeback, patient-facing estimates, and claim submission remain disabled unless later work orders add governed live execution evidence.

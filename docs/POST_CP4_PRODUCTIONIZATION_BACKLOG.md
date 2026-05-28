@@ -465,3 +465,27 @@ Do not implement these tranches directly from this backlog. Promote one tranche 
 **Known risks:**
 
 - Azure SDK execution, production container policy validation, production backup/restore drills, and PHI-bearing object delivery remain blocked until security/privacy review.
+
+## Follow-on Tranche P8-01 — Production Identity And Config Governance
+
+**Promotion status:** Promoted to `WO-041` as production-shaped identity, tenant administration, secrets/config validation, and governed high-risk feature-flag evidence.
+
+**Objective:** Add fail-closed identity/session/config controls without enabling live SSO, live ClinicOS delegation, production secret stores, or high-risk live execution.
+
+**Candidate scope:**
+
+- Add OIDC, SAML, and ClinicOS delegated identity adapter status DTOs.
+- Add synthetic tenant/site/user/session/config/feature-flag admin API and browser surfaces.
+- Deny disabled users, expired sessions, missing purpose-of-use, spoofed tenant/site, unsupported delegated identity, and unauthorized admin operations.
+- Validate secret-source metadata without returning secret values.
+- Keep high-risk flags default disabled and require approval evidence before metadata-only enablement.
+
+**Acceptance evidence:**
+
+- `pnpm identity:production-readiness` passes locally and in CI.
+- `pnpm config:production-readiness` passes locally and in CI.
+- Full local gate continues to pass.
+
+**Known risks:**
+
+- Production IdP selection, MFA, account recovery, access reviews, production secret manager selection, live ClinicOS delegation, and live feature enablement require founder/security review.

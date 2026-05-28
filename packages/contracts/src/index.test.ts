@@ -13,6 +13,7 @@ import {
   type CoachingDashboardDto,
   type CoachingReportDto,
   type ComplianceReviewDto,
+  type GovernedFeatureFlagDto,
   type RecordingChunkResponseDto,
   type RecordingPermissionResponseDto,
   type DocumentationWorkspaceDto,
@@ -26,10 +27,14 @@ import {
   type BillingReviewQueueItemDto,
   type EstimateConfigurationDto,
   type OperationalTaskDto,
+  type PlatformActionResponseDto,
+  type PlatformAdminViewDto,
+  type ProductionConfigValidationDto,
   type RulesCatalogEntryDto,
   type EhrWritebackActionResponseDto,
   type ReviewActionResponseDto,
   type RetentionJobResultDto,
+  type SessionEvaluationDto,
   type StandaloneChartContextSnapshotDto,
   type StandalonePatientDto,
   type StandalonePatientLinkageDto,
@@ -83,6 +88,145 @@ describe('identity and tenant scope contracts', () => {
     assert.equal(session.localSyntheticOnly, true);
     assert.equal(session.identityProviderMode, 'local_synthetic');
     assert.equal(denied.allowed, false);
+  });
+});
+
+describe('production platform identity and config contracts', () => {
+  it('represents admin-visible identity, secrets, and feature flags without returning credentials or enabling live execution', () => {
+    const flag: GovernedFeatureFlagDto = {
+      key: 'AURA_ENABLE_EXTERNAL_AI',
+      governs: 'external_ai',
+      enabled: false,
+      defaultValue: false,
+      highRisk: true,
+      approvalRequired: true,
+      liveExecutionEnabled: false,
+      runtimeEffect: 'disabled',
+      visibleToAdmins: true
+    };
+    const view: PlatformAdminViewDto = {
+      tenant: {
+        tenantId: 'tenant-synthetic-primary',
+        displayName: 'Synthetic Primary Tenant',
+        standaloneOwned: true
+      },
+      sites: [{ siteId: 'site-synthetic-primary', displayName: 'Synthetic Primary Site', status: 'active' }],
+      identityAdapters: [
+        {
+          adapterId: 'identity-local-dev',
+          kind: 'local_dev',
+          identityProviderMode: 'local_synthetic',
+          status: 'ready_local',
+          configured: true,
+          liveCredentialPresent: false,
+          delegatedIdentityAllowed: false
+        },
+        {
+          adapterId: 'identity-saml',
+          kind: 'saml',
+          identityProviderMode: 'saml_delegate',
+          status: 'disabled_until_configured',
+          configured: false,
+          liveCredentialPresent: false,
+          delegatedIdentityAllowed: false,
+          disabledReason: 'Delegated identity fails closed until configured.'
+        }
+      ],
+      users: [
+        {
+          userId: 'user-admin-synthetic-001',
+          tenantId: 'tenant-synthetic-primary',
+          siteIds: ['site-synthetic-primary'],
+          role: 'admin',
+          status: 'active',
+          allowedPurposes: ['operations'],
+          disabledUserBlocked: false,
+          syntheticOnly: true
+        }
+      ],
+      sessionPolicies: {
+        expirationEnforced: true,
+        disabledUsersFailClosed: true,
+        purposeOfUseRequired: true,
+        spoofedTenantDenied: true
+      },
+      secretSources: [
+        {
+          secretName: 'OIDC_CLIENT_SECRET',
+          source: 'not_configured',
+          configured: false,
+          valueReturned: false,
+          requiredFor: 'identity_provider'
+        }
+      ],
+      featureFlags: [flag],
+      modeMappings: [
+        {
+          localObject: 'identity_session',
+          clinicosTarget: 'M17 NP Cockpit delegated identity',
+          status: 'safe_degraded'
+        }
+      ],
+      states: ['ready', 'permission-denied', 'expired-session', 'unsafe-config', 'demo fixture'],
+      demoFixture: true
+    };
+    const session: SessionEvaluationDto = {
+      allowed: false,
+      denialReason: 'session expired',
+      userId: 'user-admin-synthetic-001',
+      sessionId: 'session-synthetic-001',
+      purposeOfUse: 'operations',
+      identityProviderMode: 'local_synthetic',
+      expiresAt: '2026-05-27T23:58:00.000Z',
+      evaluatedAt: '2026-05-27T23:59:00.000Z',
+      failClosed: true,
+      rawTokenReturned: false
+    };
+    const config: ProductionConfigValidationDto = {
+      environment: 'production',
+      valid: false,
+      failClosed: true,
+      errors: ['Missing required production secret source: OIDC_CLIENT_SECRET'],
+      warnings: [],
+      secretValuesReturned: false,
+      productionCredentialsRequired: true
+    };
+    const response: PlatformActionResponseDto = {
+      featureFlag: flag,
+      auditEvent: {
+        auditEventId: 'audit-flag-001',
+        tenantId: 'tenant-synthetic-primary',
+        siteId: 'site-synthetic-primary',
+        actorUserId: 'user-admin-synthetic-001',
+        action: 'feature_flag.update',
+        entityType: 'FeatureFlag',
+        entityId: flag.key,
+        traceId: 'trace-platform-001',
+        createdAt: '2026-05-27T23:59:00.000Z'
+      },
+      domainEvents: [
+        createEventEnvelope({
+          eventId: 'evt-flag-001',
+          eventType: 'feature_flag.updated.v1',
+          tenantId: 'tenant-synthetic-primary',
+          siteId: 'site-synthetic-primary',
+          producer: 'aura-note-api',
+          traceId: 'trace-platform-001',
+          idempotencyKey: 'idem-platform-001',
+          sensitivity: 'restricted',
+          retentionClass: 'audit',
+          payload: { key: flag.key, liveExecutionEnabled: false }
+        })
+      ]
+    };
+
+    assert.equal(view.identityAdapters[1]?.kind, 'saml');
+    assert.equal(view.secretSources[0]?.valueReturned, false);
+    assert.equal(view.featureFlags[0]?.liveExecutionEnabled, false);
+    assert.equal(view.modeMappings[0]?.status, 'safe_degraded');
+    assert.equal(session.rawTokenReturned, false);
+    assert.equal(config.secretValuesReturned, false);
+    assert.equal(response.domainEvents[0]?.eventType, 'feature_flag.updated.v1');
   });
 });
 

@@ -4,20 +4,20 @@ This file tracks missing, conflicting, unsafe, or deliberately deferred product 
 
 ## Active gaps
 
-No active gaps as of post-`WO-040` browser audio capture and transcription candidate / P8.5 review on 2026-05-27.
+No active gaps as of post-`WO-041` production identity/config governance review on 2026-05-27.
 
-The repo remains not production-ready. The items below are deferred production decisions rather than active blockers for the current rails work order.
+The repo remains not production-ready. The items below are deferred production decisions rather than active blockers for the current production identity/config governance scope.
 
 ## Deferred production decisions
 
-These items must stay visible and must be resolved before the related production work can be declared complete. They are not blockers for the completed P8.5 audio/transcription candidate because the active work remains synthetic/local and explicitly excludes live PHI, live EHR/ClinicOS synchronization, live transcription credentials, autonomous billing, and production launch behavior.
+These items must stay visible and must be resolved before the related production work can be declared complete. They are not blockers for the completed WO-041 production identity/config governance tranche because the active work remains synthetic/local and explicitly excludes live IdP credentials, live ClinicOS delegation, live PHI, live EHR/ClinicOS synchronization, live transcription credentials, autonomous billing, and production launch behavior.
 
 ### Deferred Decision — Production identity provider and account lifecycle
 
-- **Related future work:** `WO-041`
+- **Related future work:** post-`WO-041` security/founder review before live use
 - **Status:** deferred
 - **Decision needed before live use:** production IdP selection, OIDC/SAML/ClinicOS delegation posture, MFA expectations, account recovery, tenant/user/site administration ownership, disabled-user handling, and access-review cadence.
-- **Safe current posture:** local synthetic identity and adapter boundaries only; delegated modes remain denied or scaffolded until configured.
+- **Safe current posture:** `WO-041` adds fail-closed local synthetic identity and adapter boundaries only; delegated modes remain denied until configured and no raw tokens or secret values are returned.
 
 ### Deferred Decision — Production PHI persistence and database operations
 
