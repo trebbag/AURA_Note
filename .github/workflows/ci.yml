@@ -52,6 +52,7 @@ jobs:
       - run: pnpm ehr:integration-readiness
       - run: pnpm clinicos:integration-readiness
       - run: pnpm ai:governance-readiness
+      - run: pnpm ai:live-review-readiness
       - run: pnpm security:review-readiness
       - run: pnpm frontend:runtime-integration-readiness
       - run: pnpm launch:readiness

@@ -60,9 +60,10 @@
     "WO-053": "done",
     "WO-054": "done",
     "WO-055": "done",
-    "WO-056": "done"
+    "WO-056": "done",
+    "WO-057": "done"
   },
-  "last_updated_by": "Codex WO-056 live transcription provider review intake",
-  "last_updated_at": "2026-05-28T19:25:23Z",
-  "notes": "WO-056 completed a post-P11 planning/control intake for live transcription provider review. The repo now includes a production transcription provider review document, required future decisions, acceptance criteria, event/audit inventory, and transcription live review readiness validation. next_work_order remains null. No live transcription credential, PHI-bearing audio transport, live provider call, production raw-audio storage, PHI-bearing support transcript access, runtime transcription behavior, or production launch behavior is authorized or introduced."
+  "last_updated_by": "Codex WO-057 external AI private/BAA pathway review intake",
+  "last_updated_at": "2026-05-28T19:42:50Z",
+  "notes": "WO-057 completed a post-P11 planning/control intake for external AI private/BAA pathway review. The repo now includes a production AI private/BAA pathway review document, required future decisions, acceptance criteria, event/audit inventory, and AI live review readiness validation. next_work_order remains null. No live AI credential, raw-PHI-to-external-AI path, live model call, production prompt store, support AI PHI content access, autonomous finalization, runtime AI behavior, or production launch behavior is authorized or introduced."
 }

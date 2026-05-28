@@ -791,3 +791,44 @@ Deferred decisions remain tracked in `SPEC_GAPS.md`, including live transcriptio
 ## Next recommended batch
 
 No implementation work order is active. The next safest planning/control candidate is external AI private/BAA pathway review, but it should not be promoted without explicit selection.
+
+---
+
+# Post-P11 External AI Private BAA Pathway Review Intake
+
+## Completed work orders
+
+- `WO-057` — External AI private/BAA pathway review intake.
+
+## Acceptance evidence
+
+- `WO-057` added `docs/PRODUCTION_AI_PRIVATE_BAA_PATHWAY_REVIEW.md` with required future AI provider/private/BAA decisions, acceptance criteria, event/audit inventory, standalone behavior, and ClinicOS AI-governance boundary requirements.
+- `WO-057` added `work_orders/WO-057_external_ai_private_baa_pathway_review_intake.md` so the intake is reviewable and bounded.
+- `pnpm ai:live-review-readiness` verifies that the tranche remains planning/control only and does not enable live AI credentials, raw-PHI-to-external-AI paths, live model calls, production prompt stores, support AI PHI content access, autonomous finalization, runtime AI behavior, or launch behavior.
+- `repo_status.json` records `WO-057: done` while preserving the P11 checkpoint and no active next work order.
+
+## Tests and gates
+
+- `pnpm ai:live-review-readiness`
+- `pnpm post-p11:readiness`
+- `pnpm production:readiness`
+- `pnpm acceptance:readiness`
+- `node scripts/status.js`
+- `git diff --check`
+
+## Open risks
+
+- Provider selection, private/BAA deployment path, region, credential source, prompt registry ownership, model configuration approval, PHI scrub/de-identification policy, source freshness rules, evaluation thresholds, monitoring, drift response, incident response, support visibility, and operational ownership remain deferred decisions.
+- `WO-057` is a planning/control tranche only. It does not approve live AI credentials, raw PHI transfer to external AI, live model calls, production prompt stores, support AI PHI content access, autonomous finalization, runtime AI behavior, or production launch.
+
+## Active SPEC_GAPs
+
+None active as of the post-`WO-057` external AI private/BAA pathway review intake.
+
+## Deferred production decisions
+
+Deferred decisions remain tracked in `SPEC_GAPS.md`, including external AI governance, production EHR credentialing/writeback, ClinicOS live integration, revenue estimate policy, production rules licensing/certification, future claim/payer implementation strategy, and production launch approval.
+
+## Next recommended batch
+
+No implementation work order is active. The next safest planning/control candidate is production EHR writeback credentialing review, but it should not be promoted without explicit selection.

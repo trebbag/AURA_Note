@@ -118,7 +118,8 @@ check('doc.runbook-exists', 'WO-049 launch ops runbook exists', exists('docs/run
         contents.includes('No active gaps as of post-`WO-053` production identity/account lifecycle review intake') ||
         contents.includes('No active gaps as of post-`WO-054` production PHI persistence/database operations review intake') ||
         contents.includes('No active gaps as of post-`WO-055` production Azure storage/deletion/restore review intake') ||
-        contents.includes('No active gaps as of post-`WO-056` live transcription provider review intake');
+        contents.includes('No active gaps as of post-`WO-056` live transcription provider review intake') ||
+        contents.includes('No active gaps as of post-`WO-057` external AI private/BAA pathway review intake');
   check(id, `${id} includes ${snippet} or later P10 no-active-gap evidence`, passed, snippet);
 });
 
