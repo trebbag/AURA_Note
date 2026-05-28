@@ -236,6 +236,9 @@ Define the post-CP-4 productionization backlog: durable persistence and migratio
 
 - `pnpm production:readiness`
 - `pnpm acceptance:readiness`
+- `pnpm lint`
+- `pnpm typecheck`
+- `pnpm ehr:integration-readiness`
 - `node scripts/status.js`
 - `git diff --check`
 - Full local gate recorded in `RUN_LOG.md` for `WO-033`.
@@ -832,3 +835,45 @@ Deferred decisions remain tracked in `SPEC_GAPS.md`, including external AI gover
 ## Next recommended batch
 
 No implementation work order is active. The next safest planning/control candidate is production EHR writeback credentialing review, but it should not be promoted without explicit selection.
+
+---
+
+# Post-P11 Production EHR Writeback Credentialing Review Intake
+
+## Completed work orders
+
+- `WO-058` — Production EHR writeback credentialing review intake.
+
+## Acceptance evidence
+
+- `WO-058` added `docs/PRODUCTION_EHR_WRITEBACK_CREDENTIALING_REVIEW.md` with required future EHR credentialing, vendor-neutral adapter, writeback payload, human approval, idempotency, retry/dead-letter, reconciliation, support, and audit decisions.
+- `WO-058` added `work_orders/WO-058_production_ehr_writeback_credentialing_review_intake.md` so the intake is reviewable and bounded.
+- `pnpm ehr:live-review-readiness` verifies that the tranche remains planning/control only and does not enable production EHR credentials, raw EHR payload storage, live writeback delivery, writeback without human approval, runtime EHR behavior, autonomous finalization, claim submission, or launch behavior.
+- `repo_status.json` records `WO-058: done` while preserving the P11 checkpoint and no active next work order.
+
+## Tests and gates
+
+- `pnpm install --frozen-lockfile`
+- `pnpm ehr:live-review-readiness`
+- `pnpm post-p11:readiness`
+- `pnpm production:readiness`
+- `pnpm acceptance:readiness`
+- `node scripts/status.js`
+- `git diff --check`
+
+## Open risks
+
+- Production athenahealth credentialing, credential source, vendor-neutral adapter scope, approved writeback object types, raw payload retention policy, human approval role, idempotency strategy, retry/dead-letter policy, reconciliation ownership, vendor acknowledgement handling, attachment/task semantics, support visibility, incident response, and operational ownership remain deferred decisions.
+- `WO-058` is a planning/control tranche only. It does not approve production EHR credentials, raw EHR payload storage, live writeback delivery, writeback without human approval, runtime EHR behavior, autonomous finalization, claim submission, or production launch.
+
+## Active SPEC_GAPs
+
+None active as of the post-`WO-058` production EHR writeback credentialing review intake.
+
+## Deferred production decisions
+
+Deferred decisions remain tracked in `SPEC_GAPS.md`, including production EHR credentialing/writeback, ClinicOS live integration, revenue estimate policy, production rules licensing/certification, future claim/payer implementation strategy, and production launch approval.
+
+## Next recommended batch
+
+No implementation work order is active. The next safest planning/control candidate is ClinicOS live integration review, but it should not be promoted without explicit selection.

@@ -80,7 +80,8 @@ check(
   'spec-gaps.current',
   'SPEC_GAPS reflects post-WO-056 or later post-P11 planning/control with no active gaps',
   specGaps.includes('No active gaps as of post-`WO-056` live transcription provider review intake') ||
-    specGaps.includes('No active gaps as of post-`WO-057` external AI private/BAA pathway review intake'),
+    specGaps.includes('No active gaps as of post-`WO-057` external AI private/BAA pathway review intake') ||
+    specGaps.includes('No active gaps as of post-`WO-058` production EHR writeback credentialing review intake'),
   'SPEC_GAPS.md'
 );
 check('spec-gaps.deferred-transcription', 'SPEC_GAPS preserves live transcription provider as deferred before live use', specGaps.includes('Live transcription provider and PHI-bearing audio transport') && specGaps.includes('future approved transcription implementation work order'), 'SPEC_GAPS.md');
