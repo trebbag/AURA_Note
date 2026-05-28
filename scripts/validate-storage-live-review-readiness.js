@@ -72,7 +72,13 @@ check('storage-review.exists', 'Production Azure storage/deletion/restore review
   check(`storage-review.event.${eventName}`, `Storage review includes future event ${eventName}`, storageReview.includes(eventName), eventName);
 });
 
-check('spec-gaps.current', 'SPEC_GAPS reflects post-WO-055 with no active gaps', specGaps.includes('No active gaps as of post-`WO-055` production Azure storage/deletion/restore review intake'), 'SPEC_GAPS.md');
+check(
+  'spec-gaps.current',
+  'SPEC_GAPS reflects post-WO-055 or later post-P11 planning/control with no active gaps',
+  specGaps.includes('No active gaps as of post-`WO-055` production Azure storage/deletion/restore review intake') ||
+    specGaps.includes('No active gaps as of post-`WO-056` live transcription provider review intake'),
+  'SPEC_GAPS.md'
+);
 check('spec-gaps.deferred-storage', 'SPEC_GAPS preserves production Azure storage/deletion/restore as deferred before live use', specGaps.includes('Production Azure Blob storage and destructive deletion') && specGaps.includes('future approved storage implementation work order'), 'SPEC_GAPS.md');
 check('runlog.wo055', 'RUN_LOG records WO-055 evidence', runLog.includes('WO-055 production Azure storage, deletion, and restore review intake'), 'RUN_LOG.md');
 check('package.script', 'package.json exposes storage live review readiness script', packageJson.scripts?.['storage:live-review-readiness'] === 'node scripts/validate-storage-live-review-readiness.js', packageJson.scripts?.['storage:live-review-readiness']);

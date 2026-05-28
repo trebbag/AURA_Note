@@ -59,9 +59,10 @@
     "WO-052": "done",
     "WO-053": "done",
     "WO-054": "done",
-    "WO-055": "done"
+    "WO-055": "done",
+    "WO-056": "done"
   },
-  "last_updated_by": "Codex WO-055 production Azure storage/deletion/restore review intake",
-  "last_updated_at": "2026-05-28T18:56:24Z",
-  "notes": "WO-055 completed a post-P11 planning/control intake for production Azure storage, deletion, and restore review. The repo now includes a production Azure storage/deletion/restore review document, required future decisions, acceptance criteria, event/audit inventory, and storage live review readiness validation. next_work_order remains null. No live Azure credential, PHI-bearing object delivery, public URL, destructive production deletion, production restore execution, PHI-bearing audit export, runtime storage behavior, or production launch behavior is authorized or introduced."
+  "last_updated_by": "Codex WO-056 live transcription provider review intake",
+  "last_updated_at": "2026-05-28T19:25:23Z",
+  "notes": "WO-056 completed a post-P11 planning/control intake for live transcription provider review. The repo now includes a production transcription provider review document, required future decisions, acceptance criteria, event/audit inventory, and transcription live review readiness validation. next_work_order remains null. No live transcription credential, PHI-bearing audio transport, live provider call, production raw-audio storage, PHI-bearing support transcript access, runtime transcription behavior, or production launch behavior is authorized or introduced."
 }

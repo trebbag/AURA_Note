@@ -750,3 +750,44 @@ Deferred decisions remain tracked in `SPEC_GAPS.md`, including production Azure 
 ## Next recommended batch
 
 No implementation work order is active. The next safest planning/control candidate is live transcription provider review, but it should not be promoted without explicit selection.
+
+---
+
+# Post-P11 Live Transcription Provider Review Intake
+
+## Completed work orders
+
+- `WO-056` — Live transcription provider review intake.
+
+## Acceptance evidence
+
+- `WO-056` added `docs/PRODUCTION_TRANSCRIPTION_PROVIDER_REVIEW.md` with required future transcription provider decisions, acceptance criteria, event/audit inventory, standalone behavior, and ClinicOS transcription-boundary requirements.
+- `WO-056` added `work_orders/WO-056_live_transcription_provider_review_intake.md` so the intake is reviewable and bounded.
+- `pnpm transcription:live-review-readiness` verifies that the tranche remains planning/control only and does not enable live transcription credentials, PHI-bearing audio transport, live provider calls, production raw-audio storage, PHI-bearing support transcript access, runtime transcription behavior, or launch behavior.
+- `repo_status.json` records `WO-056: done` while preserving the P11 checkpoint and no active next work order.
+
+## Tests and gates
+
+- `pnpm transcription:live-review-readiness`
+- `pnpm post-p11:readiness`
+- `pnpm production:readiness`
+- `pnpm acceptance:readiness`
+- `node scripts/status.js`
+- `git diff --check`
+
+## Open risks
+
+- Provider selection, BAA/private deployment path, region, credential source, consent/notice policy, audio transport design, raw-audio retention execution, transcript correction/version retention, diarization reliability, retry/dead-letter policy, support visibility, incident response, and operational ownership remain deferred decisions.
+- `WO-056` is a planning/control tranche only. It does not approve live transcription credentials, PHI-bearing audio transport, live provider calls, production raw-audio storage, PHI-bearing support transcript access, runtime transcription behavior, or production launch.
+
+## Active SPEC_GAPs
+
+None active as of the post-`WO-056` live transcription provider review intake.
+
+## Deferred production decisions
+
+Deferred decisions remain tracked in `SPEC_GAPS.md`, including live transcription provider, external AI governance, production EHR credentialing/writeback, ClinicOS live integration, revenue estimate policy, production rules licensing/certification, future claim/payer implementation strategy, and production launch approval.
+
+## Next recommended batch
+
+No implementation work order is active. The next safest planning/control candidate is external AI private/BAA pathway review, but it should not be promoted without explicit selection.
