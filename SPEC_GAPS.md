@@ -4,13 +4,13 @@ This file tracks missing, conflicting, unsafe, or deliberately deferred product 
 
 ## Active gaps
 
-No active gaps as of post-`WO-056` live transcription provider review intake on 2026-05-28.
+No active gaps as of post-`WO-057` external AI private/BAA pathway review intake on 2026-05-28.
 
-The repo remains not production-ready. The items below are deferred production decisions rather than active blockers for the current post-`WO-056` planning/control scope.
+The repo remains not production-ready. The items below are deferred production decisions rather than active blockers for the current post-`WO-057` planning/control scope.
 
 ## Deferred production decisions
 
-These items must stay visible and must be resolved before the related production work can be declared complete. They are not blockers for the completed `WO-056` planning/control tranche because the active work remains synthetic/local and explicitly excludes legal certification claims, production deployment, production launch approval, live SIEM/APM vendors, production observability credentials, PHI-bearing logs, live Azure credentials, PHI-bearing object payloads, public object URLs, live destructive deletion, production restore execution, PHI-bearing audit exports, live IdP credentials, live OIDC/SAML, live ClinicOS delegation, live ClinicOS event-bus sync, raw ClinicOS payload storage, live EHR/ClinicOS synchronization, production database credentials, production PHI database storage, live migrations, production backup/restore execution, support database access, production EHR credentials, raw EHR payload storage, live EHR writeback delivery, live transcription credentials, live transcription provider calls, PHI-bearing audio transport, production raw-audio storage, PHI-bearing support transcript access, live external AI credentials, production prompt stores, autonomous billing, charge finalization, medical-necessity determination, claim submission, denial automation, payment posting, patient-facing financial conclusions, and production launch behavior.
+These items must stay visible and must be resolved before the related production work can be declared complete. They are not blockers for the completed `WO-057` planning/control tranche because the active work remains synthetic/local and explicitly excludes legal certification claims, production deployment, production launch approval, live SIEM/APM vendors, production observability credentials, PHI-bearing logs, live Azure credentials, PHI-bearing object payloads, public object URLs, live destructive deletion, production restore execution, PHI-bearing audit exports, live IdP credentials, live OIDC/SAML, live ClinicOS delegation, live ClinicOS event-bus sync, raw ClinicOS payload storage, live EHR/ClinicOS synchronization, production database credentials, production PHI database storage, live migrations, production backup/restore execution, support database access, production EHR credentials, raw EHR payload storage, live EHR writeback delivery, live transcription credentials, live transcription provider calls, PHI-bearing audio transport, production raw-audio storage, PHI-bearing support transcript access, live external AI credentials, raw PHI transfer to external AI, live model calls, production prompt stores, support AI PHI content access, autonomous billing, charge finalization, medical-necessity determination, claim submission, denial automation, payment posting, patient-facing financial conclusions, and production launch behavior.
 
 ### Deferred Decision — Production SIEM/APM vendor and operational monitoring posture
 
@@ -49,10 +49,10 @@ These items must stay visible and must be resolved before the related production
 
 ### Deferred Decision — External AI provider and PHI governance
 
-- **Related future work:** post-`WO-046` founder/security/privacy/vendor review before live use
+- **Related future work:** `WO-057`; future approved AI implementation work order before live use
 - **Status:** deferred
 - **Decision needed before live use:** private/BAA model path, de-identification policy, source-freshness rules, model/prompt approval, evaluation thresholds, monitoring, drift response, live credential source, and incident response.
-- **Safe current posture:** `WO-046` adds prompt/model metadata, deterministic local evaluation cases, source-linked output validation, unsafe output rejection, human-review-required evidence, and stronger PHI redaction/rejection. External AI remains disabled by default; no live model credential, production prompt store, raw PHI transfer, autonomous finalization, medical-necessity determination, charge finalization, or claim submission is enabled.
+- **Safe current posture:** `WO-046` adds prompt/model metadata, deterministic local evaluation cases, source-linked output validation, unsafe output rejection, human-review-required evidence, and stronger PHI redaction/rejection. `WO-057` captures the live-readiness intake and future acceptance criteria. External AI remains disabled by default; no live AI credential, production prompt store, raw PHI transfer to external AI, live model call, support AI PHI content access, autonomous finalization, medical-necessity determination, charge finalization, claim submission, or launch behavior is enabled.
 
 ### Deferred Decision — Production EHR credentialing and live writeback delivery
 

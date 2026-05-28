@@ -123,7 +123,8 @@ check('work-order.wo051-file', 'WO-051 work-order file exists for the next gate'
         contents.includes('No active gaps as of post-`WO-053` production identity/account lifecycle review intake') ||
         contents.includes('No active gaps as of post-`WO-054` production PHI persistence/database operations review intake') ||
         contents.includes('No active gaps as of post-`WO-055` production Azure storage/deletion/restore review intake') ||
-        contents.includes('No active gaps as of post-`WO-056` live transcription provider review intake');
+        contents.includes('No active gaps as of post-`WO-056` live transcription provider review intake') ||
+        contents.includes('No active gaps as of post-`WO-057` external AI private/BAA pathway review intake');
   check(id, `${id} includes ${snippet} or later P11 no-active-gap evidence`, passed, snippet);
 });
 

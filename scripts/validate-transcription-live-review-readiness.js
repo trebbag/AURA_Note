@@ -76,7 +76,13 @@ check('transcription-review.exists', 'Production transcription provider review d
   check(`transcription-review.event.${eventName}`, `Transcription review includes future event ${eventName}`, transcriptionReview.includes(eventName), eventName);
 });
 
-check('spec-gaps.current', 'SPEC_GAPS reflects post-WO-056 with no active gaps', specGaps.includes('No active gaps as of post-`WO-056` live transcription provider review intake'), 'SPEC_GAPS.md');
+check(
+  'spec-gaps.current',
+  'SPEC_GAPS reflects post-WO-056 or later post-P11 planning/control with no active gaps',
+  specGaps.includes('No active gaps as of post-`WO-056` live transcription provider review intake') ||
+    specGaps.includes('No active gaps as of post-`WO-057` external AI private/BAA pathway review intake'),
+  'SPEC_GAPS.md'
+);
 check('spec-gaps.deferred-transcription', 'SPEC_GAPS preserves live transcription provider as deferred before live use', specGaps.includes('Live transcription provider and PHI-bearing audio transport') && specGaps.includes('future approved transcription implementation work order'), 'SPEC_GAPS.md');
 check('runlog.wo056', 'RUN_LOG records WO-056 evidence', runLog.includes('WO-056 live transcription provider review intake'), 'RUN_LOG.md');
 check('package.script', 'package.json exposes transcription live review readiness script', packageJson.scripts?.['transcription:live-review-readiness'] === 'node scripts/validate-transcription-live-review-readiness.js', packageJson.scripts?.['transcription:live-review-readiness']);
