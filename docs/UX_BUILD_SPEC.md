@@ -416,6 +416,8 @@ The route is AI governance-review evidence, not a live AI operations console. It
 
 `WO-050` extends `/aura-note/support/status` with Pilot Launch Gate, Go/No-Go Approvals, Pilot Smoke Evidence, and Limited Launch Boundary states. The UI must keep `productionLaunchApproved=false`, `submittedClaim=false`, live vendor disabled, approval-required, permission-denied, read-only, and documented-mock language visible for pilot decision review.
 
+`WO-051` extends `/aura-note/support/status` with Claim/Payer Decision Gate and Future Claim Approval Criteria states. The UI must keep Draft Claim Boundary, No Live Clearinghouse, No Payer API, No Denial Automation, No Payment Posting, `submittedClaim=false`, and `claimSubmissionEnabled=false` visible. Patient-facing views must continue excluding internal billing, revenue, payer strategy, denial/payment details, confidence, coaching, and draft claim details unless a later approved work order changes that policy.
+
 ## Required accessibility and UX states
 
 Every screen must have empty, loading, ready, saving, blocked, failed, permission-denied, and read-only states.

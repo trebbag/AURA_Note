@@ -317,3 +317,9 @@ Payloads must be audit-safe metadata only: environment label, synthetic tenant/s
 `WO-050` adds beta-pilot launch gate event stubs for future audited launch evidence: `launch.onboarding_checklist_recorded.v1`, `launch.role_training_recorded.v1`, `launch.disabled_feature_inventory_reviewed.v1`, `launch.first_week_monitoring_planned.v1`, `launch.rollback_criteria_reviewed.v1`, `launch.signoff_placeholder_recorded.v1`, and `launch.go_no_go_reviewed.v1`.
 
 Current `WO-050` evidence is docs/script/UI metadata only; these event stubs do not represent live launch approval, production deployment, production PHI, live vendor traffic, charge finalization, medical-necessity determination, or claim submission.
+
+## WO-051 claim/payer decision gate event evidence
+
+`WO-051` records P11 as a claim/payer decision gate and does not add live claim submission APIs. Future event stubs that must exist before any later approved live submission work are `claim.strategy_decision_recorded.v1`, `claim.submission_approval_recorded.v1`, `claim.submission_requested.v1`, `claim.submission_blocked.v1`, `payer.acknowledgement_received.v1`, `payer.denial_recorded.v1`, `claim.void_or_reversal_requested.v1`, and `payment.reconciliation_recorded.v1`.
+
+Current behavior remains draft claim preview and billing review only. Event payloads must be audit-safe metadata and must not include raw payer payloads, production payer credentials, patient financial conclusions, medical-necessity determinations, autonomous charge finalization, denial automation, payment posting, or claim submission evidence. Any future live event implementation requires a new approved work order.

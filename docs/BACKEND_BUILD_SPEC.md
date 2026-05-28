@@ -305,3 +305,9 @@ No new production runtime service is enabled. Existing support/platform boundari
 ## WO-050 beta pilot and limited launch gate
 
 `WO-050` adds pilot launch readiness evidence as metadata-only governance. `pnpm pilot:readiness` runs a deterministic smoke harness, reruns frontend runtime integration evidence, and validates the P10 decision package. It does not create live tenants, deploy production, provision production credentials, call live vendors, store production PHI, finalize charges, determine medical necessity, or submit claims. Future launch evidence recording must remain tenant/site scoped, permission checked, audit-safe, and metadata-only until explicit approval.
+
+## WO-051 claim/payer decision gate
+
+`WO-051` adds no live payer backend behavior. It records the P11 claim/payer decision package through docs, support-status UI evidence, and `pnpm claim-decision:readiness`. Current backend posture remains draft claim preview and billing review only with `submittedClaim=false`. No clearinghouse API, payer API, denial automation, payment posting, charge finalization, medical-necessity determination, or patient-facing financial conclusion is implemented.
+
+Any future claim submission backend must be a separate approved work order with tenant/site scoping, RBAC/ABAC, human billing approval, clinician/final-note prerequisites where applicable, durable audit/event records, idempotency, claim status reconciliation, void/reversal controls, PHI-safe logging, credential-source governance, and test-payer evidence before live execution.

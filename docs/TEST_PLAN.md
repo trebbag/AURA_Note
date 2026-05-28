@@ -476,3 +476,9 @@ This gate is operational rehearsal only. It does not approve production deployme
 ## WO-050 beta pilot and limited launch gate
 
 `WO-050` adds the P10 beta-pilot decision package. Verification includes `pnpm pilot:readiness`, `pnpm launch:readiness`, support-status browser assertions for Pilot Launch Gate, Tenant Onboarding, Role Training, Disabled Feature Inventory, First-Week Monitoring, Go/No-Go Approvals, `productionLaunchApproved=false`, and `submittedClaim=false`. The gate also reruns `pnpm frontend:runtime-integration-readiness` so the seeded backend-backed appointment-through-finalization/export workflow remains part of launch review evidence.
+
+## WO-051 claim/payer decision gate
+
+`WO-051` adds `pnpm claim-decision:readiness` as the P11 decision gate. Verification includes decision-package docs, the WO-051 runbook, support-status browser assertions for Claim/Payer Decision Gate, Draft Claim Boundary, No Live Clearinghouse, No Payer API, No Denial Automation, No Payment Posting, `submittedClaim=false`, and `claimSubmissionEnabled=false`. Existing schedule/finalization tests continue proving draft claim preview remains unsubmitted and patient-facing summaries exclude internal billing/revenue details.
+
+This gate must fail if any current document/status evidence claims live claim submission, payer API calls, clearinghouse integration, denial automation, payment posting, charge finalization, medical-necessity determination, or patient financial conclusions are enabled.

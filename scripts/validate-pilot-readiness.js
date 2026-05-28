@@ -114,11 +114,15 @@ check('work-order.wo051-file', 'WO-051 work-order file exists for the next gate'
   ['RUN_LOG', runLog, 'WO-050 beta pilot and limited launch gate'],
   ['SPEC_GAPS', specGaps, 'No active gaps as of post-`WO-050` beta pilot launch gate and P10 review']
 ].forEach(([id, contents, snippet]) => {
-  check(id, `${id} includes ${snippet}`, contents.includes(snippet), snippet);
+  const passed =
+    id !== 'SPEC_GAPS'
+      ? contents.includes(snippet)
+      : contents.includes(snippet) || contents.includes('No active gaps as of post-`WO-051` claim/payer decision gate and P11 review');
+  check(id, `${id} includes ${snippet} or later P11 no-active-gap evidence`, passed, snippet);
 });
 
 check('status.wo050-done', 'WO-050 is marked done', status.work_orders?.['WO-050'] === 'done', status.work_orders?.['WO-050']);
-check('status.wo051-next', 'WO-051 is next active work order', status.next_work_order === 'WO-051' && status.work_orders?.['WO-051'] === 'todo', {
+check('status.wo051-next-or-done', 'WO-051 is next active work order or already completed', (status.next_work_order === 'WO-051' && status.work_orders?.['WO-051'] === 'todo') || (status.next_work_order === null && status.work_orders?.['WO-051'] === 'done'), {
   next_work_order: status.next_work_order,
   WO051: status.work_orders?.['WO-051']
 });

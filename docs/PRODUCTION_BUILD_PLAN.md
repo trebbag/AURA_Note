@@ -513,6 +513,8 @@ This gate does not authorize live EHR writeback, live AI, live transcription, pr
 - **Stop conditions:** founder requests live claims without legal/compliance details; create blocking `SPEC_GAP`.
 - **Risks and deferred decisions:** clearinghouse/payer/denial automation is high-risk and must be separately authorized.
 
+**Implementation status as of `WO-051`:** complete as a synthetic/local P11 decision package. The repo now includes `docs/CLAIM_PAYER_DECISION_GATE.md`, `docs/runbooks/WO-051_CLAIM_PAYER_DECISION_RUNBOOK.md`, support-status claim/payer decision gate states, and `pnpm claim-decision:readiness`. This closes P11 as a decision gate only: `submittedClaim=false`, `claimSubmissionEnabled=false`, no clearinghouse API, no payer API, no denial automation, no payment posting, no charge finalization, no medical-necessity determination, and no patient-facing financial conclusion are enabled. Any future live claim work requires a new founder-approved work order plus billing, compliance, privacy, security, and legal decisions.
+
 ## Overall production-launch criteria
 
 AURA Note can be called production-launch-ready only when all of the following are true:
