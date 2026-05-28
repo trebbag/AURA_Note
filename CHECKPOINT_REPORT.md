@@ -569,7 +569,7 @@ Begin P11 with `WO-051` claim submission and payer integration decision gate. Ke
 - `pnpm production:readiness`
 - `pnpm acceptance:readiness`
 - Full local gate is recorded in `RUN_LOG.md` for `WO-051`.
-- GitHub Actions must pass on the `WO-051` PR before merge.
+- GitHub Actions passed on PR #54 before merge.
 
 ## Open risks
 
@@ -587,3 +587,43 @@ Deferred decisions remain tracked in `SPEC_GAPS.md`, including production launch
 ## Next recommended batch
 
 Stop at P11. No further numbered work order is active until the founder approves a new tranche. Any future claim/payer implementation must begin with a new work order that names the approved clearinghouse/payer or ClinicOS/M21 handoff strategy and preserves human approval, audit, idempotency, RBAC/ABAC, PHI/security, and no-autonomy boundaries.
+
+---
+
+# Post-P11 Continuation Rails
+
+## Completed work orders
+
+- `WO-052` — Post-P11 continuation rails and tranche intake.
+
+## Acceptance evidence
+
+- `WO-052` added `docs/POST_P11_CONTINUATION_PLAN.md` with candidate future tranche families and activation criteria.
+- `WO-052` added `work_orders/WO-052_post_p11_continuation_rails.md` so the continuation work is reviewable and bounded.
+- `pnpm post-p11:readiness` verifies that post-P11 state remains planning-only, `next_work_order` is still `null`, and no live production, vendor, claim, PHI, or launch behavior is authorized.
+- `repo_status.json` records `WO-052: done` while preserving the P11 checkpoint and no active next work order.
+
+## Tests and gates
+
+- `pnpm post-p11:readiness`
+- `pnpm production:readiness`
+- `pnpm acceptance:readiness`
+- `node scripts/status.js`
+- `git diff --check`
+
+## Open risks
+
+- `WO-052` is a planning/control tranche only. It does not approve production launch, live vendor integration, production PHI storage, live claim/payer behavior, or legal/compliance/security readiness.
+- Future implementation still requires a named work order and explicit decisions for the relevant identity, PHI persistence, Azure storage, transcription, AI, EHR, ClinicOS, claim/payer, launch, and operational-governance areas.
+
+## Active SPEC_GAPs
+
+None active as of the post-`WO-052` continuation rails review.
+
+## Deferred production decisions
+
+Deferred decisions remain tracked in `SPEC_GAPS.md`, including production launch approval, production identity/account lifecycle, production PHI persistence and database operations, production Azure storage/deletion/restore controls, production SIEM/APM and monitoring posture, live transcription provider, external AI governance, production EHR credentialing/writeback, ClinicOS live integration, revenue estimate policy, production rules licensing/certification, and future claim/payer implementation strategy.
+
+## Next recommended batch
+
+No implementation work order is active. The next safe batch is to select one candidate family from `docs/POST_P11_CONTINUATION_PLAN.md` and promote it into a specific `WO-053` work order with approval evidence and stop conditions before implementation begins.

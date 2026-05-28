@@ -117,7 +117,9 @@ check('work-order.wo051-file', 'WO-051 work-order file exists for the next gate'
   const passed =
     id !== 'SPEC_GAPS'
       ? contents.includes(snippet)
-      : contents.includes(snippet) || contents.includes('No active gaps as of post-`WO-051` claim/payer decision gate and P11 review');
+      : contents.includes(snippet) ||
+        contents.includes('No active gaps as of post-`WO-051` claim/payer decision gate and P11 review') ||
+        contents.includes('No active gaps as of post-`WO-052` post-P11 continuation rails review');
   check(id, `${id} includes ${snippet} or later P11 no-active-gap evidence`, passed, snippet);
 });
 

@@ -60,6 +60,7 @@ Codex must complete work orders sequentially unless a checkpoint or blocker stop
 - `WO-049` — Deployment, environment promotion, performance, reliability, and operational drills.
 - `WO-050` — Beta pilot and limited production launch gate.
 - `WO-051` — Claim submission and payer integration decision gate.
+- `WO-052` — Post-P11 continuation rails and tranche intake.
 
 ## Work order rules
 
@@ -127,4 +128,6 @@ Post-CP4 productionization candidates are documented in `docs/POST_CP4_PRODUCTIO
 
 `WO-048` through `WO-050` form the P10 launch candidate. `WO-048` is complete as synthetic/local frontend runtime-integration gate evidence: it adds a typed web API client, an API-backed runtime evidence route, a route inventory, a named readiness verifier, and Playwright evidence from appointment creation through finalization/export with reload/refetch proof. `WO-049` is complete as synthetic/local launch operations readiness evidence: it adds launch-operations docs/runbook coverage, support-status launch drill states, a deterministic performance baseline, and `pnpm launch:ops-readiness`. `WO-050` is complete as synthetic/local beta-pilot and limited-launch decision-package evidence: it adds pilot readiness docs/runbook coverage, support-status pilot gate states, a deterministic smoke harness, `pnpm pilot:readiness`, and `pnpm launch:readiness`. P10 is complete as a decision package only; `productionLaunchApproved=false`, `productionLaunchReady=false`, `submittedClaim=false`, and live production launch still requires explicit founder/clinical/compliance/security approval.
 
-`WO-051` is complete as the P11 claim/payer decision gate. It captures the strategy for claim submission, clearinghouse, payer integration, denial automation, and payment workflows without implementing autonomous submission by default. P11 is complete as a decision package only: `submittedClaim=false`, `claimSubmissionEnabled=false`, no clearinghouse API, no payer API, no denial automation, no payment posting, no charge finalization, no medical-necessity determination, and no patient-facing financial conclusion are enabled. No further numbered work order is active until the founder approves a new tranche.
+`WO-051` is complete as the P11 claim/payer decision gate. It captures the strategy for claim submission, clearinghouse, payer integration, denial automation, and payment workflows without implementing autonomous submission by default. P11 is complete as a decision package only: `submittedClaim=false`, `claimSubmissionEnabled=false`, no clearinghouse API, no payer API, no denial automation, no payment posting, no charge finalization, no medical-necessity determination, and no patient-facing financial conclusion are enabled.
+
+`WO-052` is complete as a post-P11 planning/control tranche. It adds continuation rails, candidate future tranche families, activation criteria, and `pnpm post-p11:readiness` without authorizing live production, vendor, claim, PHI, or launch behavior. No further numbered implementation work order is active until the founder approves a specific new tranche.

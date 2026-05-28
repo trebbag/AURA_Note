@@ -113,7 +113,8 @@ check('doc.runbook-exists', 'WO-049 launch ops runbook exists', exists('docs/run
       ? contents.includes(snippet)
       : contents.includes(snippet) ||
         contents.includes('No active gaps as of post-`WO-050` beta pilot launch gate and P10 review') ||
-        contents.includes('No active gaps as of post-`WO-051` claim/payer decision gate and P11 review');
+        contents.includes('No active gaps as of post-`WO-051` claim/payer decision gate and P11 review') ||
+        contents.includes('No active gaps as of post-`WO-052` post-P11 continuation rails review');
   check(id, `${id} includes ${snippet} or later P10 no-active-gap evidence`, passed, snippet);
 });
 
