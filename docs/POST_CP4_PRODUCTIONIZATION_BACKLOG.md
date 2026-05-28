@@ -546,3 +546,19 @@ Do not implement these tranches directly from this backlog. Promote one tranche 
 **Known risks:**
 
 - External counsel, formal HIPAA/security/privacy review, BAA/vendor review, incident response ownership, production access-review cadence, launch approval, and founder/clinical/compliance/security signoff remain deferred.
+
+## Follow-on Tranche P10-02 — Launch Operations Readiness
+
+**Promotion status:** Promoted to `WO-049` and completed as synthetic P10 operational rehearsal evidence.
+
+**Objective:** Add environment promotion, deployment smoke, rollback rehearsal, synthetic performance, reliability drills, incident response, access review, and support escalation evidence without performing a production deployment.
+
+**Acceptance evidence:**
+
+- `pnpm launch:ops-readiness` passes locally and in CI.
+- `/aura-note/support/status` exposes Launch Ops Drills, synthetic performance baseline, rollback rehearsal, vendor outage, access review, and no-production-traffic states.
+- `docs/LAUNCH_OPERATIONS_READINESS.md` and `docs/runbooks/WO-049_LAUNCH_OPS_RUNBOOK.md` document operational rehearsal controls.
+
+**Known risks:**
+
+- Production hosting target, staging URL, secret manager, SIEM/APM vendor, named support/on-call owners, SLO/SLA targets, and founder/clinical/compliance/security launch approval remain deferred.

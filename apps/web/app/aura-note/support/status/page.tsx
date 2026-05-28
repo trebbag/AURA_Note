@@ -79,6 +79,20 @@ const operationalEvidence = [
   { label: 'Access review evidence', state: 'recorded_synthetic', mode: 'metadata-only review evidence' }
 ];
 
+const launchOpsDrills = [
+  { label: 'Release smoke', state: 'passing_synthetic', mode: 'web, API, worker, persistence, storage, support status' },
+  { label: 'Rollback rehearsal', state: 'documented_blocked_live', mode: 'migration rollback requires approval before production execution' },
+  { label: 'Vendor outage drill', state: 'fail_closed', mode: 'AI, EHR, ClinicOS, storage, transcription disabled paths remain safe' },
+  { label: 'Access review drill', state: 'recorded_synthetic', mode: 'disabled user, expired session, and denied support metadata only' }
+];
+
+const performanceBaselines = [
+  { label: 'Schedule list p95', state: 'under 250ms synthetic', mode: 'synthetic_load_baseline no PHI' },
+  { label: 'Finalization API p95', state: 'under 500ms synthetic', mode: 'human-review workflow only' },
+  { label: 'Export metadata p95', state: 'under 750ms synthetic', mode: 'storage-backed metadata, no public URL' },
+  { label: 'Launch load profile', state: '100 synthetic workflows', mode: 'local deterministic harness; no production traffic' }
+];
+
 export default function SupportStatusPage() {
   return (
     <main className="support-shell">
@@ -205,6 +219,34 @@ export default function SupportStatusPage() {
             </div>
           </dl>
           <p>Support operations can record audit-safe evidence, but cannot access transcripts, final notes, billing detail, coaching outputs, or PHI-bearing payloads.</p>
+        </section>
+      </section>
+
+      <section className="support-grid" aria-label="Launch operations readiness">
+        <section className="support-panel">
+          <h2>Launch Ops Drills</h2>
+          <div className="analytics-list">
+            {launchOpsDrills.map((item) => (
+              <div key={item.label}>
+                <span>{item.label}</span>
+                <strong>{item.state}</strong>
+                <small>{item.mode}</small>
+              </div>
+            ))}
+          </div>
+        </section>
+
+        <section className="support-panel">
+          <h2>Performance Baseline</h2>
+          <div className="analytics-list">
+            {performanceBaselines.map((item) => (
+              <div key={item.label}>
+                <span>{item.label}</span>
+                <strong>{item.state}</strong>
+                <small>{item.mode}</small>
+              </div>
+            ))}
+          </div>
         </section>
       </section>
 

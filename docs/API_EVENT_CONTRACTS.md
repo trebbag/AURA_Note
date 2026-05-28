@@ -303,3 +303,11 @@ New event types are `ehr.writeback_approval_recorded.v1`, `ehr.writeback_retry_s
 - `POST /integrations/clinicos/events/publish` records metadata-only event publication status, including queued, skipped-disabled, degraded, and failed-unavailable states.
 
 New event types are `clinicos.event_publication_failed.v1`, `clinicos.mapping_stale_detected.v1`, and `clinicos.permission_denied.v1` alongside the existing ClinicOS mode, mapping, publication, and unavailable events. Payloads are audit-safe metadata only and must not include raw ClinicOS payloads, transcripts, final notes, billing details, coaching output, credentials, production URLs, live event-bus payloads, charge finalization, medical-necessity determinations, or claim submission evidence.
+
+## WO-049 launch operations readiness event evidence
+
+`WO-049` does not add new state-changing production endpoints. It documents launch-operations event stubs for future durable operational evidence and validates synthetic/local readiness through scripts and support-status UI.
+
+Event stubs for launch review are `deployment.smoke_checked.v1`, `deployment.rollback_rehearsed.v1`, `performance.baseline_measured.v1`, `reliability.drill_recorded.v1`, `incident.response_rehearsed.v1`, and `access_review.launch_checked.v1`.
+
+Payloads must be audit-safe metadata only: environment label, synthetic tenant/site, actor role, trace ID, release ID, drill name, expected degraded state, actual result, rollback decision, and follow-up owner. Payloads must not include PHI-bearing logs, transcripts, final notes, billing details, coaching outputs, raw AI prompts, raw EHR/ClinicOS payloads, storage object payloads, production URLs, credentials, charge finalization, medical-necessity determinations, or claim submission evidence.

@@ -412,6 +412,8 @@ The route is AI governance-review evidence, not a live AI operations console. It
 
 `WO-048` adds the first Frontend Runtime Integration Gate evidence route and inventory. `/aura-note/runtime-integration` is API-backed through the typed web client and shows schedule/finalized-note state from backend responses. Existing production-intended scaffold routes remain documented mocks until later P10 work converts them to typed API runtime behavior or explicitly defers them before launch-candidate review. This is not final Figma fidelity, a formal accessibility audit, or production launch approval.
 
+`WO-049` extends `/aura-note/support/status` with synthetic launch operations readiness states for Launch Ops Drills, rollback rehearsal, vendor outage drill, access review drill, synthetic performance baseline, and no-production-traffic evidence. These states are browser-testable operational rehearsal evidence only; they do not imply production launch approval, live vendor execution, production PHI, charge finalization, medical-necessity determination, or claim submission.
+
 ## Required accessibility and UX states
 
 Every screen must have empty, loading, ready, saving, blocked, failed, permission-denied, and read-only states.

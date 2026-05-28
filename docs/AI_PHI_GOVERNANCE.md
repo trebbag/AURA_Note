@@ -124,3 +124,7 @@ External AI remains disabled until a later private/BAA model pathway, tenant pol
 `WO-047` reviewed the P9 AI/PHI boundary together with EHR, ClinicOS, storage, retention, observability, audit, and support surfaces. No new P9 AI/PHI blocker was found in the current synthetic/local scope. The review confirms that live external AI remains disabled, raw PHI remains rejected by default, explicit redaction mode remains metadata-only/mock-only, and unsafe output validation continues to reject autonomous diagnosis, final coding/charging, claim submission, orders, medical-necessity determination, and patient-facing financial conclusions.
 
 The review does not approve live AI use. Private/BAA model selection, live credential source, tenant policy, evaluation thresholds, monitoring, drift response, incident response, and founder/security/privacy approval remain deferred production decisions.
+
+## WO-049 launch operations PHI boundary
+
+`WO-049` launch operations readiness uses synthetic operational metadata only. Performance baselines, rollback rehearsal, reliability drills, incident response, access review, and support escalation evidence must not include PHI, secrets, production URLs, raw transcripts, final notes, billing details, coaching output, raw prompts, raw EHR/ClinicOS payloads, storage object payloads, medical-necessity determinations, charge finalization, or claim submission evidence.

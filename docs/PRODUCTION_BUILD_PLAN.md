@@ -462,10 +462,12 @@ This gate does not authorize live EHR writeback, live AI, live transcription, pr
 - **ClinicOS-integrated behavior:** embedded deployment dependencies documented.
 - **AI/PHI/security requirements:** load/failure tests use synthetic data only.
 - **Testing requirements:** deployment smoke, load/perf, failure drills.
-- **Required scripts/gates:** `pnpm deployment:readiness`, `pnpm performance:readiness`, `pnpm ops:tabletop-readiness`, default gate.
+- **Required scripts/gates:** `pnpm performance:launch-baseline`, `pnpm launch:ops-readiness`, default gate.
 - **Definition of Done:** launch operations evidence is complete enough for beta decision.
 - **Stop conditions:** missing production environment or secrets blocks live deployment; document as blocker.
 - **Risks and deferred decisions:** hosting platform and production SLOs may require founder decision.
+
+**Implementation status as of `WO-049`:** complete as synthetic/local launch-operations readiness evidence. The repo now includes `docs/LAUNCH_OPERATIONS_READINESS.md`, `docs/runbooks/WO-049_LAUNCH_OPS_RUNBOOK.md`, a deterministic synthetic performance baseline, support-status launch operations drill states, and `pnpm launch:ops-readiness`. This work proves operational rehearsal controls only: no production deployment, no production credentials, no live PHI, no live vendors, no launch approval, no autonomous clinical/coding/billing behavior, no medical-necessity determination, no charge finalization, and no claim submission.
 
 ## WO-050 — Beta Pilot And Limited Production Launch Gate
 

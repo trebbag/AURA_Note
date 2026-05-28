@@ -156,3 +156,9 @@ In ClinicOS-integrated mode, future AI request/governance metadata may map to M2
 ## WO-047 P9 mode-review posture
 
 `WO-047` reviews standalone and ClinicOS-integrated mode threats. No new P9 blocker was found in the current synthetic/local scope. Standalone remains fully usable through local governance and disabled live-vendor boundaries. ClinicOS-integrated mode remains adapter-bound and metadata-only for live integration; missing or degraded ClinicOS delegation, event-bus delivery, module mapping, or AI governance delegation fails closed and cannot override AURA Note RBAC/ABAC, PHI, audit, or human-review gates.
+
+## WO-049 launch operations readiness mode behavior
+
+In standalone mode, `WO-049` launch operations readiness proves AURA Note can rehearse build, smoke, rollback, disabled-vendor, performance, incident, access-review, and support-escalation controls without ClinicOS.
+
+In ClinicOS-integrated mode, ClinicOS dependencies are treated as disabled or degraded adapter states during rehearsal. Missing ClinicOS delegation, event publication, mapping, or operational status services fail closed and cannot bypass AURA Note permissions or support metadata-only boundaries. Production launch approval, live vendor traffic, production PHI, charge finalization, medical-necessity determination, and claim submission remain out of scope.
