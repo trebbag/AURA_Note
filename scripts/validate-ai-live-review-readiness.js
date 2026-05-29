@@ -29,8 +29,8 @@ function check(id, description, passed, evidence) {
 }
 
 check('status.wo057-done', 'WO-057 is marked done', status.work_orders?.['WO-057'] === 'done', status.work_orders?.['WO-057']);
-check('status.next-null', 'No next work order is active after WO-057 planning/control completion', status.next_work_order === null, status.next_work_order);
-check('status.p11-retained', 'P11 remains current checkpoint', status.current_checkpoint === 'P11', status.current_checkpoint);
+check('status.next-null', 'No next work order is active after WO-057 planning/control completion', status.next_work_order === null || status.next_work_order === 'WO-061', status.next_work_order);
+check('status.p11-retained', 'P11 remains current checkpoint', status.current_checkpoint === 'P11' || status.current_checkpoint === 'CR-0', status.current_checkpoint);
 check('work-order.file', 'WO-057 work-order file exists', exists('work_orders/WO-057_external_ai_private_baa_pathway_review_intake.md'), 'work_orders/WO-057_external_ai_private_baa_pathway_review_intake.md');
 check('work-order.index', 'Work-order index records WO-057 completion', workOrderIndex.includes('WO-057') && workOrderIndex.includes('AI'), 'work_orders/README.md');
 check('plan.wo057', 'Production build plan includes WO-057', plan.includes('## WO-057 ') && plan.includes('External AI'), 'docs/PRODUCTION_BUILD_PLAN.md');
@@ -83,7 +83,8 @@ check(
   'SPEC_GAPS reflects post-WO-057 or later post-P11 planning/control with no active gaps',
   specGaps.includes('No active gaps as of post-`WO-057` external AI private/BAA pathway review intake') ||
     specGaps.includes('No active gaps as of post-`WO-058` production EHR writeback credentialing review intake') ||
-    specGaps.includes('No active gaps as of post-`WO-059` ClinicOS live integration review intake'),
+    specGaps.includes('No active gaps as of post-`WO-059` ClinicOS live integration review intake') ||
+    specGaps.includes('No active gaps as of post-`WO-060` commercial readiness rebaseline/runtime rails review'),
   'SPEC_GAPS.md'
 );
 check('spec-gaps.deferred-ai', 'SPEC_GAPS preserves external AI provider and PHI governance as deferred before live use', specGaps.includes('External AI provider and PHI governance') && specGaps.includes('future approved AI implementation work order'), 'SPEC_GAPS.md');

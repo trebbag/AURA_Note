@@ -29,8 +29,8 @@ function check(id, description, passed, evidence) {
 }
 
 check('status.wo058-done', 'WO-058 is marked done', status.work_orders?.['WO-058'] === 'done', status.work_orders?.['WO-058']);
-check('status.next-null', 'No next work order is active after WO-058 planning/control completion', status.next_work_order === null, status.next_work_order);
-check('status.p11-retained', 'P11 remains current checkpoint', status.current_checkpoint === 'P11', status.current_checkpoint);
+check('status.next-null', 'No next work order is active after WO-058 planning/control completion', status.next_work_order === null || status.next_work_order === 'WO-061', status.next_work_order);
+check('status.p11-retained', 'P11 remains current checkpoint', status.current_checkpoint === 'P11' || status.current_checkpoint === 'CR-0', status.current_checkpoint);
 check('work-order.file', 'WO-058 work-order file exists', exists('work_orders/WO-058_production_ehr_writeback_credentialing_review_intake.md'), 'work_orders/WO-058_production_ehr_writeback_credentialing_review_intake.md');
 check('work-order.index', 'Work-order index records WO-058 completion', workOrderIndex.includes('WO-058') && workOrderIndex.includes('Production EHR writeback'), 'work_orders/README.md');
 check('plan.wo058', 'Production build plan includes WO-058', plan.includes('## WO-058 ') && plan.includes('Production EHR Writeback'), 'docs/PRODUCTION_BUILD_PLAN.md');
@@ -78,7 +78,8 @@ check(
   'spec-gaps.current',
   'SPEC_GAPS reflects post-WO-058 or later post-P11 planning/control with no active gaps',
   specGaps.includes('No active gaps as of post-`WO-058` production EHR writeback credentialing review intake') ||
-    specGaps.includes('No active gaps as of post-`WO-059` ClinicOS live integration review intake'),
+    specGaps.includes('No active gaps as of post-`WO-059` ClinicOS live integration review intake') ||
+    specGaps.includes('No active gaps as of post-`WO-060` commercial readiness rebaseline/runtime rails review'),
   'SPEC_GAPS.md'
 );
 check('spec-gaps.deferred-ehr', 'SPEC_GAPS preserves production EHR credentialing and live writeback delivery as deferred before live use', specGaps.includes('Production EHR credentialing and live writeback delivery') && specGaps.includes('future approved EHR implementation work order'), 'SPEC_GAPS.md');

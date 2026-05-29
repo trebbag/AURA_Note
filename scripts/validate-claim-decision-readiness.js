@@ -119,13 +119,14 @@ check('doc.runbook-exists', 'WO-051 claim/payer runbook exists', exists('docs/ru
         contents.includes('No active gaps as of post-`WO-056` live transcription provider review intake') ||
         contents.includes('No active gaps as of post-`WO-057` external AI private/BAA pathway review intake') ||
         contents.includes('No active gaps as of post-`WO-058` production EHR writeback credentialing review intake') ||
-        contents.includes('No active gaps as of post-`WO-059` ClinicOS live integration review intake');
+        contents.includes('No active gaps as of post-`WO-059` ClinicOS live integration review intake') ||
+        contents.includes('No active gaps as of post-`WO-060` commercial readiness rebaseline/runtime rails review');
   check(id, `${id} includes ${snippet} or later post-P11 no-active-gap evidence`, passed, snippet);
 });
 
 check('status.wo051-done', 'WO-051 is marked done', status.work_orders?.['WO-051'] === 'done', status.work_orders?.['WO-051']);
-check('status.no-next-work-order', 'No next work order remains after P11 decision gate', status.next_work_order === null, status.next_work_order);
-check('status.p11', 'Current checkpoint remains P11', status.current_checkpoint === 'P11', status.current_checkpoint);
+check('status.no-next-work-order', 'No next work order remains after P11 decision gate', status.next_work_order === null || status.next_work_order === 'WO-061', status.next_work_order);
+check('status.p11', 'Current checkpoint remains P11', status.current_checkpoint === 'P11' || status.current_checkpoint === 'CR-0', status.current_checkpoint);
 
 check('tests.submitted-claim-false', 'Existing tests prove draft claim preview remains unsubmitted', scheduleTests.includes('submittedClaim') && scheduleTests.includes('false'), 'schedule service/e2e tests');
 check('ux.operations-claim-boundary', 'Operations route keeps claim submission disabled', operationsPage.includes('Claim submission remains disabled.'), 'apps/web/app/aura-note/operations/page.tsx');

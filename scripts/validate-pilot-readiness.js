@@ -126,12 +126,14 @@ check('work-order.wo051-file', 'WO-051 work-order file exists for the next gate'
         contents.includes('No active gaps as of post-`WO-056` live transcription provider review intake') ||
         contents.includes('No active gaps as of post-`WO-057` external AI private/BAA pathway review intake') ||
         contents.includes('No active gaps as of post-`WO-058` production EHR writeback credentialing review intake') ||
-        contents.includes('No active gaps as of post-`WO-059` ClinicOS live integration review intake');
+        contents.includes('No active gaps as of post-`WO-059` ClinicOS live integration review intake') ||
+        contents.includes('No active gaps as of post-`WO-060` commercial readiness rebaseline/runtime rails review');
   check(id, `${id} includes ${snippet} or later P11 no-active-gap evidence`, passed, snippet);
 });
 
 check('status.wo050-done', 'WO-050 is marked done', status.work_orders?.['WO-050'] === 'done', status.work_orders?.['WO-050']);
-check('status.wo051-next-or-done', 'WO-051 is next active work order or already completed', (status.next_work_order === 'WO-051' && status.work_orders?.['WO-051'] === 'todo') || (status.next_work_order === null && status.work_orders?.['WO-051'] === 'done'), {
+const pilotNextWorkOrderNumber = Number.parseInt(String(status.next_work_order || '').replace('WO-', ''), 10);
+check('status.wo051-next-or-done', 'WO-051 is next active work order or already completed', (status.next_work_order === 'WO-051' && status.work_orders?.['WO-051'] === 'todo') || ((status.next_work_order === null || (Number.isFinite(pilotNextWorkOrderNumber) && pilotNextWorkOrderNumber >= 52)) && status.work_orders?.['WO-051'] === 'done'), {
   next_work_order: status.next_work_order,
   WO051: status.work_orders?.['WO-051']
 });

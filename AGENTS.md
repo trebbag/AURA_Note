@@ -151,6 +151,31 @@ Required after `WO-051`.
 
 Definition: claim submission, clearinghouse, payer integration, denial automation, and payment workflows are decision-captured. Live claim submission remains out of the default v1 implementation unless a later founder-approved work order explicitly authorizes it.
 
+### CR-0 — Commercial readiness rails reopened
+Required after `WO-060`.
+
+Definition: the post-P11 null-state is replaced with a new approved commercial-readiness plan. `WO-060` through `WO-075` are listed, scoped, testable, and status-tracked. The repo clearly distinguishes commercial-readiness implementation from production launch approval.
+
+### CR-1 — Runtime foundation candidate
+Required after `WO-061` through `WO-063`.
+
+Definition: core runtime services use repository interfaces rather than direct in-memory state; local Prisma/PostgreSQL is the production-shaped default for local runtime workflows; the Nest API has global validation/error/security/logging scaffolding; and synthetic header identity is restricted to explicit local/demo mode.
+
+### CR-2 — Product UX runtime candidate
+Required after `WO-064` through `WO-066`.
+
+Definition: primary production-intended UI routes are API-backed, not local-fixture authoritative; all core standalone workflows are browser/API-testable end to end; and the basic UI scaffold fully represents every screen, state, panel, modal, drawer, action, worklist, and artifact needed for Figma.
+
+### CR-3 — Integration and governance runtime candidate
+Required after `WO-067` through `WO-070`.
+
+Definition: standalone/ClinicOS mode resolution is enforced through adapter boundaries; transcription, EHR, AI, and ClinicOS integrations have production-shaped but safely disabled or mock/sandbox-governed runtime paths; all live vendor behavior remains gated.
+
+### CR-4 — Commercial readiness review candidate
+Required after `WO-071` through `WO-075`.
+
+Definition: security, privacy, observability, support, beta pilot, deployment, billing/revenue integrity, and commercial readiness evidence are complete enough for founder/clinical/compliance/security review. This is not production launch approval.
+
 At each checkpoint, Codex must produce a concise checkpoint report in `CHECKPOINT_REPORT.md`, including completed work orders, acceptance evidence, open risks, unresolved SPEC_GAPs, and next recommended batch.
 
 ## 7. Global definition of done

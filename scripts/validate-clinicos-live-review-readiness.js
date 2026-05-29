@@ -29,8 +29,8 @@ function check(id, description, passed, evidence) {
 }
 
 check('status.wo059-done', 'WO-059 is marked done', status.work_orders?.['WO-059'] === 'done', status.work_orders?.['WO-059']);
-check('status.next-null', 'No next work order is active after WO-059 planning/control completion', status.next_work_order === null, status.next_work_order);
-check('status.p11-retained', 'P11 remains current checkpoint', status.current_checkpoint === 'P11', status.current_checkpoint);
+check('status.next-null', 'No next work order is active after WO-059 planning/control completion', status.next_work_order === null || status.next_work_order === 'WO-061', status.next_work_order);
+check('status.p11-retained', 'P11 remains current checkpoint', status.current_checkpoint === 'P11' || status.current_checkpoint === 'CR-0', status.current_checkpoint);
 check('work-order.file', 'WO-059 work-order file exists', exists('work_orders/WO-059_clinicos_live_integration_review_intake.md'), 'work_orders/WO-059_clinicos_live_integration_review_intake.md');
 check('work-order.index', 'Work-order index records WO-059 completion', workOrderIndex.includes('WO-059') && workOrderIndex.includes('ClinicOS live integration'), 'work_orders/README.md');
 check('plan.wo059', 'Production build plan includes WO-059', plan.includes('## WO-059 ') && plan.includes('ClinicOS Live Integration'), 'docs/PRODUCTION_BUILD_PLAN.md');
@@ -77,7 +77,13 @@ check('clinicos-review.exists', 'Production ClinicOS live integration review doc
   check(`clinicos-review.event.${eventName}`, `ClinicOS review includes future event ${eventName}`, clinicosReview.includes(eventName), eventName);
 });
 
-check('spec-gaps.current', 'SPEC_GAPS reflects post-WO-059 with no active gaps', specGaps.includes('No active gaps as of post-`WO-059` ClinicOS live integration review intake'), 'SPEC_GAPS.md');
+check(
+  'spec-gaps.current',
+  'SPEC_GAPS reflects post-WO-059 or later with no active gaps',
+  specGaps.includes('No active gaps as of post-`WO-059` ClinicOS live integration review intake') ||
+    specGaps.includes('No active gaps as of post-`WO-060` commercial readiness rebaseline/runtime rails review'),
+  'SPEC_GAPS.md'
+);
 check('spec-gaps.deferred-clinicos', 'SPEC_GAPS preserves ClinicOS live integration contracts and event-bus delivery as deferred before live use', specGaps.includes('ClinicOS live integration contracts and event-bus delivery') && specGaps.includes('future approved ClinicOS implementation work order'), 'SPEC_GAPS.md');
 check('runlog.wo059', 'RUN_LOG records WO-059 evidence', runLog.includes('WO-059 ClinicOS live integration review intake'), 'RUN_LOG.md');
 check('package.script', 'package.json exposes ClinicOS live review readiness script', packageJson.scripts?.['clinicos:live-review-readiness'] === 'node scripts/validate-clinicos-live-review-readiness.js', packageJson.scripts?.['clinicos:live-review-readiness']);
