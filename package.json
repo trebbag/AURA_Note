@@ -51,6 +51,7 @@
     "launch:readiness": "pnpm launch:ops-readiness && pnpm pilot:readiness",
     "claim-decision:readiness": "node scripts/validate-claim-decision-readiness.js",
     "post-p11:readiness": "node scripts/validate-post-p11-continuation-readiness.js",
+    "commercial:readiness-plan": "node scripts/validate-commercial-readiness-plan.js",
     "storage:azure-adapter-readiness": "pnpm --filter @aura-note/storage test && pnpm --filter @aura-note/storage typecheck && node scripts/validate-azure-storage-adapter-readiness.js",
     "storage:secure-download-readiness": "pnpm --filter @aura-note/storage test && pnpm --filter @aura-note/api test && node scripts/validate-secure-download-readiness.js",
     "storage:live-review-readiness": "node scripts/validate-storage-live-review-readiness.js",

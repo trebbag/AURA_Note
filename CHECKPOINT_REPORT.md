@@ -922,3 +922,47 @@ Deferred decisions remain tracked in `SPEC_GAPS.md`, including ClinicOS live int
 ## Next recommended batch
 
 No implementation work order is active. The next safest planning/control candidate is revenue estimate and patient-facing financial content review, but it should not be promoted without explicit selection.
+
+---
+
+# CR-0 Commercial Readiness Rails Reopened
+
+## Completed work orders
+
+- `WO-060` — Commercial readiness rebaseline and runtime implementation rails.
+
+## Acceptance evidence
+
+- `WO-060` added the CR-0 through CR-4 checkpoint sequence to `AGENTS.md` and `docs/PRODUCTION_BUILD_PLAN.md`.
+- `WO-060` added `WO-060` through `WO-075` to `work_orders/README.md`, `docs/PRODUCTION_BUILD_PLAN.md`, and `repo_status.json`.
+- `WO-060` added `docs/COMMERCIAL_READINESS_ROADMAP.md`, `docs/COMMERCIAL_READINESS_DEFINITION_OF_DONE.md`, `docs/REMAINING_SYNTHETIC_TO_RUNTIME_GAPS.md`, and `docs/FIGMA_HANDOFF_PLAN.md`.
+- `WO-060` added `work_orders/WO-060_commercial_readiness_rebaseline_runtime_rails.md` and `work_orders/WO-061_runtime_persistence_switchover_core_workflow.md`.
+- `repo_status.json` now records `current_checkpoint: CR-0`, `next_work_order: WO-061`, `WO-060: done`, `WO-061: todo`, and `WO-062` through `WO-075: planned`.
+- `pnpm commercial:readiness-plan` validates plan/status/checkpoint/no-launch-claim posture.
+- Future checkpoints are now documented as `CR-1` Runtime Foundation Candidate, `CR-2` Product UX Runtime Candidate, `CR-3` Integration and Governance Runtime Candidate, and `CR-4` Commercial Readiness Review Candidate.
+
+## Tests and gates
+
+- `pnpm commercial:readiness-plan`
+- `pnpm production:readiness`
+- `pnpm acceptance:readiness`
+- `pnpm lint`
+- `pnpm typecheck`
+- `git diff --check`
+
+## Open risks
+
+- `WO-060` is planning/control rails only. It does not implement runtime persistence switchover, API hardening, auth fail-closed behavior, primary UI API conversion, Figma-ready screen inventory, standalone workflow completion, mode resolver, transcription/EHR/AI/ClinicOS runtime hardening, security/privacy review, operations runbooks, billing boundary completion, beta package, or final commercial-readiness review packet.
+- AURA Note remains not production-launch-ready and not commercially production-ready.
+
+## Active SPEC_GAPs
+
+None active as of the post-`WO-060` commercial readiness rebaseline/runtime rails review.
+
+## Deferred production decisions
+
+Deferred decisions remain tracked in `SPEC_GAPS.md`, including commercial readiness implementation and launch approval, production identity, production PHI persistence, production Azure storage/deletion/restore, live transcription, external AI private/BAA pathway, production EHR writeback, ClinicOS live integration, revenue estimate policy, claim/payer strategy, and production launch approval.
+
+## Next recommended batch
+
+Proceed to `WO-061` — Runtime persistence switchover for core workflow. The next checkpoint is CR-1 after `WO-061` through `WO-063`.

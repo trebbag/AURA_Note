@@ -27,8 +27,18 @@ function check(id, description, passed, evidence) {
 }
 
 check('status.wo052-done', 'WO-052 is marked done', repoStatus.work_orders?.['WO-052'] === 'done', repoStatus.work_orders?.['WO-052']);
-check('status.no-active-next-work-order', 'No future work order is active after the continuation rails', repoStatus.next_work_order === null, repoStatus.next_work_order);
-check('status.p11-retained', 'P11 remains the current checkpoint until a new approved tranche exists', repoStatus.current_checkpoint === 'P11', repoStatus.current_checkpoint);
+check(
+  'status.next-work-order-post-p11',
+  'Post-P11 rails either remain parked or point to the approved commercial-readiness active work order',
+  repoStatus.next_work_order === null || repoStatus.next_work_order === 'WO-061',
+  repoStatus.next_work_order
+);
+check(
+  'status.checkpoint-post-p11',
+  'P11 is retained until the approved commercial-readiness rails move the repo to CR-0',
+  repoStatus.current_checkpoint === 'P11' || repoStatus.current_checkpoint === 'CR-0',
+  repoStatus.current_checkpoint
+);
 check('work-order.file', 'WO-052 work-order file exists', exists('work_orders/WO-052_post_p11_continuation_rails.md'), 'work_orders/WO-052_post_p11_continuation_rails.md');
 check('work-order.index', 'Work-order index lists WO-052', workOrderIndex.includes('WO-052') && workOrderIndex.includes('Post-P11 continuation'), 'work_orders/README.md');
 check('plan.section', 'Production plan includes WO-052', plan.includes('## WO-052 ') && plan.includes('post-P11 continuation'), 'docs/PRODUCTION_BUILD_PLAN.md');
@@ -52,7 +62,8 @@ check(
     specGaps.includes('No active gaps as of post-`WO-056` live transcription provider review intake') ||
     specGaps.includes('No active gaps as of post-`WO-057` external AI private/BAA pathway review intake') ||
     specGaps.includes('No active gaps as of post-`WO-058` production EHR writeback credentialing review intake') ||
-    specGaps.includes('No active gaps as of post-`WO-059` ClinicOS live integration review intake'),
+    specGaps.includes('No active gaps as of post-`WO-059` ClinicOS live integration review intake') ||
+    specGaps.includes('No active gaps as of post-`WO-060` commercial readiness rebaseline/runtime rails review'),
   'SPEC_GAPS.md'
 );
 check('runlog.wo052', 'RUN_LOG records WO-052 evidence', runLog.includes('WO-052 post-P11 continuation rails'), 'RUN_LOG.md');

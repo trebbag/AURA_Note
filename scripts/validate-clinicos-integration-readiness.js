@@ -54,8 +54,10 @@ for (const [relativePath, snippet, label] of prohibitedSnippets) {
 }
 
 const status = JSON.parse(read('repo_status.json'));
-const activeOrder = ['WO-046', 'WO-047', 'WO-048', 'WO-049', 'WO-050', 'WO-051', null];
-if (!activeOrder.includes(status.next_work_order) || status.work_orders?.['WO-045'] !== 'done') {
+const nextWorkOrderNumber = Number.parseInt(String(status.next_work_order || '').replace('WO-', ''), 10);
+const hasAdvancedBeyondClinicOsTranche =
+  status.next_work_order === null || (Number.isFinite(nextWorkOrderNumber) && nextWorkOrderNumber >= 46);
+if (!hasAdvancedBeyondClinicOsTranche || status.work_orders?.['WO-045'] !== 'done') {
   throw new Error('repo_status.json must mark WO-045 done and next_work_order advanced to WO-046 or later before ClinicOS readiness passes');
 }
 

@@ -121,12 +121,14 @@ check('doc.runbook-exists', 'WO-049 launch ops runbook exists', exists('docs/run
         contents.includes('No active gaps as of post-`WO-056` live transcription provider review intake') ||
         contents.includes('No active gaps as of post-`WO-057` external AI private/BAA pathway review intake') ||
         contents.includes('No active gaps as of post-`WO-058` production EHR writeback credentialing review intake') ||
-        contents.includes('No active gaps as of post-`WO-059` ClinicOS live integration review intake');
+        contents.includes('No active gaps as of post-`WO-059` ClinicOS live integration review intake') ||
+        contents.includes('No active gaps as of post-`WO-060` commercial readiness rebaseline/runtime rails review');
   check(id, `${id} includes ${snippet} or later P10 no-active-gap evidence`, passed, snippet);
 });
 
 check('status.wo049-done', 'WO-049 is marked done', status.work_orders?.['WO-049'] === 'done', status.work_orders?.['WO-049']);
-check('status.wo050-or-later', 'Repo status is advanced to WO-050 or later while WO-049 remains done', (status.next_work_order === null || ['WO-050', 'WO-051'].includes(status.next_work_order)) && ['todo', 'done'].includes(status.work_orders?.['WO-050']), {
+const launchOpsNextWorkOrderNumber = Number.parseInt(String(status.next_work_order || '').replace('WO-', ''), 10);
+check('status.wo050-or-later', 'Repo status is advanced to WO-050 or later while WO-049 remains done', (status.next_work_order === null || (Number.isFinite(launchOpsNextWorkOrderNumber) && launchOpsNextWorkOrderNumber >= 50)) && ['todo', 'done'].includes(status.work_orders?.['WO-050']), {
   next_work_order: status.next_work_order,
   WO050: status.work_orders?.['WO-050']
 });

@@ -56,7 +56,7 @@ check(
   status.work_orders?.['WO-048'] && status.work_orders?.['WO-048'] !== 'planned',
   { nextWorkOrder: status.next_work_order, wo048: status.work_orders?.['WO-048'] }
 );
-check('status.p10-or-later', 'repo_status current checkpoint advances to P10 or later after P9 completion', ['P10', 'P11'].includes(status.current_checkpoint), status.current_checkpoint);
+check('status.p10-or-later', 'repo_status current checkpoint advances to P10 or later after P9 completion', ['P10', 'P11', 'CR-0'].includes(status.current_checkpoint), status.current_checkpoint);
 check('checkpoint.p9', 'P9 checkpoint report records WO-044 through WO-047', ['P9', 'WO-044', 'WO-045', 'WO-046', 'WO-047'].every((snippet) => checkpointReport.includes(snippet)), 'CHECKPOINT_REPORT.md');
 check('runlog.wo047', 'RUN_LOG records WO-047 evidence', runLog.includes('WO-047 security privacy compliance and threat-model remediation'), 'RUN_LOG.md');
 check(
@@ -74,7 +74,8 @@ check(
     specGaps.includes('No active gaps as of post-`WO-056` live transcription provider review intake') ||
     specGaps.includes('No active gaps as of post-`WO-057` external AI private/BAA pathway review intake') ||
     specGaps.includes('No active gaps as of post-`WO-058` production EHR writeback credentialing review intake') ||
-    specGaps.includes('No active gaps as of post-`WO-059` ClinicOS live integration review intake'),
+    specGaps.includes('No active gaps as of post-`WO-059` ClinicOS live integration review intake') ||
+    specGaps.includes('No active gaps as of post-`WO-060` commercial readiness rebaseline/runtime rails review'),
   'SPEC_GAPS.md'
 );
 check('work-order.next-file', 'WO-048 work-order file exists for the next tranche', fs.readdirSync(path.join(root, 'work_orders')).some((file) => file.startsWith('WO-048_')), 'work_orders');

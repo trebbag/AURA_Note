@@ -68,6 +68,22 @@ Codex must complete work orders sequentially unless a checkpoint or blocker stop
 - `WO-057` — External AI private/BAA pathway review intake.
 - `WO-058` — Production EHR writeback credentialing review intake.
 - `WO-059` — ClinicOS live integration review intake.
+- `WO-060` — Commercial readiness rebaseline and runtime implementation rails.
+- `WO-061` — Runtime persistence switchover for core workflow.
+- `WO-062` — API runtime hardening and request boundary.
+- `WO-063` — Identity runtime boundary and production fail-closed auth scaffold.
+- `WO-064` — Primary UI runtime API conversion.
+- `WO-065` — Figma-ready basic UI scaffold and screen inventory.
+- `WO-066` — Standalone workflow completion.
+- `WO-067` — ModeResolver and adapter runtime wiring.
+- `WO-068` — Transcription runtime boundary and provider-ready interface.
+- `WO-069` — Athenahealth sandbox and vendor-neutral EHR runtime boundary.
+- `WO-070` — AI governance runtime boundary and evaluation harness expansion.
+- `WO-071` — Security, privacy, compliance, and threat-model runtime hardening.
+- `WO-072` — Observability, SRE, support, and incident operations.
+- `WO-073` — Billing, revenue integrity, claim-decision, and compliance boundary completion.
+- `WO-074` — Beta pilot commercial readiness package.
+- `WO-075` — Commercial readiness decision gate.
 
 ## Work order rules
 
@@ -151,4 +167,14 @@ Post-CP4 productionization candidates are documented in `docs/POST_CP4_PRODUCTIO
 
 `WO-058` is complete as a post-P11 planning/control intake tranche for production EHR writeback credentialing review. It promotes the sixth candidate future tranche family into a fully specified decision package and readiness verifier without enabling production EHR credentials, raw EHR payload storage, live writeback delivery, writeback without human approval, autonomous finalization, runtime EHR behavior, claim submission, or launch behavior.
 
-`WO-059` is complete as a post-P11 planning/control intake tranche for ClinicOS live integration review. It promotes the seventh candidate future tranche family into a fully specified decision package and readiness verifier without enabling live ClinicOS credentials, live event-bus delivery, delegated identity bypass, raw ClinicOS payload storage, live synchronization, runtime ClinicOS behavior, autonomous finalization, claim submission, or launch behavior. No further numbered implementation work order is active until the founder approves a specific new tranche.
+`WO-059` is complete as a post-P11 planning/control intake tranche for ClinicOS live integration review. It promotes the seventh candidate future tranche family into a fully specified decision package and readiness verifier without enabling live ClinicOS credentials, live event-bus delivery, delegated identity bypass, raw ClinicOS payload storage, live synchronization, runtime ClinicOS behavior, autonomous finalization, claim submission, or launch behavior.
+
+`WO-060` is complete as the CR-0 commercial-readiness rails reopening. It replaces the post-P11 `next_work_order: null` state with a new runtime implementation sequence, adds CR-0 through CR-4 checkpoints, records remaining synthetic-to-runtime gaps, and keeps production launch approval false. It does not enable live vendors, live PHI, production credentials, autonomous clinical/coding/billing behavior, claim submission, or production launch.
+
+`WO-061` through `WO-063` form the CR-1 runtime foundation candidate. They move core runtime services behind repository ports with local Prisma/PostgreSQL as the production-shaped local runtime path, harden the Nest API request boundary, and make synthetic header identity fail closed outside explicit local/demo modes.
+
+`WO-064` through `WO-066` form the CR-2 product UX runtime candidate. They convert primary production-intended routes to typed API-backed state, complete the basic UI/Figma handoff inventory, and prove a standalone daily workflow without ClinicOS dependency.
+
+`WO-067` through `WO-070` form the CR-3 integration and governance runtime candidate. They enforce standalone/ClinicOS mode adapter boundaries and prepare transcription, EHR, AI, and ClinicOS integration paths as production-shaped but safely disabled or mock/sandbox-governed runtime paths.
+
+`WO-071` through `WO-075` form the CR-4 commercial readiness review candidate. They harden security/privacy/compliance, observability/support, billing/revenue integrity, beta-pilot packaging, and the final commercial-readiness decision packet without granting production launch approval.

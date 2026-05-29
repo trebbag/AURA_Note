@@ -29,8 +29,8 @@ function check(id, description, passed, evidence) {
 }
 
 check('status.wo054-done', 'WO-054 is marked done', status.work_orders?.['WO-054'] === 'done', status.work_orders?.['WO-054']);
-check('status.next-null', 'No next work order is active after WO-054 planning/control completion', status.next_work_order === null, status.next_work_order);
-check('status.p11-retained', 'P11 remains current checkpoint', status.current_checkpoint === 'P11', status.current_checkpoint);
+check('status.next-null', 'No next work order is active after WO-054 planning/control completion', status.next_work_order === null || status.next_work_order === 'WO-061', status.next_work_order);
+check('status.p11-retained', 'P11 remains current checkpoint', status.current_checkpoint === 'P11' || status.current_checkpoint === 'CR-0', status.current_checkpoint);
 check('work-order.file', 'WO-054 work-order file exists', exists('work_orders/WO-054_production_phi_persistence_database_ops_review_intake.md'), 'work_orders/WO-054_production_phi_persistence_database_ops_review_intake.md');
 check('work-order.index', 'Work-order index records WO-054 completion', workOrderIndex.includes('WO-054') && workOrderIndex.includes('PHI persistence'), 'work_orders/README.md');
 check('plan.wo054', 'Production build plan includes WO-054', plan.includes('## WO-054 ') && plan.includes('Production PHI Persistence'), 'docs/PRODUCTION_BUILD_PLAN.md');
@@ -75,7 +75,8 @@ check(
     specGaps.includes('No active gaps as of post-`WO-056` live transcription provider review intake') ||
     specGaps.includes('No active gaps as of post-`WO-057` external AI private/BAA pathway review intake') ||
     specGaps.includes('No active gaps as of post-`WO-058` production EHR writeback credentialing review intake') ||
-    specGaps.includes('No active gaps as of post-`WO-059` ClinicOS live integration review intake'),
+    specGaps.includes('No active gaps as of post-`WO-059` ClinicOS live integration review intake') ||
+    specGaps.includes('No active gaps as of post-`WO-060` commercial readiness rebaseline/runtime rails review'),
   'SPEC_GAPS.md'
 );
 check('spec-gaps.deferred-db', 'SPEC_GAPS preserves production PHI persistence/database operations as deferred before live use', specGaps.includes('Production PHI persistence and database operations') && specGaps.includes('future approved database implementation work order'), 'SPEC_GAPS.md');
