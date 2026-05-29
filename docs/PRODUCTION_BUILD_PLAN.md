@@ -748,6 +748,8 @@ This gate does not authorize live EHR writeback, live AI, live transcription, pr
 - **Stop conditions:** production PHI storage, database credential, migration approval, or unresolved schema policy ambiguity is required.
 - **Risks and deferred decisions:** production database host, migration operations, backup/restore, and live PHI approval remain deferred.
 
+**Implementation status as of `WO-061`:** complete as the first CR-1 runtime foundation tranche. `ScheduleService` now receives explicit repository and object-storage adapters instead of directly constructing hidden in-memory state, the in-memory schedule adapter is labeled as demo/test only, `AURA_NOTE_RUNTIME_PERSISTENCE=prisma_local` is resolved through a fail-closed local PostgreSQL configuration check, and `createPrismaCoreWorkflowRuntimeRepository` composes the existing Prisma schedule, visit-capture, review-panel, finalization/output, and runtime-metadata adapters. `pnpm runtime:persistence-readiness` starts synthetic local PostgreSQL, applies generated Prisma schema SQL, persists a full synthetic core workflow, and reloads it through fresh repository instances with cross-tenant and cross-site denial evidence. This remains synthetic/local evidence, not production PHI database approval; broad request-boundary hardening remains `WO-062`.
+
 ## WO-062 — API Runtime Hardening And Request Boundary
 
 - **Objective:** Harden the NestJS runtime boundary with validation, errors, logging, redaction, security headers, request limits, and consistent response behavior.

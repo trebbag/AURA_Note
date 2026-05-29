@@ -127,7 +127,8 @@ check('work-order.wo051-file', 'WO-051 work-order file exists for the next gate'
         contents.includes('No active gaps as of post-`WO-057` external AI private/BAA pathway review intake') ||
         contents.includes('No active gaps as of post-`WO-058` production EHR writeback credentialing review intake') ||
         contents.includes('No active gaps as of post-`WO-059` ClinicOS live integration review intake') ||
-        contents.includes('No active gaps as of post-`WO-060` commercial readiness rebaseline/runtime rails review');
+        contents.includes('No active gaps as of post-`WO-060` commercial readiness rebaseline/runtime rails review') ||
+        contents.includes('No active gaps as of post-`WO-061` runtime persistence switchover review');
   check(id, `${id} includes ${snippet} or later P11 no-active-gap evidence`, passed, snippet);
 });
 

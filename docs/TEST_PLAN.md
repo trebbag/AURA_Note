@@ -265,6 +265,19 @@ This test evidence remains synthetic/local. It does not test live EHR writeback,
 
 This closes P7 as synthetic/local durable runtime evidence. It does not test production observability sinks, production database role approval, production PHI storage, live EHR/ClinicOS synchronization, live AI, live transcription, production analytics, charge finalization, or claim submission.
 
+## WO-061 runtime persistence switchover evidence
+
+`WO-061` adds the CR-1 core workflow runtime persistence gate:
+
+- `pnpm --filter @aura-note/api test` covers explicit runtime persistence mode selection and verifies the existing schedule service still works through injected repository/storage ports;
+- `pnpm runtime:persistence-readiness` generates Prisma Client, starts the synthetic PostgreSQL service through the integration test, applies generated schema SQL, and executes `apps/api/src/schedule/runtime-persistence.repository.integration.test.ts`;
+- positive coverage persists a synthetic appointment/note, visit session, transcript segment, Visit Selections, finalization session, draft claim preview, export artifact metadata, writeback metadata, audit event, and domain event through the composed Prisma core workflow repository;
+- restart/service-recreation coverage reloads the persisted synthetic workflow through fresh repository instances;
+- negative coverage proves same semantic workflow IDs can exist across tenants while wrong-tenant and wrong-site repository/API-harness reads return no DTO data;
+- `pnpm commercial:readiness-plan` now checks the `runtime:persistence-readiness` script, CI wiring, and run-log evidence when `WO-061` is marked done.
+
+This remains synthetic/local runtime evidence. It does not test production database credentials, production PHI persistence, production migration operations, live vendors, live AI, live EHR/ClinicOS synchronization, charge finalization, medical-necessity determination, claim submission, or production launch.
+
 ## Post-CP4 local database orchestration readiness
 
 `WO-028` adds static local database orchestration checks:

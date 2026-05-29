@@ -69,6 +69,47 @@ export interface ScheduleStateRepository {
   saveIdempotencyKey(idempotencyKey: string, appointmentId: string): void;
 }
 
+export const SCHEDULE_STATE_REPOSITORY = Symbol('SCHEDULE_STATE_REPOSITORY');
+
+export type ScheduleRuntimePersistenceMode = 'demo_memory' | 'test_memory' | 'prisma_local';
+
+export interface ScheduleRuntimePersistencePlan {
+  mode: ScheduleRuntimePersistenceMode;
+  localPrismaRuntimeEnabled: boolean;
+  inMemoryAdapterExplicit: boolean;
+  productionPhiStorageApproved: false;
+  reason: string;
+}
+
+export function resolveScheduleRuntimePersistencePlan(
+  env: Record<string, string | undefined> = process.env
+): ScheduleRuntimePersistencePlan {
+  const mode = normalizeRuntimePersistenceMode(env.AURA_NOTE_RUNTIME_PERSISTENCE);
+
+  if (mode === 'prisma_local') {
+    const databaseUrl = env.DATABASE_URL ?? '';
+    if (!isLocalPostgresUrl(databaseUrl)) {
+      throw new Error('AURA_NOTE_RUNTIME_PERSISTENCE=prisma_local requires a local PostgreSQL DATABASE_URL');
+    }
+
+    return {
+      mode,
+      localPrismaRuntimeEnabled: true,
+      inMemoryAdapterExplicit: false,
+      productionPhiStorageApproved: false,
+      reason: 'Local Prisma/PostgreSQL runtime adapter selected for synthetic persistence evidence.'
+    };
+  }
+
+  return {
+    mode,
+    localPrismaRuntimeEnabled: false,
+    inMemoryAdapterExplicit: true,
+    productionPhiStorageApproved: false,
+    reason: mode === 'test_memory' ? 'Explicit in-memory test adapter selected.' : 'Explicit in-memory demo adapter selected.'
+  };
+}
+
 export class InMemoryScheduleStateRepository implements ScheduleStateRepository {
   private readonly appointments = new Map<string, StoredAppointment>();
   private readonly noteByAppointment = new Map<string, string>();
@@ -151,6 +192,37 @@ export class InMemoryScheduleStateRepository implements ScheduleStateRepository 
 
 export function createInMemoryScheduleStateRepository(): ScheduleStateRepository {
   return new InMemoryScheduleStateRepository();
+}
+
+export function createDemoScheduleStateRepository(): ScheduleStateRepository {
+  return createInMemoryScheduleStateRepository();
+}
+
+export function createTestScheduleStateRepository(): ScheduleStateRepository {
+  return createInMemoryScheduleStateRepository();
+}
+
+function normalizeRuntimePersistenceMode(mode: string | undefined): ScheduleRuntimePersistenceMode {
+  if (!mode || mode === 'demo_memory') {
+    return 'demo_memory';
+  }
+  if (mode === 'test_memory' || mode === 'prisma_local') {
+    return mode;
+  }
+  throw new Error(`Unsupported AURA_NOTE_RUNTIME_PERSISTENCE mode: ${mode}`);
+}
+
+function isLocalPostgresUrl(databaseUrl: string): boolean {
+  if (!databaseUrl.startsWith('postgresql://') && !databaseUrl.startsWith('postgres://')) {
+    return false;
+  }
+
+  try {
+    const parsed = new URL(databaseUrl);
+    return ['localhost', '127.0.0.1', '::1'].includes(parsed.hostname);
+  } catch {
+    return false;
+  }
 }
 
 export function createStandalonePatientScheduleScaffold(

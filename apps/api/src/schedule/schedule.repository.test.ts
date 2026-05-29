@@ -3,6 +3,7 @@ import { describe, it } from 'node:test';
 import { createAppointmentLifecycle } from '@aura-note/domain';
 import {
   createInMemoryScheduleStateRepository,
+  resolveScheduleRuntimePersistencePlan,
   type StoredAppointment
 } from './schedule.repository';
 
@@ -127,6 +128,39 @@ describe('InMemoryScheduleStateRepository', () => {
     assert.throws(
       () => repository.saveIdempotencyKey('idem-repository-001', 'appt-repository-002'),
       /idempotency key remapping/
+    );
+  });
+
+  it('resolves explicit runtime persistence modes without production PHI approval', () => {
+    assert.deepEqual(resolveScheduleRuntimePersistencePlan({ AURA_NOTE_RUNTIME_PERSISTENCE: 'test_memory' }), {
+      mode: 'test_memory',
+      localPrismaRuntimeEnabled: false,
+      inMemoryAdapterExplicit: true,
+      productionPhiStorageApproved: false,
+      reason: 'Explicit in-memory test adapter selected.'
+    });
+
+    assert.deepEqual(
+      resolveScheduleRuntimePersistencePlan({
+        AURA_NOTE_RUNTIME_PERSISTENCE: 'prisma_local',
+        DATABASE_URL: 'postgresql://aura_note:aura_note@localhost:5432/aura_note_dev'
+      }),
+      {
+        mode: 'prisma_local',
+        localPrismaRuntimeEnabled: true,
+        inMemoryAdapterExplicit: false,
+        productionPhiStorageApproved: false,
+        reason: 'Local Prisma/PostgreSQL runtime adapter selected for synthetic persistence evidence.'
+      }
+    );
+
+    assert.throws(
+      () =>
+        resolveScheduleRuntimePersistencePlan({
+          AURA_NOTE_RUNTIME_PERSISTENCE: 'prisma_local',
+          DATABASE_URL: 'postgresql://aura_note:secret@prod.example.com:5432/aura_note'
+        }),
+      /local PostgreSQL/
     );
   });
 });

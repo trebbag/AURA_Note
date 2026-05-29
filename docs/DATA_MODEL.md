@@ -582,6 +582,17 @@ The runtime implementation for `WO-039` is synthetic/local. It reuses the P7 dur
 
 P7 is now complete as local synthetic durable runtime evidence. This is not production database approval and does not enable production PHI storage, live vendor synchronization, live AI, medical-necessity determination, charge finalization, or claim submission.
 
+## WO-061 core workflow runtime persistence status
+
+`WO-061` does not add new Prisma tables because `WO-034` through `WO-037` already introduced the core tenant-owned workflow and metadata models. It changes how those model slices are exercised:
+
+- `ScheduleService` now uses explicit repository and storage ports rather than hidden process-local construction;
+- `ScheduleRuntimePersistencePlan` distinguishes `demo_memory`, `test_memory`, and local-only `prisma_local` posture without authorizing production PHI persistence;
+- `CoreWorkflowRuntimeSnapshot` composes `Appointment`/`Note`, `VisitSession`, `RecordingAsset`, `Transcript`, `TranscriptSegment`, `Suggestion`, `VisitSelection`, `ComplianceIssue`, `HistoryGapQuestion`, `Task`, `FinalizationRun`, wizard decisions, enhanced note/patient summary versions, billing attestation, draft claim preview, export artifact, writeback job, audit event, and domain event persistence evidence;
+- the local PostgreSQL integration test proves the composed model survives fresh repository instances and denies cross-tenant/cross-site access.
+
+This remains synthetic/local data-model evidence. It is not a production database approval, does not enable real PHI storage, and does not change the prohibition on autonomous diagnosis, code finalization, charge finalization, medical-necessity determination, or claim submission.
+
 ## WO-041 production identity/config model status
 
 `WO-041` represents the production platform control plane as typed DTOs and synthetic runtime records:
