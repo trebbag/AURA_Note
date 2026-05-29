@@ -4,6 +4,7 @@ import { Test } from '@nestjs/testing';
 import type { INestApplication } from '@nestjs/common';
 import request from 'supertest';
 import { AppModule } from '../app.module';
+import { configureAuraApi } from '../runtime/api-runtime';
 
 const billingStatements = [
   'I have reviewed and accepted the final note.',
@@ -22,7 +23,7 @@ describe('schedule appointment lifecycle API', () => {
     }).compile();
 
     app = moduleRef.createNestApplication();
-    app.setGlobalPrefix('api/v1');
+    configureAuraApi(app);
     await app.init();
   });
 

@@ -323,3 +323,15 @@ Current `WO-050` evidence is docs/script/UI metadata only; these event stubs do 
 `WO-051` records P11 as a claim/payer decision gate and does not add live claim submission APIs. Future event stubs that must exist before any later approved live submission work are `claim.strategy_decision_recorded.v1`, `claim.submission_approval_recorded.v1`, `claim.submission_requested.v1`, `claim.submission_blocked.v1`, `payer.acknowledgement_received.v1`, `payer.denial_recorded.v1`, `claim.void_or_reversal_requested.v1`, and `payment.reconciliation_recorded.v1`.
 
 Current behavior remains draft claim preview and billing review only. Event payloads must be audit-safe metadata and must not include raw payer payloads, production payer credentials, patient financial conclusions, medical-necessity determinations, autonomous charge finalization, denial automation, payment posting, or claim submission evidence. Any future live event implementation requires a new approved work order.
+
+## WO-062 API runtime boundary contracts
+
+`WO-062` adds no new clinical state-changing endpoints. It standardizes the request-boundary contract for implemented public endpoints:
+
+- `ApiErrorEnvelope` is the standard PHI-safe error shape for validation, permission-denied, blocked, read-only, oversized, throttled, and failed states.
+- Every request receives `x-aura-request-id` and `x-aura-trace-id` response headers, and those values are made available to controllers, logs, audit metadata, and tests.
+- Missing local/demo role context fails closed outside `/health`; invalid role or purpose-of-use headers fail before controller execution.
+- Ordinary endpoint request bodies reject forbidden PHI-like fields/text, raw transcript/raw audio fields, and production credential fields before service mutation.
+- Governed AI Gateway invocation bodies remain under the AI Gateway PHI policy so `ai.phi_rejected.v1`, `ai.context_scrubbed.v1`, `ai.request_prepared.v1`, and `ai.response_recorded.v1` evidence stays source-linked and human-review gated.
+
+The runtime boundary records local redacted structured log evidence only. It does not add a durable `api.request_denied.v1` event yet; durable denied-request event persistence is deferred until the observability/audit runtime work explicitly promotes request-boundary logs into tenant-owned audit/event storage.

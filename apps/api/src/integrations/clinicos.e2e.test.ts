@@ -4,6 +4,7 @@ import { Test } from '@nestjs/testing';
 import type { INestApplication } from '@nestjs/common';
 import request from 'supertest';
 import { AppModule } from '../app.module';
+import { configureAuraApi } from '../runtime/api-runtime';
 
 describe('ClinicOS integration API e2e', () => {
   let app: INestApplication;
@@ -14,7 +15,7 @@ describe('ClinicOS integration API e2e', () => {
     }).compile();
 
     app = moduleRef.createNestApplication();
-    app.setGlobalPrefix('api/v1');
+    configureAuraApi(app);
     await app.init();
   });
 
@@ -75,7 +76,8 @@ describe('ClinicOS integration API e2e', () => {
       })
       .expect(403);
 
-    assert.match(denied.body.message, /role cannot record ClinicOS mappings/);
+    assert.match(denied.body.error.message, /role cannot record ClinicOS mappings/);
+    assert.equal(denied.body.error.category, 'permission_denied');
 
     const response = await request(app.getHttpServer())
       .post('/api/v1/integrations/clinicos/mappings')

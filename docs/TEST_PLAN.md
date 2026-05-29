@@ -278,6 +278,18 @@ This closes P7 as synthetic/local durable runtime evidence. It does not test pro
 
 This remains synthetic/local runtime evidence. It does not test production database credentials, production PHI persistence, production migration operations, live vendors, live AI, live EHR/ClinicOS synchronization, charge finalization, medical-necessity determination, claim submission, or production launch.
 
+## WO-062 API runtime hardening evidence
+
+`WO-062` adds the CR-1 API runtime request-boundary gate:
+
+- `pnpm --filter @aura-note/api test:runtime-hardening` executes `apps/api/src/runtime/runtime-boundary.e2e.test.ts`;
+- runtime-boundary e2e coverage verifies request/trace correlation headers, security headers, missing-role fail-closed behavior, invalid-role rejection, cross-tenant denial, invalid JSON body shape rejection, forbidden PHI-like payload rejection, oversized body rejection, PHI-safe error envelopes, and redacted structured runtime logs;
+- `pnpm --filter @aura-note/api test:e2e` now boots every API e2e suite through shared `configureAuraApi` wiring instead of ad hoc `setGlobalPrefix` setup;
+- AI Gateway e2e coverage verifies governed mock invocation still owns explicit PHI reject/redact behavior and preserves `ai.phi_rejected.v1` evidence while the general API boundary rejects PHI-like payloads for ordinary endpoint bodies;
+- `pnpm api:runtime-hardening-readiness` runs the runtime-boundary e2e test and validates the boundary files, package scripts, CI wiring, contracts/OpenAPI error envelope, docs, status, run-log, and no-launch/no-live-vendor posture.
+
+This remains synthetic/local API request-boundary evidence. It does not test production WAF/CDN configuration, live SIEM/APM delivery, production identity providers, production PHI storage, live vendor credentials, charge finalization, medical-necessity determination, claim submission, or production launch.
+
 ## Post-CP4 local database orchestration readiness
 
 `WO-028` adds static local database orchestration checks:

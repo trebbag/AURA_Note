@@ -123,7 +123,8 @@ check('doc.runbook-exists', 'WO-049 launch ops runbook exists', exists('docs/run
         contents.includes('No active gaps as of post-`WO-058` production EHR writeback credentialing review intake') ||
         contents.includes('No active gaps as of post-`WO-059` ClinicOS live integration review intake') ||
         contents.includes('No active gaps as of post-`WO-060` commercial readiness rebaseline/runtime rails review') ||
-        contents.includes('No active gaps as of post-`WO-061` runtime persistence switchover review');
+        contents.includes('No active gaps as of post-`WO-061` runtime persistence switchover review') ||
+        contents.includes('No active gaps as of post-`WO-062` API runtime hardening and request-boundary review');
   check(id, `${id} includes ${snippet} or later P10 no-active-gap evidence`, passed, snippet);
 });
 

@@ -2,7 +2,7 @@
   "project": "AURA Note v1",
   "mode": "production_build_in_progress",
   "current_checkpoint": "CR-1",
-  "next_work_order": "WO-062",
+  "next_work_order": "WO-063",
   "work_orders": {
     "WO-000": "done",
     "WO-001": "done",
@@ -66,8 +66,8 @@
     "WO-059": "done",
     "WO-060": "done",
     "WO-061": "done",
-    "WO-062": "todo",
-    "WO-063": "planned",
+    "WO-062": "done",
+    "WO-063": "todo",
     "WO-064": "planned",
     "WO-065": "planned",
     "WO-066": "planned",
@@ -81,7 +81,7 @@
     "WO-074": "planned",
     "WO-075": "planned"
   },
-  "last_updated_by": "Codex WO-061 runtime persistence switchover",
-  "last_updated_at": "2026-05-29T19:47:02Z",
-  "notes": "WO-061 completed the first CR-1 runtime foundation tranche. ScheduleService now uses explicit repository/storage ports, in-memory usage is labeled as demo/test adapter behavior, pnpm runtime:persistence-readiness verifies local Prisma/PostgreSQL core workflow persistence through fresh repository instances with cross-tenant and cross-site denial evidence, and WO-062 is the next active API runtime hardening work order. This is not a production launch claim: no live PHI, production credential, live EHR, live ClinicOS, live transcription vendor, live external AI, live Azure PHI storage, claim submission, autonomous clinical/coding/billing behavior, medical-necessity determination, charge finalization, or production launch behavior is authorized or introduced."
+  "last_updated_by": "Codex WO-062 API runtime hardening",
+  "last_updated_at": "2026-05-29T20:34:23Z",
+  "notes": "WO-062 completed the second CR-1 runtime foundation tranche. The Nest API now uses shared configureAuraApi bootstrap wiring, global request validation, PHI-safe ApiErrorEnvelope responses, request/trace correlation headers, security headers, body-size guardrails, local rate-limit headers, and redacted structured runtime logs. pnpm api:runtime-hardening-readiness verifies the boundary files, contracts, tests, docs, CI wiring, status, run-log evidence, and no-launch posture. WO-063 is the next active identity runtime boundary work order. This is not a production launch claim: no live PHI, production credential, live WAF/CDN, live SIEM/APM, live EHR, live ClinicOS, live transcription vendor, live external AI, live Azure PHI storage, claim submission, autonomous clinical/coding/billing behavior, medical-necessity determination, charge finalization, or production launch behavior is authorized or introduced."
 }

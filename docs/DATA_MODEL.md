@@ -593,6 +593,17 @@ P7 is now complete as local synthetic durable runtime evidence. This is not prod
 
 This remains synthetic/local data-model evidence. It is not a production database approval, does not enable real PHI storage, and does not change the prohibition on autonomous diagnosis, code finalization, charge finalization, medical-necessity determination, or claim submission.
 
+## WO-062 API runtime boundary model status
+
+`WO-062` does not add Prisma tables or persisted columns. It adds typed runtime boundary evidence around existing API payloads and contracts:
+
+- `ApiErrorEnvelope` and `ApiErrorDetail` are seeded in `packages/contracts` and OpenAPI for validation, permission-denied, blocked, read-only, oversized, throttled, and failed states;
+- request/trace IDs are normalized at the Nest boundary and are available to controllers, logs, audit metadata, and e2e assertions;
+- redacted structured runtime logs stay in local in-memory evidence for tests and do not become PHI-bearing durable log records;
+- request-boundary validation rejects PHI-like fields/text for ordinary endpoint bodies and rejects raw transcript, raw audio, production connection string, private key, secret, or password fields before service mutation.
+
+This is synthetic/local API contract evidence only. It does not authorize production log retention, production PHI persistence, SIEM/APM delivery, production auth tokens, live vendor payloads, or launch behavior.
+
 ## WO-041 production identity/config model status
 
 `WO-041` represents the production platform control plane as typed DTOs and synthetic runtime records:

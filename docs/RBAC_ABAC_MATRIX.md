@@ -81,6 +81,10 @@ AURA Note must enforce role permissions and relationship-to-patient constraints.
 
 `WO-047` reconciles this matrix against implemented P8/P8.5/P9 checks. No new P9 blocker was found in the synthetic/local scope. The review keeps AURA Note RBAC/ABAC authoritative in standalone and ClinicOS-integrated modes: ClinicOS service context cannot bypass tenant/site scope, purpose-of-use, support metadata-only limits, transcript/final-note/billing/coaching restrictions, AI governance role checks, or human-review gates. Future P10 UX/accessibility hardening must preserve visible denied, read-only, disabled, and failed states for these sensitive paths.
 
+## WO-062 API request-boundary access
+
+`WO-062` hardens the runtime request boundary before controller execution. Public API requests outside `/health` must include an explicit local/demo role context; missing role context returns a PHI-safe permission-denied envelope, and invalid role or purpose-of-use headers return a PHI-safe validation envelope. Cross-tenant and cross-site denial remains enforced by existing service/security helpers before DTO exposure. ClinicOS-integrated mode still cannot bypass AURA Note role, tenant, site, purpose, support metadata-only, billing-review, transcript, final-note, coaching, AI governance, writeback, storage, or claim-boundary permissions.
+
 ## WO-049 launch operations access
 
 `WO-049` documents `launch_operations:view` and future `launch_operations:record` posture for operational rehearsal evidence. Authorized admin, compliance/privacy lead, clinic manager, support, and service-account contexts may view metadata-only launch operations evidence. Recording production launch approval remains out of scope. Support users remain metadata-only and cannot access transcripts, final notes, billing details, coaching outputs, raw prompts, raw EHR/ClinicOS payloads, audit export payloads, production credentials, or PHI-bearing logs. ClinicOS-integrated mode cannot bypass AURA Note launch operations permissions.

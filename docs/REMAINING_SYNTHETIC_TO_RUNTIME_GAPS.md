@@ -8,8 +8,8 @@ This register keeps the post-P11 implementation gap visible. It is not a defect 
 
 | Gap | Current posture after `WO-061` | Closing work order |
 | --- | --- | --- |
-| Main API runtime in-memory state | `WO-061` moved the schedule/notes runtime behind explicit repository and storage ports and added local Prisma core-workflow service-recreation evidence. Remaining request-boundary hardening and runtime auth fail-closed work continue in CR-1. | `WO-061` complete; continue `WO-062`/`WO-063` |
-| API request boundary | Runtime needs consistent validation, error envelopes, redacted logging, request IDs, request limits, CORS/security headers, and throttle scaffolding. | `WO-062` |
+| Main API runtime in-memory state | `WO-061` moved the schedule/notes runtime behind explicit repository and storage ports and added local Prisma core-workflow service-recreation evidence. `WO-062` added the shared API request boundary. Remaining runtime auth fail-closed work continues in CR-1. | `WO-061` and `WO-062` complete; continue `WO-063` |
+| API request boundary | `WO-062` added consistent request validation, PHI-safe error envelopes, redacted structured runtime logs, request/trace IDs, body-size guardrails, local CORS/security headers, and local throttle scaffolding. Production gateway/WAF/SIEM policies remain deferred. | `WO-062` complete; production gateway policies deferred |
 | Production auth fail-closed behavior | Synthetic headers must be impossible to trust outside explicit local/demo mode. | `WO-063` |
 | Primary route local fixtures | Many production-intended routes still use local fixture arrays or local React state as authoritative screen data. | `WO-064` |
 | Figma product map | Figma needs complete screen, component, state, role, workflow, data/API, copy, and interaction inventory. | `WO-065` |

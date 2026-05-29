@@ -154,6 +154,32 @@ export interface ApiEnvelope<TData> {
   warnings?: ApiWarning[];
 }
 
+export type ApiErrorCategory =
+  | 'validation'
+  | 'permission_denied'
+  | 'blocked'
+  | 'read_only'
+  | 'request_too_large'
+  | 'throttled'
+  | 'failed';
+
+export interface ApiErrorDetail {
+  code: string;
+  message: string;
+  statusCode: number;
+  category: ApiErrorCategory;
+  requestId: string;
+  traceId: string;
+  redacted: true;
+  details?: unknown;
+}
+
+export interface ApiErrorEnvelope {
+  error: ApiErrorDetail;
+  meta: ApiMeta;
+  warnings?: ApiWarning[];
+}
+
 export type IdentityProviderModeDto = 'local_synthetic' | 'clinicos_delegate' | 'oidc_delegate' | 'saml_delegate';
 export type PurposeOfUseDto = 'treatment' | 'payment' | 'operations' | 'support' | 'audit' | 'coaching' | 'break_glass';
 

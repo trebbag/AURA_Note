@@ -30,7 +30,7 @@ check('status.wo052-done', 'WO-052 is marked done', repoStatus.work_orders?.['WO
 check(
   'status.next-work-order-post-p11',
   'Post-P11 rails either remain parked or point to the approved commercial-readiness active work order',
-  repoStatus.next_work_order === null || repoStatus.next_work_order === 'WO-061' || repoStatus.next_work_order === 'WO-062',
+  repoStatus.next_work_order === null || repoStatus.next_work_order === 'WO-061' || repoStatus.next_work_order === 'WO-062' || repoStatus.next_work_order === 'WO-063',
   repoStatus.next_work_order
 );
 check(
@@ -64,7 +64,8 @@ check(
     specGaps.includes('No active gaps as of post-`WO-058` production EHR writeback credentialing review intake') ||
     specGaps.includes('No active gaps as of post-`WO-059` ClinicOS live integration review intake') ||
     specGaps.includes('No active gaps as of post-`WO-060` commercial readiness rebaseline/runtime rails review') ||
-    specGaps.includes('No active gaps as of post-`WO-061` runtime persistence switchover review'),
+    specGaps.includes('No active gaps as of post-`WO-061` runtime persistence switchover review') ||
+    specGaps.includes('No active gaps as of post-`WO-062` API runtime hardening and request-boundary review'),
   'SPEC_GAPS.md'
 );
 check('runlog.wo052', 'RUN_LOG records WO-052 evidence', runLog.includes('WO-052 post-P11 continuation rails'), 'RUN_LOG.md');
