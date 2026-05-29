@@ -781,7 +781,7 @@ This gate does not authorize live EHR writeback, live AI, live transcription, pr
 - **In scope:** identity adapter interface; local demo adapter; local synthetic test adapter; production OIDC, SAML, and ClinicOS delegated placeholders; fail-closed auth guard; purpose-of-use, session expiration, disabled-user, and access-review scaffolding; frontend client labeling of test/demo headers.
 - **Out of scope:** live OIDC/SAML, production IdP credentials, real user directory sync, live ClinicOS delegated identity, runtime break-glass access.
 - **UX requirements:** frontend routes expose permission-denied, expired-session, disabled-user, missing-purpose, delegated-denied, and read-only/degraded states where relevant.
-- **Backend/API requirements:** synthetic role/tenant/user headers are allowed only for `AURA_NOTE_AUTH_MODE=local_synthetic` or `AURA_NOTE_DEMO_MODE=true`; production/preview fail closed unless an auth adapter is configured.
+- **Backend/API requirements:** synthetic role/tenant/user headers are allowed only for `AURA_NOTE_AUTH_MODE=local_demo` or `AURA_NOTE_AUTH_MODE=local_synthetic`; production/preview fail closed unless an auth adapter is configured.
 - **Data model/persistence requirements:** add or reuse session/user/access-review metadata only if required by the scaffold; no production identity store is enabled.
 - **Event/audit requirements:** identity accepted, denied, expired, disabled-user, missing-purpose, and delegated-denied events are audit-safe.
 - **RBAC/ABAC requirements:** arbitrary client headers cannot spoof role, tenant, site, user, purpose, or relationship outside local/demo mode.
@@ -793,6 +793,8 @@ This gate does not authorize live EHR writeback, live AI, live transcription, pr
 - **Definition of Done:** production auth cannot trust client-provided role headers by accident; local tests continue through explicit local synthetic mode.
 - **Stop conditions:** live IdP or delegated identity policy is required.
 - **Risks and deferred decisions:** production IdP, MFA, account recovery, access review, and break-glass remain deferred.
+
+**Implementation status as of `WO-063`:** complete as the third CR-1 runtime foundation tranche. The Nest API now has a shared identity runtime boundary after request correlation and before controller execution. `AURA_NOTE_AUTH_MODE=local_demo` labels and normalizes local browser/demo synthetic headers; `AURA_NOTE_AUTH_MODE=local_synthetic` requires explicit role, user, session, and purpose headers. Preview OIDC, production OIDC, production SAML, and ClinicOS delegated auth postures reject synthetic headers and fail closed while live adapters remain unconfigured. Runtime denial states cover missing identity context, invalid identity context, disabled user, expired session, wrong tenant/site, wrong purpose, delegated-not-configured, and synthetic-headers-forbidden. `pnpm identity:runtime-boundary-readiness` verifies the runtime files, tests, contracts/OpenAPI DTO seed, docs/status/run-log/checkpoint evidence, CI wiring, and no-live-credential/no-launch posture. This remains synthetic/local identity evidence only; live OIDC/SAML/ClinicOS delegation, raw token validation, MFA, SCIM, account recovery, break-glass, production PHI access, claim submission, and production launch remain disabled.
 
 ## WO-064 — Primary UI Runtime API Conversion
 

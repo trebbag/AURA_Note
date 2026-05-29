@@ -290,6 +290,20 @@ This remains synthetic/local runtime evidence. It does not test production datab
 
 This remains synthetic/local API request-boundary evidence. It does not test production WAF/CDN configuration, live SIEM/APM delivery, production identity providers, production PHI storage, live vendor credentials, charge finalization, medical-necessity determination, claim submission, or production launch.
 
+## WO-063 identity runtime boundary evidence
+
+`WO-063` adds the CR-1 production fail-closed identity runtime gate:
+
+- `pnpm --filter @aura-note/api test:identity-runtime` executes `apps/api/src/runtime/identity-runtime.e2e.test.ts`;
+- e2e coverage verifies `AURA_NOTE_AUTH_MODE=local_demo` accepts and labels local demo synthetic headers;
+- strict `AURA_NOTE_AUTH_MODE=local_synthetic` requires role, user, session, and purpose headers before controller execution;
+- preview/production OIDC, production SAML, and ClinicOS delegated modes reject synthetic headers and fail closed while live adapters are unconfigured;
+- disabled-user, expired-session, wrong-tenant/site, wrong-purpose, missing-identity, invalid-identity, and delegated-not-configured states return PHI-safe error envelopes;
+- support users remain denied for audit export/PHI-sensitive paths, and billing transcript access remains limited to triggered billing-review context;
+- `pnpm identity:runtime-boundary-readiness` runs the identity e2e suite and validates runtime files, package scripts, CI wiring, contracts/OpenAPI DTO seeds, docs, status, run-log, checkpoint evidence, and no-live-credential/no-launch posture.
+
+This remains synthetic/local identity-boundary evidence. It does not test live OIDC, live SAML, live ClinicOS delegated identity, MFA, SCIM, account recovery, production token validation, break-glass access, production PHI access, claim submission, or production launch.
+
 ## Post-CP4 local database orchestration readiness
 
 `WO-028` adds static local database orchestration checks:

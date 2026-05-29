@@ -4,9 +4,9 @@ This file tracks missing, conflicting, unsafe, or deliberately deferred product 
 
 ## Active gaps
 
-No active gaps as of post-`WO-062` API runtime hardening and request-boundary review on 2026-05-29.
+No active gaps as of post-`WO-063` identity runtime boundary review on 2026-05-29.
 
-The repo remains not production-ready. The items below are deferred production decisions rather than active blockers for the current post-`WO-062` synthetic/local API runtime boundary scope.
+The repo remains not production-ready. The items below are deferred production decisions rather than active blockers for the current post-`WO-063` synthetic/local identity runtime boundary scope.
 
 ## Deferred production decisions
 
@@ -17,7 +17,7 @@ These items must stay visible and must be resolved before the related production
 - **Related future work:** `WO-061` through `WO-075`; any later founder-approved production launch work order
 - **Status:** deferred
 - **Decision needed before production launch:** founder/clinical/compliance/security/legal approval, beta scope, production environment, credential source, operational owner, incident response, access review, backup/restore, vendor contracts, PHI governance, live integrations, support ownership, launch go/no-go, and rollback authority.
-- **Safe current posture:** `WO-060` reopened implementation rails, `WO-061` added synthetic/local runtime persistence evidence, and `WO-062` hardened the API request boundary with validation, request correlation, PHI-safe error envelopes, redacted logs, security headers, body-size guardrails, and local throttle scaffolding. `WO-063` is the next active identity runtime boundary work order, but production launch remains false and no live vendor, credential, PHI, claim, autonomous clinical/coding/billing, or production deployment behavior is enabled.
+- **Safe current posture:** `WO-060` reopened implementation rails, `WO-061` added synthetic/local runtime persistence evidence, `WO-062` hardened the API request boundary with validation, request correlation, PHI-safe error envelopes, redacted logs, security headers, body-size guardrails, and local throttle scaffolding, and `WO-063` added the explicit `AURA_NOTE_AUTH_MODE` identity runtime boundary with local demo/strict synthetic modes and production/preview/delegated fail-closed behavior. Production launch remains false and no live vendor, credential, PHI, claim, autonomous clinical/coding/billing, or production deployment behavior is enabled.
 
 ### Deferred Decision — Production SIEM/APM vendor and operational monitoring posture
 

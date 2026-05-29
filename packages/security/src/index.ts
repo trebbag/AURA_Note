@@ -294,7 +294,7 @@ const forbiddenPhiTextPatterns = [
   /\bMRN[:\s-]*[A-Za-z0-9-]{3,}\b/i
 ] as const;
 
-const roles: Role[] = [
+export const AURA_NOTE_ROLES: Role[] = [
   'clinician',
   'ma',
   'billing_staff',
@@ -306,9 +306,18 @@ const roles: Role[] = [
   'service_account'
 ];
 
-const roleSet = new Set<Role>(roles);
+const roleSet = new Set<Role>(AURA_NOTE_ROLES);
 
-const identityProviderModes = new Set<IdentityProviderMode>(['local_synthetic', 'clinicos_delegate', 'oidc_delegate', 'saml_delegate']);
+export const AURA_NOTE_IDENTITY_PROVIDER_MODES: IdentityProviderMode[] = [
+  'local_synthetic',
+  'clinicos_delegate',
+  'oidc_delegate',
+  'saml_delegate'
+];
+
+const identityProviderModes = new Set<IdentityProviderMode>(AURA_NOTE_IDENTITY_PROVIDER_MODES);
+
+export const AURA_NOTE_PURPOSES_OF_USE: PurposeOfUse[] = ['treatment', 'payment', 'operations', 'support', 'audit', 'coaching', 'break_glass'];
 
 function headerValue(value: string | string[] | undefined): string | undefined {
   return Array.isArray(value) ? value[0] : value;
@@ -331,7 +340,7 @@ function parseIdentityProviderMode(value: string | undefined): IdentityProviderM
     : 'local_synthetic';
 }
 
-function defaultPurposeOfUse(role: Role): PurposeOfUse {
+export function defaultPurposeOfUseForRole(role: Role): PurposeOfUse {
   if (role === 'billing_staff') return 'payment';
   if (role === 'support') return 'support';
   if (role === 'compliance_privacy_lead') return 'audit';
@@ -362,7 +371,7 @@ export function createSyntheticLocalSession(headers: HeaderMap, options: Synthet
   const purposeOfUse =
     (headerValue(headers['x-aura-purpose-of-use']) as PurposeOfUse | undefined) ??
     options.defaultPurposeOfUse ??
-    defaultPurposeOfUse(role);
+    defaultPurposeOfUseForRole(role);
   const linkedToPatient =
     parseBooleanHeader(headerValue(headers['x-aura-linked-patient'])) ??
     resolveRoleBooleanDefault(options.defaultLinkedToPatient, role, role !== 'billing_staff');

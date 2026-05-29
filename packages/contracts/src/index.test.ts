@@ -30,6 +30,7 @@ import {
   type ExportActionResponseDto,
   type FinalizationSessionDto,
   type FinalizedNoteDetailDto,
+  type IdentityRuntimeBoundaryDecisionDto,
   type LocalAuthSessionDto,
   type BillingReviewQueueItemDto,
   type EstimateConfigurationDto,
@@ -98,6 +99,23 @@ describe('identity and tenant scope contracts', () => {
     assert.equal(session.localSyntheticOnly, true);
     assert.equal(session.identityProviderMode, 'local_synthetic');
     assert.equal(denied.allowed, false);
+  });
+
+  it('represents identity runtime boundary decisions without returning raw tokens or live credentials', () => {
+    const decision: IdentityRuntimeBoundaryDecisionDto = {
+      allowed: false,
+      authMode: 'production_oidc',
+      identitySource: 'oidc_adapter',
+      failureReason: 'delegated_identity_not_configured',
+      liveCredentialPresent: false,
+      delegatedIdentityConfigured: false,
+      rawTokenReturned: false,
+      syntheticHeadersAccepted: false
+    };
+
+    assert.equal(decision.allowed, false);
+    assert.equal(decision.liveCredentialPresent, false);
+    assert.equal(decision.rawTokenReturned, false);
   });
 });
 

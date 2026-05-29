@@ -335,3 +335,16 @@ Current behavior remains draft claim preview and billing review only. Event payl
 - Governed AI Gateway invocation bodies remain under the AI Gateway PHI policy so `ai.phi_rejected.v1`, `ai.context_scrubbed.v1`, `ai.request_prepared.v1`, and `ai.response_recorded.v1` evidence stays source-linked and human-review gated.
 
 The runtime boundary records local redacted structured log evidence only. It does not add a durable `api.request_denied.v1` event yet; durable denied-request event persistence is deferred until the observability/audit runtime work explicitly promotes request-boundary logs into tenant-owned audit/event storage.
+
+## WO-063 identity runtime boundary contracts
+
+`WO-063` adds no new clinical state-changing endpoints. It standardizes the auth-posture boundary for implemented public endpoints:
+
+- Non-health API requests require explicit `AURA_NOTE_AUTH_MODE`.
+- `local_demo` and `local_synthetic` are the only modes that accept synthetic AURA Note identity headers, and response headers label the posture through `x-aura-auth-mode` and `x-aura-identity-source`.
+- Strict local synthetic mode requires role, user, session, and purpose headers before controller execution.
+- `preview_oidc`, `production_oidc`, `production_saml`, and `clinicos_delegate` deny before controller execution while live adapters are unconfigured.
+- `IdentityRuntimeBoundaryDecision` is seeded in contracts/OpenAPI as audit-safe metadata. It includes auth mode, identity source, failure reason, `liveCredentialPresent=false`, `delegatedIdentityConfigured=false`, `rawTokenReturned=false`, and synthetic-header acceptance state.
+- Identity accepted/denied decisions are recorded in local redacted structured runtime logs as `identity.accepted` and `identity.denied`.
+
+The identity boundary does not emit durable tenant-owned identity events yet. Durable `identity.runtime_accepted.v1` or `identity.runtime_denied.v1` event persistence is deferred until a later observability/audit runtime work order promotes request-boundary logs into durable audit/event storage. No raw tokens, secrets, SAML assertions, OIDC claims payloads, production IdP responses, ClinicOS delegated identity payloads, or PHI are logged or returned.

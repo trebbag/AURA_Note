@@ -8,9 +8,9 @@ This register keeps the post-P11 implementation gap visible. It is not a defect 
 
 | Gap | Current posture after `WO-061` | Closing work order |
 | --- | --- | --- |
-| Main API runtime in-memory state | `WO-061` moved the schedule/notes runtime behind explicit repository and storage ports and added local Prisma core-workflow service-recreation evidence. `WO-062` added the shared API request boundary. Remaining runtime auth fail-closed work continues in CR-1. | `WO-061` and `WO-062` complete; continue `WO-063` |
+| Main API runtime in-memory state | `WO-061` moved the schedule/notes runtime behind explicit repository and storage ports and added local Prisma core-workflow service-recreation evidence. `WO-062` added the shared API request boundary. `WO-063` added the identity runtime boundary and explicit local/demo auth posture. Remaining product UI runtime conversion continues in CR-2. | `WO-061` through `WO-063` complete; continue `WO-064` after CR-1 checkpoint review |
 | API request boundary | `WO-062` added consistent request validation, PHI-safe error envelopes, redacted structured runtime logs, request/trace IDs, body-size guardrails, local CORS/security headers, and local throttle scaffolding. Production gateway/WAF/SIEM policies remain deferred. | `WO-062` complete; production gateway policies deferred |
-| Production auth fail-closed behavior | Synthetic headers must be impossible to trust outside explicit local/demo mode. | `WO-063` |
+| Production auth fail-closed behavior | `WO-063` makes synthetic headers impossible to trust outside explicit `AURA_NOTE_AUTH_MODE=local_demo` or `AURA_NOTE_AUTH_MODE=local_synthetic`; preview/production/delegated modes fail closed while adapters are unconfigured. Live OIDC/SAML/ClinicOS delegated identity remains deferred. | `WO-063` complete; live identity deferred |
 | Primary route local fixtures | Many production-intended routes still use local fixture arrays or local React state as authoritative screen data. | `WO-064` |
 | Figma product map | Figma needs complete screen, component, state, role, workflow, data/API, copy, and interaction inventory. | `WO-065` |
 | Standalone daily-use workflow | Standalone mode needs one coherent end-to-end workflow that does not require ClinicOS. | `WO-066` |

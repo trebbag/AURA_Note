@@ -8,6 +8,7 @@ import {
   auraSecurityHeadersMiddleware,
   AURA_MAX_BODY_BYTES
 } from './request-boundary.middleware';
+import { auraIdentityRuntimeMiddleware } from './identity-runtime.middleware';
 
 export function configureAuraApi(app: INestApplication): void {
   app.setGlobalPrefix('api/v1');
@@ -23,6 +24,10 @@ export function configureAuraApi(app: INestApplication): void {
       'x-aura-user-id',
       'x-aura-session-id',
       'x-aura-purpose-of-use',
+      'x-aura-identity-provider',
+      'x-aura-session-expires-at',
+      'x-aura-user-status',
+      'x-aura-user-disabled',
       'x-request-id',
       'x-trace-id',
       'x-aura-request-id',
@@ -32,6 +37,8 @@ export function configureAuraApi(app: INestApplication): void {
       'x-aura-request-id',
       'x-aura-trace-id',
       'x-content-type-options',
+      'x-aura-auth-mode',
+      'x-aura-identity-source',
       'x-ratelimit-limit',
       'x-ratelimit-remaining'
     ],
@@ -41,6 +48,7 @@ export function configureAuraApi(app: INestApplication): void {
   app.use(auraRequestLimitMiddleware(AURA_MAX_BODY_BYTES));
   app.use(auraSecurityHeadersMiddleware);
   app.use(auraCorrelationMiddleware);
+  app.use(auraIdentityRuntimeMiddleware);
   app.use(auraRequestLoggingMiddleware);
   app.useGlobalPipes(new AuraRequestValidationPipe());
   app.useGlobalFilters(new AuraExceptionFilter());

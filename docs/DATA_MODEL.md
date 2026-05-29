@@ -680,3 +680,9 @@ These records remain synthetic/local API metadata mapped to audit/domain-event e
 ## WO-051 claim/payer decision data status
 
 `WO-051` adds no claim-submission persistence, clearinghouse payload tables, payer response tables, denial automation tables, payment posting tables, production payer credentials, or PHI-bearing payer records. The decision package documents future data needs only: claim submission request/approval, clearinghouse routing, payer acknowledgement/rejection, denial worklists, void/reversal, payment reconciliation, and audit evidence. Current draft claim preview persistence continues enforcing `submittedClaim=false`.
+
+## WO-063 identity runtime boundary data status
+
+`WO-063` adds no production identity store, token persistence, SAML assertion persistence, OIDC claims persistence, ClinicOS delegated identity payload persistence, or PHI-bearing identity record. It adds `IdentityRuntimeBoundaryDecisionDto` and OpenAPI schema metadata for audit-safe boundary decisions: allowed state, `AURA_NOTE_AUTH_MODE`, identity source, failure reason, `liveCredentialPresent=false`, `delegatedIdentityConfigured=false`, `rawTokenReturned=false`, and synthetic-header acceptance state.
+
+Identity accepted/denied evidence remains local structured runtime log metadata. Durable tenant-owned identity-boundary event persistence remains deferred until a later audit/runtime work order promotes request-boundary decisions into persisted audit/event records.

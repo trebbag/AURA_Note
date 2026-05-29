@@ -29,8 +29,8 @@ function check(id, description, passed, evidence) {
 }
 
 check('status.wo056-done', 'WO-056 is marked done', status.work_orders?.['WO-056'] === 'done', status.work_orders?.['WO-056']);
-check('status.next-production-build-safe', 'Post-P11 planning/control remains valid while commercial-readiness runtime work is active', status.next_work_order === null || status.next_work_order === 'WO-061' || status.next_work_order === 'WO-062' || status.next_work_order === 'WO-063', status.next_work_order);
-check('status.checkpoint-production-build-safe', 'P11 or commercial-readiness checkpoint remains current', status.current_checkpoint === 'P11' || status.current_checkpoint === 'CR-0' || status.current_checkpoint === 'CR-1', status.current_checkpoint);
+check('status.next-production-build-safe', 'Post-P11 planning/control remains valid while commercial-readiness runtime work is active', status.next_work_order === null || status.next_work_order === 'WO-061' || status.next_work_order === 'WO-062' || status.next_work_order === 'WO-063' || status.next_work_order === 'WO-064', status.next_work_order);
+check('status.checkpoint-production-build-safe', 'P11 or commercial-readiness checkpoint remains current', status.current_checkpoint === 'P11' || status.current_checkpoint === 'CR-0' || status.current_checkpoint === 'CR-1' || status.current_checkpoint === 'CR-2', status.current_checkpoint);
 check('work-order.file', 'WO-056 work-order file exists', exists('work_orders/WO-056_live_transcription_provider_review_intake.md'), 'work_orders/WO-056_live_transcription_provider_review_intake.md');
 check('work-order.index', 'Work-order index records WO-056 completion', workOrderIndex.includes('WO-056') && workOrderIndex.includes('transcription provider'), 'work_orders/README.md');
 check('plan.wo056', 'Production build plan includes WO-056', plan.includes('## WO-056 ') && plan.includes('Live Transcription Provider'), 'docs/PRODUCTION_BUILD_PLAN.md');
@@ -85,7 +85,8 @@ check(
     specGaps.includes('No active gaps as of post-`WO-059` ClinicOS live integration review intake') ||
     specGaps.includes('No active gaps as of post-`WO-060` commercial readiness rebaseline/runtime rails review') ||
     specGaps.includes('No active gaps as of post-`WO-061` runtime persistence switchover review') ||
-    specGaps.includes('No active gaps as of post-`WO-062` API runtime hardening and request-boundary review'),
+    specGaps.includes('No active gaps as of post-`WO-062` API runtime hardening and request-boundary review') ||
+    specGaps.includes('No active gaps as of post-`WO-063` identity runtime boundary review'),
   'SPEC_GAPS.md'
 );
 check('spec-gaps.deferred-transcription', 'SPEC_GAPS preserves live transcription provider as deferred before live use', specGaps.includes('Live transcription provider and PHI-bearing audio transport') && specGaps.includes('future approved transcription implementation work order'), 'SPEC_GAPS.md');
