@@ -157,6 +157,12 @@ In ClinicOS-integrated mode, future AI request/governance metadata may map to M2
 
 `WO-047` reviews standalone and ClinicOS-integrated mode threats. No new P9 blocker was found in the current synthetic/local scope. Standalone remains fully usable through local governance and disabled live-vendor boundaries. ClinicOS-integrated mode remains adapter-bound and metadata-only for live integration; missing or degraded ClinicOS delegation, event-bus delivery, module mapping, or AI governance delegation fails closed and cannot override AURA Note RBAC/ABAC, PHI, audit, or human-review gates.
 
+## WO-062 API runtime-boundary mode behavior
+
+In standalone mode, the API request boundary accepts explicit local/demo role context and synthetic tenant/site headers only through the shared Nest runtime bootstrap. Missing role context, invalid role context, invalid purpose-of-use context, cross-tenant context, and PHI-like ordinary payloads fail closed before DTO data is exposed.
+
+In ClinicOS-integrated mode, the same request boundary applies before any adapter delegation. ClinicOS headers, service-account metadata, future event-bus context, or delegated identity claims cannot bypass AURA Note validation, tenant/site scope, PHI boundary, RBAC/ABAC checks, error redaction, request correlation, or audit-safe logging.
+
 ## WO-049 launch operations readiness mode behavior
 
 In standalone mode, `WO-049` launch operations readiness proves AURA Note can rehearse build, smoke, rollback, disabled-vendor, performance, incident, access-review, and support-escalation controls without ClinicOS.

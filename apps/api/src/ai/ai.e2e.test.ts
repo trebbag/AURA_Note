@@ -4,6 +4,7 @@ import { Test } from '@nestjs/testing';
 import type { INestApplication } from '@nestjs/common';
 import request from 'supertest';
 import { AppModule } from '../app.module';
+import { configureAuraApi } from '../runtime/api-runtime';
 
 describe('AI gateway API e2e', () => {
   let app: INestApplication;
@@ -14,7 +15,7 @@ describe('AI gateway API e2e', () => {
     }).compile();
 
     app = moduleRef.createNestApplication();
-    app.setGlobalPrefix('api/v1');
+    configureAuraApi(app);
     await app.init();
   });
 
@@ -46,9 +47,11 @@ describe('AI gateway API e2e', () => {
       })
       .expect(400);
 
-    const rejectionPayload = rejected.body.message?.code ? rejected.body.message : rejected.body.response ?? rejected.body;
+    const rejectionPayload = rejected.body.error.details ?? rejected.body.error;
     assert.equal(rejectionPayload.code, 'AI_PHI_BOUNDARY_REJECTED');
     assert.equal(rejectionPayload.domainEvents[0].eventType, 'ai.phi_rejected.v1');
+    assert.equal(rejected.body.error.category, 'validation');
+    assert.equal(rejected.body.error.redacted, true);
   });
 
   it('allows explicit PHI redaction for mock invocation and keeps output draft-only', async () => {

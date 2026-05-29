@@ -169,7 +169,8 @@ check(
     specGaps.includes('No active gaps as of post-`WO-058` production EHR writeback credentialing review intake') ||
     specGaps.includes('No active gaps as of post-`WO-059` ClinicOS live integration review intake') ||
     specGaps.includes('No active gaps as of post-`WO-060` commercial readiness rebaseline/runtime rails review') ||
-    specGaps.includes('No active gaps as of post-`WO-061` runtime persistence switchover review'),
+    specGaps.includes('No active gaps as of post-`WO-061` runtime persistence switchover review') ||
+    specGaps.includes('No active gaps as of post-`WO-062` API runtime hardening and request-boundary review'),
   'SPEC_GAPS.md active gaps section'
 );
 

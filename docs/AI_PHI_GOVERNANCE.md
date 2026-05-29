@@ -125,6 +125,12 @@ External AI remains disabled until a later private/BAA model pathway, tenant pol
 
 The review does not approve live AI use. Private/BAA model selection, live credential source, tenant policy, evaluation thresholds, monitoring, drift response, incident response, and founder/security/privacy approval remain deferred production decisions.
 
+## WO-062 API request-boundary PHI posture
+
+`WO-062` adds a general API request-boundary PHI guard for implemented public endpoints. Ordinary request bodies that include forbidden PHI-like keys/text, raw transcript fields, raw audio fields, or production credential fields are rejected before service mutation and returned as PHI-safe `ApiErrorEnvelope` responses. Runtime logs use structured redaction and do not retain raw request bodies.
+
+AI Gateway invocation payloads remain governed by the AI Gateway policy instead of the generic boundary so explicit `reject` and `redact` behavior continues to generate AI-specific audit/domain evidence such as `ai.phi_rejected.v1`, `ai.context_scrubbed.v1`, and `ai.request_prepared.v1`. `WO-062` does not enable external AI, live model calls, raw-PHI-to-external-AI transfer, production prompt stores, or support access to AI PHI content.
+
 ## WO-049 launch operations PHI boundary
 
 `WO-049` launch operations readiness uses synthetic operational metadata only. Performance baselines, rollback rehearsal, reliability drills, incident response, access review, and support escalation evidence must not include PHI, secrets, production URLs, raw transcripts, final notes, billing details, coaching output, raw prompts, raw EHR/ClinicOS payloads, storage object payloads, medical-necessity determinations, charge finalization, or claim submission evidence.

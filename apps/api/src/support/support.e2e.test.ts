@@ -3,12 +3,13 @@ import { describe, it } from 'node:test';
 import { Test } from '@nestjs/testing';
 import request from 'supertest';
 import { AppModule } from '../app.module';
+import { configureAuraApi } from '../runtime/api-runtime';
 
 describe('Support hardening API e2e', () => {
   it('exposes permissioned support status and denies ordinary clinician access', async () => {
     const moduleRef = await Test.createTestingModule({ imports: [AppModule] }).compile();
     const app = moduleRef.createNestApplication();
-    app.setGlobalPrefix('api/v1');
+    configureAuraApi(app);
     await app.init();
 
     try {
@@ -70,7 +71,7 @@ describe('Support hardening API e2e', () => {
   it('creates redacted audit export metadata for compliance users only', async () => {
     const moduleRef = await Test.createTestingModule({ imports: [AppModule] }).compile();
     const app = moduleRef.createNestApplication();
-    app.setGlobalPrefix('api/v1');
+    configureAuraApi(app);
     await app.init();
 
     try {

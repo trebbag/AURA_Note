@@ -29,6 +29,7 @@
     "persistence:finalization-output-adapter": "node scripts/verify-finalization-output-adapter.js",
     "persistence:durable-runtime-readiness": "node scripts/verify-durable-runtime-readiness.js",
     "runtime:persistence-readiness": "node scripts/verify-runtime-persistence-readiness.js",
+    "api:runtime-hardening-readiness": "pnpm --filter @aura-note/api test:runtime-hardening && node scripts/validate-api-runtime-hardening-readiness.js",
     "persistence:phi-db-review-readiness": "node scripts/validate-phi-db-review-readiness.js",
     "standalone:patient-schedule-readiness": "node scripts/validate-standalone-patient-schedule-readiness.js",
     "standalone:operations-readiness": "node scripts/validate-standalone-operations-readiness.js",

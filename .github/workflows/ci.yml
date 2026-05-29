@@ -41,6 +41,7 @@ jobs:
       - run: pnpm persistence:finalization-output-adapter
       - run: pnpm persistence:durable-runtime-readiness
       - run: pnpm runtime:persistence-readiness
+      - run: pnpm api:runtime-hardening-readiness
       - run: pnpm persistence:phi-db-review-readiness
       - run: pnpm standalone:patient-schedule-readiness
       - run: pnpm standalone:operations-readiness

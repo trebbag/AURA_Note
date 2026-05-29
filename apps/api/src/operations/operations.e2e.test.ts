@@ -4,6 +4,7 @@ import { Test } from '@nestjs/testing';
 import type { INestApplication } from '@nestjs/common';
 import request from 'supertest';
 import { AppModule } from '../app.module';
+import { configureAuraApi } from '../runtime/api-runtime';
 
 describe('standalone operations API', () => {
   let app: INestApplication;
@@ -14,7 +15,7 @@ describe('standalone operations API', () => {
     }).compile();
 
     app = moduleRef.createNestApplication();
-    app.setGlobalPrefix('api/v1');
+    configureAuraApi(app);
     await app.init();
   });
 

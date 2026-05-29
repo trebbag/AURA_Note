@@ -771,6 +771,8 @@ This gate does not authorize live EHR writeback, live AI, live transcription, pr
 - **Stop conditions:** security policy ambiguity about accepted payload size, CORS origins, or production auth requirements blocks safe defaulting.
 - **Risks and deferred decisions:** production WAF, gateway, and observability vendor policies remain deferred.
 
+**Implementation status as of `WO-062`:** complete as the second CR-1 runtime foundation tranche. The Nest API now uses shared `configureAuraApi` bootstrap wiring in both `main.ts` and API e2e tests; implemented public endpoints pass through global JSON-object validation, PHI/credential/raw-audio/raw-transcript boundary checks, request/trace correlation headers, security headers, body-size guardrails, local rate-limit headers, PHI-safe standard error envelopes, and redacted in-memory structured runtime logs. Governed AI mock-invocation payloads still pass to the AI Gateway so its explicit reject/redact policy, audit metadata, and `ai.phi_rejected.v1` evidence remain authoritative. `pnpm api:runtime-hardening-readiness` verifies the boundary files, contracts, CI wiring, docs/status/run-log evidence, and negative tests. This remains synthetic/local request-boundary evidence only; production WAF/CDN, live SIEM/APM, production identity, production PHI storage, live vendors, autonomous clinical/coding/billing behavior, claim submission, and production launch remain disabled.
+
 ## WO-063 — Identity Runtime Boundary And Production Fail-Closed Auth Scaffold
 
 - **Objective:** Prevent synthetic header identity from becoming accidental production auth.
