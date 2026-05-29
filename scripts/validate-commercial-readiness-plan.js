@@ -160,7 +160,8 @@ check(
   'SPEC_GAPS reflects the post-WO-060 or later no-active-gap state',
   specGaps.includes('No active gaps as of post-`WO-060` commercial readiness rebaseline/runtime rails review') ||
     specGaps.includes('No active gaps as of post-`WO-061` runtime persistence switchover review') ||
-    specGaps.includes('No active gaps as of post-`WO-062` API runtime hardening and request-boundary review'),
+    specGaps.includes('No active gaps as of post-`WO-062` API runtime hardening and request-boundary review') ||
+    specGaps.includes('No active gaps as of post-`WO-063` identity runtime boundary review'),
   'SPEC_GAPS.md'
 );
 

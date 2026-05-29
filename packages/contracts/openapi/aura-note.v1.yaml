@@ -1519,6 +1519,38 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/ApiWarning'
+    IdentityRuntimeBoundaryDecision:
+      type: object
+      required:
+        - allowed
+        - authMode
+        - identitySource
+        - liveCredentialPresent
+        - delegatedIdentityConfigured
+        - rawTokenReturned
+        - syntheticHeadersAccepted
+      description: WO-063 production fail-closed identity runtime boundary decision metadata. This schema is audit-safe and never contains raw tokens, SAML assertions, OIDC claims payloads, credentials, or PHI.
+      properties:
+        allowed: { type: boolean }
+        authMode: { type: string, enum: [disabled, local_demo, local_synthetic, preview_oidc, production_oidc, production_saml, clinicos_delegate] }
+        identitySource: { type: string, enum: [none, local_demo_headers, local_synthetic_headers, oidc_adapter, saml_adapter, clinicos_delegate_adapter] }
+        failureReason:
+          type: string
+          enum:
+            - auth_mode_missing
+            - auth_mode_invalid
+            - identity_context_missing
+            - invalid_identity_context
+            - synthetic_headers_forbidden
+            - delegated_identity_not_configured
+            - disabled_user
+            - expired_session
+            - wrong_tenant_or_site
+            - wrong_purpose
+        liveCredentialPresent: { type: boolean, enum: [false] }
+        delegatedIdentityConfigured: { type: boolean, enum: [false] }
+        rawTokenReturned: { type: boolean, enum: [false] }
+        syntheticHeadersAccepted: { type: boolean }
     IdentityAdapterStatusView:
       type: object
       required: [adapterId, kind, identityProviderMode, status, configured, liveCredentialPresent, delegatedIdentityAllowed]

@@ -5,18 +5,6 @@ import { appendRuntimeLog, runtimeTimestamp } from './runtime-log';
 export const AURA_MAX_BODY_BYTES = 32 * 1024;
 export const AURA_MAX_BODY_SIZE = '32kb';
 
-const validRoles = new Set([
-  'clinician',
-  'ma',
-  'billing_staff',
-  'admin',
-  'authorized_admin',
-  'clinic_manager',
-  'compliance_privacy_lead',
-  'support',
-  'service_account'
-]);
-const validPurposeOfUse = new Set(['treatment', 'payment', 'operations', 'support', 'audit', 'coaching', 'break_glass']);
 const idPattern = /^[A-Za-z0-9._:-]{3,128}$/;
 const rateBuckets = new Map<string, { windowStartedAt: number; count: number }>();
 const RATE_LIMIT_WINDOW_MS = 60_000;
@@ -93,72 +81,6 @@ export function auraCorrelationMiddleware(request: RuntimeRequest, response: Run
   request.headers['x-aura-trace-id'] = traceId;
   response.setHeader('x-aura-request-id', requestId);
   response.setHeader('x-aura-trace-id', traceId);
-
-  const role = headerValue(request.headers['x-aura-role']);
-  const path = request.originalUrl ?? request.url ?? '';
-  if (role === undefined && !path.includes('/health')) {
-    response.status(HttpStatus.FORBIDDEN).json({
-      error: {
-        code: 'FORBIDDEN',
-        message: 'Missing AURA Note role context.',
-        statusCode: HttpStatus.FORBIDDEN,
-        category: 'permission_denied',
-        requestId,
-        traceId,
-        redacted: true
-      },
-      meta: {
-        requestId,
-        traceId,
-        mode: process.env.APP_MODE === 'clinicos_integrated' ? 'clinicos_integrated' : 'standalone',
-        generatedAt: runtimeTimestamp()
-      }
-    });
-    return;
-  }
-
-  if (role !== undefined && !validRoles.has(role)) {
-    response.status(HttpStatus.BAD_REQUEST).json({
-      error: {
-        code: 'BAD_REQUEST',
-        message: 'Invalid AURA Note role context.',
-        statusCode: HttpStatus.BAD_REQUEST,
-        category: 'validation',
-        requestId,
-        traceId,
-        redacted: true
-      },
-      meta: {
-        requestId,
-        traceId,
-        mode: process.env.APP_MODE === 'clinicos_integrated' ? 'clinicos_integrated' : 'standalone',
-        generatedAt: runtimeTimestamp()
-      }
-    });
-    return;
-  }
-
-  const purposeOfUse = headerValue(request.headers['x-aura-purpose-of-use']);
-  if (purposeOfUse !== undefined && !validPurposeOfUse.has(purposeOfUse)) {
-    response.status(HttpStatus.BAD_REQUEST).json({
-      error: {
-        code: 'BAD_REQUEST',
-        message: 'Invalid AURA Note purpose-of-use context.',
-        statusCode: HttpStatus.BAD_REQUEST,
-        category: 'validation',
-        requestId,
-        traceId,
-        redacted: true
-      },
-      meta: {
-        requestId,
-        traceId,
-        mode: process.env.APP_MODE === 'clinicos_integrated' ? 'clinicos_integrated' : 'standalone',
-        generatedAt: runtimeTimestamp()
-      }
-    });
-    return;
-  }
 
   next();
 }

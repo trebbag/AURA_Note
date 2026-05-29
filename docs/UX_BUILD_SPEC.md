@@ -420,6 +420,8 @@ The route is AI governance-review evidence, not a live AI operations console. It
 
 `WO-062` adds the API error-state contract that frontend routes must consume as they move from documented mocks to typed API-backed runtime state. API-backed screens should map `ApiErrorEnvelope.error.category` values to visible validation, permission-denied, blocked, read-only, oversized/throttled, and failed states without showing stack traces, PHI, secrets, raw transcripts, raw audio, final-note text, billing detail, raw EHR/ClinicOS payloads, or production URLs. Synthetic local React state remains acceptable only for Storybook, fixture/demo routes, or documented mocks until the relevant route is converted.
 
+`WO-063` adds the identity runtime state contract that frontend routes must treat as API-backed auth posture evidence. Local/demo identity must be visibly labeled through API response headers or documented local runtime labels. Screens should map missing identity context, expired-session, disabled-user, delegated-denied, wrong-purpose, permission-denied, and read-only identity outcomes to visible states without implying production SSO, ClinicOS identity delegation, live PHI access, or launch readiness. Synthetic identity headers remain acceptable only in explicit local/demo mode and must not be represented as production authentication.
+
 ## Required accessibility and UX states
 
 Every screen must have empty, loading, ready, saving, blocked, failed, permission-denied, and read-only states.

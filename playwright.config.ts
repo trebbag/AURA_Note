@@ -26,7 +26,7 @@ export default defineConfig({
   ],
   webServer: [
     {
-      command: `PORT=${apiPort} pnpm --filter @aura-note/api exec tsx src/main.ts`,
+      command: `AURA_NOTE_AUTH_MODE=local_demo PORT=${apiPort} pnpm --filter @aura-note/api exec tsx src/main.ts`,
       url: `${apiBaseURL}/health`,
       reuseExistingServer: !process.env.CI,
       timeout: 120_000

@@ -182,6 +182,25 @@ export interface ApiErrorEnvelope {
 
 export type IdentityProviderModeDto = 'local_synthetic' | 'clinicos_delegate' | 'oidc_delegate' | 'saml_delegate';
 export type PurposeOfUseDto = 'treatment' | 'payment' | 'operations' | 'support' | 'audit' | 'coaching' | 'break_glass';
+export type AuraAuthModeDto = 'local_demo' | 'local_synthetic' | 'preview_oidc' | 'production_oidc' | 'production_saml' | 'clinicos_delegate';
+export type IdentityRuntimeSourceDto =
+  | 'local_demo_headers'
+  | 'local_synthetic_headers'
+  | 'oidc_adapter'
+  | 'saml_adapter'
+  | 'clinicos_delegate_adapter'
+  | 'none';
+export type IdentityRuntimeFailureReasonDto =
+  | 'auth_mode_missing'
+  | 'auth_mode_invalid'
+  | 'identity_context_missing'
+  | 'invalid_identity_context'
+  | 'synthetic_headers_forbidden'
+  | 'delegated_identity_not_configured'
+  | 'disabled_user'
+  | 'expired_session'
+  | 'wrong_tenant_or_site'
+  | 'wrong_purpose';
 
 export interface LocalAuthSessionDto {
   tenantId: string;
@@ -201,6 +220,17 @@ export interface LocalAuthSessionDto {
   identityProviderMode: IdentityProviderModeDto;
   purposeOfUse: PurposeOfUseDto;
   localSyntheticOnly: boolean;
+}
+
+export interface IdentityRuntimeBoundaryDecisionDto {
+  allowed: boolean;
+  authMode: AuraAuthModeDto | 'disabled';
+  identitySource: IdentityRuntimeSourceDto;
+  failureReason?: IdentityRuntimeFailureReasonDto;
+  liveCredentialPresent: false;
+  delegatedIdentityConfigured: false;
+  rawTokenReturned: false;
+  syntheticHeadersAccepted: boolean;
 }
 
 export interface TenantScopeDecisionDto {

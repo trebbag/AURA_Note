@@ -21,6 +21,7 @@ const apiRuntime = read('apps/api/src/runtime/api-runtime.ts');
 const validationPipe = read('apps/api/src/runtime/aura-validation.pipe.ts');
 const exceptionFilter = read('apps/api/src/runtime/aura-exception.filter.ts');
 const boundaryMiddleware = read('apps/api/src/runtime/request-boundary.middleware.ts');
+const identityRuntime = read('apps/api/src/runtime/identity-runtime.ts');
 const runtimeTest = read('apps/api/src/runtime/runtime-boundary.e2e.test.ts');
 const openApi = read('packages/contracts/openapi/aura-note.v1.yaml');
 const contracts = read('packages/contracts/src/index.ts');
@@ -56,8 +57,8 @@ check('runtime.security-headers', 'runtime applies security headers', boundaryMi
 check('runtime.correlation', 'runtime applies request and trace correlation headers', boundaryMiddleware.includes('x-aura-request-id') && boundaryMiddleware.includes('x-aura-trace-id'), 'apps/api/src/runtime/request-boundary.middleware.ts');
 check('runtime.body-limit', 'runtime applies body-size guardrails', boundaryMiddleware.includes('AURA_MAX_BODY_BYTES') && runtimeTest.includes('PAYLOAD_TOO_LARGE'), 'apps/api/src/runtime/request-boundary.middleware.ts');
 check('runtime.throttle-scaffold', 'runtime has local throttle/rate-limit scaffold', boundaryMiddleware.includes('RATE_LIMIT_MAX_REQUESTS') && boundaryMiddleware.includes('x-ratelimit-limit'), 'apps/api/src/runtime/request-boundary.middleware.ts');
-check('runtime.missing-role', 'runtime fails closed when role context is missing outside health', boundaryMiddleware.includes('Missing AURA Note role context'), 'apps/api/src/runtime/request-boundary.middleware.ts');
-check('runtime.invalid-context', 'runtime validates role and purpose-of-use headers', boundaryMiddleware.includes('Invalid AURA Note role context') && boundaryMiddleware.includes('Invalid AURA Note purpose-of-use context'), 'apps/api/src/runtime/request-boundary.middleware.ts');
+check('runtime.missing-role', 'runtime fails closed when role context is missing outside health', identityRuntime.includes('IDENTITY_CONTEXT_MISSING'), 'apps/api/src/runtime/identity-runtime.ts');
+check('runtime.invalid-context', 'runtime validates role and purpose-of-use headers through the identity boundary', identityRuntime.includes('Invalid AURA Note role context') && identityRuntime.includes('Invalid AURA Note purpose-of-use context'), 'apps/api/src/runtime/identity-runtime.ts');
 check('validation.phi', 'validation pipe rejects forbidden PHI-like payloads outside governed AI package handling', validationPipe.includes('scanForForbiddenPhiKeys') && validationPipe.includes('isAiGatewayGovernedPayload'), 'apps/api/src/runtime/aura-validation.pipe.ts');
 check('validation.raw-assets', 'validation pipe rejects raw transcript, raw audio, and production credential fields', validationPipe.includes('rawTranscript') && validationPipe.includes('rawAudio') && validationPipe.includes('productionConnectionString'), 'apps/api/src/runtime/aura-validation.pipe.ts');
 check('errors.standard-envelope', 'exception filter emits ApiErrorEnvelope', exceptionFilter.includes('ApiErrorEnvelope') && exceptionFilter.includes('redacted: true'), 'apps/api/src/runtime/aura-exception.filter.ts');
@@ -83,10 +84,16 @@ check('docs.backend', 'Backend spec records WO-062 boundary behavior', backendSp
 check('docs.test-plan', 'Test plan records WO-062 runtime boundary coverage', testPlan.includes('WO-062 API runtime hardening evidence') && testPlan.includes('pnpm api:runtime-hardening-readiness'), 'docs/TEST_PLAN.md');
 check('docs.production-plan', 'Production plan records WO-062 implementation status', productionPlan.includes('Implementation status as of `WO-062`'), 'docs/PRODUCTION_BUILD_PLAN.md');
 check('status.wo062-done', 'repo_status marks WO-062 done', status.work_orders?.['WO-062'] === 'done', status.work_orders?.['WO-062']);
-check('status.next-wo063', 'repo_status advances next work order to WO-063', status.next_work_order === 'WO-063', status.next_work_order);
-check('work-order.readme', 'work-order index records WO-062 completion and WO-063 as next active', workOrderReadme.includes('`WO-062` is complete') && workOrderReadme.includes('`WO-063` is the next active work order'), 'work_orders/README.md');
+check('status.next-wo063-or-later', 'repo_status advances next work order to WO-063 or later', ['WO-063', 'WO-064'].includes(status.next_work_order), status.next_work_order);
+check('work-order.readme', 'work-order index records WO-062 completion and WO-063/CR-1 continuity', workOrderReadme.includes('`WO-062` is complete') && workOrderReadme.includes('`WO-063`'), 'work_orders/README.md');
 check('runlog.wo062', 'RUN_LOG records WO-062 evidence', runLog.includes('WO-062 API runtime hardening and request boundary'), 'RUN_LOG.md');
-check('spec-gaps.wo062', 'SPEC_GAPS records no active WO-062 gaps', gaps.includes('No active gaps as of post-`WO-062` API runtime hardening and request-boundary review'), 'SPEC_GAPS.md');
+check(
+  'spec-gaps.wo062-or-later',
+  'SPEC_GAPS records no active WO-062 or later runtime-boundary gaps',
+  gaps.includes('No active gaps as of post-`WO-062` API runtime hardening and request-boundary review') ||
+    gaps.includes('No active gaps as of post-`WO-063` identity runtime boundary review'),
+  'SPEC_GAPS.md'
+);
 
 const prohibited = [
   ['production launch approved', backendSpec + testPlan + productionPlan],

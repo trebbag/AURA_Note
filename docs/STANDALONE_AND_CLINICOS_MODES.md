@@ -163,6 +163,12 @@ In standalone mode, the API request boundary accepts explicit local/demo role co
 
 In ClinicOS-integrated mode, the same request boundary applies before any adapter delegation. ClinicOS headers, service-account metadata, future event-bus context, or delegated identity claims cannot bypass AURA Note validation, tenant/site scope, PHI boundary, RBAC/ABAC checks, error redaction, request correlation, or audit-safe logging.
 
+## WO-063 identity runtime-boundary mode behavior
+
+In standalone mode, `AURA_NOTE_AUTH_MODE=local_demo` labels and normalizes synthetic identity headers for local browser/demo evidence, and `AURA_NOTE_AUTH_MODE=local_synthetic` requires explicit role, user, session, and purpose headers. Missing identity context, disabled users, expired sessions, wrong tenant/site, wrong purpose, and delegated identity providers fail closed before controller execution. This remains a local synthetic scaffold, not production SSO.
+
+In ClinicOS-integrated mode, `AURA_NOTE_AUTH_MODE=clinicos_delegate` is represented as a disabled adapter posture. It fails closed until a later approved ClinicOS identity contract, credential source, event/audit policy, and tenant/user mapping are implemented. ClinicOS cannot pass synthetic headers to bypass AURA Note RBAC/ABAC, purpose-of-use, tenant/site, transcript, final-note, billing, coaching, AI, writeback, storage, or claim boundaries.
+
 ## WO-049 launch operations readiness mode behavior
 
 In standalone mode, `WO-049` launch operations readiness proves AURA Note can rehearse build, smoke, rollback, disabled-vendor, performance, incident, access-review, and support-escalation controls without ClinicOS.

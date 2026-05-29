@@ -131,6 +131,12 @@ The review does not approve live AI use. Private/BAA model selection, live crede
 
 AI Gateway invocation payloads remain governed by the AI Gateway policy instead of the generic boundary so explicit `reject` and `redact` behavior continues to generate AI-specific audit/domain evidence such as `ai.phi_rejected.v1`, `ai.context_scrubbed.v1`, and `ai.request_prepared.v1`. `WO-062` does not enable external AI, live model calls, raw-PHI-to-external-AI transfer, production prompt stores, or support access to AI PHI content.
 
+## WO-063 identity runtime PHI posture
+
+`WO-063` adds the explicit `AURA_NOTE_AUTH_MODE` identity runtime boundary. Local synthetic/demo identity headers are accepted only in explicit local modes, and preview/production/delegated auth postures fail closed while live adapters are unconfigured. Identity accepted/denied logs contain audit-safe metadata only: auth mode, identity source, failure reason, request ID, trace ID, and `liveCredentialPresent=false`. They do not contain raw tokens, SAML assertions, OIDC claims payloads, ClinicOS delegated identity payloads, credentials, secrets, or PHI.
+
+`WO-063` does not change AI behavior or authorize PHI access. External AI remains disabled, raw PHI remains blocked from external AI, and all AI/coding/billing/coaching/patient-summary/payer-support outputs remain draft/candidate/human-review-required.
+
 ## WO-049 launch operations PHI boundary
 
 `WO-049` launch operations readiness uses synthetic operational metadata only. Performance baselines, rollback rehearsal, reliability drills, incident response, access review, and support escalation evidence must not include PHI, secrets, production URLs, raw transcripts, final notes, billing details, coaching output, raw prompts, raw EHR/ClinicOS payloads, storage object payloads, medical-necessity determinations, charge finalization, or claim submission evidence.

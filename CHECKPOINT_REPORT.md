@@ -966,3 +966,51 @@ Deferred decisions remain tracked in `SPEC_GAPS.md`, including commercial readin
 ## Next recommended batch
 
 Proceed to `WO-061` — Runtime persistence switchover for core workflow. The next checkpoint is CR-1 after `WO-061` through `WO-063`.
+
+---
+
+# CR-1 Runtime Foundation Candidate
+
+## Completed work orders
+
+- `WO-061` — Runtime persistence switchover for core workflow.
+- `WO-062` — API runtime hardening and request boundary.
+- `WO-063` — Identity runtime boundary and production fail-closed auth scaffold.
+
+## Acceptance evidence
+
+- `WO-061` moved `ScheduleService` behind repository/storage ports and added a composed local Prisma core workflow repository for synthetic appointment, visit, review-panel, finalization/output, export, audit, and domain evidence.
+- `WO-061` added `pnpm runtime:persistence-readiness` to prove service-recreation persistence and cross-tenant/cross-site denial against local synthetic PostgreSQL.
+- `WO-062` added shared `configureAuraApi` bootstrap wiring, request/trace correlation, security headers, request body limits, local rate-limit headers, global validation, PHI-safe error envelopes, and redacted runtime logs.
+- `WO-062` added `ApiErrorEnvelope` to contracts/OpenAPI and `pnpm api:runtime-hardening-readiness`.
+- `WO-063` added explicit `AURA_NOTE_AUTH_MODE` handling before controller execution.
+- `WO-063` accepts synthetic identity headers only in `local_demo` or strict `local_synthetic` mode, rejects synthetic headers in preview/production/delegated modes, and fails closed for missing identity, invalid identity, disabled user, expired session, wrong tenant/site, wrong purpose, and delegated-provider states.
+- `WO-063` added response posture labels, audit-safe identity accepted/denied logs, `IdentityRuntimeBoundaryDecision` DTO/OpenAPI seeds, and `pnpm identity:runtime-boundary-readiness`.
+
+## Tests and gates
+
+- `pnpm --filter @aura-note/api typecheck`
+- `pnpm --filter @aura-note/api test:identity-runtime`
+- `pnpm identity:runtime-boundary-readiness`
+- Full local gate passed: `pnpm install --frozen-lockfile`; `pnpm db:client:generate`; `pnpm lint`; `pnpm lint:phi`; `pnpm typecheck`; `pnpm test`; `pnpm test:e2e`; `pnpm test:browser`; `pnpm build`; all persistence/storage/retention/readiness scripts in the current CI-style chain; `pnpm production:readiness`; `pnpm acceptance:readiness`; `node scripts/status.js`; `git diff --check`.
+- During verification, a stale generated `apps/web/.next` type artifact was cleared after the first lint run failed on duplicate generated identifiers, then `pnpm lint` passed.
+- During verification, `pnpm commercial:readiness-plan` found `WO-064` promoted to `todo` without a discoverable work-order file; `work_orders/WO-064_primary_ui_runtime_api_conversion.md` was added from the already documented production plan scope, and the commercial readiness check passed.
+- GitHub Actions remains required after the `WO-063` PR is opened.
+
+## Open risks
+
+- CR-1 remains synthetic/local runtime evidence. Production PHI database credentials, live migration execution, production IdP credentials, live OIDC/SAML, live ClinicOS delegated identity, production WAF/CDN, live SIEM/APM, live EHR, live transcription, live external AI, live Azure PHI storage, claim submission, autonomous clinical/coding/billing behavior, charge finalization, medical-necessity determination, and production launch remain disabled.
+- `AURA_NOTE_AUTH_MODE=local_demo` is intentionally a development/browser/demo posture and must not be used as production authentication.
+- Durable denied-request identity events are not yet tenant-owned persisted events; `WO-063` records audit-safe local structured log evidence only.
+
+## Active SPEC_GAPs
+
+None active as of the post-`WO-063` identity runtime boundary review.
+
+## Deferred production decisions
+
+Deferred decisions remain tracked in `SPEC_GAPS.md`, including production IdP selection, MFA, SCIM/directory sync, account recovery, access review, break-glass, ClinicOS delegated identity contract, production PHI persistence, live vendor credentials, support operations, and launch approval.
+
+## Next recommended batch
+
+Stop at the CR-1 checkpoint until review rules allow the next batch. The next implementation target is `WO-064` — Primary UI Runtime API Conversion, which opens CR-2 Product UX Runtime Candidate work.

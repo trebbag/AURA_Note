@@ -19,8 +19,10 @@ export interface AuraNoteApiClientOptions {
   baseUrl?: string;
   role?: AuraNoteRuntimeRole;
   userId?: string;
+  sessionId?: string;
   tenantId?: string;
   siteId?: string;
+  purposeOfUse?: 'treatment' | 'payment' | 'operations' | 'support' | 'audit' | 'coaching' | 'break_glass';
 }
 
 const defaultBillingAttestationStatements = [
@@ -41,16 +43,21 @@ export function createAuraNoteApiClient(options: AuraNoteApiClientOptions = {}) 
   const baseUrl = (options.baseUrl ?? getAuraNoteApiBaseUrl()).replace(/\/$/, '');
   const role = options.role ?? 'clinician';
   const userId = options.userId ?? `user-${role}-synthetic-runtime`;
+  const sessionId = options.sessionId ?? `session-${role}-synthetic-runtime`;
   const tenantId = options.tenantId ?? 'tenant-synthetic-primary';
   const siteId = options.siteId ?? 'site-synthetic-primary';
+  const purposeOfUse = options.purposeOfUse ?? defaultPurposeForRole(role);
 
   async function request<TData>(path: string, init: RequestInit = {}): Promise<ApiEnvelope<TData>> {
     const headers = new Headers(init.headers);
     headers.set('content-type', headers.get('content-type') ?? 'application/json');
     headers.set('x-aura-role', role);
     headers.set('x-aura-user-id', userId);
+    headers.set('x-aura-session-id', sessionId);
     headers.set('x-aura-tenant-id', tenantId);
     headers.set('x-aura-site-id', siteId);
+    headers.set('x-aura-purpose-of-use', purposeOfUse);
+    headers.set('x-aura-identity-provider', 'local_synthetic');
 
     const response = await fetch(`${baseUrl}${path}`, {
       ...init,
@@ -105,4 +112,12 @@ export function createAuraNoteApiClient(options: AuraNoteApiClientOptions = {}) 
     signAndDispatch: (noteId: string) => post<FinalizationActionResponseDto>(`/notes/${noteId}/finalization/sign-dispatch`),
     generateFinalNotePdf: (noteId: string) => post<ExportActionResponseDto>(`/notes/${noteId}/exports/final-note-pdf`)
   };
+}
+
+function defaultPurposeForRole(role: AuraNoteRuntimeRole): NonNullable<AuraNoteApiClientOptions['purposeOfUse']> {
+  if (role === 'billing_staff') return 'payment';
+  if (role === 'support') return 'support';
+  if (role === 'authorized_admin' || role === 'admin') return 'operations';
+  if (role === 'compliance_privacy_lead') return 'audit';
+  return 'treatment';
 }

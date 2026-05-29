@@ -2,7 +2,7 @@
 
 ## Status
 
-As of `WO-062`, AURA Note is in commercial-readiness implementation, not production launch. The repo has strong synthetic/local evidence through P11 plus CR-1 runtime persistence switchover and API request-boundary hardening evidence, but it is not commercially production-ready, not live against production identity, EHR, ClinicOS, external AI, transcription, Azure storage, production PHI databases, clearinghouses, payers, production WAF/CDN/SIEM infrastructure, or production launch infrastructure.
+As of `WO-063`, AURA Note is in commercial-readiness implementation, not production launch. The repo has strong synthetic/local evidence through P11 plus CR-1 runtime persistence switchover, API request-boundary hardening, and identity runtime fail-closed evidence, but it is not commercially production-ready, not live against production identity, EHR, ClinicOS, external AI, transcription, Azure storage, production PHI databases, clearinghouses, payers, production WAF/CDN/SIEM infrastructure, or production launch infrastructure.
 
 `productionLaunchApproved=false` remains the required posture until a later founder-approved work order explicitly changes it after clinical, compliance, privacy, security, legal, vendor, credential, backup/restore, incident-response, and operational decisions are resolved.
 
@@ -21,7 +21,7 @@ As of `WO-062`, AURA Note is in commercial-readiness implementation, not product
 1. `WO-060` reopens rails and validates no-launch-claim posture.
 2. `WO-061` moves core workflow runtime services from direct in-memory state to repository ports with local Prisma/PostgreSQL as the production-shaped local adapter.
 3. `WO-062` hardens the API request boundary with shared Nest bootstrap, validation, PHI-safe error envelopes, request correlation, security headers, request limits, redacted logs, and readiness evidence.
-4. `WO-063` makes local synthetic identity explicit and production/preview auth fail closed.
+4. `WO-063` made local synthetic identity explicit and production/preview auth fail closed through `AURA_NOTE_AUTH_MODE` and `pnpm identity:runtime-boundary-readiness`.
 5. `WO-064` converts primary production-intended routes to typed API-backed state.
 6. `WO-065` creates the basic UI and documentation inventory Figma needs.
 7. `WO-066` proves a complete standalone workflow without ClinicOS.
