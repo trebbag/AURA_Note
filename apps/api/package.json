@@ -16,7 +16,8 @@
     "test:visit-capture-adapter": "node --import tsx --test src/schedule/prisma-visit-capture.repository.integration.test.ts",
     "test:review-panel-adapter": "node --import tsx --test src/schedule/prisma-review-panel.repository.integration.test.ts",
     "test:finalization-output-adapter": "node --import tsx --test src/schedule/prisma-finalization-output.repository.integration.test.ts",
-    "test:durable-runtime-readiness": "node --import tsx --test src/schedule/prisma-runtime-metadata.repository.integration.test.ts"
+    "test:durable-runtime-readiness": "node --import tsx --test src/schedule/prisma-runtime-metadata.repository.integration.test.ts",
+    "test:runtime-persistence-readiness": "node --import tsx --test src/schedule/runtime-persistence.repository.integration.test.ts"
   },
   "dependencies": {
     "@aura-note/contracts": "workspace:^",

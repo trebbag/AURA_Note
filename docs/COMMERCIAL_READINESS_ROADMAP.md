@@ -2,7 +2,7 @@
 
 ## Status
 
-As of `WO-060`, AURA Note is in commercial-readiness implementation, not production launch. The repo has strong synthetic/local evidence through P11, but it is not commercially production-ready, not live against production identity, EHR, ClinicOS, external AI, transcription, Azure storage, production PHI databases, clearinghouses, payers, or production launch infrastructure.
+As of `WO-061`, AURA Note is in commercial-readiness implementation, not production launch. The repo has strong synthetic/local evidence through P11 plus the first CR-1 runtime persistence switchover evidence, but it is not commercially production-ready, not live against production identity, EHR, ClinicOS, external AI, transcription, Azure storage, production PHI databases, clearinghouses, payers, or production launch infrastructure.
 
 `productionLaunchApproved=false` remains the required posture until a later founder-approved work order explicitly changes it after clinical, compliance, privacy, security, legal, vendor, credential, backup/restore, incident-response, and operational decisions are resolved.
 
@@ -10,7 +10,7 @@ As of `WO-060`, AURA Note is in commercial-readiness implementation, not product
 
 | Checkpoint | Work orders | Outcome | Launch posture |
 | --- | --- | --- | --- |
-| `CR-0` | `WO-060` | Commercial-readiness rails reopened; `WO-061` is the next active runtime work order. | Not launch-ready |
+| `CR-0` | `WO-060` | Commercial-readiness rails reopened. | Not launch-ready |
 | `CR-1` | `WO-061` through `WO-063` | Runtime foundation candidate: repository ports, local Prisma runtime, API boundary, fail-closed identity. | Not launch-ready |
 | `CR-2` | `WO-064` through `WO-066` | Product UX runtime candidate: primary routes API-backed, Figma scaffold complete, standalone workflow complete. | Not launch-ready |
 | `CR-3` | `WO-067` through `WO-070` | Integration and governance runtime candidate: mode resolver, transcription/EHR/AI/ClinicOS boundaries. | Not launch-ready |

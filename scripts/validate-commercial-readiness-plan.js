@@ -157,8 +157,9 @@ check(
 
 check(
   'spec-gaps.current',
-  'SPEC_GAPS reflects the post-WO-060 no-active-gap state',
-  specGaps.includes('No active gaps as of post-`WO-060` commercial readiness rebaseline/runtime rails review'),
+  'SPEC_GAPS reflects the post-WO-060 or later no-active-gap state',
+  specGaps.includes('No active gaps as of post-`WO-060` commercial readiness rebaseline/runtime rails review') ||
+    specGaps.includes('No active gaps as of post-`WO-061` runtime persistence switchover review'),
   'SPEC_GAPS.md'
 );
 
@@ -195,6 +196,37 @@ check(
   'CI runs pnpm commercial:readiness-plan',
   ci.includes('pnpm commercial:readiness-plan'),
   '.github/workflows/ci.yml'
+);
+
+check(
+  'package.runtime-persistence-script',
+  'package.json exposes pnpm runtime:persistence-readiness for WO-061',
+  packageJson.scripts?.['runtime:persistence-readiness'] === 'node scripts/verify-runtime-persistence-readiness.js',
+  packageJson.scripts?.['runtime:persistence-readiness']
+);
+
+check(
+  'ci.runtime-persistence-script',
+  'CI runs pnpm runtime:persistence-readiness after durable runtime evidence',
+  ci.includes('pnpm runtime:persistence-readiness'),
+  '.github/workflows/ci.yml'
+);
+
+check(
+  'wo061.runtime-adapter-evidence',
+  'WO-061 runtime persistence files exist before the work order can be marked done',
+  repoStatus.work_orders?.['WO-061'] !== 'done' ||
+    (exists('apps/api/src/schedule/runtime-persistence.repository.ts') &&
+      exists('apps/api/src/schedule/runtime-persistence.repository.integration.test.ts') &&
+      exists('scripts/verify-runtime-persistence-readiness.js') &&
+      runLog.includes('pnpm runtime:persistence-readiness')),
+  {
+    status: repoStatus.work_orders?.['WO-061'],
+    repository: exists('apps/api/src/schedule/runtime-persistence.repository.ts'),
+    test: exists('apps/api/src/schedule/runtime-persistence.repository.integration.test.ts'),
+    script: exists('scripts/verify-runtime-persistence-readiness.js'),
+    runLogEvidence: runLog.includes('pnpm runtime:persistence-readiness')
+  }
 );
 
 const launchClaimSources = [

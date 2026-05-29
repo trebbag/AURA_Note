@@ -171,6 +171,8 @@ Post-CP4 productionization candidates are documented in `docs/POST_CP4_PRODUCTIO
 
 `WO-060` is complete as the CR-0 commercial-readiness rails reopening. It replaces the post-P11 `next_work_order: null` state with a new runtime implementation sequence, adds CR-0 through CR-4 checkpoints, records remaining synthetic-to-runtime gaps, and keeps production launch approval false. It does not enable live vendors, live PHI, production credentials, autonomous clinical/coding/billing behavior, claim submission, or production launch.
 
+`WO-061` is complete as the first CR-1 runtime foundation tranche. It moves `ScheduleService` behind explicit repository/storage ports, labels in-memory usage as demo/test adapter behavior, adds the `createPrismaCoreWorkflowRuntimeRepository` composite adapter, and adds `pnpm runtime:persistence-readiness` evidence for local PostgreSQL service-recreation persistence across appointment, visit, Visit Selection, finalization, export, audit, and domain state. This is still synthetic/local evidence only; production PHI database approval and API request-boundary hardening remain out of scope. `WO-062` is the next active work order.
+
 `WO-061` through `WO-063` form the CR-1 runtime foundation candidate. They move core runtime services behind repository ports with local Prisma/PostgreSQL as the production-shaped local runtime path, harden the Nest API request boundary, and make synthetic header identity fail closed outside explicit local/demo modes.
 
 `WO-064` through `WO-066` form the CR-2 product UX runtime candidate. They convert primary production-intended routes to typed API-backed state, complete the basic UI/Figma handoff inventory, and prove a standalone daily workflow without ClinicOS dependency.

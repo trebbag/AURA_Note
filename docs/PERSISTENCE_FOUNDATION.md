@@ -256,6 +256,19 @@ This remains local synthetic persistence. It does not introduce live EHR writeba
 
 This remains local synthetic persistence. It does not introduce production observability sinks, production database role approval, production PHI persistence, live EHR/ClinicOS synchronization, live AI, live transcription, production analytics, medical-necessity determination, charge finalization, or claim submission. P7.5 begins standalone patient/chart/schedule product completion.
 
+## WO-061 runtime persistence switchover update
+
+`WO-061` moves the commercial-readiness runtime away from hidden in-memory construction and adds a production-shaped local Prisma runtime evidence gate:
+
+- `ScheduleService` now receives a `ScheduleStateRepository` and `ObjectStorageAdapter` through explicit constructor/module wiring instead of directly constructing in-memory state;
+- `schedule.repository.ts` labels in-memory behavior as explicit `demo_memory` or `test_memory` adapter usage and validates `AURA_NOTE_RUNTIME_PERSISTENCE=prisma_local` against a local PostgreSQL URL only;
+- `runtime-persistence.repository.ts` composes the existing Prisma schedule, visit-capture, review-panel, finalization/output, and runtime-metadata adapters into a core workflow runtime repository;
+- `runtime-persistence.repository.integration.test.ts` persists a synthetic workflow with appointment/note, visit session, transcript, Visit Selections, finalization, draft claim preview, storage-backed export metadata, writeback metadata, audit event, and domain event rows, then reloads through fresh repository instances to simulate service recreation;
+- the same test proves same semantic IDs can exist across tenants and wrong-tenant/wrong-site contexts receive no persisted workflow before DTO exposure;
+- `pnpm runtime:persistence-readiness` runs this evidence against the synthetic local PostgreSQL container and is now part of CI.
+
+This is synthetic/local evidence only. It does not approve production PHI database use, production database hosts or credentials, live migrations, support database access, live vendors, medical-necessity determination, charge finalization, claim submission, or production launch. `WO-062` continues CR-1 with the API request-boundary hardening needed before the Nest runtime can be treated as production-shaped.
+
 ## WO-038 standalone patient/chart/schedule persistence update
 
 `WO-038` extends the existing schedule/note persistence evidence for the standalone patient and chart-context slice:

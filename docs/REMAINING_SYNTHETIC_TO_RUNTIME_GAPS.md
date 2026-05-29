@@ -6,9 +6,9 @@ This register keeps the post-P11 implementation gap visible. It is not a defect 
 
 ## Gap summary
 
-| Gap | Current posture after `WO-060` | Closing work order |
+| Gap | Current posture after `WO-061` | Closing work order |
 | --- | --- | --- |
-| Main API runtime in-memory state | Key services still use in-memory/synthetic repositories even though durable adapters exist for many slices. | `WO-061` |
+| Main API runtime in-memory state | `WO-061` moved the schedule/notes runtime behind explicit repository and storage ports and added local Prisma core-workflow service-recreation evidence. Remaining request-boundary hardening and runtime auth fail-closed work continue in CR-1. | `WO-061` complete; continue `WO-062`/`WO-063` |
 | API request boundary | Runtime needs consistent validation, error envelopes, redacted logging, request IDs, request limits, CORS/security headers, and throttle scaffolding. | `WO-062` |
 | Production auth fail-closed behavior | Synthetic headers must be impossible to trust outside explicit local/demo mode. | `WO-063` |
 | Primary route local fixtures | Many production-intended routes still use local fixture arrays or local React state as authoritative screen data. | `WO-064` |

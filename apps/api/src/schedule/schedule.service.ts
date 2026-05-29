@@ -119,8 +119,12 @@ import {
   createSyntheticLocalSession,
   type AccessContext
 } from '@aura-note/security';
-import { InMemoryObjectStorageAdapter, buildStorageKey } from '@aura-note/storage';
-import { createInMemoryScheduleStateRepository, type StoredAppointment } from './schedule.repository';
+import { InMemoryObjectStorageAdapter, buildStorageKey, type ObjectStorageAdapter } from '@aura-note/storage';
+import {
+  createDemoScheduleStateRepository,
+  type ScheduleStateRepository,
+  type StoredAppointment
+} from './schedule.repository';
 
 const TENANT_ID = 'tenant-synthetic-primary';
 const SITE_ID = 'site-synthetic-primary';
@@ -137,8 +141,11 @@ interface RequestContext {
 @Injectable()
 export class ScheduleService {
   private sequence = 1;
-  private readonly repository = createInMemoryScheduleStateRepository();
-  private readonly storage = new InMemoryObjectStorageAdapter();
+
+  constructor(
+    private readonly repository: ScheduleStateRepository = createDemoScheduleStateRepository(),
+    private readonly storage: ObjectStorageAdapter = new InMemoryObjectStorageAdapter()
+  ) {}
 
   listAppointments(context: RequestContext): ApiEnvelope<ScheduleViewDto> {
     if (!canPerform('schedule:view', context.access)) {
@@ -527,6 +534,7 @@ export class ScheduleService {
     stored.rawAudioRetention = rawAudioRetention;
     stored.transcriptionProviderStatus = this.createTranscriptionProviderStatus();
     stored.transcript = transcript;
+    this.persistStoredAppointment(stored);
 
     return createApiEnvelope(
       {
@@ -887,6 +895,7 @@ export class ScheduleService {
     } as const;
     stored.recordingPermission = permission;
     stored.transcriptionProviderStatus = this.createTranscriptionProviderStatus();
+    this.persistStoredAppointment(stored);
 
     return createApiEnvelope(
       {
@@ -980,6 +989,7 @@ export class ScheduleService {
       checksum: chunk.checksum,
       contentLengthBytes: (rawAudioRetention.contentLengthBytes ?? 0) + chunk.contentLengthBytes
     };
+    this.persistStoredAppointment(stored);
 
     return createApiEnvelope(
       {
@@ -1037,6 +1047,7 @@ export class ScheduleService {
     }
     const providerStatus = this.createTranscriptionProviderStatus();
     stored.transcriptionProviderStatus = providerStatus;
+    this.persistStoredAppointment(stored);
     return createApiEnvelope(
       {
         providerStatus,
@@ -1111,6 +1122,7 @@ export class ScheduleService {
       corrections: stored.transcriptCorrections ?? transcript.corrections ?? [],
       segments: [...transcript.segments, ...newSegments]
     };
+    this.persistStoredAppointment(stored);
 
     return createApiEnvelope(
       {
@@ -1184,6 +1196,7 @@ export class ScheduleService {
           : candidate
       )
     };
+    this.persistStoredAppointment(stored);
 
     return createApiEnvelope(
       {
@@ -1214,6 +1227,7 @@ export class ScheduleService {
   listSuggestions(noteId: string, context: RequestContext): ApiEnvelope<SuggestionsViewDto> {
     const stored = this.getReviewableNote(noteId, context);
     stored.suggestions = stored.suggestions ?? this.createDeterministicSuggestions(stored);
+    this.persistStoredAppointment(stored);
     return createApiEnvelope({ noteId, suggestions: stored.suggestions }, this.createMeta(context));
   }
 
@@ -1314,12 +1328,14 @@ export class ScheduleService {
   evaluateCompliance(noteId: string, context: RequestContext): ApiEnvelope<ComplianceReviewDto> {
     const stored = this.getReviewableNote(noteId, context);
     stored.complianceIssues = this.evaluateComplianceIssues(stored);
+    this.persistStoredAppointment(stored);
     return createApiEnvelope(this.toComplianceReview(stored), this.createMeta(context));
   }
 
   listHistoryGaps(noteId: string, context: RequestContext): ApiEnvelope<{ noteId: string; questions: HistoryGapQuestionDto[] }> {
     const stored = this.getReviewableNote(noteId, context);
     stored.historyGaps = stored.historyGaps ?? this.createDeterministicHistoryGaps(stored);
+    this.persistStoredAppointment(stored);
     return createApiEnvelope({ noteId, questions: stored.historyGaps }, this.createMeta(context));
   }
 
@@ -1877,6 +1893,7 @@ export class ScheduleService {
             retryable: true
           }
         : writeback;
+    this.persistStoredAppointment(stored);
 
     return createApiEnvelope(
       {
@@ -1943,12 +1960,17 @@ export class ScheduleService {
     };
   }
 
+  private persistStoredAppointment(entry: StoredAppointment): void {
+    this.repository.saveAppointment(entry);
+  }
+
   private createReviewActionEnvelope(
     entry: StoredAppointment,
     context: RequestContext,
     auditAction: string,
     eventTypes: CoreEventType[]
   ): ApiEnvelope<ReviewActionResponseDto> {
+    this.persistStoredAppointment(entry);
     return createApiEnvelope(
       {
         suggestions: entry.suggestions ?? [],
@@ -2067,6 +2089,7 @@ export class ScheduleService {
     const artifact = this.createExportArtifact(stored, artifactType, context);
     stored.finalization.exportArtifacts = [...stored.finalization.exportArtifacts, artifact];
     stored.finalization.updatedAt = artifact.generatedAt;
+    this.persistStoredAppointment(stored);
 
     return createApiEnvelope(
       {
@@ -2556,6 +2579,7 @@ export class ScheduleService {
       throw new BadRequestException('finalization session is not active');
     }
     const finalization = entry.finalization;
+    this.persistStoredAppointment(entry);
 
     return createApiEnvelope(
       {
@@ -2821,6 +2845,7 @@ export class ScheduleService {
       throw new BadRequestException('visit session is not active');
     }
     const visitSession = entry.visitSession;
+    this.persistStoredAppointment(entry);
 
     return createApiEnvelope(
       {
