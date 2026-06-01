@@ -18,6 +18,9 @@ describe('ClinicOS integration service', () => {
     assert.equal(status.data.rawPayloadsStored, false);
     assert.equal(status.data.liveClinicOsSyncEnabled, false);
     assert.equal(status.data.moduleBoundaries.length, 8);
+    assert.equal(status.data.modeAdapterBoundaries.length, 10);
+    assert.equal(status.data.modeAdapterBoundaries.every((boundary) => boundary.permissionBoundary === 'aura_note_authoritative'), true);
+    assert.equal(status.data.modeAdapterBoundaries.every((boundary) => boundary.liveDelegationEnabled === false), true);
     assert.equal(status.data.states.includes('permission-denied'), true);
     assert.equal(status.data.domainEvents[0]?.eventType, 'clinicos.mode_resolved.v1');
   });
@@ -37,6 +40,8 @@ describe('ClinicOS integration service', () => {
     );
 
     assert.equal(mapped.data.modeContext.hostMode, 'clinicos_integrated');
+    assert.equal(mapped.data.modeAdapterBoundaries?.find((boundary) => boundary.seam === 'visitGraph')?.clinicOsModuleId, 'M03');
+    assert.equal(mapped.data.modeAdapterBoundaries?.every((boundary) => boundary.humanReviewRequired === true), true);
     assert.equal(mapped.data.mappings.length, 2);
     assert.equal(mapped.data.mappings[0]?.clinicosModuleId, 'M03');
     assert.equal(mapped.data.publishedEvent.status, 'queued');
@@ -141,6 +146,23 @@ describe('ClinicOS integration service', () => {
     assert.equal(mapped.data.modeContext.availability, 'unavailable');
     assert.equal(mapped.data.mappings.length, 0);
     assert.equal(mapped.data.publishedEvent.status, 'failed_unavailable');
+    assert.equal(mapped.data.modeAdapterBoundaries?.find((boundary) => boundary.seam === 'ehr')?.adapterStatus, 'unavailable');
+  });
+
+  it('marks degraded ClinicOS mode as fail-closed without live delegation', async () => {
+    const service = new ClinicOsService();
+    const status = await service.getStatus({
+      'x-aura-role': 'clinician',
+      'x-aura-linked-visit': 'true',
+      'x-aura-clinicos-mode': 'clinicos_integrated',
+      'x-aura-clinicos-degraded': 'true',
+      'x-trace-id': 'trace-clinicos-degraded-001'
+    });
+
+    assert.equal(status.data.modeContext.availability, 'degraded');
+    assert.equal(status.data.modeAdapterBoundaries.find((boundary) => boundary.seam === 'tasks')?.adapterStatus, 'mock_degraded');
+    assert.equal(status.data.modeAdapterBoundaries.every((boundary) => boundary.writesFailClosed === true), true);
+    assert.equal(status.data.modeAdapterBoundaries.every((boundary) => boundary.rawPayloadStorageEnabled === false), true);
   });
 
   it('denies cross-tenant service-account attempts before metadata is exposed', async () => {

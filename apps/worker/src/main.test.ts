@@ -393,6 +393,21 @@ describe('worker scaffold', () => {
           warnings: []
         },
         moduleBoundaries: [],
+        modeAdapterBoundaries: [
+          {
+            seam: 'visitGraph',
+            displayName: 'VisitGraph context',
+            sourceOfTruth: 'clinicos',
+            adapterStatus: 'unavailable',
+            permissionBoundary: 'aura_note_authoritative',
+            liveDelegationEnabled: false,
+            rawPayloadStorageEnabled: false,
+            humanReviewRequired: true,
+            writesFailClosed: true,
+            notes: 'ClinicOS unavailable; AURA Note retains authority.',
+            clinicOsModuleId: 'M03'
+          }
+        ],
         mappings: [],
         publishedEvents: [
           {

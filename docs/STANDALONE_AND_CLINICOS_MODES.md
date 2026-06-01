@@ -169,6 +169,16 @@ In standalone mode, `AURA_NOTE_AUTH_MODE=local_demo` labels and normalizes synth
 
 In ClinicOS-integrated mode, `AURA_NOTE_AUTH_MODE=clinicos_delegate` is represented as a disabled adapter posture. It fails closed until a later approved ClinicOS identity contract, credential source, event/audit policy, and tenant/user mapping are implemented. ClinicOS cannot pass synthetic headers to bypass AURA Note RBAC/ABAC, purpose-of-use, tenant/site, transcript, final-note, billing, coaching, AI, writeback, storage, or claim boundaries.
 
+## WO-067 ModeResolver runtime boundary
+
+`WO-067` promotes the required application-level `ModeResolver` into API runtime code. `resolveAuraRuntimeModeFromHeaders` now converts ClinicOS mode headers into a typed mode context, shared API mode, ClinicOS module boundaries, and ten explicit adapter seams: schedule source, patient context, VisitGraph, tasks, audit, AI governance, Charge Integrity, EHR, export, and identity.
+
+Standalone mode remains the default and authoritative. Missing or invalid ClinicOS mode headers resolve to standalone; AURA Note schedule, patient, task, audit, export, identity, transcript, final-note, billing, coaching, AI, writeback, storage, and claim-boundary permissions still apply before DTO data is returned or state changes.
+
+ClinicOS-integrated mode is still mock/degraded metadata only. The ClinicOS status and action responses now expose `modeAdapterBoundaries` with `permissionBoundary='aura_note_authoritative'`, `liveDelegationEnabled=false`, `rawPayloadStorageEnabled=false`, and `humanReviewRequired=true`. Degraded or unavailable ClinicOS mode marks adapter writes fail-closed. `pnpm mode:adapter-readiness` verifies the resolver, service tests, e2e evidence, docs, status, and no-live/no-launch posture.
+
+`WO-067` does not enable live ClinicOS credentials, live event bus delivery, raw ClinicOS payload storage, delegated identity, live EHR/writeback routing, live AI, live transcription, production PHI, charge finalization, medical-necessity determination, claim submission, or production launch behavior.
+
 ## WO-049 launch operations readiness mode behavior
 
 In standalone mode, `WO-049` launch operations readiness proves AURA Note can rehearse build, smoke, rollback, disabled-vendor, performance, incident, access-review, and support-escalation controls without ClinicOS.

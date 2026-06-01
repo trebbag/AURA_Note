@@ -1469,6 +1469,18 @@ export type ClinicOsAvailabilityDto = 'available' | 'disabled' | 'unavailable' |
 export type ClinicOsSourceOfTruthDto = 'aura_note' | 'clinicos' | 'ehr' | 'hybrid';
 export type ClinicOsMappingStatusDto = 'active' | 'pending' | 'stale' | 'degraded' | 'unavailable' | 'failed';
 export type ClinicOsPublishedEventStatusDto = 'queued' | 'sent_mock' | 'skipped_disabled' | 'failed_unavailable' | 'degraded';
+export type AuraModeAdapterSeamDto =
+  | 'scheduleSource'
+  | 'patientContext'
+  | 'visitGraph'
+  | 'tasks'
+  | 'audit'
+  | 'aiGovernance'
+  | 'chargeIntegrity'
+  | 'ehr'
+  | 'export'
+  | 'identity';
+export type AuraModeAdapterStatusDto = 'standalone_authoritative' | 'mock_available' | 'mock_degraded' | 'unavailable' | 'disabled';
 
 export interface ClinicOsModeContextDto {
   enabled: boolean;
@@ -1528,9 +1540,24 @@ export interface ClinicOsModuleBoundaryDto {
   permissionBoundary: 'aura_note_authoritative';
 }
 
+export interface AuraModeAdapterBoundaryDto {
+  seam: AuraModeAdapterSeamDto;
+  displayName: string;
+  sourceOfTruth: ClinicOsSourceOfTruthDto;
+  adapterStatus: AuraModeAdapterStatusDto;
+  permissionBoundary: 'aura_note_authoritative';
+  liveDelegationEnabled: false;
+  rawPayloadStorageEnabled: false;
+  humanReviewRequired: true;
+  writesFailClosed: boolean;
+  notes: string;
+  clinicOsModuleId?: ClinicOsModuleIdDto;
+}
+
 export interface ClinicOsIntegrationStatusDto {
   modeContext: ClinicOsModeContextDto;
   moduleBoundaries: ClinicOsModuleBoundaryDto[];
+  modeAdapterBoundaries: AuraModeAdapterBoundaryDto[];
   mappings: ClinicOsMappingRecordDto[];
   publishedEvents: ClinicOsPublishedEventDto[];
   permissionsStillEnforcedByAuraNote: true;
@@ -1548,6 +1575,7 @@ export interface ClinicOsMapVisitRequestDto {
 
 export interface ClinicOsMapVisitResponseDto {
   modeContext: ClinicOsModeContextDto;
+  modeAdapterBoundaries?: AuraModeAdapterBoundaryDto[];
   visitGraphId?: string;
   m17ContextId?: string;
   mappings: ClinicOsMappingRecordDto[];
@@ -1568,6 +1596,7 @@ export interface ClinicOsMappingUpsertRequestDto {
 
 export interface ClinicOsMappingUpsertResponseDto {
   modeContext: ClinicOsModeContextDto;
+  modeAdapterBoundaries?: AuraModeAdapterBoundaryDto[];
   mapping: ClinicOsMappingRecordDto;
   auditEvent: AuditEventDto;
   domainEvents: Array<AuraNoteEvent<Record<string, unknown>>>;
@@ -1581,6 +1610,7 @@ export interface ClinicOsEventPublishRequestDto {
 
 export interface ClinicOsEventPublishResponseDto {
   modeContext: ClinicOsModeContextDto;
+  modeAdapterBoundaries?: AuraModeAdapterBoundaryDto[];
   publishedEvent: ClinicOsPublishedEventDto;
   auditEvent: AuditEventDto;
   domainEvents: Array<AuraNoteEvent<Record<string, unknown>>>;

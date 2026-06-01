@@ -348,3 +348,9 @@ The runtime boundary records local redacted structured log evidence only. It doe
 - Identity accepted/denied decisions are recorded in local redacted structured runtime logs as `identity.accepted` and `identity.denied`.
 
 The identity boundary does not emit durable tenant-owned identity events yet. Durable `identity.runtime_accepted.v1` or `identity.runtime_denied.v1` event persistence is deferred until a later observability/audit runtime work order promotes request-boundary logs into durable audit/event storage. No raw tokens, secrets, SAML assertions, OIDC claims payloads, production IdP responses, ClinicOS delegated identity payloads, or PHI are logged or returned.
+
+## WO-067 ModeResolver and adapter-boundary event evidence
+
+`WO-067` extends the existing ClinicOS status, mapping, and publication contracts with `AuraModeAdapterBoundary` / `modeAdapterBoundaries` response metadata. The boundary metadata covers schedule source, patient context, VisitGraph, tasks, audit, AI governance, Charge Integrity, EHR, export, and identity seams and records `permissionBoundary='aura_note_authoritative'`, `liveDelegationEnabled=false`, `rawPayloadStorageEnabled=false`, and `humanReviewRequired=true`.
+
+The existing event family remains the source of runtime evidence: `clinicos.mode_resolved.v1`, `clinicos.mapping_recorded.v1`, `clinicos.mapping_stale_detected.v1`, `clinicos.event_published.v1`, `clinicos.event_publication_failed.v1`, `clinicos.permission_denied.v1`, and `clinicos.unavailable.v1`. `WO-067` payloads add audit-safe fields such as `modeAdapterBoundaryCount`, `liveDelegationEnabled=false`, and `rawPayloadStorageEnabled=false`. They must not include raw ClinicOS payloads, event-bus messages, transcripts, final-note text, billing details, coaching output, identity tokens, credentials, production URLs, charge finalization, medical-necessity determinations, or claim submission evidence.

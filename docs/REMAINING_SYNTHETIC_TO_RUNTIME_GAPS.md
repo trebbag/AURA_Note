@@ -12,9 +12,9 @@ This register keeps the post-P11 implementation gap visible. It is not a defect 
 | API request boundary | `WO-062` added consistent request validation, PHI-safe error envelopes, redacted structured runtime logs, request/trace IDs, body-size guardrails, local CORS/security headers, and local throttle scaffolding. Production gateway/WAF/SIEM policies remain deferred. | `WO-062` complete; production gateway policies deferred |
 | Production auth fail-closed behavior | `WO-063` makes synthetic headers impossible to trust outside explicit `AURA_NOTE_AUTH_MODE=local_demo` or `AURA_NOTE_AUTH_MODE=local_synthetic`; preview/production/delegated modes fail closed while adapters are unconfigured. Live OIDC/SAML/ClinicOS delegated identity remains deferred. | `WO-063` complete; live identity deferred |
 | Primary route local fixtures | Primary production-intended routes now use typed API clients and backend-backed state; remaining local React state is transient control/form/tab state or documented disabled/demo adapter presentation. | `WO-064` complete |
-| Figma product map | Figma needs complete screen, component, state, role, workflow, data/API, copy, and interaction inventory. | `WO-065` |
-| Standalone daily-use workflow | Standalone mode needs one coherent end-to-end workflow that does not require ClinicOS. | `WO-066` |
-| Runtime mode resolution | Runtime services need an explicit `ModeResolver` and adapter use for standalone and ClinicOS contexts. | `WO-067` |
+| Figma product map | `WO-065` added the Figma-ready screen, component, state, role, workflow, data/API, copy, and interaction inventory. Final Figma visual design remains deferred. | `WO-065` complete |
+| Standalone daily-use workflow | `WO-066` proved a coherent synthetic/local standalone workflow that does not require ClinicOS. | `WO-066` complete |
+| Runtime mode resolution | `WO-067` added a shared API `ModeResolver` and explicit adapter-boundary evidence for standalone and ClinicOS contexts. Live ClinicOS contracts and event-bus semantics remain deferred. | `WO-067` complete; live ClinicOS deferred |
 | Transcription provider boundary | Browser/audio/transcription path needs provider-ready runtime boundaries while live calls remain disabled. | `WO-068` |
 | EHR sandbox runtime boundary | Athenahealth-first and vendor-neutral EHR runtime paths need hardened sandbox, queue, approval, retry, and reconciliation evidence. | `WO-069` |
 | AI governance runtime evidence | Prompt/model/eval/source/human-review governance needs expansion without live external AI. | `WO-070` |

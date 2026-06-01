@@ -3641,13 +3641,42 @@ components:
         sourceOfTruth: { type: string, enum: [aura_note, clinicos, ehr, hybrid] }
         delegationEnabled: { type: boolean }
         permissionBoundary: { type: string, enum: [aura_note_authoritative] }
+    AuraModeAdapterBoundary:
+      type: object
+      required:
+        [
+          seam,
+          displayName,
+          sourceOfTruth,
+          adapterStatus,
+          permissionBoundary,
+          liveDelegationEnabled,
+          rawPayloadStorageEnabled,
+          humanReviewRequired,
+          writesFailClosed,
+          notes
+        ]
+      properties:
+        seam:
+          type: string
+          enum: [scheduleSource, patientContext, visitGraph, tasks, audit, aiGovernance, chargeIntegrity, ehr, export, identity]
+        displayName: { type: string }
+        sourceOfTruth: { type: string, enum: [aura_note, clinicos, ehr, hybrid] }
+        adapterStatus: { type: string, enum: [standalone_authoritative, mock_available, mock_degraded, unavailable, disabled] }
+        permissionBoundary: { type: string, enum: [aura_note_authoritative] }
+        liveDelegationEnabled: { type: boolean, const: false }
+        rawPayloadStorageEnabled: { type: boolean, const: false }
+        humanReviewRequired: { type: boolean, const: true }
+        writesFailClosed: { type: boolean }
+        notes: { type: string }
+        clinicOsModuleId: { type: string, enum: [M03, M04, M17, M21, M23, M24, M25, M26] }
     ClinicOsIntegrationStatusResponse:
       allOf:
         - type: object
           properties:
             data:
               type: object
-              required: [modeContext, moduleBoundaries, mappings, publishedEvents, permissionsStillEnforcedByAuraNote, rawPayloadsStored, liveClinicOsSyncEnabled, states, auditEvent, domainEvents]
+              required: [modeContext, moduleBoundaries, modeAdapterBoundaries, mappings, publishedEvents, permissionsStillEnforcedByAuraNote, rawPayloadsStored, liveClinicOsSyncEnabled, states, auditEvent, domainEvents]
               properties:
                 modeContext:
                   $ref: '#/components/schemas/ClinicOsModeContext'
@@ -3655,6 +3684,10 @@ components:
                   type: array
                   items:
                     $ref: '#/components/schemas/ClinicOsModuleBoundary'
+                modeAdapterBoundaries:
+                  type: array
+                  items:
+                    $ref: '#/components/schemas/AuraModeAdapterBoundary'
                 mappings:
                   type: array
                   items:
@@ -3693,6 +3726,10 @@ components:
               properties:
                 modeContext:
                   $ref: '#/components/schemas/ClinicOsModeContext'
+                modeAdapterBoundaries:
+                  type: array
+                  items:
+                    $ref: '#/components/schemas/AuraModeAdapterBoundary'
                 visitGraphId: { type: string }
                 m17ContextId: { type: string }
                 mappings:
@@ -3730,6 +3767,10 @@ components:
               properties:
                 modeContext:
                   $ref: '#/components/schemas/ClinicOsModeContext'
+                modeAdapterBoundaries:
+                  type: array
+                  items:
+                    $ref: '#/components/schemas/AuraModeAdapterBoundary'
                 mapping:
                   $ref: '#/components/schemas/ClinicOsMappingRecord'
                 auditEvent:
@@ -3759,6 +3800,10 @@ components:
               properties:
                 modeContext:
                   $ref: '#/components/schemas/ClinicOsModeContext'
+                modeAdapterBoundaries:
+                  type: array
+                  items:
+                    $ref: '#/components/schemas/AuraModeAdapterBoundary'
                 publishedEvent:
                   $ref: '#/components/schemas/ClinicOsPublishedEvent'
                 auditEvent:

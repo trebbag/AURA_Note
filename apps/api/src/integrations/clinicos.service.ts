@@ -1,17 +1,15 @@
 import { BadRequestException, ForbiddenException, Injectable } from '@nestjs/common';
 import {
-  CLINICOS_MOCK_MODE_SETTINGS,
   MockClinicOsAdapter,
-  STANDALONE_MODE_SETTINGS,
-  type AuraNoteHostMode,
+  type ClinicOsModuleBoundary,
   type ClinicOsMappingRecord,
   type ClinicOsModeContext,
   type ClinicOsPublishedEvent,
-  getClinicOsModuleBoundaries
 } from '@aura-note/clinicos-adapter';
 import {
   createApiEnvelope,
   createEventEnvelope,
+  type AuraModeAdapterBoundaryDto,
   type ApiEnvelope,
   type ApiMeta,
   type AuditEventDto,
@@ -28,11 +26,10 @@ import {
   type ClinicOsPublishedEventDto
 } from '@aura-note/contracts';
 import { canPerform, createSyntheticLocalSession, type AccessContext } from '@aura-note/security';
+import { resolveAuraRuntimeModeFromHeaders, type AuraModeAdapterBoundary, type AuraRuntimeModeResolution } from '../runtime/mode-resolver';
 
 const TENANT_ID = 'tenant-synthetic-primary';
 const SITE_ID = 'site-synthetic-primary';
-const APP_MODE = 'standalone' as const;
-
 interface RequestContext {
   requestId: string;
   traceId: string;
@@ -123,12 +120,14 @@ export class ClinicOsService {
       throw new ForbiddenException('role cannot view ClinicOS adapter status');
     }
 
-    const adapter = this.createAdapter(headers);
+    const runtime = this.resolveRuntime(headers);
+    const adapter = this.createAdapter(runtime);
     const modeContext = await adapter.getModeContext();
-    const moduleBoundaries = this.toModuleBoundaryDtos(this.getModuleBoundaries(headers));
+    const moduleBoundaries = this.toModuleBoundaryDtos(runtime.clinicOsModuleBoundaries);
     const status: ClinicOsIntegrationStatusDto = {
       modeContext: this.toModeContextDto(modeContext),
       moduleBoundaries,
+      modeAdapterBoundaries: this.toModeAdapterBoundaryDtos(runtime.adapterBoundaries),
       mappings: this.projectMappingsForContext(modeContext),
       publishedEvents: this.projectPublishedEventsForContext(modeContext),
       permissionsStillEnforcedByAuraNote: true,
@@ -163,13 +162,16 @@ export class ClinicOsService {
             hostMode: modeContext.hostMode,
             enabled: modeContext.enabled,
             availability: modeContext.availability,
-            permissionsStillEnforcedByAuraNote: true
+            permissionsStillEnforcedByAuraNote: true,
+            modeAdapterBoundaryCount: runtime.adapterBoundaries.length,
+            liveDelegationEnabled: false,
+            rawPayloadStorageEnabled: false
           }
         })
       ]
     };
 
-    return createApiEnvelope(status, this.createMeta(context));
+    return createApiEnvelope(status, this.createMeta(context, runtime));
   }
 
   async mapVisit(
@@ -184,7 +186,8 @@ export class ClinicOsService {
       throw new BadRequestException('localAppointmentId and localNoteId are required');
     }
 
-    const adapter = this.createAdapter(headers);
+    const runtime = this.resolveRuntime(headers);
+    const adapter = this.createAdapter(runtime);
     const modeContext = await adapter.getModeContext();
     const mapped = await adapter.mapVisitContext({
       localAppointmentId: body.localAppointmentId,
@@ -197,6 +200,7 @@ export class ClinicOsService {
     return createApiEnvelope(
       {
         modeContext: this.toModeContextDto(modeContext),
+        modeAdapterBoundaries: this.toModeAdapterBoundaryDtos(runtime.adapterBoundaries),
         ...(mapped.visitGraphId ? { visitGraphId: mapped.visitGraphId } : {}),
         ...(mapped.m17ContextId ? { m17ContextId: mapped.m17ContextId } : {}),
         mappings: mapped.mappings,
@@ -218,7 +222,10 @@ export class ClinicOsService {
               localNoteId: body.localNoteId,
               mappingCount: mapped.mappings.length,
               hostMode: modeContext.hostMode,
-              availability: modeContext.availability
+              availability: modeContext.availability,
+              modeAdapterBoundaryCount: runtime.adapterBoundaries.length,
+              liveDelegationEnabled: false,
+              rawPayloadStorageEnabled: false
             }
           }),
           createEventEnvelope({
@@ -234,12 +241,13 @@ export class ClinicOsService {
             payload: {
               eventType: publishedEvent.eventType,
               targetModules: publishedEvent.targetModules,
-              outboxStatus: publishedEvent.status
+              outboxStatus: publishedEvent.status,
+              permissionsStillEnforcedByAuraNote: true
             }
           })
         ]
       },
-      this.createMeta(context)
+      this.createMeta(context, runtime)
     );
   }
 
@@ -255,7 +263,8 @@ export class ClinicOsService {
       throw new BadRequestException('localObjectType, localObjectId, and clinicosModuleId are required');
     }
 
-    const modeContext = await this.createAdapter(headers).getModeContext();
+    const runtime = this.resolveRuntime(headers);
+    const modeContext = await this.createAdapter(runtime).getModeContext();
     const now = new Date().toISOString();
     const status = body.status ?? (modeContext.availability === 'available' ? 'active' : 'unavailable');
     const mapping: ClinicOsMappingRecordDto = {
@@ -280,6 +289,7 @@ export class ClinicOsService {
     return createApiEnvelope(
       {
         modeContext: this.toModeContextDto(modeContext),
+        modeAdapterBoundaries: this.toModeAdapterBoundaryDtos(runtime.adapterBoundaries),
         mapping,
         auditEvent: this.createAuditEvent('clinicos.mapping_upsert', 'ClinicOsModeMapping', mapping.mappingId, context),
         domainEvents: [
@@ -298,12 +308,13 @@ export class ClinicOsService {
               moduleId: mapping.clinicosModuleId,
               status: mapping.status,
               payloadStored: false,
-              permissionsStillEnforcedByAuraNote: true
+              permissionsStillEnforcedByAuraNote: true,
+              modeAdapterBoundaryCount: runtime.adapterBoundaries.length
             }
           })
         ]
       },
-      this.createMeta(context)
+      this.createMeta(context, runtime)
     );
   }
 
@@ -319,7 +330,8 @@ export class ClinicOsService {
       throw new BadRequestException('eventType is required');
     }
 
-    const adapter = this.createAdapter(headers);
+    const runtime = this.resolveRuntime(headers);
+    const adapter = this.createAdapter(runtime);
     const modeContext = await adapter.getModeContext();
     const published = this.toPublishedEventDto(await adapter.publishAuraNoteEvent({ eventType: body.eventType }));
     const overridden: ClinicOsPublishedEventDto = {
@@ -336,6 +348,7 @@ export class ClinicOsService {
     return createApiEnvelope(
       {
         modeContext: this.toModeContextDto(modeContext),
+        modeAdapterBoundaries: this.toModeAdapterBoundaryDtos(runtime.adapterBoundaries),
         publishedEvent: overridden,
         auditEvent: this.createAuditEvent('clinicos.event_publish', 'ClinicOsOutbox', overridden.outboxId, context),
         domainEvents: [
@@ -354,29 +367,26 @@ export class ClinicOsService {
               targetModules: overridden.targetModules,
               outboxStatus: overridden.status,
               payloadStored: false,
-              permissionsStillEnforcedByAuraNote: true
+              permissionsStillEnforcedByAuraNote: true,
+              modeAdapterBoundaryCount: runtime.adapterBoundaries.length,
+              liveDelegationEnabled: false
             }
           })
         ]
       },
-      this.createMeta(context)
+      this.createMeta(context, runtime)
     );
   }
 
-  private createAdapter(headers: Record<string, string | string[] | undefined>): MockClinicOsAdapter {
-    const hostMode = this.parseHostMode(this.headerValue(headers['x-aura-clinicos-mode']));
-    const enabled = hostMode !== 'standalone';
-    const unavailable = this.parseBooleanHeader(this.headerValue(headers['x-aura-clinicos-unavailable'])) ?? false;
-    const degraded = this.parseBooleanHeader(this.headerValue(headers['x-aura-clinicos-degraded'])) ?? false;
-    return new MockClinicOsAdapter({
-      ...(enabled ? CLINICOS_MOCK_MODE_SETTINGS : STANDALONE_MODE_SETTINGS),
-      hostMode,
-      enabled,
-      unavailable,
-      degraded,
+  private resolveRuntime(headers: Record<string, string | string[] | undefined>): AuraRuntimeModeResolution {
+    return resolveAuraRuntimeModeFromHeaders(headers, {
       tenantId: TENANT_ID,
       siteId: SITE_ID
     });
+  }
+
+  private createAdapter(runtime: AuraRuntimeModeResolution): MockClinicOsAdapter {
+    return new MockClinicOsAdapter(runtime.adapterSettings);
   }
 
   private toModeContextDto(modeContext: ClinicOsModeContext): ClinicOsModeContextDto {
@@ -434,7 +444,7 @@ export class ClinicOsService {
     };
   }
 
-  private toModuleBoundaryDtos(boundaries: ReturnType<typeof getClinicOsModuleBoundaries>): ClinicOsModuleBoundaryDto[] {
+  private toModuleBoundaryDtos(boundaries: ClinicOsModuleBoundary[]): ClinicOsModuleBoundaryDto[] {
     return boundaries.map((boundary) => ({
       moduleId: boundary.moduleId,
       moduleName: boundary.moduleName,
@@ -445,9 +455,20 @@ export class ClinicOsService {
     }));
   }
 
-  private getModuleBoundaries(headers: Record<string, string | string[] | undefined>): ReturnType<typeof getClinicOsModuleBoundaries> {
-    const hostMode = this.parseHostMode(this.headerValue(headers['x-aura-clinicos-mode']));
-    return getClinicOsModuleBoundaries(hostMode === 'standalone' ? STANDALONE_MODE_SETTINGS.sourceOfTruth : CLINICOS_MOCK_MODE_SETTINGS.sourceOfTruth);
+  private toModeAdapterBoundaryDtos(boundaries: AuraModeAdapterBoundary[]): AuraModeAdapterBoundaryDto[] {
+    return boundaries.map((boundary) => ({
+      seam: boundary.seam,
+      displayName: boundary.displayName,
+      sourceOfTruth: boundary.sourceOfTruth,
+      adapterStatus: boundary.adapterStatus,
+      permissionBoundary: boundary.permissionBoundary,
+      liveDelegationEnabled: boundary.liveDelegationEnabled,
+      rawPayloadStorageEnabled: boundary.rawPayloadStorageEnabled,
+      humanReviewRequired: boundary.humanReviewRequired,
+      writesFailClosed: boundary.writesFailClosed,
+      notes: boundary.notes,
+      ...(boundary.clinicOsModuleId ? { clinicOsModuleId: boundary.clinicOsModuleId } : {})
+    }));
   }
 
   private projectMappingsForContext(modeContext: ClinicOsModeContext): ClinicOsMappingRecordDto[] {
@@ -507,35 +528,13 @@ export class ClinicOsService {
     };
   }
 
-  private createMeta(context: RequestContext): ApiMeta {
+  private createMeta(context: RequestContext, runtime?: AuraRuntimeModeResolution): ApiMeta {
     return {
       requestId: context.requestId,
       traceId: context.traceId,
-      mode: APP_MODE,
+      mode: runtime?.apiMode ?? 'standalone',
       generatedAt: new Date().toISOString()
     };
-  }
-
-  private headerValue(value: string | string[] | undefined): string | undefined {
-    return Array.isArray(value) ? value[0] : value;
-  }
-
-  private parseHostMode(value: string | undefined): AuraNoteHostMode {
-    switch (value) {
-      case 'clinicos_integrated':
-      case 'ehr_embedded':
-      case 'hybrid_transition':
-      case 'standalone':
-        return value;
-      default:
-        return 'standalone';
-    }
-  }
-
-  private parseBooleanHeader(value: string | undefined): boolean | undefined {
-    if (value === 'true') return true;
-    if (value === 'false') return false;
-    return undefined;
   }
 
   private nextId(prefix: string): string {

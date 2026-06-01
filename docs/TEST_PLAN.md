@@ -534,6 +534,17 @@ This gate is design-handoff evidence only. It does not enable live PHI, live EHR
 
 This gate closes CR-2 as synthetic/local product UX runtime evidence only. It does not enable live PHI, live EHR, live ClinicOS, live AI, live transcription, live storage, claim submission, autonomous clinical/coding/billing behavior, medical-necessity determination, charge finalization, or production launch.
 
+## WO-067 ModeResolver and adapter runtime wiring
+
+`WO-067` adds `pnpm mode:adapter-readiness`:
+
+- API unit tests cover standalone default mode, ClinicOS mock mode, degraded/unavailable fail-closed state, invalid mode fallback, metadata-only adapter seams, and no live delegation or raw payload storage.
+- ClinicOS service/e2e tests cover status, VisitGraph/M17 mapping, stale mapping evidence, failed publication metadata, cross-tenant/service-account denial, ordinary-clinician write denial, degraded mode, and mode adapter boundary metadata.
+- The readiness script verifies the shared ModeResolver, ClinicOS service wiring, contract/OpenAPI DTOs, synthetic fixtures, docs/status/run-log evidence, active next-work-order rails, and no-live/no-launch posture.
+- Existing `pnpm standalone:workflow-readiness`, `pnpm frontend:primary-runtime-readiness`, and `pnpm clinicos:integration-readiness` remain required to prove standalone workflow behavior and the prior ClinicOS metadata boundary were not regressed.
+
+This gate proves synthetic/local CR-3 mode adapter readiness only. It does not enable live ClinicOS credentials, live event bus delivery, delegated identity, raw ClinicOS payload storage, live EHR/writeback routing, live AI, live transcription, production PHI, charge finalization, medical-necessity determination, claim submission, or production launch.
+
 ## WO-049 launch operations readiness
 
 `WO-049` adds synthetic/local deployment, performance, reliability, and operational drill evidence:

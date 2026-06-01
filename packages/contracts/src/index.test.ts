@@ -1151,6 +1151,21 @@ describe('ClinicOS adapter contracts', () => {
           permissionBoundary: 'aura_note_authoritative'
         }
       ],
+      modeAdapterBoundaries: [
+        {
+          seam: 'identity',
+          displayName: 'Identity context',
+          sourceOfTruth: 'aura_note',
+          adapterStatus: 'standalone_authoritative',
+          permissionBoundary: 'aura_note_authoritative',
+          liveDelegationEnabled: false,
+          rawPayloadStorageEnabled: false,
+          humanReviewRequired: true,
+          writesFailClosed: true,
+          notes: 'Standalone AURA Note remains authoritative.',
+          clinicOsModuleId: 'M17'
+        }
+      ],
       mappings: [],
       publishedEvents: [],
       permissionsStillEnforcedByAuraNote: true,
@@ -1172,6 +1187,7 @@ describe('ClinicOS adapter contracts', () => {
     assert.equal(status.modeContext.hostMode, 'standalone');
     assert.equal(status.permissionsStillEnforcedByAuraNote, true);
     assert.equal(status.rawPayloadsStored, false);
+    assert.equal(status.modeAdapterBoundaries[0]?.liveDelegationEnabled, false);
   });
 
   it('represents VisitGraph and M17 mapping records for mock ClinicOS mode', () => {

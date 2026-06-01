@@ -886,6 +886,8 @@ This gate does not authorize live EHR writeback, live AI, live transcription, pr
 - **Stop conditions:** live module contract or delegated identity behavior is required.
 - **Risks and deferred decisions:** live ClinicOS contracts and event-bus semantics remain deferred.
 
+**Implementation status as of `WO-067`:** complete as synthetic/local CR-3 mode adapter readiness evidence. The API now has a shared `ModeResolver` that normalizes standalone and ClinicOS mode headers into a typed runtime mode context plus adapter-boundary evidence for schedule source, patient context, VisitGraph, tasks, audit, AI governance, Charge Integrity, EHR, export, and identity. ClinicOS status/action responses expose `modeAdapterBoundaries`, and tests prove standalone default behavior, ClinicOS mock mode, degraded/unavailable fail-closed behavior, cross-tenant denial, role denial, metadata-only publication, and no live delegation or raw payload storage. `pnpm mode:adapter-readiness` verifies code, contracts, docs, status, run-log, and no-live/no-launch posture. CR-3 remains in progress; this does not enable live ClinicOS sync, delegated identity, live event bus delivery, raw ClinicOS payload storage, live EHR/writeback, live AI, live transcription, production PHI, charge finalization, medical-necessity determination, claim submission, or production launch.
+
 ## WO-068 — Transcription Runtime Boundary And Provider-Ready Interface
 
 - **Objective:** Make transcription production-shaped while keeping live provider calls disabled until future approval.

@@ -188,7 +188,8 @@ assertIncludes('work_orders/README.md', ['`WO-065` is complete']);
 const workOrderIndex = read('work_orders/README.md');
 if (
   !workOrderIndex.includes('`WO-066` is the next active CR-2 work order') &&
-  !workOrderIndex.includes('`WO-067` is the next active CR-3 work order')
+  !workOrderIndex.includes('`WO-067` is the next active CR-3 work order') &&
+  !workOrderIndex.includes('`WO-068` is the next active CR-3 work order')
 ) {
   throw new Error('work_orders/README.md must retain WO-066 or later next-work-order evidence after WO-065');
 }
@@ -196,7 +197,8 @@ assertIncludes('RUN_LOG.md', ['WO-065 Figma-ready basic UI scaffold and screen i
 const specGaps = read('SPEC_GAPS.md');
 if (
   !specGaps.includes('No active gaps as of post-`WO-065` Figma handoff inventory review') &&
-  !specGaps.includes('No active gaps as of post-`WO-066` standalone workflow completion / CR-2 review')
+  !specGaps.includes('No active gaps as of post-`WO-066` standalone workflow completion / CR-2 review') &&
+  !specGaps.includes('No active gaps as of post-`WO-067` ModeResolver and adapter runtime wiring review')
 ) {
   throw new Error('SPEC_GAPS.md must retain WO-065 or later no-active-gap evidence');
 }

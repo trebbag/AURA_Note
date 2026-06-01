@@ -43,6 +43,8 @@ describe('ClinicOS integration API e2e', () => {
     assert.equal(mock.body.data.rawPayloadsStored, false);
     assert.equal(mock.body.data.liveClinicOsSyncEnabled, false);
     assert.equal(mock.body.data.moduleBoundaries.length, 8);
+    assert.equal(mock.body.data.modeAdapterBoundaries.length, 10);
+    assert.equal(mock.body.data.modeAdapterBoundaries.every((boundary: { liveDelegationEnabled: boolean }) => boundary.liveDelegationEnabled === false), true);
   });
 
   it('records VisitGraph and M17 mappings in ClinicOS mock mode', async () => {
@@ -60,6 +62,7 @@ describe('ClinicOS integration API e2e', () => {
     assert.equal(response.body.data.mappings[0].clinicosModuleId, 'M03');
     assert.equal(response.body.data.mappings[1].clinicosModuleId, 'M17');
     assert.equal(response.body.data.publishedEvent.status, 'queued');
+    assert.equal(response.body.data.modeAdapterBoundaries.find((boundary: { seam: string }) => boundary.seam === 'visitGraph').clinicOsModuleId, 'M03');
   });
 
   it('records stale mapping review metadata and denies ordinary clinicians', async () => {
@@ -115,5 +118,6 @@ describe('ClinicOS integration API e2e', () => {
     assert.equal(response.body.data.publishedEvent.payloadStored, false);
     assert.equal(response.body.data.publishedEvent.permissionBoundaryEnforced, true);
     assert.equal(response.body.data.domainEvents[0].eventType, 'clinicos.event_publication_failed.v1');
+    assert.equal(response.body.data.modeAdapterBoundaries.find((boundary: { seam: string }) => boundary.seam === 'ehr').adapterStatus, 'unavailable');
   });
 });

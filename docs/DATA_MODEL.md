@@ -686,3 +686,9 @@ These records remain synthetic/local API metadata mapped to audit/domain-event e
 `WO-063` adds no production identity store, token persistence, SAML assertion persistence, OIDC claims persistence, ClinicOS delegated identity payload persistence, or PHI-bearing identity record. It adds `IdentityRuntimeBoundaryDecisionDto` and OpenAPI schema metadata for audit-safe boundary decisions: allowed state, `AURA_NOTE_AUTH_MODE`, identity source, failure reason, `liveCredentialPresent=false`, `delegatedIdentityConfigured=false`, `rawTokenReturned=false`, and synthetic-header acceptance state.
 
 Identity accepted/denied evidence remains local structured runtime log metadata. Durable tenant-owned identity-boundary event persistence remains deferred until a later audit/runtime work order promotes request-boundary decisions into persisted audit/event records.
+
+## WO-067 ModeResolver adapter-boundary data status
+
+`WO-067` adds no new production tables and no raw ClinicOS payload persistence. It extends the ClinicOS DTO/OpenAPI model with `AuraModeAdapterBoundaryDto` and `modeAdapterBoundaries` evidence for schedule source, patient context, VisitGraph, tasks, audit, AI governance, Charge Integrity, EHR, export, and identity seams.
+
+The metadata records source-of-truth posture, adapter status, optional ClinicOS module ID, `permissionBoundary='aura_note_authoritative'`, `liveDelegationEnabled=false`, `rawPayloadStorageEnabled=false`, `humanReviewRequired=true`, and fail-closed write state for degraded/unavailable ClinicOS mode. Existing `ModeMapping`, `IntegrationConnection`, domain-event, and audit-event shapes remain the durability path where prior work orders already require persisted adapter metadata. Broader live ClinicOS event-bus payloads, delegated identity payloads, production synchronization records, and raw module payload storage remain deferred.

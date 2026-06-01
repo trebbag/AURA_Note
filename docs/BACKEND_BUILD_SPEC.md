@@ -308,6 +308,14 @@ Existing production-intended scaffold routes are inventoried in `docs/FRONTEND_R
 
 The API runtime CORS boundary now accepts the ClinicOS mode headers required by the typed browser client: `x-aura-clinicos-mode`, `x-aura-clinicos-unavailable`, and `x-aura-clinicos-degraded`. This remains local synthetic adapter evidence only; no live ClinicOS event bus, delegated identity, raw payload storage, or production launch behavior is enabled.
 
+## WO-067 ModeResolver and adapter runtime backend status
+
+`WO-067` adds `apps/api/src/runtime/mode-resolver.ts` as the shared API ModeResolver. Runtime ClinicOS headers are normalized into a typed `AuraRuntimeModeResolution` containing the API mode, ClinicOS mode context, module boundaries, and adapter-boundary evidence for schedule source, patient context, VisitGraph, tasks, audit, AI governance, Charge Integrity, EHR, export, and identity.
+
+`ClinicOsService` now consumes that resolver instead of parsing host-mode headers locally. ClinicOS status, mapping, and publication responses return `modeAdapterBoundaries` so clients can see that AURA Note remains authoritative, live delegation is disabled, raw payload storage is disabled, and human review is required. Degraded or unavailable ClinicOS mode marks writes fail-closed and emits metadata-only domain event payloads with `modeAdapterBoundaryCount`.
+
+Standalone remains the default runtime posture and AURA Note remains authoritative in every mode. `WO-067` is not live ClinicOS integration: no production credentials, event bus, delegated identity, raw ClinicOS payload, production PHI, autonomous clinical/coding/billing behavior, charge finalization, medical-necessity determination, claim submission, or production launch behavior is enabled.
+
 ## WO-049 launch operations readiness
 
 `WO-049` adds synthetic/local backend operational readiness evidence. `pnpm launch:ops-readiness` combines the deterministic performance baseline, browser support-status drill assertions, and a static verifier for environment promotion, smoke checks, rollback rehearsal, incident response, access review, and support escalation evidence.
