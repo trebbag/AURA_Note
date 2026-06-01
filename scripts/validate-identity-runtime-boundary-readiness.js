@@ -179,7 +179,12 @@ check(
 });
 
 check('status.wo063-done', 'repo_status marks WO-063 done', status.work_orders?.['WO-063'] === 'done', status.work_orders?.['WO-063']);
-check('status.next-wo064', 'repo_status advances next work order to WO-064 after CR-1', status.next_work_order === 'WO-064', status.next_work_order);
+check(
+  'status.next-wo064-or-later',
+  'repo_status advances next work order to WO-064 or later after CR-1',
+  status.next_work_order === null || Number.parseInt(String(status.next_work_order || '').replace('WO-', ''), 10) >= 64,
+  status.next_work_order
+);
 check('status.checkpoint-cr2', 'repo_status advances to CR-2 after CR-1 checkpoint report', status.current_checkpoint === 'CR-2', status.current_checkpoint);
 check(
   'work-order.readme',

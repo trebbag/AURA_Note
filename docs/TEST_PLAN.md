@@ -501,6 +501,18 @@ This gate proves synthetic/local P9 review readiness only. It does not certify H
 
 This gate proves synthetic/local frontend runtime integration evidence only. Existing production-intended scaffold routes must be converted to typed API runtime behavior or explicitly deferred before launch-candidate readiness is claimed.
 
+## WO-064 primary UI runtime API conversion
+
+`WO-064` adds `pnpm frontend:primary-runtime-readiness`:
+
+- the primary production-intended AURA Note routes use the typed web API client for route loaders and state-changing actions;
+- Playwright seeds backend records through the API for schedule, workspace, finalized-note, and frontend runtime integration flows;
+- browser checks cover loading, empty, ready, saving, failed, permission-denied, read-only, blocked, degraded, disabled, and documented demo/fixture states where relevant;
+- route actions for schedule, visit timer, recording metadata, transcript correction, History Gap blocker creation, finalization, export/copy/download/writeback, operations, platform, EHR, ClinicOS, AI governance, coaching, and support status refetch typed API-backed state after mutation;
+- ClinicOS browser calls use typed mode headers and the API CORS boundary permits those headers for local synthetic evidence.
+
+This gate proves synthetic/local primary route runtime evidence only. It does not enable live EHR, ClinicOS, AI, transcription, storage, payer, claim, production identity, production PHI, or production launch behavior.
+
 ## WO-049 launch operations readiness
 
 `WO-049` adds synthetic/local deployment, performance, reliability, and operational drill evidence:

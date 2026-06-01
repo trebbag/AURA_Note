@@ -30,7 +30,7 @@ check('status.wo052-done', 'WO-052 is marked done', repoStatus.work_orders?.['WO
 check(
   'status.next-work-order-post-p11',
   'Post-P11 rails either remain parked or point to the approved commercial-readiness active work order',
-  repoStatus.next_work_order === null || repoStatus.next_work_order === 'WO-061' || repoStatus.next_work_order === 'WO-062' || repoStatus.next_work_order === 'WO-063' || repoStatus.next_work_order === 'WO-064',
+  repoStatus.next_work_order === null || Number.parseInt(String(repoStatus.next_work_order || '').replace('WO-', ''), 10) >= 61,
   repoStatus.next_work_order
 );
 check(

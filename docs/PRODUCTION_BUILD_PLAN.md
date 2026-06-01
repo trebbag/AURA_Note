@@ -817,6 +817,8 @@ This gate does not authorize live EHR writeback, live AI, live transcription, pr
 - **Stop conditions:** backend support is missing for a high-risk route and cannot be safely stubbed behind documented disabled mode.
 - **Risks and deferred decisions:** visual design remains deferred to Figma; live vendors remain gated.
 
+**Implementation status as of `WO-064`:** complete as synthetic/local CR-2 primary UI runtime evidence. The primary AURA Note routes now use `apps/web/lib/aura-note-api-client.ts` for typed API loaders/actions, and Playwright seeds backend-backed workflows for schedule, workspace, finalized-note, and appointment-through-finalization/export reload evidence. Local React state remains only for transient controls, form text, tabs, and documented disabled/demo adapter presentation. `pnpm frontend:primary-runtime-readiness` verifies route files, typed-client expansion, ClinicOS mode header support, route inventory, test evidence, status/run-log evidence, and no-live/no-launch posture. This does not enable live vendors, production PHI, production credentials, autonomous clinical/coding/billing behavior, claim submission, or production launch.
+
 ## WO-065 — Figma-Ready Basic UI Scaffold And Screen Inventory
 
 - **Objective:** Ensure the basic UI contains every product surface, workflow, state, panel, modal, drawer, table, form, action, and artifact Figma must design later.

@@ -422,6 +422,8 @@ The route is AI governance-review evidence, not a live AI operations console. It
 
 `WO-063` adds the identity runtime state contract that frontend routes must treat as API-backed auth posture evidence. Local/demo identity must be visibly labeled through API response headers or documented local runtime labels. Screens should map missing identity context, expired-session, disabled-user, delegated-denied, wrong-purpose, permission-denied, and read-only identity outcomes to visible states without implying production SSO, ClinicOS identity delegation, live PHI access, or launch readiness. Synthetic identity headers remain acceptable only in explicit local/demo mode and must not be represented as production authentication.
 
+`WO-064` converts the primary production-intended AURA Note routes to typed API-backed route state. Local React state on those routes is now limited to transient control state, form text, selected tabs, and documented disabled/demo adapter presentation; it is not the authoritative product data source. Each affected route must keep loading, empty, ready, saving, failed, permission-denied, and read-only states visible through API responses or documented mocks, and high-risk disabled live-vendor actions must remain blocked without implying production readiness.
+
 ## Required accessibility and UX states
 
 Every screen must have empty, loading, ready, saving, blocked, failed, permission-denied, and read-only states.

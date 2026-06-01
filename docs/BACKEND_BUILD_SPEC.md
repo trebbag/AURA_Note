@@ -302,6 +302,12 @@ No live model credential, production prompt store, raw external model prompt, ra
 
 Existing production-intended scaffold routes are inventoried in `docs/FRONTEND_RUNTIME_INTEGRATION.md` as API-backed runtime or documented mocks. Later P10 work must either convert those documented mocks to typed API runtime behavior or explicitly defer/disable them before launch-candidate review. No production PHI storage, live vendor execution, autonomous clinical/coding/billing behavior, medical-necessity determination, charge finalization, claim submission, or production launch approval is introduced.
 
+## WO-064 primary UI runtime backend status
+
+`WO-064` expands the typed web API client and converts primary production-intended routes to API-backed runtime behavior through typed API clients. The affected frontend actions call existing tenant-scoped backend operations for schedule/patient shells, workspace state, visit controls, recording metadata, transcript correction, suggestions/selections, compliance/history gaps, finalization, exports, operations worklists, platform controls, EHR/ClinicOS adapter states, AI governance, coaching, and support status. Browser-visible failed and permission-denied states now use PHI-safe API error envelopes where available.
+
+The API runtime CORS boundary now accepts the ClinicOS mode headers required by the typed browser client: `x-aura-clinicos-mode`, `x-aura-clinicos-unavailable`, and `x-aura-clinicos-degraded`. This remains local synthetic adapter evidence only; no live ClinicOS event bus, delegated identity, raw payload storage, or production launch behavior is enabled.
+
 ## WO-049 launch operations readiness
 
 `WO-049` adds synthetic/local backend operational readiness evidence. `pnpm launch:ops-readiness` combines the deterministic performance baseline, browser support-status drill assertions, and a static verifier for environment promotion, smoke checks, rollback rehearsal, incident response, access review, and support escalation evidence.

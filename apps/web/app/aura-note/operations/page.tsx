@@ -1,50 +1,176 @@
 'use client';
 
 import Link from 'next/link';
-import { useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import type {
+  BillingReviewQueueViewDto,
+  EstimateConfigurationDto,
+  RulesCatalogViewDto,
+  SettingsAdminViewDto,
+  TaskWorklistViewDto,
+  TemplatesViewDto
+} from '@aura-note/contracts';
+import { createAuraNoteApiClient } from '../../../lib/aura-note-api-client';
 
 const states = ['empty', 'loading', 'ready', 'saving', 'blocked', 'failed', 'permission-denied', 'read-only', 'demo fixture'];
-
-const tabs = [
-  'Task Inbox',
-  'MA Follow-Up',
-  'Billing Review',
-  'Settings',
-  'Templates',
-  'Estimates',
-  'Rules Catalog'
-] as const;
+const tabs = ['Task Inbox', 'MA Follow-Up', 'Billing Review', 'Settings', 'Templates', 'Estimates', 'Rules Catalog'] as const;
 
 type Tab = (typeof tabs)[number];
+type RouteState = (typeof states)[number];
 
 export default function StandaloneOperationsPage() {
+  const adminClient = useMemo(() => createAuraNoteApiClient({ role: 'admin' }), []);
+  const maClient = useMemo(() => createAuraNoteApiClient({ role: 'ma' }), []);
+  const billingClient = useMemo(() => createAuraNoteApiClient({ role: 'billing_staff' }), []);
+  const supportClient = useMemo(() => createAuraNoteApiClient({ role: 'support', userId: 'user-support-operations-denial' }), []);
   const [activeTab, setActiveTab] = useState<Tab>('Task Inbox');
-  const [taskStatus, setTaskStatus] = useState('open blocker');
-  const [billingTranscript, setBillingTranscript] = useState('denied until triggered review context');
-  const [integrationStatus, setIntegrationStatus] = useState('disabled');
-  const [templateStatus, setTemplateStatus] = useState('active synthetic template');
-  const [estimateStatus, setEstimateStatus] = useState('internal only');
-  const [rulesStatus, setRulesStatus] = useState('draft-only human review required');
+  const [routeState, setRouteState] = useState<RouteState>('loading');
+  const [tasks, setTasks] = useState<TaskWorklistViewDto | null>(null);
+  const [billing, setBilling] = useState<BillingReviewQueueViewDto | null>(null);
+  const [settings, setSettings] = useState<SettingsAdminViewDto | null>(null);
+  const [templates, setTemplates] = useState<TemplatesViewDto | null>(null);
+  const [estimate, setEstimate] = useState<EstimateConfigurationDto | null>(null);
+  const [rules, setRules] = useState<RulesCatalogViewDto | null>(null);
+  const [statusMessage, setStatusMessage] = useState('Loading operations from typed API responses.');
 
-  const statusSummary = useMemo(
-    () => [
-      ['Worklist', taskStatus],
-      ['Billing transcript', billingTranscript],
-      ['Integration', integrationStatus],
-      ['Estimate', estimateStatus],
-      ['Rules', rulesStatus]
-    ],
-    [billingTranscript, estimateStatus, integrationStatus, rulesStatus, taskStatus]
-  );
+  const refreshOperations = useCallback(async () => {
+    setRouteState('loading');
+    try {
+      const [taskResponse, billingResponse, settingsResponse, templatesResponse, estimateResponse, rulesResponse] = await Promise.all([
+        adminClient.listOperationalTasks(),
+        adminClient.listBillingReviews(),
+        adminClient.getSettings(),
+        adminClient.listTemplates(),
+        adminClient.getEstimateConfig(),
+        adminClient.listRulesCatalog()
+      ]);
+      setTasks(taskResponse.data);
+      setBilling(billingResponse.data);
+      setSettings(settingsResponse.data);
+      setTemplates(templatesResponse.data);
+      setEstimate(estimateResponse.data);
+      setRules(rulesResponse.data);
+      setRouteState(taskResponse.data.counts.total === 0 ? 'empty' : 'ready');
+      setStatusMessage('Standalone operations state loaded through AURA Note API endpoints.');
+    } catch (error) {
+      setRouteState('failed');
+      setStatusMessage(error instanceof Error ? error.message : 'Operations API load failed.');
+    }
+  }, [adminClient]);
+
+  useEffect(() => {
+    void refreshOperations();
+  }, [refreshOperations]);
+
+  async function runAction(label: string, action: () => Promise<unknown>) {
+    setRouteState('saving');
+    try {
+      await action();
+      await refreshOperations();
+      setStatusMessage(label);
+    } catch (error) {
+      setRouteState('failed');
+      setStatusMessage(error instanceof Error ? error.message : label);
+    }
+  }
+
+  function assignTask() {
+    const task = tasks?.tasks.find((candidate) => candidate.ownerRole === 'clinician') ?? tasks?.tasks[0];
+    if (!task) return;
+    void runAction('Task updated through API as an assigned non-blocker.', () =>
+      adminClient.updateOperationalTask(task.taskId, { adjudicationStatus: 'assigned', blocksSigning: false })
+    );
+  }
+
+  function markMaAnswered() {
+    const task = tasks?.tasks.find((candidate) => candidate.ownerRole === 'ma');
+    if (!task) return;
+    void runAction('MA follow-up task answered through API.', () =>
+      maClient.updateOperationalTask(task.taskId, { adjudicationStatus: 'answered', blocksSigning: false })
+    );
+  }
+
+  function triggerBillingReview() {
+    const item = billing?.items[0];
+    if (!item) return;
+    void runAction('Billing review updated through API; transcript access remains trigger and role scoped.', () =>
+      billingClient.updateBillingReview(item.billingReviewId, { status: 'in_review', requestTranscriptAccess: true })
+    );
+  }
+
+  function setMockReady() {
+    const integration = settings?.integrations[0];
+    if (!integration) return;
+    void runAction('Integration mock-ready state recorded through API.', () =>
+      adminClient.updateIntegration(integration.integrationId, {
+        status: 'mock_ready',
+        reason: 'WO-064 API-backed operations route mock-ready evidence'
+      })
+    );
+  }
+
+  function createDraftTemplate() {
+    void runAction('Draft synthetic template created through API.', () =>
+      adminClient.createTemplate({
+        name: `WO-064 Draft Template ${Date.now()}`,
+        visitType: 'Chronic follow-up',
+        sections: ['Subjective', 'Assessment', 'Plan'],
+        variables: ['{{follow_up_interval}}']
+      })
+    );
+  }
+
+  function acknowledgeEstimateCaveat() {
+    if (!estimate) return;
+    void runAction('Estimate caveat update recorded through API; patient-facing estimates remain disabled.', () =>
+      adminClient.updateEstimateConfig({
+        internalEstimatesEnabled: true,
+        patientFacingEstimatesEnabled: false,
+        caveatText: estimate.caveatText
+      })
+    );
+  }
+
+  function publishRules() {
+    const ruleIds = rules?.entries.map((entry) => entry.ruleId) ?? [];
+    if (ruleIds.length === 0) return;
+    void runAction('Rules catalog published through API with human-review attestation.', () =>
+      adminClient.publishRulesCatalog({
+        ruleIds,
+        attestation: 'Human review required before any coding, billing, or medical necessity use.'
+      })
+    );
+  }
+
+  async function verifyPermissionDeniedState() {
+    setRouteState('loading');
+    try {
+      await supportClient.listBillingReviews();
+      setRouteState('failed');
+      setStatusMessage('Unexpected support billing-review access succeeded.');
+    } catch (error) {
+      setRouteState('permission-denied');
+      setStatusMessage(error instanceof Error ? error.message : 'Support billing-review access denied by API.');
+    }
+  }
+
+  const statusSummary = [
+    ['Worklist', `${tasks?.counts.total ?? 0} tasks / ${tasks?.counts.blockers ?? 0} blockers`],
+    ['Billing transcript', billing?.items[0]?.transcriptAccessReason ?? 'not loaded'],
+    ['Integration', settings?.integrations.map((integration) => `${integration.vendor}:${integration.status}`).join(', ') ?? 'not loaded'],
+    ['Estimate', estimate?.patientFacingEstimatesEnabled ? 'unsafe enabled' : 'patient-facing disabled'],
+    ['Rules', rules?.entries.map((entry) => `${entry.codeOrKey}:${entry.status}`).join(', ') ?? 'not loaded']
+  ];
 
   return (
     <main className="operations-shell">
       <header className="page-header">
         <div>
-          <p className="eyebrow">P7.5 / WO-039</p>
+          <p className="eyebrow">CR-2 / WO-064</p>
           <h1>Standalone Operations Center</h1>
         </div>
         <nav className="header-nav" aria-label="AURA Note sections">
+          <Link href="/aura-note">Runtime Home</Link>
           <Link href="/aura-note/schedule">Schedule</Link>
           <Link href="/aura-note/drafts">Draft Notes</Link>
           <Link href="/aura-note/finalized">Finalized Notes</Link>
@@ -55,12 +181,13 @@ export default function StandaloneOperationsPage() {
       <section className="status-band" aria-label="Standalone operations readiness">
         <div>
           <h2>Standalone Daily Operations</h2>
-          <p>
-            Synthetic task, billing review, settings, template, estimate, and rules-catalog surfaces are available without
-            ClinicOS dependency.
-          </p>
+          <p>{statusMessage}</p>
         </div>
         <dl>
+          <div>
+            <dt>Route State</dt>
+            <dd>{routeState}</dd>
+          </div>
           <div>
             <dt>Mode</dt>
             <dd>standalone</dd>
@@ -100,6 +227,9 @@ export default function StandaloneOperationsPage() {
               </span>
             ))}
           </section>
+          <button type="button" className="secondary-action" onClick={() => void verifyPermissionDeniedState()}>
+            Verify Permission Denied
+          </button>
         </div>
 
         <div className="schedule-list" aria-live="polite">
@@ -108,14 +238,15 @@ export default function StandaloneOperationsPage() {
               <div className="appointment-main">
                 <strong>Task Inbox</strong>
                 <small>Clinician linked tasks, blocker visibility, due metadata, note and safe patient linkage.</small>
-                <span>{taskStatus}</span>
+                <span>{tasks?.tasks[0]?.adjudicationStatus ?? 'empty'}</span>
               </div>
               <div className="state-grid">
-                <span>Owner: clinician</span>
-                <span>Due: 2026-05-29</span>
+                <span>Total: {tasks?.counts.total ?? 0}</span>
+                <span>Blockers: {tasks?.counts.blockers ?? 0}</span>
+                {tasks?.counts.blockers ? <span>open blocker</span> : <span>no open blocker</span>}
               </div>
               <div className="action-row">
-                <button type="button" onClick={() => setTaskStatus('assigned non-blocker')}>
+                <button type="button" onClick={assignTask}>
                   Assign
                 </button>
               </div>
@@ -127,14 +258,17 @@ export default function StandaloneOperationsPage() {
               <div className="appointment-main">
                 <strong>MA Follow-Up</strong>
                 <small>History Gap task can block signing until answered, closed, or assigned.</small>
-                <span>{taskStatus}</span>
+                <span>{tasks?.tasks.find((task) => task.ownerRole === 'ma')?.adjudicationStatus ?? 'empty'}</span>
               </div>
               <div className="state-grid">
-                <span>Owner: ma</span>
+                <span>MA follow-up: {tasks?.counts.maFollowUp ?? 0}</span>
                 <span>Source: history_gap</span>
+                {tasks?.tasks.find((task) => task.ownerRole === 'ma' && task.adjudicationStatus === 'answered' && !task.blocksSigning) ? (
+                  <span>answered non-blocker</span>
+                ) : null}
               </div>
               <div className="action-row">
-                <button type="button" onClick={() => setTaskStatus('answered non-blocker')}>
+                <button type="button" onClick={markMaAnswered}>
                   Mark Answered
                 </button>
               </div>
@@ -146,14 +280,15 @@ export default function StandaloneOperationsPage() {
               <div className="appointment-main">
                 <strong>Billing Review Queue</strong>
                 <small>Draft claim preview remains human-review-required with submittedClaim=false.</small>
-                <span>{billingTranscript}</span>
+                <span>{billing?.items[0]?.transcriptAccess ?? 'empty'}</span>
               </div>
               <div className="state-grid">
                 <span>Transcript: triggered review only</span>
                 <span>Support access: denied</span>
+                <span>submittedClaim={String(billing?.items[0]?.submittedClaim ?? false)}</span>
               </div>
               <div className="action-row">
-                <button type="button" onClick={() => setBillingTranscript('allowed for billing_staff triggered review')}>
+                <button type="button" onClick={triggerBillingReview}>
                   Trigger Review
                 </button>
               </div>
@@ -165,14 +300,17 @@ export default function StandaloneOperationsPage() {
               <div className="appointment-main">
                 <strong>Settings/Admin/Integrations</strong>
                 <small>Tenant, site, role, feature flag, disabled user, and adapter status scaffolding.</small>
-                <span>{integrationStatus}</span>
+                <span>{settings?.integrations[0]?.status ?? 'empty'}</span>
               </div>
               <div className="state-grid">
-                <span>athenahealth: disabled</span>
-                <span>ClinicOS: safe degraded</span>
+                {settings?.integrations.map((integration) => (
+                  <span key={integration.integrationId}>
+                    {integration.vendor}: {integration.status}
+                  </span>
+                ))}
               </div>
               <div className="action-row">
-                <button type="button" onClick={() => setIntegrationStatus('mock_ready')}>
+                <button type="button" onClick={setMockReady}>
                   Set Mock Ready
                 </button>
               </div>
@@ -184,14 +322,14 @@ export default function StandaloneOperationsPage() {
               <div className="appointment-main">
                 <strong>Templates And Dot Phrases</strong>
                 <small>Safe variables use placeholder form and obvious PHI is rejected.</small>
-                <span>{templateStatus}</span>
+                <span>{templates?.templates[0]?.status ?? 'empty synthetic template'}</span>
               </div>
               <div className="state-grid">
-                <span>{'{{follow_up_interval}}'}</span>
-                <span>.awvplan</span>
+                <span>{templates?.templates[0]?.variables[0] ?? '{{follow_up_interval}}'}</span>
+                <span>{templates?.dotPhrases[0]?.trigger ?? '.awvplan'}</span>
               </div>
               <div className="action-row">
-                <button type="button" onClick={() => setTemplateStatus('draft synthetic template created')}>
+                <button type="button" onClick={createDraftTemplate}>
                   Create Draft
                 </button>
               </div>
@@ -203,14 +341,14 @@ export default function StandaloneOperationsPage() {
               <div className="appointment-main">
                 <strong>Estimate Configuration</strong>
                 <small>Internal caveated estimates only; no patient-facing financial conclusion.</small>
-                <span>{estimateStatus}</span>
+                <span>{estimate?.internalEstimatesEnabled ? 'internal only' : 'disabled'}</span>
               </div>
               <div className="state-grid">
-                <span>Source data: not configured</span>
-                <span>Patient-facing: disabled</span>
+                <span>Source data: {estimate?.sourceDataConfigured ? 'configured' : 'not configured'}</span>
+                <span>Patient-facing: {estimate?.patientFacingEstimatesEnabled ? 'enabled' : 'disabled'}</span>
               </div>
               <div className="action-row">
-                <button type="button" onClick={() => setEstimateStatus('internal caveat acknowledged')}>
+                <button type="button" onClick={acknowledgeEstimateCaveat}>
                   Acknowledge Caveat
                 </button>
               </div>
@@ -222,14 +360,14 @@ export default function StandaloneOperationsPage() {
               <div className="appointment-main">
                 <strong>Rules Catalog</strong>
                 <small>CPT, HCPCS, ICD-10, HCC, E/M, quality, visit-type, and confidence threshold seeds.</small>
-                <span>{rulesStatus}</span>
+                <span>{rules?.entries[0]?.status ?? 'empty'}</span>
               </div>
               <div className="state-grid">
                 <span>Human review: required</span>
                 <span>Autonomous finalization: false</span>
               </div>
               <div className="action-row">
-                <button type="button" onClick={() => setRulesStatus('published as active synthetic rules')}>
+                <button type="button" onClick={publishRules}>
                   Publish
                 </button>
               </div>

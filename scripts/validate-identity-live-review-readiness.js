@@ -29,7 +29,7 @@ function check(id, description, passed, evidence) {
 }
 
 check('status.wo053-done', 'WO-053 is marked done', status.work_orders?.['WO-053'] === 'done', status.work_orders?.['WO-053']);
-check('status.next-production-build-safe', 'Post-P11 planning/control remains valid while commercial-readiness runtime work is active', status.next_work_order === null || status.next_work_order === 'WO-061' || status.next_work_order === 'WO-062' || status.next_work_order === 'WO-063' || status.next_work_order === 'WO-064', status.next_work_order);
+check('status.next-production-build-safe', 'Post-P11 planning/control remains valid while commercial-readiness runtime work is active', status.next_work_order === null || Number.parseInt(String(status.next_work_order || '').replace('WO-', ''), 10) >= 61, status.next_work_order);
 check('status.checkpoint-production-build-safe', 'P11 or commercial-readiness checkpoint remains current', status.current_checkpoint === 'P11' || status.current_checkpoint === 'CR-0' || status.current_checkpoint === 'CR-1' || status.current_checkpoint === 'CR-2', status.current_checkpoint);
 check('work-order.file', 'WO-053 work-order file exists', exists('work_orders/WO-053_production_identity_account_lifecycle_review_intake.md'), 'work_orders/WO-053_production_identity_account_lifecycle_review_intake.md');
 check('work-order.index', 'Work-order index records WO-053 completion', workOrderIndex.includes('WO-053') && workOrderIndex.includes('production identity'), 'work_orders/README.md');

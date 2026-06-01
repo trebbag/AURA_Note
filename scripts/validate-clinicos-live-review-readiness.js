@@ -29,7 +29,7 @@ function check(id, description, passed, evidence) {
 }
 
 check('status.wo059-done', 'WO-059 is marked done', status.work_orders?.['WO-059'] === 'done', status.work_orders?.['WO-059']);
-check('status.next-production-build-safe', 'Post-P11 planning/control remains valid while commercial-readiness runtime work is active', status.next_work_order === null || status.next_work_order === 'WO-061' || status.next_work_order === 'WO-062' || status.next_work_order === 'WO-063' || status.next_work_order === 'WO-064', status.next_work_order);
+check('status.next-production-build-safe', 'Post-P11 planning/control remains valid while commercial-readiness runtime work is active', status.next_work_order === null || Number.parseInt(String(status.next_work_order || '').replace('WO-', ''), 10) >= 61, status.next_work_order);
 check('status.checkpoint-production-build-safe', 'P11 or commercial-readiness checkpoint remains current', status.current_checkpoint === 'P11' || status.current_checkpoint === 'CR-0' || status.current_checkpoint === 'CR-1' || status.current_checkpoint === 'CR-2', status.current_checkpoint);
 check('work-order.file', 'WO-059 work-order file exists', exists('work_orders/WO-059_clinicos_live_integration_review_intake.md'), 'work_orders/WO-059_clinicos_live_integration_review_intake.md');
 check('work-order.index', 'Work-order index records WO-059 completion', workOrderIndex.includes('WO-059') && workOrderIndex.includes('ClinicOS live integration'), 'work_orders/README.md');

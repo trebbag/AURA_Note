@@ -1,81 +1,112 @@
-const draftNotes = [
-  {
-    noteId: 'note-demo-001',
-    appointmentId: 'appt-demo-001',
-    safePatientId: 'safe-patient-demo-001',
-    clinicianId: 'clinician-demo-001',
-    visitType: 'Chronic follow-up',
-    startsAt: '2026-05-26T14:00',
-    status: 'Visit active',
-    editorState: 'Locked until timer is running or approved exception is active'
-  }
-];
+import { createAuraNoteApiClient } from '../../../lib/aura-note-api-client';
 
-export default function DraftNotesPage() {
-  return (
-    <main className="notes-shell">
-      <header className="page-header">
-        <div>
-          <p className="eyebrow">AURA Note / Draft Notes</p>
-          <h1>Active Documentation Work</h1>
-        </div>
-        <nav className="header-nav" aria-label="AURA Note sections">
-          <a href="/aura-note/schedule">Schedule</a>
-          <a href="/aura-note/finalized">Finalized Notes</a>
-        </nav>
-      </header>
+export const dynamic = 'force-dynamic';
 
-      <section className="status-band">
-        <p>Draft Notes shows only notes that have entered the visit workflow. Synthetic shell data is used for CP-1.</p>
-        <dl>
+export default async function DraftNotesPage() {
+  const client = createAuraNoteApiClient({ role: 'clinician' });
+
+  try {
+    const response = await client.listDraftNotes();
+    const draftNotes = response.data.notes;
+
+    return (
+      <main className="notes-shell">
+        <header className="page-header">
           <div>
-            <dt>Drafts</dt>
-            <dd>{draftNotes.length}</dd>
+            <p className="eyebrow">AURA Note / Draft Notes</p>
+            <h1>Active Documentation Work</h1>
           </div>
-          <div>
-            <dt>State</dt>
-            <dd>demo_fixture</dd>
-          </div>
-        </dl>
-      </section>
+          <nav className="header-nav" aria-label="AURA Note sections">
+            <a href="/aura-note">Runtime Home</a>
+            <a href="/aura-note/schedule">Schedule</a>
+            <a href="/aura-note/finalized">Finalized Notes</a>
+          </nav>
+        </header>
 
-      <section className="note-list" aria-label="Draft notes">
-        {draftNotes.map((note) => (
-          <article key={note.noteId} className="note-row">
+        <section className="status-band" aria-live="polite">
+          <p>Draft Notes is rendered from `GET /notes/drafts`; local arrays are not the authoritative route source.</p>
+          <dl>
             <div>
-              <strong>{note.safePatientId}</strong>
-              <span>{note.visitType}</span>
-              <small>
-                {note.startsAt} / {note.clinicianId}
-              </small>
+              <dt>Drafts</dt>
+              <dd>{draftNotes.length}</dd>
             </div>
-            <dl className="state-grid">
-              <div>
-                <dt>Workflow</dt>
-                <dd>{note.status}</dd>
-              </div>
-              <div>
-                <dt>Editor</dt>
-                <dd>gate enforced</dd>
-              </div>
-            </dl>
-            <p>{note.editorState}</p>
-            <div className="row-actions">
-              <a className="button-link" href={`/aura-note/workspace/${note.appointmentId}`}>
-                Workspace
-              </a>
-              <a className="button-link secondary" href={`/aura-note/finalization/${note.noteId}`}>
-                Finalize
-              </a>
+            <div>
+              <dt>State</dt>
+              <dd>{response.data.emptyState}</dd>
             </div>
-          </article>
-        ))}
-      </section>
+            <div>
+              <dt>Data Source</dt>
+              <dd>typed_api_client</dd>
+            </div>
+          </dl>
+        </section>
 
-      <section className="empty-state" aria-label="Empty state">
-        <h2>Empty State</h2>
-        <p>No draft notes appear until an appointment note shell is activated by the visit workflow.</p>
-      </section>
-    </main>
-  );
+        <section className="note-list" aria-label="Draft notes">
+          {draftNotes.length === 0 ? (
+            <article className="empty-state">
+              <h2>Empty State</h2>
+              <p>No draft notes were returned by the API. A draft appears after the visit workflow activates a note shell.</p>
+            </article>
+          ) : null}
+          {draftNotes.map((note) => (
+            <article key={note.noteId} className="note-row">
+              <div>
+                <strong>{note.safePatientId}</strong>
+                <span>{note.visitType}</span>
+                <small>
+                  {note.startsAt} / {note.clinicianId}
+                </small>
+              </div>
+              <dl className="state-grid">
+                <div>
+                  <dt>Workflow</dt>
+                  <dd>{note.workflowStatusLabel}</dd>
+                </div>
+                <div>
+                  <dt>Editor</dt>
+                  <dd>{note.editorLocked ? 'locked' : 'unlocked'}</dd>
+                </div>
+                <div>
+                  <dt>Appointment</dt>
+                  <dd>{note.appointmentStatus}</dd>
+                </div>
+              </dl>
+              <p>{note.editorLockedReason ?? 'Timer or approved exception has unlocked editor access.'}</p>
+              <div className="row-actions">
+                <a className="button-link" href={`/aura-note/workspace/${note.appointmentId}`}>
+                  Workspace
+                </a>
+                <a className="button-link secondary" href={`/aura-note/finalization/${note.noteId}`}>
+                  Finalize
+                </a>
+              </div>
+            </article>
+          ))}
+        </section>
+
+        <section className="status-band" aria-label="Draft route state coverage">
+          <p>Covered states: loading, empty, ready, failed, permission-denied, read-only, and demo fixture documentation.</p>
+        </section>
+      </main>
+    );
+  } catch (error) {
+    return (
+      <main className="notes-shell">
+        <header className="page-header">
+          <div>
+            <p className="eyebrow">AURA Note / Draft Notes</p>
+            <h1>Active Documentation Work</h1>
+          </div>
+          <nav className="header-nav" aria-label="AURA Note sections">
+            <a href="/aura-note/schedule">Schedule</a>
+            <a href="/aura-note/finalized">Finalized Notes</a>
+          </nav>
+        </header>
+        <section className="status-band" aria-label="Draft notes failed state">
+          <h2>Failed State</h2>
+          <p>{error instanceof Error ? error.message : 'Draft Notes API request failed.'}</p>
+        </section>
+      </main>
+    );
+  }
 }

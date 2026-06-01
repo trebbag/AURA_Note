@@ -1,9 +1,9 @@
 'use client';
 
-import { useMemo, useState } from 'react';
-
-type WizardStep = 'code_review' | 'suggestion_review' | 'compose' | 'compare_edit' | 'billing_attest' | 'sign_dispatch';
-type Decision = 'pending' | 'keep' | 'remove';
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import type { WizardStep } from '@aura-note/domain';
+import type { FinalizationSessionDto } from '@aura-note/contracts';
+import { createAuraNoteApiClient, frontendRuntimeBillingAttestationStatements } from '../../../../lib/aura-note-api-client';
 
 interface FinalizationClientProps {
   noteId: string;
@@ -18,160 +18,130 @@ const steps: Array<{ id: WizardStep; label: string }> = [
   { id: 'sign_dispatch', label: 'Sign & Dispatch' }
 ];
 
-const initialSelections = [
-  {
-    id: 'selection-demo-99214',
-    label: 'CPT 99214 candidate',
-    evidence: 'Synthetic medication review and chronic follow-up support'
-  },
-  {
-    id: 'selection-demo-quality',
-    label: 'Quality follow-up plan',
-    evidence: 'Synthetic vitals review placeholder'
-  }
-];
-
-const initialSuggestions = [
-  {
-    id: 'suggestion-demo-bp',
-    label: 'Blood pressure follow-up candidate',
-    confidence: 0.88
-  },
-  {
-    id: 'suggestion-demo-hcc',
-    label: 'Risk review candidate',
-    confidence: 0.58
-  }
-];
+type RouteState = 'loading' | 'empty' | 'ready' | 'saving' | 'blocked' | 'failed' | 'permission-denied' | 'read-only';
 
 export function FinalizationClient({ noteId }: FinalizationClientProps) {
-  const [currentStep, setCurrentStep] = useState<WizardStep>('code_review');
-  const [selectionDecisions, setSelectionDecisions] = useState<Record<string, Decision>>({});
-  const [suggestionDecisions, setSuggestionDecisions] = useState<Record<string, Decision>>({});
-  const [composeComplete, setComposeComplete] = useState(false);
-  const [sourceEdited, setSourceEdited] = useState(false);
-  const [finalNoteApproved, setFinalNoteApproved] = useState(false);
-  const [summaryApproved, setSummaryApproved] = useState(false);
-  const [draftClaimReady, setDraftClaimReady] = useState(false);
-  const [estimateCaveatAcknowledged, setEstimateCaveatAcknowledged] = useState(false);
-  const [billingReviewRouted, setBillingReviewRouted] = useState(false);
-  const [billingAttested, setBillingAttested] = useState(false);
-  const [signedAndDispatched, setSignedAndDispatched] = useState(false);
-  const [message, setMessage] = useState('Frozen synthetic snapshot is ready for Code Review.');
+  const client = useMemo(() => createAuraNoteApiClient({ role: 'clinician' }), []);
+  const supportClient = useMemo(() => createAuraNoteApiClient({ role: 'support', userId: 'user-support-finalization-denial' }), []);
+  const [session, setSession] = useState<FinalizationSessionDto | null>(null);
+  const [routeState, setRouteState] = useState<RouteState>('loading');
+  const [message, setMessage] = useState('Loading finalization state from the API.');
 
-  const allSelectionsDecided = initialSelections.every((selection) => selectionDecisions[selection.id] && selectionDecisions[selection.id] !== 'pending');
-  const allSuggestionsDecided = initialSuggestions.every((suggestion) => suggestionDecisions[suggestion.id] && suggestionDecisions[suggestion.id] !== 'pending');
-  const billingReady = finalNoteApproved && summaryApproved && composeComplete && !sourceEdited;
-  const dispatchReady = billingReady && billingAttested && !signedAndDispatched;
+  const refreshSession = useCallback(async () => {
+    setRouteState('loading');
+    try {
+      const response = await client.getFinalizationSession(noteId);
+      setSession(response.data);
+      setRouteState(response.data.signedAndDispatched ? 'read-only' : 'ready');
+      setMessage('Finalization session loaded from typed API-backed state.');
+    } catch (error) {
+      setSession(null);
+      setRouteState('empty');
+      setMessage(error instanceof Error ? error.message : 'No finalization session returned yet.');
+    }
+  }, [client, noteId]);
 
-  const progress = useMemo(
-    () =>
-      steps.map((step) => ({
-        ...step,
-        status: step.id === currentStep ? 'in_progress' : steps.findIndex((candidate) => candidate.id === step.id) < steps.findIndex((candidate) => candidate.id === currentStep) ? 'completed' : 'not_started'
-      })),
-    [currentStep]
-  );
+  useEffect(() => {
+    void refreshSession();
+  }, [refreshSession]);
 
-  function decideSelection(selectionId: string, decision: Decision) {
-    setSelectionDecisions((current) => ({ ...current, [selectionId]: decision }));
-    setMessage(decision === 'remove' ? 'Selection moved to the unused audit list.' : 'Selection kept in the final package.');
+  async function runAction(label: string, action: () => Promise<{ data: { finalizationSession: FinalizationSessionDto } } | unknown>) {
+    setRouteState('saving');
+    try {
+      const result = await action();
+      if (result && typeof result === 'object' && 'data' in result) {
+        const data = (result as { data?: { finalizationSession?: FinalizationSessionDto } }).data;
+        if (data?.finalizationSession) setSession(data.finalizationSession);
+      }
+      setMessage(label);
+      await refreshSession();
+    } catch (error) {
+      setRouteState('failed');
+      setMessage(error instanceof Error ? error.message : label);
+    }
+  }
+
+  function startFinalization() {
+    void runAction('Finalization started through API.', () => client.startFinalization(noteId));
+  }
+
+  function decideSelection(selectionId: string, decision: 'keep' | 'remove') {
+    void runAction(`Selection ${decision} decision recorded through API.`, () =>
+      client.decideFinalizationSelection(noteId, selectionId, decision)
+    );
   }
 
   function completeCodeReview() {
-    if (!allSelectionsDecided) {
-      setMessage('Code Review requires a keep/remove decision on every selected item.');
-      return;
-    }
-    setCurrentStep('suggestion_review');
-    setMessage('Suggestion Review is active. Full raw transcript is not shown in this step.');
+    void runAction('Code Review completed through API.', () => client.completeCodeReview(noteId));
   }
 
-  function decideSuggestion(suggestionId: string, decision: Decision) {
-    setSuggestionDecisions((current) => ({ ...current, [suggestionId]: decision }));
-    setMessage(decision === 'keep' ? 'Suggestion moved into Visit Selections.' : 'Suggestion recorded as unused for audit.');
+  function decideSuggestion(suggestionId: string, decision: 'keep' | 'remove') {
+    void runAction(`Suggestion ${decision} decision recorded through API.`, () =>
+      client.decideFinalizationSuggestion(noteId, suggestionId, decision, 'Synthetic WO-064 finalization UI decision')
+    );
   }
 
   function completeSuggestionReview() {
-    if (!allSuggestionsDecided) {
-      setMessage('Suggestion Review cannot be skipped; every final-pass suggestion needs a decision.');
-      return;
-    }
-    setCurrentStep('compose');
-    setMessage('Compose is ready.');
+    void runAction('Suggestion Review completed through API.', () => client.completeSuggestionReview(noteId));
   }
 
   function runCompose() {
-    setComposeComplete(true);
-    setSourceEdited(false);
-    setCurrentStep('compare_edit');
-    setMessage('Enhanced note and patient summary are generated as draft outputs.');
+    void runAction('Enhanced note and patient summary drafts composed through API.', () => client.composeFinalizationDrafts(noteId));
   }
 
   function editSource() {
-    setSourceEdited(true);
-    setFinalNoteApproved(false);
-    setSummaryApproved(false);
-    setMessage('Source note changed. Re-beautify is required before approval.');
+    void runAction('Source note update recorded through API and approval reset.', () =>
+      client.updateCompareEditOriginal(noteId, 'Synthetic source note updated from WO-064 API-backed finalization route.')
+    );
   }
 
   function rebeautify() {
-    setSourceEdited(false);
-    setFinalNoteApproved(false);
-    setSummaryApproved(false);
-    setMessage('Enhanced version replaced from the updated source note.');
+    void runAction('Re-beautify recorded through API.', () => client.rebeautifyFinalization(noteId, 'WO-064 API-backed route refresh'));
   }
 
   function approveNote() {
-    if (sourceEdited || !composeComplete) {
-      setMessage('Approve Note requires a current enhanced version.');
-      return;
-    }
-    setFinalNoteApproved(true);
-    setMessage('Final note approved. Patient summary still requires separate approval.');
+    void runAction('Final note approved through API.', () =>
+      client.approveFinalNote(noteId, { approved: true, attestation: 'Synthetic final note approval from WO-064 route' })
+    );
   }
 
   function approveSummary() {
-    if (sourceEdited || !composeComplete) {
-      setMessage('Approve Patient Summary requires a current enhanced version.');
-      return;
-    }
-    setSummaryApproved(true);
-    setMessage('Patient summary approved separately from the final note.');
-  }
-
-  function completeCompareEdit() {
-    if (!billingReady) {
-      setMessage('Compare & Edit requires both approvals and a current Re-beautify state.');
-      return;
-    }
-    setCurrentStep('billing_attest');
-    setMessage('Steps 1-4 are complete. Billing & Attest is the next work order.');
+    void runAction('Patient summary approved through API.', () =>
+      client.approvePatientSummary(noteId, { approved: true, attestation: 'Synthetic patient summary approval from WO-064 route' })
+    );
   }
 
   function generateDraftClaimPreview() {
-    setDraftClaimReady(true);
-    setMessage('Draft claim preview generated as an internal candidate only. No claim was submitted.');
+    void runAction('Draft claim preview generated through API with submittedClaim=false.', () => client.generateDraftClaimPreview(noteId));
   }
 
   function completeBillingAttest() {
-    if (!draftClaimReady || !estimateCaveatAcknowledged) {
-      setMessage('Billing & Attest requires a draft claim preview and estimate caveat acknowledgement.');
-      return;
-    }
-    setBillingAttested(true);
-    setCurrentStep('sign_dispatch');
-    setMessage('Billing & Attest complete. Sign & Dispatch is available when no blockers are open.');
+    void runAction('Billing & Attest completed through API.', () =>
+      client.completeBillingAttest(noteId, {
+        acceptedStatements: frontendRuntimeBillingAttestationStatements,
+        estimateCaveatAcknowledged: true,
+        routeToBillingReview: true
+      })
+    );
   }
 
   function signAndDispatch() {
-    if (!dispatchReady) {
-      setMessage('Sign & Dispatch requires Billing & Attest completion and both approvals.');
-      return;
-    }
-    setSignedAndDispatched(true);
-    setMessage('Final note and patient summary records created. Export, PDF, copy, and writeback actions are now available from Finalized Notes.');
+    void runAction('Sign & Dispatch completed through API; finalized records are read-only.', () => client.signAndDispatch(noteId));
   }
+
+  async function verifyPermissionDeniedState() {
+    setRouteState('loading');
+    try {
+      await supportClient.getFinalizationSession(noteId);
+      setRouteState('failed');
+      setMessage('Unexpected support finalization access succeeded.');
+    } catch (error) {
+      setRouteState('permission-denied');
+      setMessage(error instanceof Error ? error.message : 'Support finalization access denied by API.');
+    }
+  }
+
+  const currentStep = session?.currentStep ?? 'code_review';
 
   return (
     <main className="wizard-shell">
@@ -181,6 +151,7 @@ export function FinalizationClient({ noteId }: FinalizationClientProps) {
           <h1>Finalization Steps 1-6</h1>
         </div>
         <nav className="header-nav" aria-label="AURA Note sections">
+          <a href="/aura-note">Runtime Home</a>
           <a href="/aura-note/drafts">Draft Notes</a>
           <a href="/aura-note/finalized">Finalized Notes</a>
           <a href="/aura-note/schedule">Schedule</a>
@@ -191,28 +162,37 @@ export function FinalizationClient({ noteId }: FinalizationClientProps) {
         <div>
           <h2>{noteId}</h2>
           <p>{message}</p>
+          {!session ? (
+            <button type="button" onClick={startFinalization}>
+              Start Finalization
+            </button>
+          ) : null}
         </div>
         <dl>
+          <div>
+            <dt>Route State</dt>
+            <dd>{routeState}</dd>
+          </div>
           <div>
             <dt>Current Step</dt>
             <dd>{steps.find((step) => step.id === currentStep)?.label}</dd>
           </div>
           <div>
             <dt>Billing Ready</dt>
-            <dd>{billingReady || billingAttested ? 'yes' : 'no'}</dd>
+            <dd>{session?.readyForBillingAttest || session?.billingAttested ? 'yes' : 'no'}</dd>
           </div>
           <div>
             <dt>Signed</dt>
-            <dd>{signedAndDispatched ? 'yes' : 'no'}</dd>
+            <dd>{session?.signedAndDispatched ? 'yes' : 'no'}</dd>
           </div>
         </dl>
       </section>
 
       <ol className="wizard-progress" aria-label="Finalization progress">
-        {progress.map((step) => (
-          <li key={step.id} className={`state-${step.status}`}>
+        {steps.map((step) => (
+          <li key={step.id} className={`state-${session?.stepStatuses[step.id] ?? 'not_started'}`}>
             <span>{step.label}</span>
-            <small>{step.status}</small>
+            <small>{session?.stepStatuses[step.id] ?? 'not_started'}</small>
           </li>
         ))}
       </ol>
@@ -221,22 +201,23 @@ export function FinalizationClient({ noteId }: FinalizationClientProps) {
         <article>
           <h2>Step 1 / Code Review</h2>
           <div className="decision-list">
-            {initialSelections.map((selection) => (
-              <div key={selection.id} className="decision-row">
+            {(session?.frozenSnapshot.visitSelections ?? []).map((selection) => (
+              <div key={selection.visitSelectionId} className="decision-row">
                 <div>
                   <strong>{selection.label}</strong>
-                  <span>{selection.evidence}</span>
+                  <span>{selection.category} / human review required</span>
                 </div>
-                <button type="button" disabled={currentStep !== 'code_review'} onClick={() => decideSelection(selection.id, 'keep')}>
+                <button type="button" disabled={currentStep !== 'code_review'} onClick={() => decideSelection(selection.visitSelectionId, 'keep')}>
                   Keep
                 </button>
-                <button type="button" disabled={currentStep !== 'code_review'} onClick={() => decideSelection(selection.id, 'remove')}>
+                <button type="button" disabled={currentStep !== 'code_review'} onClick={() => decideSelection(selection.visitSelectionId, 'remove')}>
                   Remove
                 </button>
               </div>
             ))}
+            {!session || session.frozenSnapshot.visitSelections.length === 0 ? <p>No frozen selections returned by API.</p> : null}
           </div>
-          <button type="button" disabled={currentStep !== 'code_review'} onClick={completeCodeReview}>
+          <button type="button" disabled={!session || currentStep !== 'code_review'} onClick={completeCodeReview}>
             Complete Code Review
           </button>
         </article>
@@ -244,22 +225,22 @@ export function FinalizationClient({ noteId }: FinalizationClientProps) {
         <article>
           <h2>Step 2 / Suggestion Review</h2>
           <div className="decision-list">
-            {initialSuggestions.map((suggestion) => (
-              <div key={suggestion.id} className="decision-row">
+            {(session?.frozenSnapshot.finalPassSuggestions ?? []).map((suggestion) => (
+              <div key={suggestion.suggestionId} className="decision-row">
                 <div>
                   <strong>{suggestion.label}</strong>
                   <span>{Math.round(suggestion.confidence * 100)}% final-pass candidate</span>
                 </div>
-                <button type="button" disabled={currentStep !== 'suggestion_review'} onClick={() => decideSuggestion(suggestion.id, 'keep')}>
+                <button type="button" disabled={currentStep !== 'suggestion_review'} onClick={() => decideSuggestion(suggestion.suggestionId, 'keep')}>
                   Keep
                 </button>
-                <button type="button" disabled={currentStep !== 'suggestion_review'} onClick={() => decideSuggestion(suggestion.id, 'remove')}>
+                <button type="button" disabled={currentStep !== 'suggestion_review'} onClick={() => decideSuggestion(suggestion.suggestionId, 'remove')}>
                   Remove
                 </button>
               </div>
             ))}
           </div>
-          <button type="button" disabled={currentStep !== 'suggestion_review'} onClick={completeSuggestionReview}>
+          <button type="button" disabled={!session || currentStep !== 'suggestion_review'} onClick={completeSuggestionReview}>
             Complete Suggestion Review
           </button>
         </article>
@@ -267,13 +248,18 @@ export function FinalizationClient({ noteId }: FinalizationClientProps) {
         <article>
           <h2>Step 3 / Compose</h2>
           <div className="compose-phases">
-            {['Analyzing Content', 'Enhancing Structure', 'Beautifying Language', 'Final Review'].map((phase) => (
-              <span key={phase} className={composeComplete ? 'complete' : ''}>
-                {phase}
+            {(session?.composePhases ?? [
+              { phase: 'analyzing_content' as const, status: 'pending' as const },
+              { phase: 'enhancing_structure' as const, status: 'pending' as const },
+              { phase: 'beautifying_language' as const, status: 'pending' as const },
+              { phase: 'final_review' as const, status: 'pending' as const }
+            ]).map((phase) => (
+              <span key={phase.phase} className={phase.status === 'completed' ? 'complete' : ''}>
+                {phase.phase.replaceAll('_', ' ')}: {phase.status}
               </span>
             ))}
           </div>
-          <button type="button" disabled={currentStep !== 'compose'} onClick={runCompose}>
+          <button type="button" disabled={!session || currentStep !== 'compose'} onClick={runCompose}>
             Run Mock Compose
           </button>
         </article>
@@ -281,28 +267,25 @@ export function FinalizationClient({ noteId }: FinalizationClientProps) {
         <article>
           <h2>Step 4 / Compare & Edit</h2>
           <div className="compare-grid">
-            <textarea aria-label="Original note side" readOnly value="Synthetic source note with clinician-reviewed selected items." />
+            <textarea aria-label="Original note side" readOnly value={session?.frozenSnapshot.originalNoteText ?? 'No finalization snapshot returned.'} />
             <textarea
               aria-label="Enhanced note side"
               readOnly
-              value={composeComplete ? 'Enhanced synthetic note and patient-safe summary are ready for approval.' : 'Compose has not run.'}
+              value={session?.composeOutput?.enhancedNoteText ?? 'Compose has not run.'}
             />
           </div>
           <div className="controls-bar wizard-actions">
-            <button type="button" disabled={currentStep !== 'compare_edit'} onClick={editSource}>
+            <button type="button" disabled={!session || currentStep !== 'compare_edit'} onClick={editSource}>
               Edit Source
             </button>
-            <button type="button" disabled={currentStep !== 'compare_edit' || !sourceEdited} onClick={rebeautify}>
+            <button type="button" disabled={!session || currentStep !== 'compare_edit'} onClick={rebeautify}>
               Re-beautify
             </button>
-            <button type="button" disabled={currentStep !== 'compare_edit'} onClick={approveNote}>
+            <button type="button" disabled={!session || currentStep !== 'compare_edit'} onClick={approveNote}>
               Approve Note
             </button>
-            <button type="button" disabled={currentStep !== 'compare_edit'} onClick={approveSummary}>
+            <button type="button" disabled={!session || currentStep !== 'compare_edit'} onClick={approveSummary}>
               Approve Summary
-            </button>
-            <button type="button" disabled={currentStep !== 'compare_edit'} onClick={completeCompareEdit}>
-              Complete Step 4
             </button>
           </div>
         </article>
@@ -310,8 +293,12 @@ export function FinalizationClient({ noteId }: FinalizationClientProps) {
         <article>
           <h2>Patient Opportunity Analysis</h2>
           <div className="opportunity-list">
-            <span>Clinical / Confirm follow-up plan</span>
-            <span>Quality / Human-review-required measure follow-up</span>
+            {(session?.patientOpportunities ?? []).map((opportunity) => (
+              <span key={opportunity.patientOpportunityId}>
+                {opportunity.category} / {opportunity.title}
+              </span>
+            ))}
+            {!session?.patientOpportunities.length ? <span>Clinical opportunities load after API finalization starts.</span> : null}
             <span>Internal revenue values hidden from patient outputs</span>
           </div>
         </article>
@@ -319,34 +306,15 @@ export function FinalizationClient({ noteId }: FinalizationClientProps) {
         <article>
           <h2>Step 5 / Billing & Attest</h2>
           <div className="draft-claim-preview">
-            <span>Draft only / not submitted / not final coding</span>
-            <span>CPT candidates: 99214 candidate</span>
-            <span>Estimate unavailable until fee schedule and payer data are configured</span>
-            <span>Billing review: {billingReviewRouted ? 'routed' : 'not routed'}</span>
+            <span>Draft only / submittedClaim={String(session?.draftClaimPreview?.submittedClaim ?? false)}</span>
+            <span>Claim readiness: {session?.draftClaimPreview?.claimReadiness ?? 'not generated'}</span>
+            <span>{session?.draftClaimPreview?.estimateCaveat ?? 'Estimate unavailable until source data is configured.'}</span>
           </div>
-          <label className="check-row">
-            <input
-              type="checkbox"
-              checked={estimateCaveatAcknowledged}
-              disabled={currentStep !== 'billing_attest'}
-              onChange={(event) => setEstimateCaveatAcknowledged(event.target.checked)}
-            />
-            Estimate caveat acknowledged
-          </label>
-          <label className="check-row">
-            <input
-              type="checkbox"
-              checked={billingReviewRouted}
-              disabled={currentStep !== 'billing_attest'}
-              onChange={(event) => setBillingReviewRouted(event.target.checked)}
-            />
-            Route to billing review
-          </label>
           <div className="controls-bar billing-actions">
-            <button type="button" disabled={currentStep !== 'billing_attest'} onClick={generateDraftClaimPreview}>
+            <button type="button" disabled={!session || currentStep !== 'billing_attest'} onClick={generateDraftClaimPreview}>
               Generate Preview
             </button>
-            <button type="button" disabled={currentStep !== 'billing_attest'} onClick={completeBillingAttest}>
+            <button type="button" disabled={!session || currentStep !== 'billing_attest'} onClick={completeBillingAttest}>
               Complete Attest
             </button>
           </div>
@@ -355,17 +323,20 @@ export function FinalizationClient({ noteId }: FinalizationClientProps) {
         <article>
           <h2>Step 6 / Sign & Dispatch</h2>
           <div className="opportunity-list">
-            <span>Final note record: {signedAndDispatched ? 'created read-only' : 'pending'}</span>
-            <span>Patient summary record: {signedAndDispatched ? 'created patient-facing' : 'pending'}</span>
+            <span>Final note record: {session?.finalNote ? 'created read-only' : 'pending'}</span>
+            <span>Patient summary record: {session?.patientSummary ? 'created patient-facing' : 'pending'}</span>
             <span>Claim submission: never performed in this workflow</span>
           </div>
-          <button type="button" disabled={currentStep !== 'sign_dispatch' || signedAndDispatched} onClick={signAndDispatch}>
+          <button type="button" disabled={!session || currentStep !== 'sign_dispatch' || session.signedAndDispatched} onClick={signAndDispatch}>
             Sign & Dispatch
           </button>
+          <button type="button" className="secondary-action" onClick={() => void verifyPermissionDeniedState()}>
+            Verify Permission Denied
+          </button>
           <div className="export-readiness-panel">
-            <span>Copy/export/PDF: {signedAndDispatched ? 'available in Finalized Notes' : 'disabled until signed'}</span>
-            <span>EHR writeback: {signedAndDispatched ? 'configuration-gated' : 'disabled until signed'}</span>
-            {signedAndDispatched ? (
+            <span>Copy/export/PDF: {session?.signedAndDispatched ? 'available in Finalized Notes' : 'disabled until signed'}</span>
+            <span>EHR writeback: {session?.signedAndDispatched ? 'configuration-gated' : 'disabled until signed'}</span>
+            {session?.signedAndDispatched ? (
               <a className="button-link" href={`/aura-note/finalized/${noteId}`}>
                 Open Finalized Viewer
               </a>

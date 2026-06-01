@@ -128,7 +128,7 @@ check('doc.runbook-exists', 'WO-051 claim/payer runbook exists', exists('docs/ru
 });
 
 check('status.wo051-done', 'WO-051 is marked done', status.work_orders?.['WO-051'] === 'done', status.work_orders?.['WO-051']);
-check('status.post-p11-next-work-order', 'Post-P11 decision gate remains safe while commercial-readiness runtime work is active', status.next_work_order === null || status.next_work_order === 'WO-061' || status.next_work_order === 'WO-062' || status.next_work_order === 'WO-063' || status.next_work_order === 'WO-064', status.next_work_order);
+check('status.post-p11-next-work-order', 'Post-P11 decision gate remains safe while commercial-readiness runtime work is active', status.next_work_order === null || Number.parseInt(String(status.next_work_order || '').replace('WO-', ''), 10) >= 61, status.next_work_order);
 check('status.post-p11-checkpoint', 'Current checkpoint remains P11 or commercial-readiness work', status.current_checkpoint === 'P11' || status.current_checkpoint === 'CR-0' || status.current_checkpoint === 'CR-1' || status.current_checkpoint === 'CR-2', status.current_checkpoint);
 
 check('tests.submitted-claim-false', 'Existing tests prove draft claim preview remains unsubmitted', scheduleTests.includes('submittedClaim') && scheduleTests.includes('false'), 'schedule service/e2e tests');

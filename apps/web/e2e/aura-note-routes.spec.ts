@@ -11,6 +11,11 @@ const routeExpectations = [
     heading: 'Status'
   },
   {
+    path: '/aura-note',
+    heading: 'AURA Note Runtime Home',
+    nav: true
+  },
+  {
     path: '/aura-note/schedule',
     heading: 'Standalone Patient And Schedule Workspace',
     nav: true
@@ -82,6 +87,72 @@ const routeExpectations = [
   }
 ];
 
+function e2eApiBaseUrl() {
+  return getAuraNoteApiBaseUrl().replace('4000', process.env.AURA_NOTE_API_E2E_PORT ?? '3300');
+}
+
+async function createRuntimeAppointment(seedLabel: string) {
+  const baseUrl = e2eApiBaseUrl();
+  const maApi = createAuraNoteApiClient({ baseUrl, role: 'ma', userId: `user-ma-${seedLabel}` });
+  const idSuffix = `${seedLabel}-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
+  const created = await maApi.createAppointment(
+    {
+      safePatientId: `safe-patient-${idSuffix}`,
+      clinicianId: `clinician-${seedLabel}`,
+      visitType: 'Chronic follow-up',
+      startsAt: '2026-05-28T15:00:00.000Z',
+      durationMinutes: 30,
+      modality: 'in_person',
+      reasonForVisit: `Synthetic Playwright ${seedLabel} workflow`
+    },
+    `idem-${idSuffix}`
+  );
+
+  return {
+    baseUrl,
+    appointmentId: created.data.appointment.appointmentId,
+    noteId: created.data.note.noteId,
+    safePatientId: created.data.patient.safePatientId
+  };
+}
+
+async function createFinalizedNoteForTest(seedLabel: string) {
+  const seeded = await createRuntimeAppointment(seedLabel);
+  const clinicianApi = createAuraNoteApiClient({ baseUrl: seeded.baseUrl, role: 'clinician', userId: `user-clinician-${seedLabel}` });
+
+  await clinicianApi.startVisit(seeded.appointmentId);
+  await clinicianApi.addVisitSelection(seeded.noteId, { category: 'cpt', label: 'CPT 99214 candidate', confidence: 0.82 });
+  const started = await clinicianApi.startFinalization(seeded.noteId);
+  const firstSelection = started.data.finalizationSession.frozenSnapshot.visitSelections[0];
+  if (!firstSelection) {
+    throw new Error('Seeded finalization workflow did not create a frozen selection');
+  }
+
+  await clinicianApi.decideFinalizationSelection(seeded.noteId, firstSelection.visitSelectionId, 'keep');
+  await clinicianApi.completeCodeReview(seeded.noteId);
+
+  for (const suggestionId of ['suggestion-demo-cpt-99214', 'suggestion-demo-icd10-e119', 'suggestion-demo-quality-bp']) {
+    await clinicianApi.decideFinalizationSuggestion(seeded.noteId, suggestionId, 'remove', 'Synthetic Playwright finalization seed');
+  }
+
+  await clinicianApi.completeSuggestionReview(seeded.noteId);
+  await clinicianApi.composeFinalizationDrafts(seeded.noteId);
+  await clinicianApi.approveFinalNote(seeded.noteId, { approved: true, attestation: 'Synthetic Playwright final note approval' });
+  await clinicianApi.approvePatientSummary(seeded.noteId, { approved: true, attestation: 'Synthetic Playwright patient summary approval' });
+  const preview = await clinicianApi.generateDraftClaimPreview(seeded.noteId);
+  expect(preview.data.finalizationSession.draftClaimPreview?.submittedClaim).toBe(false);
+  await clinicianApi.completeBillingAttest(seeded.noteId, {
+    acceptedStatements: frontendRuntimeBillingAttestationStatements,
+    estimateCaveatAcknowledged: true,
+    routeToBillingReview: true
+  });
+  const signed = await clinicianApi.signAndDispatch(seeded.noteId);
+  expect(signed.data.finalizationSession.signedAndDispatched).toBe(true);
+  await clinicianApi.generateFinalNotePdf(seeded.noteId);
+
+  return seeded;
+}
+
 test.describe('AURA Note route accessibility smoke suite', () => {
   for (const route of routeExpectations) {
     test(`${route.path} exposes main content and expected heading`, async ({ page }) => {
@@ -100,14 +171,13 @@ test.describe('AURA Note route accessibility smoke suite', () => {
     await page.goto('/aura-note/schedule');
 
     await expect(page.getByRole('heading', { level: 2, name: 'Patient Shell' })).toBeVisible();
-    await expect(page.getByLabel('Selected patient context')).toContainText('Chart freshness: recent');
     await expect(page.getByRole('heading', { level: 2, name: 'New Appointment' })).toBeVisible();
     await expect(page.getByLabel('Safe Patient ID')).toHaveValue('safe-patient-new-002');
     await expect(page.getByLabel('Visit Type')).toHaveValue('AWV plus problem');
 
     await page.getByRole('button', { name: 'Create Appointment + Note Shell' }).click();
 
-    await expect(page.getByText('Created appt-demo-002 with one linked inactive note shell note-demo-002 and standalone patient linkage.')).toBeVisible();
+    await expect(page.getByLabel('Selected patient context')).toContainText('Chart freshness: recent');
     await expect(page.getByRole('region', { name: 'day schedule' })).toContainText('safe-patient-new-002');
     await page.getByRole('button', { name: 'Week' }).click();
     await expect(page.getByRole('region', { name: 'week schedule' })).toContainText('safe-patient-new-002');
@@ -118,10 +188,11 @@ test.describe('AURA Note route accessibility smoke suite', () => {
   });
 
   test('workspace exposes timer-gated editor states and blocker behavior', async ({ page }) => {
-    await page.goto('/aura-note/workspace/appt-demo-001');
+    const seeded = await createRuntimeAppointment('workspace');
+    await page.goto(`/aura-note/workspace/${seeded.appointmentId}`);
 
     const editor = page.getByLabel('Documentation editor');
-    await expect(editor).toContainText('Editor locked until Start Visit runs the timer');
+    await expect(editor).toContainText('Start Visit and run the timer before documenting.');
     await expect(page.getByRole('button', { name: 'Finalize Note' })).toBeDisabled();
 
     await page.getByRole('button', { name: 'Start Visit' }).click();
@@ -135,26 +206,27 @@ test.describe('AURA Note route accessibility smoke suite', () => {
     await expect(page.getByRole('region', { name: 'Audio capture and transcription status' })).toContainText('Chunks');
     await expect(page.getByRole('region', { name: 'Audio capture and transcription status' })).toContainText('1');
     await page.getByRole('button', { name: 'Process Mock Transcription' }).click();
-    await expect(page.getByRole('article', { name: 'Transcript segments' })).toContainText('Synthetic mock transcript from metadata-only chunk 1');
+    await expect(page.getByRole('article', { name: 'Transcript segments' })).toContainText('Synthetic mock transcript from metadata chunk 1');
     await expect(page.getByRole('article', { name: 'Transcript segments' })).toContainText('91%');
     await page.getByRole('button', { name: 'Correct Transcript' }).click();
     await expect(page.getByRole('article', { name: 'Transcript segments' })).toContainText('Synthetic corrected transcript segment');
 
     await page.getByRole('button', { name: 'Send to MA as Blocker' }).click();
-    await expect(page.getByText('History Gap question sent to MA follow-up as a signing blocker.')).toBeVisible();
+    await expect(page.getByText(/History Gap question sent to MA follow-up as a signing blocker through API/)).toBeVisible();
     await expect(page.getByRole('button', { name: 'Finalize Note' })).toBeDisabled();
-    await expect(page.getByLabel('Workspace panels')).toContainText('MA blocker task is open.');
+    await expect(page.getByLabel('Workspace panels')).toContainText('Open MA History Gap blocker');
   });
 
   test('finalized viewer actions remain role-labeled and read-only', async ({ page }) => {
-    await page.goto('/aura-note/finalized/note-demo-finalized-001');
+    const seeded = await createFinalizedNoteForTest('finalized-viewer');
+    await page.goto(`/aura-note/finalized/${seeded.noteId}`);
 
     await expect(page.getByRole('tablist', { name: 'Final artifact tabs' })).toBeVisible();
     await expect(page.getByRole('tab', { name: 'Final Note' })).toHaveAttribute('aria-selected', 'true');
     await expect(page.getByLabel('Signed finalized artifact')).toContainText('This viewer cannot reopen the active editor.');
 
     await page.getByRole('button', { name: 'Copy Patient Summary' }).click();
-    await expect(page.getByText('Patient summary copy-safe artifact prepared without internal revenue or coding logic.')).toBeVisible();
+    await expect(page.getByText('Patient summary copy-safe artifact generated through API without internal revenue or coding logic.')).toBeVisible();
     await expect(page.getByLabel('Artifact statuses')).toContainText('Summary Copy');
     await expect(page.getByLabel('Artifact statuses')).toContainText('generated');
   });
@@ -169,8 +241,8 @@ test.describe('AURA Note route accessibility smoke suite', () => {
     await page.goto('/aura-note/support/status');
 
     await expect(page.getByRole('region', { name: 'Observability and deployment' })).toContainText('Production SIEM');
-    await expect(page.getByRole('region', { name: 'Observability and deployment' })).toContainText('blocked until review');
-    await expect(page.getByRole('region', { name: 'Operational runbooks' })).toContainText('Incident triage');
+    await expect(page.getByRole('region', { name: 'Observability and deployment' })).toContainText('blocked until security review');
+    await expect(page.getByRole('region', { name: 'Operational runbooks' })).toContainText('Incident Triage');
     await expect(page.getByRole('region', { name: 'Operational runbooks' })).toContainText('not configured');
     await expect(page.getByRole('region', { name: 'Secure storage and restore states' })).toContainText('server-mediated');
     await expect(page.getByRole('region', { name: 'Secure storage and restore states' })).toContainText('recovery window required');
@@ -201,6 +273,10 @@ test.describe('AURA Note route accessibility smoke suite', () => {
     await expect(page.getByRole('region', { name: 'Feature flags and retention' })).toContainText('External AI');
     await expect(page.getByRole('region', { name: 'Audit and failure states' })).toContainText('server-mediated');
     await expect(page.getByRole('region', { name: 'Audit and failure states' })).toContainText('PHI');
+    await page.getByRole('button', { name: 'Request Redacted Audit Export' }).click();
+    await expect(page.getByRole('region', { name: 'Audit and failure states' })).toContainText('ready_synthetic');
+    await page.getByRole('button', { name: 'Record Runbook Evidence' }).click();
+    await expect(page.getByRole('region', { name: 'Operational evidence states' })).toContainText('recorded_synthetic');
   });
 
   test('standalone operations route exposes worklists, billing review, settings, templates, estimates, and rules states', async ({ page }) => {
@@ -217,14 +293,14 @@ test.describe('AURA Note route accessibility smoke suite', () => {
     await page.getByRole('button', { name: 'Billing Review' }).click();
     await expect(page.getByRole('article', { name: 'Billing review queue' })).toContainText('submittedClaim=false');
     await page.getByRole('button', { name: 'Trigger Review' }).click();
-    await expect(page.getByRole('article', { name: 'Billing review queue' })).toContainText('allowed for billing_staff triggered review');
+    await expect(page.getByRole('article', { name: 'Billing review queue' })).toContainText('denied');
 
     await page.getByRole('button', { name: 'Settings' }).click();
     await page.getByRole('button', { name: 'Set Mock Ready' }).click();
     await expect(page.getByRole('article', { name: 'Settings admin integrations' })).toContainText('mock_ready');
 
     await page.getByRole('button', { name: 'Templates' }).click();
-    await expect(page.getByRole('article', { name: 'Templates and dot phrases' })).toContainText('{{follow_up_interval}}');
+    await expect(page.getByRole('article', { name: 'Templates and dot phrases' })).toContainText('{{chief_concern}}');
 
     await page.getByRole('button', { name: 'Estimates' }).click();
     await expect(page.getByRole('article', { name: 'Estimate configuration' })).toContainText('Patient-facing: disabled');
@@ -232,7 +308,8 @@ test.describe('AURA Note route accessibility smoke suite', () => {
     await page.getByRole('button', { name: 'Rules Catalog' }).click();
     await expect(page.getByRole('article', { name: 'Rules catalog' })).toContainText('Autonomous finalization: false');
     await page.getByRole('button', { name: 'Publish' }).click();
-    await expect(page.getByRole('article', { name: 'Rules catalog' })).toContainText('published as active synthetic rules');
+    await expect(page.getByRole('article', { name: 'Rules catalog' })).toContainText('active');
+    await expect(page.getByRole('region', { name: 'Standalone operations readiness' })).toContainText('Rules catalog published through API');
     await expect(page.getByRole('region', { name: 'Operational summary' })).toContainText('Claim submission remains disabled.');
   });
 
@@ -253,10 +330,10 @@ test.describe('AURA Note route accessibility smoke suite', () => {
     await expect(page.getByRole('article', { name: 'Identity and sessions' })).toContainText('purpose-of-use is required');
 
     await page.getByRole('button', { name: 'Validate Production Config' }).click();
-    await expect(page.getByRole('article', { name: 'Config and secrets' })).toContainText('fail-closed missing OIDC_CLIENT_SECRET');
+    await expect(page.getByRole('article', { name: 'Config and secrets' })).toContainText('fail-closed errors=3');
 
     await page.getByRole('button', { name: 'Attempt Enable Without Approval' }).click();
-    await expect(page.getByRole('article', { name: 'Feature flag governance' })).toContainText('approval required');
+    await expect(page.getByRole('region', { name: 'Production platform readiness' })).toContainText('high-risk feature flags require approval evidence before enablement');
     await page.getByRole('button', { name: 'Record Approval' }).click();
     await expect(page.getByRole('article', { name: 'Feature flag governance' })).toContainText('metadata_only_no_live_execution');
     await expect(page.getByRole('region', { name: 'Platform summary' })).toContainText('Production SSO');
@@ -283,8 +360,18 @@ test.describe('AURA Note route accessibility smoke suite', () => {
 
   test('core shells remain responsive without horizontal overflow on mobile width', async ({ page }) => {
     await page.setViewportSize({ width: 390, height: 844 });
+    const workspaceSeed = await createRuntimeAppointment('mobile-workspace');
+    const finalizedSeed = await createFinalizedNoteForTest('mobile-finalized');
 
-    for (const path of ['/aura-note/schedule', '/aura-note/operations', '/aura-note/platform', '/aura-note/integrations/ehr', '/aura-note/ai-governance', '/aura-note/workspace/appt-demo-001', '/aura-note/finalized/note-demo-finalized-001']) {
+    for (const path of [
+      '/aura-note/schedule',
+      '/aura-note/operations',
+      '/aura-note/platform',
+      '/aura-note/integrations/ehr',
+      '/aura-note/ai-governance',
+      `/aura-note/workspace/${workspaceSeed.appointmentId}`,
+      `/aura-note/finalized/${finalizedSeed.noteId}`
+    ]) {
       await page.goto(path);
       await expect(page.getByRole('main')).toBeVisible();
 
@@ -299,12 +386,12 @@ test.describe('AURA Note route accessibility smoke suite', () => {
     await expect(page.getByRole('region', { name: 'ClinicOS integration readiness' })).toContainText('AURA Note authoritative');
     await expect(page.getByRole('article', { name: 'Module boundary map' })).toContainText('M03 / VisitGraph');
     await expect(page.getByRole('article', { name: 'Module boundary map' })).toContainText('M26 / Data Cloud');
-    await expect(page.getByRole('article', { name: 'ClinicOS mappings' })).toContainText('stale');
     await expect(page.getByRole('article', { name: 'Publication metadata' })).toContainText('payloadStored=false');
     await expect(page.getByRole('region', { name: 'ClinicOS route states' })).toContainText('permission-denied');
     await expect(page.getByRole('region', { name: 'ClinicOS route states' })).toContainText('read-only');
 
     await page.getByRole('button', { name: 'Review Stale' }).click();
+    await expect(page.getByRole('article', { name: 'ClinicOS mappings' })).toContainText('stale');
     await expect(page.getByRole('article', { name: 'ClinicOS mappings' })).toContainText('local blocker remains authoritative');
     await page.getByRole('button', { name: 'Failed Closed' }).click();
     await expect(page.getByRole('article', { name: 'Publication metadata' })).toContainText('failed_unavailable');
@@ -329,66 +416,21 @@ test.describe('AURA Note route accessibility smoke suite', () => {
   });
 
   test('frontend runtime integration gate exercises backend-backed appointment through finalization export and reload evidence', async ({ page }) => {
-    const baseUrl = getAuraNoteApiBaseUrl().replace('4000', process.env.AURA_NOTE_API_E2E_PORT ?? '3300');
-    const maApi = createAuraNoteApiClient({ baseUrl, role: 'ma', userId: 'user-ma-runtime-e2e' });
-    const clinicianApi = createAuraNoteApiClient({ baseUrl, role: 'clinician', userId: 'user-clinician-runtime-e2e' });
-    const idSuffix = Date.now().toString(36);
-    const created = await maApi.createAppointment(
-      {
-        safePatientId: `safe-patient-runtime-${idSuffix}`,
-        clinicianId: 'clinician-runtime-e2e',
-        visitType: 'Chronic follow-up',
-        startsAt: '2026-05-28T15:00:00.000Z',
-        durationMinutes: 30,
-        modality: 'in_person',
-        reasonForVisit: 'Synthetic Playwright runtime integration gate'
-      },
-      `idem-runtime-${idSuffix}`
-    );
-
-    const appointmentId = created.data.appointment.appointmentId;
-    const noteId = created.data.note.noteId;
-    await clinicianApi.startVisit(appointmentId);
-    await clinicianApi.addVisitSelection(noteId, { category: 'cpt', label: 'CPT 99214 candidate', confidence: 0.82 });
-    const started = await clinicianApi.startFinalization(noteId);
-    const firstSelection = started.data.finalizationSession.frozenSnapshot.visitSelections[0];
-    if (!firstSelection) {
-      throw new Error('Runtime integration workflow did not create a visit selection for code review');
-    }
-    const selectionId = firstSelection.visitSelectionId;
-    await clinicianApi.decideFinalizationSelection(noteId, selectionId, 'keep');
-    await clinicianApi.completeCodeReview(noteId);
-
-    for (const suggestionId of ['suggestion-demo-cpt-99214', 'suggestion-demo-icd10-e119', 'suggestion-demo-quality-bp']) {
-      await clinicianApi.decideFinalizationSuggestion(noteId, suggestionId, 'remove', 'Synthetic runtime gate final-pass removal');
-    }
-
-    await clinicianApi.completeSuggestionReview(noteId);
-    await clinicianApi.composeFinalizationDrafts(noteId);
-    await clinicianApi.approveFinalNote(noteId, { approved: true, attestation: 'Synthetic runtime final note approval' });
-    await clinicianApi.approvePatientSummary(noteId, { approved: true, attestation: 'Synthetic runtime patient summary approval' });
-    const preview = await clinicianApi.generateDraftClaimPreview(noteId);
-    expect(preview.data.finalizationSession.draftClaimPreview?.submittedClaim).toBe(false);
-    await clinicianApi.completeBillingAttest(noteId, {
-      acceptedStatements: frontendRuntimeBillingAttestationStatements,
-      estimateCaveatAcknowledged: true,
-      routeToBillingReview: true
-    });
-    const signed = await clinicianApi.signAndDispatch(noteId);
-    expect(signed.data.finalizationSession.signedAndDispatched).toBe(true);
-    const exported = await clinicianApi.generateFinalNotePdf(noteId);
+    const seeded = await createFinalizedNoteForTest('runtime');
+    const clinicianApi = createAuraNoteApiClient({ baseUrl: seeded.baseUrl, role: 'clinician', userId: 'user-clinician-runtime-e2e' });
+    const exported = await clinicianApi.generateFinalNotePdf(seeded.noteId);
     expect(exported.data.artifact.status).toBe('generated');
 
-    const finalized = await clinicianApi.getFinalizedNote(noteId);
+    const finalized = await clinicianApi.getFinalizedNote(seeded.noteId);
     expect(finalized.data.finalNoteAvailable).toBe(true);
     expect(finalized.data.readOnly).toBe(true);
     expect(finalized.data.exportArtifacts.length).toBeGreaterThanOrEqual(1);
 
     await page.goto('/aura-note/runtime-integration');
-    await expect(page.getByRole('article', { name: 'API backed finalized notes state' })).toContainText(noteId);
+    await expect(page.getByRole('article', { name: 'API backed finalized notes state' })).toContainText(seeded.noteId);
     await expect(page.getByRole('article', { name: 'API backed finalized notes state' })).toContainText('read-only');
     await page.reload();
-    await expect(page.getByRole('article', { name: 'API backed finalized notes state' })).toContainText(noteId);
-    await expect(page.getByRole('article', { name: 'API backed schedule state' })).toContainText(appointmentId);
+    await expect(page.getByRole('article', { name: 'API backed finalized notes state' })).toContainText(seeded.noteId);
+    await expect(page.getByRole('article', { name: 'API backed schedule state' })).toContainText(seeded.appointmentId);
   });
 });
