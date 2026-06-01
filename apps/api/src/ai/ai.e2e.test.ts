@@ -33,7 +33,19 @@ describe('AI gateway API e2e', () => {
     assert.equal(status.body.data.externalAiEnabled, false);
     assert.equal(status.body.data.providerMode, 'mock');
     assert.equal(status.body.data.liveModelCredentialPresent, false);
+    assert.equal(status.body.data.runtimeBoundary.providerBoundary, 'server_side_ai_gateway');
     assert.equal(status.body.data.evaluationCases.some((evalCase: { purpose: string }) => evalCase.purpose === 'coaching'), true);
+    assert.equal(status.body.data.evaluationCases.some((evalCase: { blockedBehavior?: string }) => evalCase.blockedBehavior === 'claim_submission'), true);
+
+    const boundary = await request(app.getHttpServer())
+      .get('/api/v1/ai-gateway/runtime-boundary')
+      .set('x-aura-role', 'compliance_privacy_lead')
+      .set('x-aura-purpose-of-use', 'audit')
+      .expect(200);
+
+    assert.equal(boundary.body.data.runtimeBoundary.liveModelCallsEnabled, false);
+    assert.equal(boundary.body.data.runtimeBoundary.prohibitedBehaviorCoverage.includes('medical_necessity_determination'), true);
+    assert.equal(boundary.body.data.domainEvents[0].eventType, 'ai.runtime_boundary_checked.v1');
 
     const rejected = await request(app.getHttpServer())
       .post('/api/v1/ai-gateway/mock-invocations')
@@ -50,6 +62,7 @@ describe('AI gateway API e2e', () => {
     const rejectionPayload = rejected.body.error.details ?? rejected.body.error;
     assert.equal(rejectionPayload.code, 'AI_PHI_BOUNDARY_REJECTED');
     assert.equal(rejectionPayload.domainEvents[0].eventType, 'ai.phi_rejected.v1');
+    assert.equal(rejectionPayload.domainEvents[1].eventType, 'ai.request_denied.v1');
     assert.equal(rejected.body.error.category, 'validation');
     assert.equal(rejected.body.error.redacted, true);
   });
@@ -99,13 +112,17 @@ describe('AI gateway API e2e', () => {
       .set('x-aura-purpose-of-use', 'audit')
       .set('x-trace-id', 'trace-ai-e2e-eval-001')
       .send({
-        evalCaseIds: ['eval-patient-summary-no-internal-details-v1', 'eval-coaching-role-limited-v1']
+        evalCaseIds: ['eval-patient-summary-no-internal-details-v1', 'eval-claim-submission-rejected-v1', 'eval-source-stale-human-review-blocked-v1']
       })
       .expect(201);
 
     assert.equal(evalRun.body.data.allPassed, true);
     assert.equal(evalRun.body.data.liveModelCalled, false);
+    assert.equal(evalRun.body.data.regressionBlockedCount, 2);
+    assert.equal(evalRun.body.data.prohibitedBehaviorCoverage.includes('claim_submission'), true);
+    assert.equal(evalRun.body.data.prohibitedBehaviorCoverage.includes('source_stale'), true);
     assert.equal(evalRun.body.data.domainEvents[0].eventType, 'ai.evaluation_run_completed.v1');
+    assert.equal(evalRun.body.data.domainEvents.some((event: { eventType: string }) => event.eventType === 'ai.regression_blocked.v1'), true);
 
     const rejected = await request(app.getHttpServer())
       .post('/api/v1/ai-gateway/outputs/validate')
@@ -121,7 +138,10 @@ describe('AI gateway API e2e', () => {
 
     assert.equal(rejected.body.data.validation.validationStatus, 'rejected');
     assert.equal(rejected.body.data.validation.riskLabel, 'unsafe');
+    assert.equal(rejected.body.data.validation.schemaValidationStatus, 'invalid');
+    assert.equal(rejected.body.data.validation.blockedBehavior, 'medical_necessity_determination');
     assert.equal(rejected.body.data.domainEvents[0].eventType, 'ai.output_rejected.v1');
+    assert.equal(rejected.body.data.domainEvents.some((event: { eventType: string }) => event.eventType === 'ai.human_review_required.v1'), true);
   });
 
   it('denies governance evaluation runs to support users', async () => {

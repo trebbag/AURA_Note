@@ -137,14 +137,22 @@ export type CoreEventType =
   | 'clinicos.permission_denied.v1'
   | 'clinicos.unavailable.v1'
   | 'ai.request_prepared.v1'
+  | 'ai.runtime_boundary_checked.v1'
+  | 'ai.prompt_model_reviewed.v1'
+  | 'ai.context_package_created.v1'
   | 'ai.context_scrubbed.v1'
   | 'ai.phi_rejected.v1'
+  | 'ai.request_denied.v1'
+  | 'ai.output_validated.v1'
   | 'ai.response_recorded.v1'
   | 'ai.output_rejected.v1'
+  | 'ai.human_review_required.v1'
   | 'ai.prompt_config_changed.v1'
   | 'ai.model_config_changed.v1'
   | 'ai.evaluation_run_completed.v1'
   | 'ai.evaluation_run_failed.v1'
+  | 'ai.regression_blocked.v1'
+  | 'ai.incident_metadata_recorded.v1'
   | 'coaching.signal_created.v1'
   | 'coaching.report_generated.v1'
   | 'coaching.dashboard_viewed.v1'
@@ -1793,6 +1801,36 @@ export type AiPhiHandlingDto = 'reject' | 'redact';
 export type AiHumanReviewStatusDto = 'required' | 'approved_by_human' | 'rejected_by_human';
 export type AiValidationStatusDto = 'accepted' | 'rejected';
 export type AiRiskLabelDto = 'low' | 'moderate' | 'high' | 'unsafe';
+export type AiSchemaValidationStatusDto = 'valid' | 'invalid';
+export type AiSourceFreshnessStatusDto = 'current' | 'stale' | 'unknown';
+export type AiBlockedBehaviorDto =
+  | 'unsupported_diagnosis_finalization'
+  | 'code_finalization'
+  | 'charge_finalization'
+  | 'claim_submission'
+  | 'medical_necessity_determination'
+  | 'order_placement'
+  | 'patient_financial_conclusion'
+  | 'unsafe_coaching'
+  | 'unsupported_payer_language'
+  | 'source_stale';
+export type AiRuntimeStateDto =
+  | 'disabled'
+  | 'configured'
+  | 'degraded'
+  | 'failed'
+  | 'source_stale'
+  | 'scrubbed'
+  | 'phi_rejected'
+  | 'output_validation_failed'
+  | 'unsafe_output_rejected'
+  | 'human_review_required'
+  | 'permission_denied'
+  | 'read_only'
+  | 'loading'
+  | 'empty'
+  | 'ready'
+  | 'demo_fixture';
 
 export interface AiEvidenceNodeDto {
   evidenceId: string;
@@ -1849,9 +1887,13 @@ export interface AiModelConfigurationDto {
 export interface AiOutputValidationResultDto {
   validationStatus: AiValidationStatusDto;
   riskLabel: AiRiskLabelDto;
+  schemaValidationStatus: AiSchemaValidationStatusDto;
+  sourceFreshnessStatus: AiSourceFreshnessStatusDto;
+  confidence: number;
   unsafeReasons: string[];
   prohibitedActionDetected: boolean;
   rawPhiDetected: boolean;
+  blockedBehavior?: AiBlockedBehaviorDto;
   humanReviewRequired: true;
 }
 
@@ -1863,6 +1905,9 @@ export interface AiEvaluationCaseDto {
   expectedPromptId: string;
   sourceEvidenceIds: string[];
   expectedValidationStatus: AiValidationStatusDto;
+  expectedRiskLabel: AiRiskLabelDto;
+  expectedSourceFreshnessStatus: AiSourceFreshnessStatusDto;
+  blockedBehavior?: AiBlockedBehaviorDto;
 }
 
 export interface AiEvaluationResultDto {
@@ -1876,11 +1921,15 @@ export interface AiEvaluationResultDto {
   policyMode: AiGatewayPolicyModeDto;
   validationStatus: AiValidationStatusDto;
   riskLabel: AiRiskLabelDto;
+  schemaValidationStatus: AiSchemaValidationStatusDto;
+  sourceFreshnessStatus: AiSourceFreshnessStatusDto;
+  confidence: number;
   humanReviewRequired: true;
   sourceEvidenceIds: string[];
   unsafeReasons: string[];
   prohibitedActionDetected: boolean;
   rawPhiDetected: boolean;
+  blockedBehavior?: AiBlockedBehaviorDto;
   liveModelCalled: false;
   passed: boolean;
   traceId: string;
@@ -1895,6 +1944,9 @@ export interface AiEvaluationRunResponseDto {
   results: AiEvaluationResultDto[];
   allPassed: boolean;
   liveModelCalled: false;
+  regressionBlockedCount?: number;
+  prohibitedBehaviorCoverage?: AiBlockedBehaviorDto[];
+  sourceFreshnessStatuses?: AiSourceFreshnessStatusDto[];
   auditEvent: AuditEventDto;
   domainEvents: Array<AuraNoteEvent<Record<string, unknown>>>;
 }
@@ -1989,12 +2041,42 @@ export interface AiGatewayStatusDto {
   liveModelCredentialPresent?: false;
   rawPhiToExternalAiAllowed?: false;
   humanReviewRequiredForAllOutputs?: true;
+  runtimeBoundary?: AiRuntimeBoundaryDto;
 }
 
 export interface AiGatewayInvocationResponseDto {
   request: AiGatewayRequestDto;
   response: AiGatewayResponseDto;
   contextPackage: AiContextPackageDto;
+  auditEvent: AuditEventDto;
+  domainEvents: Array<AuraNoteEvent<Record<string, unknown>>>;
+}
+
+export interface AiRuntimeBoundaryDto {
+  providerBoundary: 'server_side_ai_gateway';
+  gatewayMode: AiGatewayPolicyModeDto;
+  liveModelCallsEnabled: false;
+  liveModelCredentialPresent: false;
+  rawPhiToExternalAiAllowed: false;
+  productionPromptStoreEnabled: false;
+  privateBaaPathwayApproved: false;
+  driftMonitoringEnabled: false;
+  driftMonitoringStatus: 'placeholder_disabled';
+  supportedRuntimeStates: AiRuntimeStateDto[];
+  promptRegistryCount: number;
+  modelConfigurationCount: number;
+  evaluationCaseCount: number;
+  prohibitedBehaviorCoverage: AiBlockedBehaviorDto[];
+  sourceFreshnessStatuses: AiSourceFreshnessStatusDto[];
+  humanReviewGate: 'required_before_use';
+  schemaValidationRequired: true;
+  sourceEvidenceRequired: true;
+  syntheticOnly: true;
+  reviewedAt: string;
+}
+
+export interface AiRuntimeBoundaryResponseDto {
+  runtimeBoundary: AiRuntimeBoundaryDto;
   auditEvent: AuditEventDto;
   domainEvents: Array<AuraNoteEvent<Record<string, unknown>>>;
 }

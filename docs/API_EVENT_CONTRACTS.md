@@ -380,3 +380,16 @@ Payloads are audit-safe metadata only. They must not include raw audio, transcri
 New event types are `ehr.config_reviewed.v1`, `ehr.credential_disabled.v1`, `ehr.patient_lookup_performed.v1`, `ehr.appointment_imported.v1`, `ehr.encounter_context_loaded.v1`, `ehr.writeback_payload_prepared.v1`, `ehr.writeback_denied.v1`, `ehr.writeback_attempt_recorded.v1`, and `ehr.writeback_acknowledged.v1`.
 
 Payloads are audit-safe metadata only. They must not include raw EHR payloads, production patient identifiers, final-note text, transcript text, billing details, credentials, production URLs, autonomous finalization evidence, charge finalization, medical-necessity determinations, or claim submission evidence.
+
+## WO-070 AI runtime governance boundary contracts
+
+`WO-070` extends the AI Gateway runtime API/event surface while keeping live external AI disabled:
+
+- `GET /ai-gateway/runtime-boundary` returns provider boundary metadata, mock-only gateway mode, disabled live-model and raw-PHI-to-external-AI flags, prompt/model/evaluation counts, prohibited-behavior coverage, source-freshness states, drift placeholder, schema-validation requirement, source-evidence requirement, and human-review gate evidence.
+- `POST /ai-gateway/evaluations/run` now returns regression-block count, prohibited-behavior coverage, source-freshness statuses, schema-validation status, confidence, and blocked-behavior metadata for deterministic synthetic evaluation cases.
+- `POST /ai-gateway/outputs/validate` now returns schema-validation status, source-freshness status, confidence, and blocked-behavior metadata in addition to accepted/rejected status and unsafe reasons.
+- `POST /ai-gateway/mock-invocations` records explicit `ai.request_denied.v1` metadata when raw PHI is rejected and continues to record scrubbed context and human-review-required evidence when explicit redaction is used.
+
+New or expanded AI event types are `ai.runtime_boundary_checked.v1`, `ai.prompt_model_reviewed.v1`, `ai.context_package_created.v1`, `ai.request_denied.v1`, `ai.output_validated.v1`, `ai.human_review_required.v1`, `ai.regression_blocked.v1`, and `ai.incident_metadata_recorded.v1`, alongside the existing request-prepared, context-scrubbed, PHI-rejected, response-recorded, output-rejected, prompt/model config, and evaluation-run events.
+
+Payloads are audit-safe metadata only. They must not include raw prompts, raw model responses, note text, transcript text, raw EHR/ClinicOS payloads, credentials, production URLs, final diagnosis/code/charge behavior, medical-necessity determinations, orders, claim submissions, or patient-facing financial conclusions.

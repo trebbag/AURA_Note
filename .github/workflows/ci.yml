@@ -60,6 +60,7 @@ jobs:
       - run: pnpm clinicos:live-review-readiness
       - run: pnpm mode:adapter-readiness
       - run: pnpm ai:governance-readiness
+      - run: pnpm ai:runtime-governance-readiness
       - run: pnpm ai:live-review-readiness
       - run: pnpm security:review-readiness
       - run: pnpm frontend:runtime-integration-readiness

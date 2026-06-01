@@ -177,7 +177,8 @@ check(
     specGaps.includes('No active gaps as of post-`WO-066` standalone workflow completion / CR-2 review') ||
     specGaps.includes('No active gaps as of post-`WO-067` ModeResolver and adapter runtime wiring review') ||
     specGaps.includes('No active gaps as of post-`WO-068` transcription runtime boundary review') ||
-    specGaps.includes('No active gaps as of post-`WO-069` athenahealth sandbox and vendor-neutral EHR runtime boundary review'),
+    specGaps.includes('No active gaps as of post-`WO-069` athenahealth sandbox and vendor-neutral EHR runtime boundary review') ||
+    specGaps.includes('No active gaps as of post-`WO-070` AI governance runtime boundary review'),
   'SPEC_GAPS.md active gaps section'
 );
 

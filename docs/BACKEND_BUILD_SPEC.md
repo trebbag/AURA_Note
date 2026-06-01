@@ -332,6 +332,14 @@ The EHR API now exposes sandbox-safe runtime evidence through `/integrations/ehr
 
 All state-changing EHR actions remain tenant/site scoped through the local identity boundary, permission checked, purpose-of-use checked, audit/domain-event emitting, and payload-safe. No live EHR credential, raw EHR payload storage, live API call, live writeback delivery, autonomous note submission, charge finalization, medical-necessity determination, claim submission, or production launch behavior is enabled.
 
+## WO-070 AI governance runtime boundary backend status
+
+`WO-070` extends the AI Gateway runtime boundary while keeping live external AI disabled. The API now exposes `/ai-gateway/runtime-boundary` with server-side AI Gateway metadata, disabled live model calls, disabled raw-PHI-to-external-AI posture, disabled production prompt store, private/BAA approval placeholder, drift placeholder, supported runtime states, prompt/model/evaluation counts, source-freshness coverage, prohibited-behavior coverage, schema-validation requirement, source-evidence requirement, and human-review gate evidence.
+
+Evaluation runs now cover prohibited diagnosis/code/charge/claim/medical-necessity/order/patient-financial/coaching/payer-language behaviors and stale-source output. Output validation returns schema-validation status, source-freshness status, confidence, risk label, and blocked-behavior metadata. Raw-PHI rejection emits `ai.request_denied.v1`; accepted redaction and mock invocation paths emit context-package and human-review-required evidence. Governance actions remain tenant/site scoped through the local identity boundary, permission checked by `ai_governance:view` or `ai_gateway:invoke`, purpose-of-use checked, audit/domain-event emitting, and metadata-only.
+
+No live model credential, production prompt store, private/BAA model approval, raw prompt/model-response persistence, raw PHI transfer to external AI, autonomous clinical/coding/billing behavior, charge finalization, medical-necessity determination, order placement, claim submission, patient-facing financial conclusion, or production launch behavior is enabled.
+
 ## WO-049 launch operations readiness
 
 `WO-049` adds synthetic/local backend operational readiness evidence. `pnpm launch:ops-readiness` combines the deterministic performance baseline, browser support-status drill assertions, and a static verifier for environment promotion, smoke checks, rollback rehearsal, incident response, access review, and support escalation evidence.

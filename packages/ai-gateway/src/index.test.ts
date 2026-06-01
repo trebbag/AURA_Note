@@ -195,6 +195,8 @@ describe('AI gateway safety policy', () => {
 
     assert.equal(result.validationStatus, 'rejected');
     assert.equal(result.riskLabel, 'unsafe');
+    assert.equal(result.schemaValidationStatus, 'invalid');
+    assert.equal(result.blockedBehavior, 'claim_submission');
     assert.equal(result.prohibitedActionDetected, true);
     assert.equal(result.humanReviewRequired, true);
   });
@@ -237,12 +239,43 @@ describe('AI gateway safety policy', () => {
       nowIso: '2026-05-28T00:05:00.000Z'
     });
 
-    assert.equal(AI_EVALUATION_CASES.length >= 5, true);
+    assert.equal(AI_EVALUATION_CASES.length >= 15, true);
     assert.equal(AI_MODEL_CONFIGURATIONS.every((config) => config.liveInvocationEnabled === false), true);
     assert.equal(result.passed, true);
     assert.equal(result.liveModelCalled, false);
     assert.equal(result.promptId, 'aura-note-billing-preview-v1');
     assert.equal(result.validationStatus, 'accepted');
+    assert.equal(result.schemaValidationStatus, 'valid');
     assert.equal(result.humanReviewRequired, true);
+  });
+
+  it('blocks deterministic prohibited-output evaluation cases without live model calls', async () => {
+    const result = await runDeterministicAiEvaluationCase({
+      caseId: 'eval-claim-submission-rejected-v1',
+      evidence,
+      traceId: 'trace-ai-eval-claim-block-001',
+      nowIso: '2026-06-01T17:00:00.000Z'
+    });
+
+    assert.equal(result.passed, true);
+    assert.equal(result.validationStatus, 'rejected');
+    assert.equal(result.riskLabel, 'unsafe');
+    assert.equal(result.schemaValidationStatus, 'invalid');
+    assert.equal(result.blockedBehavior, 'claim_submission');
+    assert.equal(result.liveModelCalled, false);
+  });
+
+  it('blocks stale-source evaluation cases before user-facing adoption', async () => {
+    const result = await runDeterministicAiEvaluationCase({
+      caseId: 'eval-source-stale-human-review-blocked-v1',
+      evidence,
+      traceId: 'trace-ai-eval-source-stale-001',
+      nowIso: '2026-06-01T17:01:00.000Z'
+    });
+
+    assert.equal(result.passed, true);
+    assert.equal(result.sourceFreshnessStatus, 'stale');
+    assert.equal(result.blockedBehavior, 'source_stale');
+    assert.equal(result.validationStatus, 'rejected');
   });
 });

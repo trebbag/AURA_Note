@@ -424,16 +424,31 @@ test.describe('AURA Note route accessibility smoke suite', () => {
     await page.goto('/aura-note/ai-governance');
 
     await expect(page.getByRole('region', { name: 'AI governance readiness' })).toContainText('External AI');
+    await expect(page.getByRole('region', { name: 'AI runtime boundary evidence' })).toContainText('server_side_ai_gateway');
+    await expect(page.getByRole('region', { name: 'AI runtime boundary evidence' })).toContainText('liveModelCallsEnabled=false');
+    await expect(page.getByRole('region', { name: 'AI runtime boundary evidence' })).toContainText('rawPhiToExternalAiAllowed=false');
+    await expect(page.getByRole('region', { name: 'AI runtime boundary evidence' })).toContainText('driftMonitoringStatus=placeholder_disabled');
     await expect(page.getByRole('article', { name: 'Prompt registry' })).toContainText('aura-note-suggestions-v1');
     await expect(page.getByRole('article', { name: 'Model configuration' })).toContainText('liveInvocationEnabled=false');
     await expect(page.getByRole('article', { name: 'Evaluation harness' })).toContainText('eval-billing-preview-candidate-only-v1');
+    await expect(page.getByRole('article', { name: 'Evaluation harness' })).toContainText('eval-claim-submission-rejected-v1');
     await expect(page.getByRole('article', { name: 'Output validation' })).toContainText('ai.output_rejected.v1');
     await expect(page.getByRole('region', { name: 'AI governance route states' })).toContainText('permission-denied');
+    await expect(page.getByRole('region', { name: 'AI governance route states' })).toContainText('source_stale');
+    await expect(page.getByRole('region', { name: 'AI governance route states' })).toContainText('phi_rejected');
+    await expect(page.getByRole('region', { name: 'AI governance route states' })).toContainText('human_review_required');
 
     await page.getByRole('button', { name: 'Run Evaluations' }).click();
     await expect(page.getByRole('article', { name: 'Evaluation harness' })).toContainText('allPassed=true liveModelCalled=false');
+    await expect(page.getByRole('article', { name: 'Evaluation harness' })).toContainText('regressionBlockedCount=');
     await page.getByRole('button', { name: 'Reject Unsafe Output' }).click();
-    await expect(page.getByRole('article', { name: 'Output validation' })).toContainText('unsafe-output-rejected');
+    await expect(page.getByRole('article', { name: 'Output validation' })).toContainText('unsafe_output_rejected');
+    await page.getByRole('button', { name: 'Validate Source-Stale Output' }).click();
+    await expect(page.getByRole('article', { name: 'Output validation' })).toContainText('source_stale');
+    await page.getByRole('button', { name: 'Reject PHI Context' }).click();
+    await expect(page.getByRole('region', { name: 'AI governance readiness' })).toContainText('PHI-rejected');
+    await page.getByRole('button', { name: 'Scrub PHI Context' }).click();
+    await expect(page.getByRole('region', { name: 'AI governance readiness' })).toContainText('scrubbed');
     await expect(page.getByRole('region', { name: 'AI governance safety summary' })).toContainText('does not autonomously diagnose');
   });
 

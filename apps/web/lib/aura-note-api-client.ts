@@ -4,6 +4,7 @@ import type {
   AiEvaluationRunResponseDto,
   AiGatewayInvocationRequestDto,
   AiGatewayInvocationResponseDto,
+  AiRuntimeBoundaryResponseDto,
   AiGatewayStatusDto,
   AiOutputValidationRequestDto,
   AiOutputValidationResponseDto,
@@ -352,6 +353,7 @@ export function createAuraNoteApiClient(options: AuraNoteApiClientOptions = {}) 
     publishClinicOsEvent: (body: ClinicOsEventPublishRequestDto) =>
       post<ClinicOsEventPublishResponseDto>('/integrations/clinicos/events/publish', body),
     getAiGatewayStatus: () => request<AiGatewayStatusDto>('/ai-gateway/status'),
+    getAiRuntimeBoundary: () => request<AiRuntimeBoundaryResponseDto>('/ai-gateway/runtime-boundary'),
     runAiEvaluations: (body: AiEvaluationRunRequestDto) =>
       post<AiEvaluationRunResponseDto>('/ai-gateway/evaluations/run', body),
     validateAiOutput: (body: AiOutputValidationRequestDto) =>

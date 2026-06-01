@@ -955,6 +955,8 @@ This gate does not authorize live EHR writeback, live AI, live transcription, pr
 - **Stop conditions:** model/provider selection, BAA/private path, or live credential is required.
 - **Risks and deferred decisions:** private model pathway, eval thresholds, and drift response remain deferred.
 
+**Implementation status as of `WO-070`:** complete as synthetic/local CR-3 AI governance runtime boundary evidence. The AI Gateway now exposes `/ai-gateway/runtime-boundary`, expanded deterministic evaluation cases for prohibited diagnosis/code/charge/claim/medical-necessity/order/patient-financial/coaching/payer-language behavior, source-freshness rejection, schema-validation metadata, confidence metadata, blocked-behavior metadata, PHI rejection/redaction evidence, and human-review-required events. The `/aura-note/ai-governance` route displays API-backed runtime boundary state, no-live/no-raw-PHI-to-external-AI posture, source-stale validation, unsafe-output rejection, PHI rejection, and scrubbed context evidence. `pnpm ai:runtime-governance-readiness` verifies code, contracts/OpenAPI, API/browser tests, docs/status/run-log/checkpoint evidence, CI wiring, and no-live/no-launch posture. CR-3 is complete and stops for checkpoint review; this does not enable live AI credentials, production prompt stores, private/BAA model approval, raw PHI transfer to external AI, autonomous diagnosis/coding/billing behavior, charge finalization, medical-necessity determination, order placement, claim submission, patient-facing financial conclusions, or production launch.
+
 ## WO-071 — Security, Privacy, Compliance, And Threat-Model Runtime Hardening
 
 - **Objective:** Move from scaffold safety to review-ready runtime security posture.

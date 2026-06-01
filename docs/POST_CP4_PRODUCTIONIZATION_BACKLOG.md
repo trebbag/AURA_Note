@@ -578,3 +578,19 @@ Do not implement these tranches directly from this backlog. Promote one tranche 
 **Known risks:**
 
 - Real tenant scope, named support/on-call owners, pilot dates, production approvals, production credentials, production PHI posture, live vendors, charge finalization, medical-necessity determination, and claim submission remain deferred.
+
+## Commercial Readiness Runtime Note — CR-3 Completion
+
+**Promotion status:** `WO-067` through `WO-070` are complete as synthetic/local CR-3 integration and governance runtime evidence.
+
+**Objective:** Preserve the post-CP4 backlog distinction between production-shaped runtime boundaries and production launch approval. CR-3 completed ModeResolver/ClinicOS adapter-boundary evidence, transcription provider boundary evidence, EHR sandbox runtime boundary evidence, and AI runtime governance boundary evidence.
+
+**Acceptance evidence:**
+
+- `pnpm mode:adapter-readiness`, `pnpm transcription:runtime-boundary-readiness`, `pnpm ehr:sandbox-runtime-readiness`, and `pnpm ai:runtime-governance-readiness` pass before CR-3 can be considered complete.
+- `CHECKPOINT_REPORT.md` records CR-3 as complete with `next_work_order: null` until checkpoint review promotes CR-4.
+- Live ClinicOS, EHR, transcription, AI, storage, payer, and production launch behavior remain disabled.
+
+**Known risks:**
+
+- CR-4 still needs security/privacy/compliance hardening, operations/support readiness, billing/revenue integrity boundary completion, beta-pilot packaging, and the final commercial-readiness decision packet before any founder launch review can proceed.

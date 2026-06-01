@@ -195,6 +195,14 @@ In ClinicOS-integrated mode, future M25 Integration Hub routing remains adapter-
 
 `WO-069` does not enable production EHR credentials, raw EHR payload storage, live EHR API calls, live writeback delivery, autonomous finalization, charge finalization, medical-necessity determination, claim submission, or production launch behavior.
 
+## WO-070 AI Gateway runtime governance boundary
+
+In standalone mode, AURA Note owns AI Gateway policy, prompt/model metadata, deterministic evaluation evidence, PHI rejection/redaction, source-freshness checks, output validation, human-review gates, and runtime-boundary state. Disabled live model state does not block non-AI documentation, finalization, export, or draft claim preview workflows.
+
+In ClinicOS-integrated mode, future M23 Copilot Runtime and M24 AI Governance delegation remains adapter-bound. ClinicOS may provide context metadata only through approved adapter seams, and it cannot bypass AURA Note purpose-of-use checks, source-freshness checks, PHI scrubber, tenant/site scope, role checks, output validation, human-review gates, audit/event evidence, or disabled live-model posture.
+
+`WO-070` does not enable live external AI, production model credentials, private/BAA model approval, production prompt stores, raw PHI model payloads, autonomous diagnosis, final code or charge behavior, medical-necessity determination, order placement, claim submission, patient-facing financial conclusions, or production launch behavior.
+
 ## WO-049 launch operations readiness mode behavior
 
 In standalone mode, `WO-049` launch operations readiness proves AURA Note can rehearse build, smoke, rollback, disabled-vendor, performance, incident, access-review, and support-escalation controls without ClinicOS.

@@ -115,7 +115,7 @@ const checks = [
   {
     id: 'spec-gaps.wo069',
     path: 'SPEC_GAPS.md',
-    snippets: ['No active gaps as of post-`WO-069` athenahealth sandbox and vendor-neutral EHR runtime boundary review']
+    snippets: ['No active gaps as of post-`WO-070` AI governance runtime boundary review']
   },
   {
     id: 'work-order.next',
@@ -157,8 +157,8 @@ const status = JSON.parse(read('repo_status.json'));
 if (status.work_orders?.['WO-069'] !== 'done') {
   failures.push({ id: 'status.wo069', path: 'repo_status.json', missing: 'WO-069 done' });
 }
-if (status.next_work_order !== 'WO-070') {
-  failures.push({ id: 'status.next', path: 'repo_status.json', missing: 'next_work_order WO-070' });
+if (status.next_work_order !== 'WO-070' && status.next_work_order !== null) {
+  failures.push({ id: 'status.next', path: 'repo_status.json', missing: 'next_work_order WO-070 or CR-3 checkpoint null' });
 }
 if (status.current_checkpoint !== 'CR-3') {
   failures.push({ id: 'status.checkpoint', path: 'repo_status.json', missing: 'CR-3' });

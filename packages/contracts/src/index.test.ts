@@ -7,6 +7,7 @@ import {
   type AiContextPackageDto,
   type AiEvaluationRunResponseDto,
   type AiGatewayInvocationResponseDto,
+  type AiRuntimeBoundaryResponseDto,
   type AiGatewayStatusDto,
   type AiOutputValidationResponseDto,
   type AuditExportResponseDto,
@@ -788,9 +789,33 @@ describe('AI gateway contracts', () => {
           syntheticOnly: true,
           expectedPromptId: 'aura-note-suggestions-v1',
           sourceEvidenceIds: ['evidence-001'],
-          expectedValidationStatus: 'accepted'
+          expectedValidationStatus: 'accepted',
+          expectedRiskLabel: 'moderate',
+          expectedSourceFreshnessStatus: 'current'
         }
       ],
+      runtimeBoundary: {
+        providerBoundary: 'server_side_ai_gateway',
+        gatewayMode: 'mock_only',
+        liveModelCallsEnabled: false,
+        liveModelCredentialPresent: false,
+        rawPhiToExternalAiAllowed: false,
+        productionPromptStoreEnabled: false,
+        privateBaaPathwayApproved: false,
+        driftMonitoringEnabled: false,
+        driftMonitoringStatus: 'placeholder_disabled',
+        supportedRuntimeStates: ['disabled', 'configured', 'degraded', 'failed', 'source_stale', 'scrubbed', 'phi_rejected', 'output_validation_failed', 'unsafe_output_rejected', 'human_review_required', 'permission_denied', 'read_only', 'loading', 'empty', 'ready', 'demo_fixture'],
+        promptRegistryCount: 1,
+        modelConfigurationCount: 1,
+        evaluationCaseCount: 15,
+        prohibitedBehaviorCoverage: ['claim_submission', 'medical_necessity_determination', 'source_stale'],
+        sourceFreshnessStatuses: ['current', 'stale'],
+        humanReviewGate: 'required_before_use',
+        schemaValidationRequired: true,
+        sourceEvidenceRequired: true,
+        syntheticOnly: true,
+        reviewedAt: '2026-06-01T16:00:00.000Z'
+      },
       liveModelCredentialPresent: false,
       rawPhiToExternalAiAllowed: false,
       humanReviewRequiredForAllOutputs: true
@@ -800,6 +825,60 @@ describe('AI gateway contracts', () => {
     assert.equal(status.promptRegistry[0]?.humanReviewRequired, true);
     assert.equal(status.modelConfigurations?.[0]?.liveInvocationEnabled, false);
     assert.equal(status.rawPhiToExternalAiAllowed, false);
+    assert.equal(status.runtimeBoundary?.providerBoundary, 'server_side_ai_gateway');
+  });
+
+  it('represents the W070 AI runtime boundary response', () => {
+    const boundary: AiRuntimeBoundaryResponseDto = {
+      runtimeBoundary: {
+        providerBoundary: 'server_side_ai_gateway',
+        gatewayMode: 'mock_only',
+        liveModelCallsEnabled: false,
+        liveModelCredentialPresent: false,
+        rawPhiToExternalAiAllowed: false,
+        productionPromptStoreEnabled: false,
+        privateBaaPathwayApproved: false,
+        driftMonitoringEnabled: false,
+        driftMonitoringStatus: 'placeholder_disabled',
+        supportedRuntimeStates: ['disabled', 'configured', 'degraded', 'failed', 'source_stale', 'scrubbed', 'phi_rejected', 'output_validation_failed', 'unsafe_output_rejected', 'human_review_required', 'permission_denied', 'read_only', 'loading', 'empty', 'ready', 'demo_fixture'],
+        promptRegistryCount: 5,
+        modelConfigurationCount: 3,
+        evaluationCaseCount: 15,
+        prohibitedBehaviorCoverage: ['unsupported_diagnosis_finalization', 'code_finalization', 'charge_finalization', 'claim_submission', 'medical_necessity_determination', 'order_placement', 'patient_financial_conclusion', 'unsafe_coaching', 'unsupported_payer_language', 'source_stale'],
+        sourceFreshnessStatuses: ['current', 'stale'],
+        humanReviewGate: 'required_before_use',
+        schemaValidationRequired: true,
+        sourceEvidenceRequired: true,
+        syntheticOnly: true,
+        reviewedAt: '2026-06-01T16:00:00.000Z'
+      },
+      auditEvent: {
+        auditEventId: 'audit-ai-runtime-001',
+        tenantId: 'tenant-001',
+        action: 'ai.runtime_boundary_checked',
+        entityType: 'AiGatewayRuntimeBoundary',
+        entityId: 'ai-runtime-boundary-v1',
+        traceId: 'trace-ai-runtime-001',
+        createdAt: '2026-06-01T16:00:00.000Z'
+      },
+      domainEvents: [
+        createEventEnvelope({
+          eventId: 'evt-ai-runtime-001',
+          eventType: 'ai.runtime_boundary_checked.v1',
+          tenantId: 'tenant-001',
+          siteId: 'site-001',
+          producer: 'aura-note-api',
+          traceId: 'trace-ai-runtime-001',
+          idempotencyKey: 'idem-ai-runtime-001',
+          sensitivity: 'restricted',
+          retentionClass: 'audit',
+          payload: { liveModelCallsEnabled: false }
+        })
+      ]
+    };
+
+    assert.equal(boundary.runtimeBoundary.liveModelCallsEnabled, false);
+    assert.equal(boundary.domainEvents[0]?.eventType, 'ai.runtime_boundary_checked.v1');
   });
 
   it('represents an invocation with deidentified context and governance events', () => {
@@ -900,6 +979,9 @@ describe('AI gateway contracts', () => {
           policyMode: 'mock_only',
           validationStatus: 'accepted',
           riskLabel: 'moderate',
+          schemaValidationStatus: 'valid',
+          sourceFreshnessStatus: 'current',
+          confidence: 0.86,
           humanReviewRequired: true,
           sourceEvidenceIds: ['evidence-001'],
           unsafeReasons: [],
@@ -913,6 +995,9 @@ describe('AI gateway contracts', () => {
       ],
       allPassed: true,
       liveModelCalled: false,
+      regressionBlockedCount: 0,
+      prohibitedBehaviorCoverage: [],
+      sourceFreshnessStatuses: ['current'],
       auditEvent: {
         auditEventId: 'audit-ai-eval-001',
         tenantId: 'tenant-001',
@@ -941,9 +1026,13 @@ describe('AI gateway contracts', () => {
       validation: {
         validationStatus: 'rejected',
         riskLabel: 'unsafe',
+        schemaValidationStatus: 'invalid',
+        sourceFreshnessStatus: 'current',
+        confidence: 0.41,
         unsafeReasons: ['prohibited autonomous action requested'],
         prohibitedActionDetected: true,
         rawPhiDetected: false,
+        blockedBehavior: 'claim_submission',
         humanReviewRequired: true
       },
       auditEvent: {

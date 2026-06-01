@@ -19,6 +19,8 @@ import {
   createApiEnvelope,
   createEventEnvelope,
   type AiContextPackageDto,
+  type AiRuntimeBoundaryDto,
+  type AiRuntimeBoundaryResponseDto,
   type AiEvaluationCaseDto,
   type AiEvaluationRunRequestDto,
   type AiEvaluationRunResponseDto,
@@ -85,7 +87,45 @@ export class AiService {
         externalAiEnabled: false,
         liveModelCredentialPresent: false,
         rawPhiToExternalAiAllowed: false,
-        humanReviewRequiredForAllOutputs: true
+        humanReviewRequiredForAllOutputs: true,
+        runtimeBoundary: this.createRuntimeBoundary()
+      },
+      this.createMeta(context)
+    );
+  }
+
+  getRuntimeBoundary(headers: Record<string, string | string[] | undefined>): ApiEnvelope<AiRuntimeBoundaryResponseDto> {
+    const context = this.createRequestContext(headers);
+    if (!canPerform('ai_governance:view', context.access)) {
+      throw new ForbiddenException('role cannot view AI governance runtime boundary');
+    }
+
+    const runtimeBoundary = this.createRuntimeBoundary();
+    return createApiEnvelope(
+      {
+        runtimeBoundary,
+        auditEvent: this.createAuditEvent('ai.runtime_boundary_checked', 'AiGatewayRuntimeBoundary', 'ai-runtime-boundary-v1', context),
+        domainEvents: [
+          createEventEnvelope({
+            eventId: this.nextId('evt'),
+            eventType: 'ai.runtime_boundary_checked.v1',
+            tenantId: TENANT_ID,
+            siteId: SITE_ID,
+            producer: 'aura-note-api',
+            traceId: context.traceId,
+            idempotencyKey: context.idempotencyKey ?? this.nextId('idem'),
+            sensitivity: 'restricted',
+            retentionClass: 'audit',
+            payload: {
+              providerBoundary: runtimeBoundary.providerBoundary,
+              liveModelCallsEnabled: false,
+              rawPhiToExternalAiAllowed: false,
+              evaluationCaseCount: runtimeBoundary.evaluationCaseCount,
+              prohibitedBehaviorCoverage: runtimeBoundary.prohibitedBehaviorCoverage,
+              humanReviewGate: runtimeBoundary.humanReviewGate
+            }
+          })
+        ]
       },
       this.createMeta(context)
     );
@@ -119,7 +159,22 @@ export class AiService {
       )
     );
     const allPassed = results.every((result) => result.passed);
+    const blockedBehaviorCoverage = [
+      ...new Set(results.map((result) => result.blockedBehavior).filter((behavior): behavior is NonNullable<typeof behavior> => Boolean(behavior)))
+    ];
+    const sourceFreshnessStatuses = [...new Set(results.map((result) => result.sourceFreshnessStatus))];
+    const regressionBlockedCount = results.filter((result) => result.validationStatus === 'rejected').length;
     const eventType = allPassed ? 'ai.evaluation_run_completed.v1' : 'ai.evaluation_run_failed.v1';
+    const eventPayload = {
+      evalCaseIds: requestedCaseIds,
+      resultCount: results.length,
+      allPassed,
+      liveModelCalled: false,
+      regressionBlockedCount,
+      prohibitedBehaviorCoverage: blockedBehaviorCoverage,
+      sourceFreshnessStatuses,
+      modelModes: [...new Set(results.map((result) => result.modelMode))]
+    };
     const event = createEventEnvelope({
       eventId: this.nextId('evt'),
       eventType,
@@ -130,12 +185,38 @@ export class AiService {
       idempotencyKey: context.idempotencyKey ?? this.nextId('idem'),
       sensitivity: 'restricted',
       retentionClass: 'audit',
+      payload: eventPayload
+    });
+    const humanReviewEvent = createEventEnvelope({
+      eventId: this.nextId('evt'),
+      eventType: 'ai.human_review_required.v1',
+      tenantId: TENANT_ID,
+      siteId: SITE_ID,
+      producer: 'aura-note-api',
+      traceId: context.traceId,
+      idempotencyKey: context.idempotencyKey ?? this.nextId('idem'),
+      sensitivity: 'restricted',
+      retentionClass: 'audit',
       payload: {
         evalCaseIds: requestedCaseIds,
-        resultCount: results.length,
-        allPassed,
-        liveModelCalled: false,
-        modelModes: [...new Set(results.map((result) => result.modelMode))]
+        humanReviewGate: 'required_before_use',
+        outputTypes: [...new Set(results.map((result) => result.outputType))]
+      }
+    });
+    const regressionEvent = createEventEnvelope({
+      eventId: this.nextId('evt'),
+      eventType: 'ai.regression_blocked.v1',
+      tenantId: TENANT_ID,
+      siteId: SITE_ID,
+      producer: 'aura-note-api',
+      traceId: context.traceId,
+      idempotencyKey: context.idempotencyKey ?? this.nextId('idem'),
+      sensitivity: 'restricted',
+      retentionClass: 'audit',
+      payload: {
+        regressionBlockedCount,
+        prohibitedBehaviorCoverage: blockedBehaviorCoverage,
+        liveModelCalled: false
       }
     });
 
@@ -144,8 +225,11 @@ export class AiService {
         results: results.map((result): AiEvaluationResultDto => ({ ...result })),
         allPassed,
         liveModelCalled: false,
+        regressionBlockedCount,
+        prohibitedBehaviorCoverage: blockedBehaviorCoverage,
+        sourceFreshnessStatuses,
         auditEvent: this.createAuditEvent('ai.evaluation_run', 'AiGatewayEvaluation', this.nextId('eval-run'), context),
-        domainEvents: [event]
+        domainEvents: regressionBlockedCount > 0 ? [event, humanReviewEvent, regressionEvent] : [event, humanReviewEvent]
       },
       this.createMeta(context)
     );
@@ -171,35 +255,70 @@ export class AiService {
       rejected: false
     };
     const validation = inspectAiGatewayResponse(response);
-    const eventType = validation.validationStatus === 'rejected' ? 'ai.output_rejected.v1' : 'ai.response_recorded.v1';
+    const eventType = validation.validationStatus === 'rejected' ? 'ai.output_rejected.v1' : 'ai.output_validated.v1';
+    const outputEvent = createEventEnvelope({
+      eventId: this.nextId('evt'),
+      eventType,
+      tenantId: TENANT_ID,
+      siteId: SITE_ID,
+      producer: 'aura-note-api',
+      traceId: context.traceId,
+      idempotencyKey: context.idempotencyKey ?? this.nextId('idem'),
+      sensitivity: 'restricted',
+      retentionClass: 'audit',
+      payload: {
+        outputType: body.outputType,
+        validationStatus: validation.validationStatus,
+        schemaValidationStatus: validation.schemaValidationStatus,
+        sourceFreshnessStatus: validation.sourceFreshnessStatus,
+        confidence: validation.confidence,
+        riskLabel: validation.riskLabel,
+        unsafeReasons: validation.unsafeReasons,
+        prohibitedActionDetected: validation.prohibitedActionDetected,
+        rawPhiDetected: validation.rawPhiDetected,
+        blockedBehavior: validation.blockedBehavior,
+        sourceEvidenceIds: body.sourceEvidenceIds ?? [],
+        humanReviewRequired: true
+      }
+    });
+    const humanReviewEvent = createEventEnvelope({
+      eventId: this.nextId('evt'),
+      eventType: 'ai.human_review_required.v1',
+      tenantId: TENANT_ID,
+      siteId: SITE_ID,
+      producer: 'aura-note-api',
+      traceId: context.traceId,
+      idempotencyKey: context.idempotencyKey ?? this.nextId('idem'),
+      sensitivity: 'restricted',
+      retentionClass: 'audit',
+      payload: {
+        outputType: body.outputType,
+        humanReviewGate: 'required_before_use',
+        validationStatus: validation.validationStatus
+      }
+    });
+    const regressionEvent = createEventEnvelope({
+      eventId: this.nextId('evt'),
+      eventType: 'ai.regression_blocked.v1',
+      tenantId: TENANT_ID,
+      siteId: SITE_ID,
+      producer: 'aura-note-api',
+      traceId: context.traceId,
+      idempotencyKey: context.idempotencyKey ?? this.nextId('idem'),
+      sensitivity: 'restricted',
+      retentionClass: 'audit',
+      payload: {
+        blockedBehavior: validation.blockedBehavior,
+        validationStatus: validation.validationStatus,
+        liveModelCalled: false
+      }
+    });
 
     return createApiEnvelope(
       {
         validation: this.toValidationDto(validation),
         auditEvent: this.createAuditEvent('ai.output_validated', 'AiGatewayOutput', this.nextId('ai-output'), context),
-        domainEvents: [
-          createEventEnvelope({
-            eventId: this.nextId('evt'),
-            eventType,
-            tenantId: TENANT_ID,
-            siteId: SITE_ID,
-            producer: 'aura-note-api',
-            traceId: context.traceId,
-            idempotencyKey: context.idempotencyKey ?? this.nextId('idem'),
-            sensitivity: 'restricted',
-            retentionClass: 'audit',
-            payload: {
-              outputType: body.outputType,
-              validationStatus: validation.validationStatus,
-              riskLabel: validation.riskLabel,
-              unsafeReasons: validation.unsafeReasons,
-              prohibitedActionDetected: validation.prohibitedActionDetected,
-              rawPhiDetected: validation.rawPhiDetected,
-              sourceEvidenceIds: body.sourceEvidenceIds ?? [],
-              humanReviewRequired: true
-            }
-          })
-        ]
+        domainEvents: validation.validationStatus === 'rejected' ? [outputEvent, humanReviewEvent, regressionEvent] : [outputEvent, humanReviewEvent]
       },
       this.createMeta(context)
     );
@@ -257,7 +376,25 @@ export class AiService {
             payload: buildAiGovernanceEventPayload({
               request: syntheticRequest,
               status: 'phi_rejected'
-            })
+          }),
+          }),
+          createEventEnvelope({
+            eventId: this.nextId('evt'),
+            eventType: 'ai.request_denied.v1',
+            tenantId: TENANT_ID,
+            siteId: SITE_ID,
+            producer: 'aura-note-api',
+            traceId: context.traceId,
+            idempotencyKey: context.idempotencyKey ?? this.nextId('idem'),
+            sensitivity: 'restricted',
+            retentionClass: 'audit',
+            payload: {
+              purpose: body.purpose,
+              outputType: body.outputType ?? 'suggestion',
+              reason: 'raw_phi_rejected',
+              rejectedPaths: prepared.package.rejectedPaths,
+              liveModelCalled: false
+            }
           })
         ]
       });
@@ -282,8 +419,8 @@ export class AiService {
     });
 
     const eventTypes = prepared.package.redactedPaths.length > 0
-      ? ['ai.context_scrubbed.v1' as const, 'ai.request_prepared.v1' as const, 'ai.response_recorded.v1' as const]
-      : ['ai.request_prepared.v1' as const, 'ai.response_recorded.v1' as const];
+      ? ['ai.context_package_created.v1' as const, 'ai.context_scrubbed.v1' as const, 'ai.request_prepared.v1' as const, 'ai.response_recorded.v1' as const, 'ai.human_review_required.v1' as const]
+      : ['ai.context_package_created.v1' as const, 'ai.request_prepared.v1' as const, 'ai.response_recorded.v1' as const, 'ai.human_review_required.v1' as const];
 
     return createApiEnvelope(
       {
@@ -308,9 +445,13 @@ export class AiService {
               status:
                 eventType === 'ai.context_scrubbed.v1'
                   ? 'context_scrubbed'
-                  : eventType === 'ai.response_recorded.v1'
-                    ? 'response_recorded'
-                    : 'prepared'
+                  : eventType === 'ai.context_package_created.v1'
+                    ? 'prepared'
+                    : eventType === 'ai.human_review_required.v1'
+                      ? 'response_recorded'
+                      : eventType === 'ai.response_recorded.v1'
+                        ? 'response_recorded'
+                        : 'prepared'
             })
           })
         )
@@ -380,6 +521,50 @@ export class AiService {
     };
   }
 
+  private createRuntimeBoundary(): AiRuntimeBoundaryDto {
+    return {
+      providerBoundary: 'server_side_ai_gateway',
+      gatewayMode: AURA_NOTE_AI_SAFETY_POLICY.mode,
+      liveModelCallsEnabled: false,
+      liveModelCredentialPresent: false,
+      rawPhiToExternalAiAllowed: false,
+      productionPromptStoreEnabled: false,
+      privateBaaPathwayApproved: false,
+      driftMonitoringEnabled: false,
+      driftMonitoringStatus: 'placeholder_disabled',
+      supportedRuntimeStates: [
+        'disabled',
+        'configured',
+        'degraded',
+        'failed',
+        'source_stale',
+        'scrubbed',
+        'phi_rejected',
+        'output_validation_failed',
+        'unsafe_output_rejected',
+        'human_review_required',
+        'permission_denied',
+        'read_only',
+        'loading',
+        'empty',
+        'ready',
+        'demo_fixture'
+      ],
+      promptRegistryCount: PROMPT_REGISTRY.length,
+      modelConfigurationCount: AI_MODEL_CONFIGURATIONS.length,
+      evaluationCaseCount: AI_EVALUATION_CASES.length,
+      prohibitedBehaviorCoverage: [
+        ...new Set(AI_EVALUATION_CASES.map((evalCase) => evalCase.blockedBehavior).filter((behavior): behavior is NonNullable<typeof behavior> => Boolean(behavior)))
+      ],
+      sourceFreshnessStatuses: [...new Set(AI_EVALUATION_CASES.map((evalCase) => evalCase.expectedSourceFreshnessStatus))],
+      humanReviewGate: 'required_before_use',
+      schemaValidationRequired: true,
+      sourceEvidenceRequired: true,
+      syntheticOnly: true,
+      reviewedAt: new Date().toISOString()
+    };
+  }
+
   private toContextPackageDto(contextPackage: AiContextPackage): AiContextPackageDto {
     return {
       contextPackageId: contextPackage.contextPackageId,
@@ -440,9 +625,13 @@ export class AiService {
     return {
       validationStatus: validation.validationStatus,
       riskLabel: validation.riskLabel,
+      schemaValidationStatus: validation.schemaValidationStatus,
+      sourceFreshnessStatus: validation.sourceFreshnessStatus,
+      confidence: validation.confidence,
       unsafeReasons: validation.unsafeReasons,
       prohibitedActionDetected: validation.prohibitedActionDetected,
       rawPhiDetected: validation.rawPhiDetected,
+      ...(validation.blockedBehavior ? { blockedBehavior: validation.blockedBehavior } : {}),
       humanReviewRequired: validation.humanReviewRequired
     };
   }

@@ -187,12 +187,14 @@ Post-CP4 productionization candidates are documented in `docs/POST_CP4_PRODUCTIO
 
 `WO-068` is complete as the second CR-3 integration/governance runtime tranche. It adds the server-side transcription provider boundary, deterministic mock provider, disabled live-provider fail-closed evidence, runtime state metadata, retry/dead-letter posture, one-week raw-audio retention and indefinite transcript retention evidence, browser/API tests, and `pnpm transcription:runtime-boundary-readiness`.
 
-`WO-069` is complete as the third CR-3 integration/governance runtime tranche. It adds the vendor-neutral EHR runtime boundary, athenahealth-first sandbox posture, disabled credential evidence, sandbox patient lookup, appointment import, encounter context, human-gated writeback denial/payload-preparation/attempt/acknowledgement metadata, browser/API tests, and `pnpm ehr:sandbox-runtime-readiness`. `WO-070` is the next active CR-3 work order.
+`WO-069` is complete as the third CR-3 integration/governance runtime tranche. It adds the vendor-neutral EHR runtime boundary, athenahealth-first sandbox posture, disabled credential evidence, sandbox patient lookup, appointment import, encounter context, human-gated writeback denial/payload-preparation/attempt/acknowledgement metadata, browser/API tests, and `pnpm ehr:sandbox-runtime-readiness`.
+
+`WO-070` is complete as the fourth CR-3 integration/governance runtime tranche. It adds the server-side AI Gateway runtime boundary, deterministic prohibited-behavior evaluation expansion, source-freshness/schema/confidence/blocked-behavior validation metadata, PHI rejection/redaction evidence, human-review-required and regression-blocked events, browser/API tests, and `pnpm ai:runtime-governance-readiness`. CR-3 is complete and stops for checkpoint review before promoting `WO-071`.
 
 `WO-061` through `WO-063` form the CR-1 runtime foundation candidate. They move core runtime services behind repository ports with local Prisma/PostgreSQL as the production-shaped local runtime path, harden the Nest API request boundary, and make synthetic header identity fail closed outside explicit local/demo modes.
 
 `WO-064` through `WO-066` form the CR-2 product UX runtime candidate. `WO-064`, `WO-065`, and `WO-066` are complete; CR-2 is complete as synthetic/local product UX runtime evidence.
 
-`WO-067` through `WO-070` form the CR-3 integration and governance runtime candidate. They enforce standalone/ClinicOS mode adapter boundaries and prepare transcription, EHR, AI, and ClinicOS integration paths as production-shaped but safely disabled or mock/sandbox-governed runtime paths.
+`WO-067` through `WO-070` form the CR-3 integration and governance runtime candidate. They are complete as synthetic/local evidence: standalone/ClinicOS mode adapter boundaries are enforced, and transcription, EHR, AI, and ClinicOS integration paths are production-shaped but safely disabled or mock/sandbox-governed runtime paths.
 
 `WO-071` through `WO-075` form the CR-4 commercial readiness review candidate. They harden security/privacy/compliance, observability/support, billing/revenue integrity, beta-pilot packaging, and the final commercial-readiness decision packet without granting production launch approval.

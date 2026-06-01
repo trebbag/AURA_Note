@@ -95,7 +95,8 @@ const specGaps = read('SPEC_GAPS.md');
 if (
   !specGaps.includes('No active gaps as of post-`WO-067` ModeResolver and adapter runtime wiring review') &&
   !specGaps.includes('No active gaps as of post-`WO-068` transcription runtime boundary review') &&
-  !specGaps.includes('No active gaps as of post-`WO-069` athenahealth sandbox and vendor-neutral EHR runtime boundary review')
+  !specGaps.includes('No active gaps as of post-`WO-069` athenahealth sandbox and vendor-neutral EHR runtime boundary review') &&
+  !specGaps.includes('No active gaps as of post-`WO-070` AI governance runtime boundary review')
 ) {
   throw new Error('SPEC_GAPS.md must retain WO-067 or later no-active-gap evidence');
 }
@@ -108,7 +109,7 @@ const status = JSON.parse(read('repo_status.json'));
 if (status.work_orders?.['WO-067'] !== 'done') {
   throw new Error('repo_status.json must mark WO-067 done before mode adapter readiness passes');
 }
-if (!['WO-068', 'WO-069', 'WO-070', 'WO-071'].includes(status.next_work_order)) {
+if (![null, 'WO-068', 'WO-069', 'WO-070', 'WO-071'].includes(status.next_work_order)) {
   throw new Error(`repo_status.json must be at WO-068 or later after WO-067; found ${status.next_work_order}`);
 }
 if (!['todo', 'done'].includes(status.work_orders?.['WO-068'])) {

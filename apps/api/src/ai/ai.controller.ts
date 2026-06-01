@@ -15,6 +15,11 @@ export class AiController {
     return this.aiService.getStatus(headers);
   }
 
+  @Get('runtime-boundary')
+  getRuntimeBoundary(@Headers() headers: Record<string, string | string[] | undefined>) {
+    return this.aiService.getRuntimeBoundary(headers);
+  }
+
   @Post('mock-invocations')
   invokeMock(
     @Body() body: AiGatewayInvocationRequestDto,

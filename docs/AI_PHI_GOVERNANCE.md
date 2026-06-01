@@ -149,6 +149,14 @@ The disabled live-provider path fails closed until vendor, BAA, credential, cons
 
 Writeback action reasons continue to pass PHI/credential boundary checks before mutation. Support users remain operational metadata only. Event payloads are audit-safe metadata and must not include raw vendor responses, credentials, production URLs, final-note text, transcript text, billing details, autonomous diagnosis/coding/billing evidence, charge finalization, medical-necessity determinations, or claim submission evidence.
 
+## WO-070 AI runtime governance boundary
+
+`WO-070` expands the AI Gateway runtime boundary and evaluation harness while keeping live external AI disabled. `/ai-gateway/runtime-boundary` returns `server_side_ai_gateway` metadata with `liveModelCallsEnabled=false`, `liveModelCredentialPresent=false`, `rawPhiToExternalAiAllowed=false`, `productionPromptStoreEnabled=false`, `privateBaaPathwayApproved=false`, and `driftMonitoringStatus=placeholder_disabled`.
+
+The deterministic evaluation harness now rejects prohibited finalization behaviors for diagnosis, codes, charges, claims, medical necessity, orders, patient-facing financial conclusions, unsupported payer language, and unsafe coaching. It also rejects stale-source output through `source_stale` blocked-behavior metadata. Output validation records schema-validation status, source freshness, confidence, risk label, blocked behavior, and human-review-required state before any user-facing adoption.
+
+PHI handling remains fail-closed: raw PHI is rejected before any model boundary, explicit redaction records scrubbed context evidence, and both paths remain mock/local only. Event payloads are audit-safe metadata only and may include prompt/model versions, context package IDs, source evidence IDs, rejected/redacted paths, validation status, source freshness, blocked behavior, trace ID, and `liveModelCalled=false`; they must not include raw prompts, raw note text, raw transcript text, raw EHR/ClinicOS payloads, production chart data, real model output, credentials, production URLs, final clinical/coding/billing decisions, medical-necessity determinations, orders, claim submissions, or patient financial conclusions.
+
 ## WO-049 launch operations PHI boundary
 
 `WO-049` launch operations readiness uses synthetic operational metadata only. Performance baselines, rollback rehearsal, reliability drills, incident response, access review, and support escalation evidence must not include PHI, secrets, production URLs, raw transcripts, final notes, billing details, coaching output, raw prompts, raw EHR/ClinicOS payloads, storage object payloads, medical-necessity determinations, charge finalization, or claim submission evidence.

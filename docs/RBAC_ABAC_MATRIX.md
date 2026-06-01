@@ -105,6 +105,12 @@ The runtime `modeAdapterBoundaries` evidence records all adapter seams as `permi
 
 Only treating clinicians linked to the visit and authorized admins may approve, deny, or prepare writeback-facing metadata. Retry, attempt, acknowledgement, dead-letter, and reconciliation metadata remains limited to authorized admin, admin, clinic manager, compliance/privacy lead, and service-account contexts. ClinicOS-integrated mode cannot bypass AURA Note tenant/site scope, purpose-of-use, RBAC/ABAC, human approval, writeback, reconciliation, audit, or no-live-delivery boundaries.
 
+## WO-070 AI runtime governance access
+
+`WO-070` keeps AI runtime governance access behind AURA Note permissions in both standalone and ClinicOS-integrated modes. `ai_governance:view` is required to view `/ai-gateway/runtime-boundary`, run deterministic evaluations, and validate output metadata; compliance/privacy leads and authorized admins remain the intended governance roles. Support users remain metadata-only and cannot run evaluations, validate outputs, access raw prompts, transcripts, final notes, billing details, coaching outputs, raw AI payloads, model data, or PHI-bearing context.
+
+Treating clinicians linked to the visit may invoke permitted draft/candidate AI support through `ai_gateway:invoke`, but raw-PHI context is rejected or explicitly scrubbed before the mock-only boundary and all output remains human-review-required. Billing staff do not gain broad AI governance access through this tranche. ClinicOS-integrated mode cannot bypass AURA Note AI Gateway policy, purpose-of-use, source-freshness, PHI scrubbing, tenant/site scope, role checks, output validation, human-review gates, or no-live-model posture.
+
 ## WO-049 launch operations access
 
 `WO-049` documents `launch_operations:view` and future `launch_operations:record` posture for operational rehearsal evidence. Authorized admin, compliance/privacy lead, clinic manager, support, and service-account contexts may view metadata-only launch operations evidence. Recording production launch approval remains out of scope. Support users remain metadata-only and cannot access transcripts, final notes, billing details, coaching outputs, raw prompts, raw EHR/ClinicOS payloads, audit export payloads, production credentials, or PHI-bearing logs. ClinicOS-integrated mode cannot bypass AURA Note launch operations permissions.

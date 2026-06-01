@@ -569,6 +569,18 @@ This gate proves synthetic/local transcription runtime boundary readiness only. 
 
 This gate proves synthetic/local athenahealth sandbox and vendor-neutral EHR runtime boundary readiness only. It does not enable production EHR credentials, raw EHR payload storage, live API calls, live writeback delivery, autonomous finalization, charge finalization, medical-necessity determination, claim submission, or production launch.
 
+## WO-070 AI runtime governance boundary
+
+`WO-070` adds `pnpm ai:runtime-governance-readiness`:
+
+- AI Gateway unit tests cover expanded deterministic evaluation cases for prohibited diagnosis finalization, code finalization, charge finalization, claim submission, medical-necessity determination, order placement, patient-facing financial conclusions, unsafe coaching, unsupported payer language, and stale-source rejection.
+- API service and e2e tests cover `/ai-gateway/runtime-boundary`, prompt/model/evaluation metadata, PHI rejection/redaction, output validation, source-freshness rejection, support-user denial, regression-blocked events, and `liveModelCalled=false`.
+- contracts tests cover `AiRuntimeBoundaryDto`, schema-validation status, source-freshness status, blocked-behavior metadata, and new AI event types.
+- browser tests cover `/aura-note/ai-governance` loading, ready, permission-denied, scrubbed, PHI-rejected, source-stale, unsafe-output-rejected, output-validation-failed, human-review-required, read-only, disabled, degraded, failed, and demo-fixture states through typed API responses.
+- the readiness script verifies code, contracts/OpenAPI, docs/status/run-log/checkpoint evidence, CI wiring, `next_work_order: null` CR-3 checkpoint stop, and no-live/no-launch posture.
+
+This gate closes CR-3 as synthetic/local integration and governance runtime evidence only. It does not enable live model credentials, production prompt stores, raw PHI transfer to external AI, private/BAA pathway approval, autonomous finalization, charge finalization, medical-necessity determination, claim submission, or production launch.
+
 ## WO-049 launch operations readiness
 
 `WO-049` adds synthetic/local deployment, performance, reliability, and operational drill evidence:

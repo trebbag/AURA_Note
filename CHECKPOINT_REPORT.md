@@ -1068,3 +1068,68 @@ Deferred decisions remain tracked in `SPEC_GAPS.md`, including production launch
 ## Next recommended batch
 
 Proceed to `WO-067` — ModeResolver And Adapter Runtime Wiring. The next checkpoint is CR-3 after `WO-067` through `WO-070`.
+
+---
+
+# CR-3 Integration And Governance Runtime Candidate
+
+## Completed work orders
+
+- `WO-067` — ModeResolver and adapter runtime wiring.
+- `WO-068` — Transcription runtime boundary and provider-ready interface.
+- `WO-069` — Athenahealth sandbox and vendor-neutral EHR runtime boundary.
+- `WO-070` — AI governance runtime boundary and evaluation harness expansion.
+
+## Acceptance evidence
+
+- `WO-067` added a shared API ModeResolver and explicit adapter-boundary evidence for standalone and ClinicOS-integrated contexts. ClinicOS remains unable to bypass AURA Note permissions.
+- `WO-068` added server-side transcription provider adapters, deterministic mock transcription, disabled live-provider fail-closed evidence, one-week raw-audio retention metadata, indefinite transcript-retention metadata, and runtime-state browser/API coverage.
+- `WO-069` added vendor-neutral EHR runtime boundary metadata, athenahealth-first sandbox posture, disabled credential evidence, sandbox patient lookup, appointment import, encounter context, and human-gated writeback lifecycle metadata.
+- `WO-070` added server-side AI Gateway runtime boundary metadata, expanded deterministic prohibited-behavior evaluation cases, source-freshness/schema/confidence/blocked-behavior validation metadata, PHI rejection/redaction evidence, human-review-required events, regression-blocked events, and `/aura-note/ai-governance` browser evidence.
+- `repo_status.json` records `current_checkpoint: CR-3`, `next_work_order: null`, `WO-067: done`, `WO-068: done`, `WO-069: done`, and `WO-070: done`. `WO-071` through `WO-075` remain planned for CR-4 and are not active until checkpoint review promotes the next batch.
+- No live vendors, production PHI, production credentials, autonomous clinical/coding/billing behavior, charge finalization, medical-necessity determination, order placement, claim submission, raw PHI transfer to external AI, or production launch behavior were introduced.
+
+## Tests and gates
+
+- `pnpm mode:adapter-readiness`
+- `pnpm transcription:runtime-boundary-readiness`
+- `pnpm ehr:sandbox-runtime-readiness`
+- `pnpm ai:runtime-governance-readiness`
+- `pnpm ai:governance-readiness`
+- `pnpm clinicos:integration-readiness`
+- `pnpm ehr:integration-readiness`
+- `pnpm audio:transcription-readiness`
+- `pnpm frontend:runtime-integration-readiness`
+- `pnpm frontend:primary-runtime-readiness`
+- `pnpm standalone:workflow-readiness`
+- `pnpm install --frozen-lockfile`
+- `pnpm db:client:generate`
+- `pnpm lint`
+- `pnpm lint:phi`
+- `pnpm typecheck`
+- `pnpm test`
+- `pnpm test:e2e`
+- `pnpm test:browser`
+- `pnpm build`
+- `pnpm production:readiness`
+- `pnpm acceptance:readiness`
+- `node scripts/status.js`
+- `git diff --check`
+
+## Open risks
+
+- CR-3 remains synthetic/local integration and governance runtime evidence. Live ClinicOS contracts, live event-bus delivery, production EHR credentialing, live EHR calls, live writeback delivery, live transcription provider calls, raw PHI audio transport, live external AI, private/BAA model approval, production prompt stores, drift-monitoring ownership, production PHI storage, live vendor monitoring, and production launch approval remain out of scope.
+- Runtime AI, transcription, EHR, and ClinicOS paths are production-shaped but safely disabled, mock-backed, or sandbox-metadata-only until later security/privacy/founder-approved work orders provide credentials, vendor contracts, and live-use controls.
+- CR-4 work orders `WO-071` through `WO-075` remain planned and must be promoted deliberately before implementation continues.
+
+## Active SPEC_GAPs
+
+None active as of the post-`WO-070` AI governance runtime boundary / CR-3 review.
+
+## Deferred production decisions
+
+Deferred decisions remain tracked in `SPEC_GAPS.md`, including production launch approval, live ClinicOS contracts, production EHR credentialing, live transcription provider selection, external AI private/BAA pathway, production prompt store, model evaluation thresholds, drift response ownership, production PHI persistence, production Azure storage/deletion/restore, revenue estimate policy, claim/payer strategy, and commercial readiness approval.
+
+## Next recommended batch
+
+Stop at the CR-3 checkpoint until review rules allow the next batch. The next planned implementation target is `WO-071` — Security, Privacy, Compliance, And Threat-Model Runtime Hardening, which opens CR-4 Commercial Readiness Review Candidate work.
