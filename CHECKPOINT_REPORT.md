@@ -1132,4 +1132,55 @@ Deferred decisions remain tracked in `SPEC_GAPS.md`, including production launch
 
 ## Next recommended batch
 
-Stop at the CR-3 checkpoint until review rules allow the next batch. The next planned implementation target is `WO-071` — Security, Privacy, Compliance, And Threat-Model Runtime Hardening, which opens CR-4 Commercial Readiness Review Candidate work.
+CR-4 has now been completed. The next batch must be a later founder-approved post-CR-4 or launch-decision work order; no active next work order exists in `repo_status.json`.
+
+---
+
+# CR-4 Commercial Readiness Review Candidate
+
+## Completed work orders
+
+- `WO-071` — Security, privacy, compliance, and threat-model runtime hardening.
+- `WO-072` — Observability, SRE, support, and incident operations.
+- `WO-073` — Billing, revenue integrity, claim-decision, and compliance boundary completion.
+- `WO-074` — Beta pilot commercial readiness package.
+- `WO-075` — Commercial readiness decision gate.
+
+## Acceptance evidence
+
+- `WO-071` added `docs/SECURITY_PRIVACY_COMPLIANCE_THREAT_MODEL.md`, CR-4 security/privacy commercial readiness API metadata, support metadata-only denial evidence, audit-safe `security.privacy_review_checked.v1` and `threat_model.reviewed.v1` events, and no-certification/no-launch posture.
+- `WO-072` added `docs/COMMERCIAL_OBSERVABILITY_SUPPORT_OPERATIONS.md`, incident severity taxonomy, commercial support/operations metadata, disabled SIEM/APM/on-call posture, audit-safe `support.incident_taxonomy_checked.v1`, and the `pnpm ops:commercial-readiness` gate.
+- `WO-073` added `docs/BILLING_REVENUE_INTEGRITY_BOUNDARY.md`, billing/revenue integrity commercial readiness evidence, candidate-only and `submittedClaim=false` posture, patient-summary exclusion posture, triggered transcript access boundaries, and audit-safe `billing.revenue_integrity_checked.v1`.
+- `WO-074` added `docs/BETA_PILOT_READINESS_PACKAGE.md`, beta onboarding/training/support/rollback/disabled-feature evidence, synthetic pilot smoke validation, and audit-safe `beta.pilot_package_checked.v1`.
+- `WO-075` added `docs/COMMERCIAL_READINESS_REVIEW_PACKET.md`, `/support/commercial-readiness`, final readiness matrix, disabled-capability inventory, required final review roles, audit-safe `commercial.readiness_decision_checked.v1`, and `pnpm commercial:readiness`.
+- `repo_status.json` records `current_checkpoint: CR-4`, `next_work_order: null`, and `WO-071` through `WO-075: done`.
+- No live PHI, production credentials, live vendors, certification claim, claim submission, autonomous clinical/coding/billing behavior, charge finalization, medical-necessity determination, order placement, patient-facing financial conclusion, or production launch behavior was introduced.
+
+## Tests and gates
+
+- `pnpm security:commercial-readiness`
+- `pnpm ops:commercial-readiness`
+- `pnpm billing:revenue-integrity-readiness`
+- `pnpm beta:pilot-package-readiness`
+- `pnpm commercial:readiness`
+- Default local gate passed: `pnpm install --frozen-lockfile`; `pnpm db:client:generate`; `pnpm lint`; `pnpm lint:phi`; `pnpm typecheck`; `pnpm test`; `pnpm test:e2e`; `pnpm test:browser`; `pnpm build`.
+- Broader readiness gates passed, including persistence/runtime, identity, config, observability, EHR, ClinicOS, AI, security, frontend runtime integration, launch, storage, retention, claim decision, commercial plan, post-P11, production, and acceptance readiness.
+- Final status and hygiene checks passed: `node scripts/status.js`; `git diff --check`.
+
+## Open risks
+
+- CR-4 is review-ready synthetic evidence only. Production launch still requires a later founder-approved work order, real launch approvals, live vendor credentialing, BAA/contract review where required, production identity/storage/database/telemetry setup, backup/restore drills, support ownership, incident response, access review, and deployment approval.
+- Beta pilot package readiness does not equal real beta tenant onboarding or live PHI use.
+- Commercial readiness review does not equal HIPAA certification, SOC 2 certification, legal approval, or production launch approval.
+
+## Active SPEC_GAPs
+
+None active as of the post-`WO-075` commercial readiness decision gate / CR-4 review.
+
+## Deferred production decisions
+
+Deferred decisions remain tracked in `SPEC_GAPS.md`, including production launch approval, live identity/account lifecycle, production PHI persistence, production Azure storage/deletion/restore, live transcription, external AI private/BAA pathway, production EHR writeback, ClinicOS live integration, revenue estimate policy, claim/payer strategy, support/on-call ownership, legal/compliance/privacy/security approval, and live vendor credentials.
+
+## Next recommended batch
+
+Stop at the CR-4 checkpoint. The next work must be a later founder-approved post-CR-4 or production-launch decision work order. `repo_status.json` intentionally has `next_work_order: null`.

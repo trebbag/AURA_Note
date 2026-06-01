@@ -88,7 +88,7 @@ assertIncludes('apps/web/e2e/aura-note-routes.spec.ts', [
   'page.reload()',
   'Open MA History Gap blocker',
   'failed_unavailable',
-  'unsafe-output-rejected'
+  'unsafe_output_rejected'
 ]);
 
 const frontendRuntimeInventory = read('docs/FRONTEND_RUNTIME_INTEGRATION.md');
@@ -116,7 +116,10 @@ if (
   !workOrderIndex.includes('`WO-067` is the next active CR-3 work order') &&
   !workOrderIndex.includes('`WO-068` is the next active CR-3 work order') &&
   !workOrderIndex.includes('`WO-069` is the next active CR-3 work order') &&
-  !workOrderIndex.includes('`WO-070` is the next active CR-3 work order')
+  !workOrderIndex.includes('`WO-070` is the next active CR-3 work order') &&
+  !workOrderIndex.includes('`WO-070` is complete') &&
+  !workOrderIndex.includes('`WO-075` is complete') &&
+  !workOrderIndex.includes('CR-4 is complete')
 ) {
   throw new Error('work_orders/README.md must retain CR-2 next-work-order evidence after WO-064');
 }
@@ -128,7 +131,9 @@ if (
   !specGaps.includes('No active gaps as of post-`WO-066` standalone workflow completion / CR-2 review') &&
   !specGaps.includes('No active gaps as of post-`WO-067` ModeResolver and adapter runtime wiring review') &&
   !specGaps.includes('No active gaps as of post-`WO-068` transcription runtime boundary review') &&
-  !specGaps.includes('No active gaps as of post-`WO-069` athenahealth sandbox and vendor-neutral EHR runtime boundary review')
+  !specGaps.includes('No active gaps as of post-`WO-069` athenahealth sandbox and vendor-neutral EHR runtime boundary review') &&
+  !specGaps.includes('No active gaps as of post-`WO-070` AI governance runtime boundary review') &&
+  !specGaps.includes('No active gaps as of post-`WO-075` commercial readiness decision gate review')
 ) {
   throw new Error('SPEC_GAPS.md must retain WO-064 or later no-active-gap evidence');
 }

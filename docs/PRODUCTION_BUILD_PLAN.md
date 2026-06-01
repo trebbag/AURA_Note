@@ -978,6 +978,8 @@ This gate does not authorize live EHR writeback, live AI, live transcription, pr
 - **Stop conditions:** legal/security/privacy decision required for a high-risk behavior.
 - **Risks and deferred decisions:** formal compliance review and production security approval remain deferred.
 
+**Implementation status as of `WO-071`:** complete as CR-4 review-ready synthetic evidence. The repo now includes `docs/SECURITY_PRIVACY_COMPLIANCE_THREAT_MODEL.md`, `/support/commercial-readiness` security/privacy review metadata, audit-safe security/privacy and threat-model events, browser-visible support route evidence, and `pnpm security:commercial-readiness`. No certification claim, live PHI, live credential, live vendor, or production launch approval is introduced.
+
 ## WO-072 — Observability, SRE, Support, And Incident Operations
 
 - **Objective:** Prepare commercial operations without selecting live vendors.
@@ -998,6 +1000,8 @@ This gate does not authorize live EHR writeback, live AI, live transcription, pr
 - **Definition of Done:** commercial support posture is review-ready with live vendors disabled.
 - **Stop conditions:** live vendor or on-call/SLO approval is required.
 - **Risks and deferred decisions:** vendor choice, alert thresholds, on-call owners, and live telemetry remain deferred.
+
+**Implementation status as of `WO-072`:** complete as CR-4 review-ready synthetic evidence. The repo now includes `docs/COMMERCIAL_OBSERVABILITY_SUPPORT_OPERATIONS.md`, incident severity taxonomy, support/status commercial operations evidence, disabled SIEM/APM/vendor/on-call posture, audit-safe incident taxonomy event evidence, and `pnpm ops:commercial-readiness`.
 
 ## WO-073 — Billing, Revenue Integrity, Claim-Decision, And Compliance Boundary Completion
 
@@ -1020,6 +1024,8 @@ This gate does not authorize live EHR writeback, live AI, live transcription, pr
 - **Stop conditions:** live claim/clearinghouse/payer behavior or patient-facing financial policy is required.
 - **Risks and deferred decisions:** future claim submission strategy remains founder/legal/compliance gated.
 
+**Implementation status as of `WO-073`:** complete as CR-4 review-ready synthetic evidence. The repo now includes `docs/BILLING_REVENUE_INTEGRITY_BOUNDARY.md`, commercial readiness API billing/revenue integrity metadata, support/browser evidence for claim-disabled posture, and `pnpm billing:revenue-integrity-readiness`. Draft claim preview remains `submittedClaim=false`; claim submission, charge finalization, medical-necessity determination, and autonomous billing remain disabled.
+
 ## WO-074 — Beta Pilot Commercial Readiness Package
 
 - **Objective:** Prepare a controlled beta pilot package without production launch approval.
@@ -1041,6 +1047,8 @@ This gate does not authorize live EHR writeback, live AI, live transcription, pr
 - **Stop conditions:** real beta tenant, live data, live vendor, or launch approval is requested.
 - **Risks and deferred decisions:** pilot participants, support owners, legal/privacy approvals, and launch timing remain deferred.
 
+**Implementation status as of `WO-074`:** complete as CR-4 review-ready synthetic evidence. The repo now includes `docs/BETA_PILOT_READINESS_PACKAGE.md`, commercial readiness API beta-pilot metadata, support/browser beta gate evidence, synthetic pilot-smoke validation, and `pnpm beta:pilot-package-readiness`. No real tenant onboarding, live PHI, live vendor, or production launch approval is enabled.
+
 ## WO-075 — Commercial Readiness Decision Gate
 
 - **Objective:** Create the final commercial-readiness decision gate for founder/clinical/compliance/security review.
@@ -1061,6 +1069,8 @@ This gate does not authorize live EHR writeback, live AI, live transcription, pr
 - **Definition of Done:** CR-4 checkpoint report exists; repo clearly states Figma readiness, beta-pilot package readiness, commercial-review readiness, and production-launch-ready false.
 - **Stop conditions:** founder asks to flip launch/live behavior without required clinical/compliance/security/legal/vendor approval evidence.
 - **Risks and deferred decisions:** final approval, contracts, real pilot scope, live credentials, and production deployment remain decision-gated.
+
+**Implementation status as of `WO-075`:** complete as the CR-4 commercial readiness review candidate. The repo now includes `docs/COMMERCIAL_READINESS_REVIEW_PACKET.md`, final CR-4 readiness matrix, `/support/commercial-readiness`, `pnpm commercial:readiness`, CR-4 checkpoint evidence, and `repo_status.json` with `next_work_order: null`. Commercial review package readiness is true; production launch ready remains false.
 
 ## Overall production-launch criteria
 

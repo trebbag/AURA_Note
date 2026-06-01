@@ -18,6 +18,7 @@ import {
   type ClinicOsMapVisitResponseDto,
   type CoachingDashboardDto,
   type CoachingReportDto,
+  type CommercialReadinessResponseDto,
   type ComplianceReviewDto,
   type GovernedFeatureFlagDto,
   type RecordingChunkResponseDto,
@@ -674,6 +675,87 @@ describe('support hardening contracts', () => {
     assert.equal(readiness.readiness.vendorSinksConfigured, false);
     assert.equal(evidence.evidence.phiSafe, true);
     assert.equal(evidence.evidence.launchReadinessClaimed, false);
+  });
+
+  it('represents CR-4 commercial readiness review evidence without launch approval', () => {
+    const response: CommercialReadinessResponseDto = {
+      readiness: {
+        checkpoint: 'CR-4',
+        status: 'review_ready_synthetic',
+        generatedAt: '2026-06-01T18:00:00.000Z',
+        traceId: 'trace-commercial-001',
+        productionLaunchReady: false,
+        sections: [
+          {
+            sectionId: 'security_privacy_compliance',
+            workOrder: 'WO-071',
+            title: 'Security, Privacy, Compliance, And Threat Model',
+            status: 'review_ready',
+            states: ['empty', 'loading', 'ready', 'saving', 'blocked', 'failed', 'permission-denied', 'read-only', 'demo fixture'],
+            checklist: [
+              {
+                itemId: 'threat-model',
+                label: 'Threat model package',
+                status: 'ready_synthetic',
+                evidence: 'docs/SECURITY_PRIVACY_COMPLIANCE_THREAT_MODEL.md',
+                ownerRole: 'security',
+                productionLaunchBlocker: true
+              }
+            ],
+            missingApprovals: ['formal security approval'],
+            productionLaunchReady: false,
+            liveVendorEnabled: false,
+            phiSafe: true
+          }
+        ],
+        decisionGate: {
+          checkpoint: 'CR-4',
+          status: 'review_ready_synthetic',
+          completedWorkOrders: ['WO-071', 'WO-072', 'WO-073', 'WO-074', 'WO-075'],
+          figmaReady: true,
+          betaPilotPackageReady: true,
+          commercialReviewReady: true,
+          productionLaunchReady: false,
+          noActiveSpecGaps: true,
+          liveVendorDecisionRequired: true,
+          finalReviewRoles: ['founder', 'clinical', 'compliance_privacy', 'security']
+        },
+        disabledCapabilities: ['claim_submission', 'live_external_ai'],
+        requiredApprovals: ['founder approval', 'clinical approval', 'compliance/privacy approval', 'security approval'],
+        nextStep: 'Founder review of CR-4 decision packet'
+      },
+      auditEvent: {
+        auditEventId: 'audit-commercial-001',
+        tenantId: 'tenant-001',
+        action: 'commercial.readiness_check',
+        entityType: 'CommercialReadiness',
+        entityId: 'CR-4',
+        traceId: 'trace-commercial-001',
+        createdAt: '2026-06-01T18:00:00.000Z'
+      },
+      domainEvents: [
+        createEventEnvelope({
+          eventId: 'evt-commercial-001',
+          eventType: 'commercial.readiness_decision_checked.v1',
+          tenantId: 'tenant-001',
+          siteId: 'site-001',
+          producer: 'aura-note-api',
+          traceId: 'trace-commercial-001',
+          idempotencyKey: 'idem-commercial-001',
+          sensitivity: 'restricted',
+          retentionClass: 'audit',
+          payload: {
+            productionLaunchReady: false
+          }
+        })
+      ]
+    };
+
+    assert.equal(response.readiness.checkpoint, 'CR-4');
+    assert.equal(response.readiness.productionLaunchReady, false);
+    assert.equal(response.readiness.sections[0]?.productionLaunchReady, false);
+    assert.equal(response.readiness.decisionGate.completedWorkOrders.includes('WO-075'), true);
+    assert.equal(response.readiness.decisionGate.liveVendorDecisionRequired, true);
   });
 
   it('represents redacted metadata-only audit export requests', () => {

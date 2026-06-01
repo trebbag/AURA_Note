@@ -2,7 +2,7 @@
 
 ## Status
 
-As of `WO-064`, AURA Note is in commercial-readiness implementation, not production launch. The repo has strong synthetic/local evidence through P11 plus CR-1 runtime persistence switchover, API request-boundary hardening, identity runtime fail-closed evidence, and CR-2 primary UI runtime API-backed route evidence, but it is not commercially production-ready, not live against production identity, EHR, ClinicOS, external AI, transcription, Azure storage, production PHI databases, clearinghouses, payers, production WAF/CDN/SIEM infrastructure, or production launch infrastructure.
+As of `WO-075`, AURA Note has completed CR-4 commercial-readiness review evidence, not production launch. The repo has strong synthetic/local evidence through P11 and CR-1 through CR-4, including runtime persistence, API request-boundary hardening, identity runtime fail-closed evidence, primary UI runtime API-backed route evidence, standalone workflow evidence, integration/governance runtime boundaries, and the CR-4 commercial readiness review packet. It is not live against production identity, EHR, ClinicOS, external AI, transcription, Azure storage, production PHI databases, clearinghouses, payers, production WAF/CDN/SIEM infrastructure, or production launch infrastructure.
 
 `productionLaunchApproved=false` remains the required posture until a later founder-approved work order explicitly changes it after clinical, compliance, privacy, security, legal, vendor, credential, backup/restore, incident-response, and operational decisions are resolved.
 
@@ -30,11 +30,11 @@ As of `WO-064`, AURA Note is in commercial-readiness implementation, not product
 9. `WO-068` makes transcription provider integration production-shaped but disabled/live-gated.
 10. `WO-069` hardens athenahealth-first and vendor-neutral EHR runtime boundaries.
 11. `WO-070` expands AI governance/evaluation while live model calls remain disabled.
-12. `WO-071` packages security/privacy/compliance runtime evidence.
-13. `WO-072` packages observability, SRE, support, and incident operations.
-14. `WO-073` completes billing/revenue integrity boundaries without claim submission.
-15. `WO-074` prepares a controlled beta pilot package without launch approval.
-16. `WO-075` creates the commercial readiness decision packet and final review gate.
+12. `WO-071` packages security/privacy/compliance runtime evidence. Complete.
+13. `WO-072` packages observability, SRE, support, and incident operations. Complete.
+14. `WO-073` completes billing/revenue integrity boundaries without claim submission. Complete.
+15. `WO-074` prepares a controlled beta pilot package without launch approval. Complete.
+16. `WO-075` creates the commercial readiness decision packet and final review gate. Complete.
 
 ## Non-negotiable boundaries
 

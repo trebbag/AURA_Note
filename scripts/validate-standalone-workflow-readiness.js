@@ -67,7 +67,10 @@ if (
   !workOrderIndex.includes('`WO-067` is the next active CR-3 work order') &&
   !workOrderIndex.includes('`WO-068` is the next active CR-3 work order') &&
   !workOrderIndex.includes('`WO-069` is the next active CR-3 work order') &&
-  !workOrderIndex.includes('`WO-070` is the next active CR-3 work order')
+  !workOrderIndex.includes('`WO-070` is the next active CR-3 work order') &&
+  !workOrderIndex.includes('`WO-070` is complete') &&
+  !workOrderIndex.includes('`WO-075` is complete') &&
+  !workOrderIndex.includes('CR-4 is complete')
 ) {
   throw new Error('work_orders/README.md must retain WO-067 or later next-work-order evidence after WO-066');
 }
@@ -77,7 +80,9 @@ if (
   !specGaps.includes('No active gaps as of post-`WO-066` standalone workflow completion / CR-2 review') &&
   !specGaps.includes('No active gaps as of post-`WO-067` ModeResolver and adapter runtime wiring review') &&
   !specGaps.includes('No active gaps as of post-`WO-068` transcription runtime boundary review') &&
-  !specGaps.includes('No active gaps as of post-`WO-069` athenahealth sandbox and vendor-neutral EHR runtime boundary review')
+  !specGaps.includes('No active gaps as of post-`WO-069` athenahealth sandbox and vendor-neutral EHR runtime boundary review') &&
+  !specGaps.includes('No active gaps as of post-`WO-070` AI governance runtime boundary review') &&
+  !specGaps.includes('No active gaps as of post-`WO-075` commercial readiness decision gate review')
 ) {
   throw new Error('SPEC_GAPS.md must retain WO-066 or later no-active-gap evidence');
 }
@@ -96,8 +101,8 @@ if (nextWorkOrderNumber !== null && nextWorkOrderNumber < 67) {
 if (!['todo', 'in_progress', 'done'].includes(status.work_orders?.['WO-067'])) {
   throw new Error('repo_status.json must keep WO-067 represented as todo, in_progress, or done after WO-066 is complete');
 }
-if (status.current_checkpoint !== 'CR-3') {
-  throw new Error(`repo_status.json must advance current_checkpoint to CR-3 after CR-2 completion; found ${status.current_checkpoint}`);
+if (!['CR-3', 'CR-4'].includes(status.current_checkpoint)) {
+  throw new Error(`repo_status.json must advance current_checkpoint to CR-3 or later CR-4 after CR-2 completion; found ${status.current_checkpoint}`);
 }
 
 assertNoForbiddenClaims();

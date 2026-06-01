@@ -8,6 +8,9 @@ import {
   type AuditExportRequestDto,
   type AuditExportResponseDto,
   type BackupRestoreReadinessResponseDto,
+  type CommercialReadinessChecklistItemDto,
+  type CommercialReadinessResponseDto,
+  type CommercialReadinessSectionDto,
   type DeploymentEnvironmentDto,
   type FeatureFlagDecisionDto,
   type ObservabilityStatusDto,
@@ -205,6 +208,163 @@ export class SupportService {
               vendorSinksConfigured: false,
               productionLaunchReady: false,
               missing
+            }
+          })
+        ]
+      },
+      this.createMeta(context)
+    );
+  }
+
+  getCommercialReadiness(headers: Record<string, string | string[] | undefined>): ApiEnvelope<CommercialReadinessResponseDto> {
+    const context = this.createRequestContext(headers);
+    if (!canPerform('support_status:view', context.access) && !canPerform('audit:view', context.access)) {
+      throw new ForbiddenException('role cannot view commercial readiness review package');
+    }
+
+    const now = new Date().toISOString();
+    const sections = this.commercialReadinessSections();
+    const disabledCapabilities = [
+      'live_phi',
+      'production_credentials',
+      'live_external_ai',
+      'live_transcription_vendor',
+      'live_ehr_writeback',
+      'live_clinicos_event_bus',
+      'live_azure_phi_storage',
+      'claim_submission',
+      'charge_finalization',
+      'medical_necessity_determination',
+      'autonomous_clinical_coding_billing_behavior',
+      'patient_facing_financial_conclusion',
+      'production_launch'
+    ];
+
+    return createApiEnvelope(
+      {
+        readiness: {
+          checkpoint: 'CR-4',
+          status: 'review_ready_synthetic',
+          generatedAt: now,
+          traceId: context.traceId,
+          sections,
+          decisionGate: {
+            checkpoint: 'CR-4',
+            status: 'review_ready_synthetic',
+            completedWorkOrders: ['WO-071', 'WO-072', 'WO-073', 'WO-074', 'WO-075'],
+            figmaReady: true,
+            betaPilotPackageReady: true,
+            commercialReviewReady: true,
+            productionLaunchReady: false,
+            noActiveSpecGaps: true,
+            liveVendorDecisionRequired: true,
+            finalReviewRoles: ['founder', 'clinical', 'compliance_privacy', 'security']
+          },
+          disabledCapabilities,
+          requiredApprovals: [
+            'founder commercial readiness review',
+            'clinical workflow and safety review',
+            'compliance/privacy review',
+            'security review',
+            'live vendor credentialing and BAA review before any live integration'
+          ],
+          nextStep: 'Founder, clinical, compliance/privacy, and security review of the CR-4 decision packet.',
+          productionLaunchReady: false
+        },
+        auditEvent: this.createAuditEvent('commercial.readiness_check', 'CommercialReadiness', 'CR-4', context),
+        domainEvents: [
+          createEventEnvelope({
+            eventId: this.nextId('evt'),
+            eventType: 'security.privacy_review_checked.v1',
+            tenantId: TENANT_ID,
+            siteId: SITE_ID,
+            producer: 'aura-note-api',
+            traceId: context.traceId,
+            idempotencyKey: context.idempotencyKey ?? this.nextId('idem'),
+            sensitivity: 'restricted',
+            retentionClass: 'audit',
+            payload: {
+              workOrder: 'WO-071',
+              productionLaunchReady: false,
+              phiSafe: true
+            }
+          }),
+          createEventEnvelope({
+            eventId: this.nextId('evt'),
+            eventType: 'threat_model.reviewed.v1',
+            tenantId: TENANT_ID,
+            siteId: SITE_ID,
+            producer: 'aura-note-api',
+            traceId: context.traceId,
+            idempotencyKey: context.idempotencyKey ?? this.nextId('idem'),
+            sensitivity: 'restricted',
+            retentionClass: 'audit',
+            payload: {
+              workOrder: 'WO-071',
+              noCertificationClaim: true
+            }
+          }),
+          createEventEnvelope({
+            eventId: this.nextId('evt'),
+            eventType: 'support.incident_taxonomy_checked.v1',
+            tenantId: TENANT_ID,
+            siteId: SITE_ID,
+            producer: 'aura-note-api',
+            traceId: context.traceId,
+            idempotencyKey: context.idempotencyKey ?? this.nextId('idem'),
+            sensitivity: 'restricted',
+            retentionClass: 'audit',
+            payload: {
+              workOrder: 'WO-072',
+              liveTelemetryVendorConfigured: false
+            }
+          }),
+          createEventEnvelope({
+            eventId: this.nextId('evt'),
+            eventType: 'billing.revenue_integrity_checked.v1',
+            tenantId: TENANT_ID,
+            siteId: SITE_ID,
+            producer: 'aura-note-api',
+            traceId: context.traceId,
+            idempotencyKey: context.idempotencyKey ?? this.nextId('idem'),
+            sensitivity: 'restricted',
+            retentionClass: 'audit',
+            payload: {
+              workOrder: 'WO-073',
+              submittedClaim: false,
+              autonomousBilling: false
+            }
+          }),
+          createEventEnvelope({
+            eventId: this.nextId('evt'),
+            eventType: 'beta.pilot_package_checked.v1',
+            tenantId: TENANT_ID,
+            siteId: SITE_ID,
+            producer: 'aura-note-api',
+            traceId: context.traceId,
+            idempotencyKey: context.idempotencyKey ?? this.nextId('idem'),
+            sensitivity: 'restricted',
+            retentionClass: 'audit',
+            payload: {
+              workOrder: 'WO-074',
+              betaPilotPackageReady: true,
+              liveTenantOnboarding: false
+            }
+          }),
+          createEventEnvelope({
+            eventId: this.nextId('evt'),
+            eventType: 'commercial.readiness_decision_checked.v1',
+            tenantId: TENANT_ID,
+            siteId: SITE_ID,
+            producer: 'aura-note-api',
+            traceId: context.traceId,
+            idempotencyKey: context.idempotencyKey ?? this.nextId('idem'),
+            sensitivity: 'restricted',
+            retentionClass: 'audit',
+            payload: {
+              workOrder: 'WO-075',
+              commercialReviewReady: true,
+              productionLaunchReady: false
             }
           })
         ]
@@ -777,6 +937,124 @@ export class SupportService {
       entityId,
       traceId: context.traceId,
       createdAt: new Date().toISOString()
+    };
+  }
+
+  private commercialReadinessSections(): CommercialReadinessSectionDto[] {
+    const states: CommercialReadinessSectionDto['states'] = [
+      'empty',
+      'loading',
+      'ready',
+      'saving',
+      'blocked',
+      'failed',
+      'permission-denied',
+      'read-only',
+      'demo fixture'
+    ];
+
+    return [
+      {
+        sectionId: 'security_privacy_compliance',
+        workOrder: 'WO-071',
+        title: 'Security, Privacy, Compliance, And Threat Model',
+        status: 'review_ready',
+        states,
+        checklist: [
+          this.commercialChecklistItem('threat-model', 'Threat model and privacy checklist', 'ready_synthetic', 'docs/SECURITY_PRIVACY_COMPLIANCE_THREAT_MODEL.md', 'security', true),
+          this.commercialChecklistItem('minimum-necessary', 'Minimum necessary and support scope restrictions', 'ready_synthetic', 'docs/RBAC_ABAC_MATRIX.md', 'compliance_privacy', true),
+          this.commercialChecklistItem('break-glass', 'Break-glass placeholder remains disabled', 'disabled_by_default', 'apps/api/src/platform/platform.service.ts', 'security', true),
+          this.commercialChecklistItem('certification', 'No HIPAA or SOC 2 certification claim', 'review_required', 'docs/SECURITY_PRIVACY_COMPLIANCE_THREAT_MODEL.md', 'compliance_privacy', true)
+        ],
+        missingApprovals: ['formal security approval', 'formal compliance/privacy approval'],
+        productionLaunchReady: false,
+        liveVendorEnabled: false,
+        phiSafe: true
+      },
+      {
+        sectionId: 'observability_support_incident_operations',
+        workOrder: 'WO-072',
+        title: 'Observability, SRE, Support, And Incident Operations',
+        status: 'review_ready',
+        states,
+        checklist: [
+          this.commercialChecklistItem('incident-taxonomy', 'Incident severity taxonomy and runbooks', 'ready_synthetic', 'docs/COMMERCIAL_OBSERVABILITY_SUPPORT_OPERATIONS.md', 'support', true),
+          this.commercialChecklistItem('telemetry', 'SIEM/APM placeholders remain disabled', 'disabled_by_default', 'docs/OBSERVABILITY_SINKS.md', 'engineering', true),
+          this.commercialChecklistItem('support-status', 'Support status route is metadata-only', 'ready_synthetic', 'apps/web/app/aura-note/support/status/page.tsx', 'support', true)
+        ],
+        missingApprovals: ['SRE/on-call owner approval', 'SIEM/APM vendor approval'],
+        productionLaunchReady: false,
+        liveVendorEnabled: false,
+        phiSafe: true
+      },
+      {
+        sectionId: 'billing_revenue_integrity',
+        workOrder: 'WO-073',
+        title: 'Billing, Revenue Integrity, Claim Decision, And Compliance Boundary',
+        status: 'review_ready',
+        states,
+        checklist: [
+          this.commercialChecklistItem('draft-claim', 'Draft claim preview remains submittedClaim=false', 'ready_synthetic', 'docs/BILLING_REVENUE_INTEGRITY_BOUNDARY.md', 'billing', true),
+          this.commercialChecklistItem('candidate-only', 'Codes and billing items remain candidate-only', 'ready_synthetic', 'apps/api/src/operations/operations.service.ts', 'billing', true),
+          this.commercialChecklistItem('patient-summary-exclusion', 'Patient summaries exclude internal revenue and billing detail', 'ready_synthetic', 'apps/api/src/schedule/schedule.service.ts', 'clinical', true),
+          this.commercialChecklistItem('claim-submission', 'Live claim submission remains disabled', 'disabled_by_default', 'docs/CLAIM_PAYER_DECISION_GATE.md', 'billing', true)
+        ],
+        missingApprovals: ['founder billing strategy approval', 'legal/compliance payer review'],
+        productionLaunchReady: false,
+        liveVendorEnabled: false,
+        phiSafe: true
+      },
+      {
+        sectionId: 'beta_pilot_package',
+        workOrder: 'WO-074',
+        title: 'Beta Pilot Commercial Readiness Package',
+        status: 'review_ready',
+        states,
+        checklist: [
+          this.commercialChecklistItem('onboarding', 'Beta onboarding and tenant setup checklist', 'ready_synthetic', 'docs/BETA_PILOT_READINESS_PACKAGE.md', 'founder', true),
+          this.commercialChecklistItem('training', 'Role training checklists', 'ready_synthetic', 'docs/BETA_PILOT_READINESS_PACKAGE.md', 'clinical', true),
+          this.commercialChecklistItem('pilot-smoke', 'Synthetic pilot smoke remains API-backed', 'ready_synthetic', 'scripts/simulate-pilot-launch-smoke.js', 'engineering', true),
+          this.commercialChecklistItem('disabled-features', 'Disabled feature inventory is visible', 'ready_synthetic', 'docs/BETA_PILOT_READINESS_PACKAGE.md', 'support', true)
+        ],
+        missingApprovals: ['real beta participant approval', 'privacy/security beta approval'],
+        productionLaunchReady: false,
+        liveVendorEnabled: false,
+        phiSafe: true
+      },
+      {
+        sectionId: 'commercial_readiness_decision_gate',
+        workOrder: 'WO-075',
+        title: 'Commercial Readiness Decision Gate',
+        status: 'review_ready',
+        states,
+        checklist: [
+          this.commercialChecklistItem('review-packet', 'Commercial readiness review packet', 'ready_synthetic', 'docs/COMMERCIAL_READINESS_REVIEW_PACKET.md', 'founder', true),
+          this.commercialChecklistItem('readiness-matrix', 'Readiness matrix and disabled-capability inventory', 'ready_synthetic', 'docs/COMMERCIAL_READINESS_REVIEW_PACKET.md', 'engineering', true),
+          this.commercialChecklistItem('launch-posture', 'Production-launch-ready remains false', 'blocked_until_approval', 'repo_status.json', 'founder', true)
+        ],
+        missingApprovals: ['founder approval', 'clinical approval', 'compliance/privacy approval', 'security approval'],
+        productionLaunchReady: false,
+        liveVendorEnabled: false,
+        phiSafe: true
+      }
+    ];
+  }
+
+  private commercialChecklistItem(
+    itemId: string,
+    label: string,
+    status: CommercialReadinessChecklistItemDto['status'],
+    evidence: string,
+    ownerRole: CommercialReadinessChecklistItemDto['ownerRole'],
+    productionLaunchBlocker: boolean
+  ): CommercialReadinessChecklistItemDto {
+    return {
+      itemId,
+      label,
+      status,
+      evidence,
+      ownerRole,
+      productionLaunchBlocker
     };
   }
 

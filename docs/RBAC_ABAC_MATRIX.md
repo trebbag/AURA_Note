@@ -122,3 +122,9 @@ Treating clinicians linked to the visit may invoke permitted draft/candidate AI 
 ## WO-051 claim/payer decision gate access
 
 `WO-051` documents `claim_strategy:view` and future `claim_strategy:record` posture for claim/payer strategy evidence. Authorized admin, billing lead, compliance/privacy lead, security/founder context, and approved service-account contexts may view or record metadata-only decision evidence. Clinicians may review clinical documentation support but cannot submit claims autonomously through AURA Note. Support users remain metadata-only and cannot access claim payloads, payer details, transcripts, final notes, billing evidence beyond operational status, production credentials, or patient financial conclusions. ClinicOS-integrated mode and M21 Charge Integrity cannot bypass AURA Note permissions, human approval, audit, or the default `submittedClaim=false` posture.
+
+## WO-071 through WO-075 CR-4 commercial readiness access
+
+`WO-071` through `WO-075` expose `/support/commercial-readiness` as metadata-only CR-4 review evidence. Support users and compliance/privacy leads may view the commercial readiness package because it contains no PHI-bearing content, raw logs, credentials, transcripts, final-note text, billing detail, coaching output, raw AI/EHR/ClinicOS payloads, or patient financial conclusions. Ordinary clinicians remain denied from support/commercial review metadata.
+
+The CR-4 packet does not grant any new access to PHI, audit export payloads, production secrets, live vendor controls, claim submission, charge finalization, medical-necessity determination, or production launch approval. ClinicOS-integrated mode cannot bypass AURA Note support metadata-only limits, tenant/site scope, RBAC/ABAC, or no-launch posture.

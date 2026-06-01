@@ -110,6 +110,12 @@ export type CoreEventType =
   | 'degraded_mode.acknowledged.v1'
   | 'access_review.evidence_recorded.v1'
   | 'operational.readiness_checked.v1'
+  | 'security.privacy_review_checked.v1'
+  | 'threat_model.reviewed.v1'
+  | 'support.incident_taxonomy_checked.v1'
+  | 'billing.revenue_integrity_checked.v1'
+  | 'beta.pilot_package_checked.v1'
+  | 'commercial.readiness_decision_checked.v1'
   | 'ehr_writeback.queued.v1'
   | 'ehr_writeback.failed.v1'
   | 'ehr.adapter_status_checked.v1'
@@ -2353,6 +2359,75 @@ export interface OperationalReadinessDto {
 
 export interface OperationalReadinessResponseDto {
   readiness: OperationalReadinessDto;
+  auditEvent: AuditEventDto;
+  domainEvents: Array<AuraNoteEvent<Record<string, unknown>>>;
+}
+
+export type CommercialReadinessSectionIdDto =
+  | 'security_privacy_compliance'
+  | 'observability_support_incident_operations'
+  | 'billing_revenue_integrity'
+  | 'beta_pilot_package'
+  | 'commercial_readiness_decision_gate';
+
+export type CommercialReadinessWorkOrderDto = 'WO-071' | 'WO-072' | 'WO-073' | 'WO-074' | 'WO-075';
+
+export type CommercialReadinessItemStatusDto =
+  | 'ready_synthetic'
+  | 'blocked_until_approval'
+  | 'disabled_by_default'
+  | 'review_required';
+
+export interface CommercialReadinessChecklistItemDto {
+  itemId: string;
+  label: string;
+  status: CommercialReadinessItemStatusDto;
+  evidence: string;
+  ownerRole: 'founder' | 'clinical' | 'compliance_privacy' | 'security' | 'billing' | 'support' | 'engineering';
+  productionLaunchBlocker: boolean;
+}
+
+export interface CommercialReadinessSectionDto {
+  sectionId: CommercialReadinessSectionIdDto;
+  workOrder: CommercialReadinessWorkOrderDto;
+  title: string;
+  status: 'ready_synthetic' | 'review_ready';
+  states: Array<'empty' | 'loading' | 'ready' | 'saving' | 'blocked' | 'failed' | 'permission-denied' | 'read-only' | 'demo fixture'>;
+  checklist: CommercialReadinessChecklistItemDto[];
+  missingApprovals: string[];
+  productionLaunchReady: false;
+  liveVendorEnabled: false;
+  phiSafe: true;
+}
+
+export interface CommercialReadinessDecisionGateDto {
+  checkpoint: 'CR-4';
+  status: 'review_ready_synthetic';
+  completedWorkOrders: CommercialReadinessWorkOrderDto[];
+  figmaReady: boolean;
+  betaPilotPackageReady: boolean;
+  commercialReviewReady: boolean;
+  productionLaunchReady: false;
+  noActiveSpecGaps: boolean;
+  liveVendorDecisionRequired: boolean;
+  finalReviewRoles: Array<'founder' | 'clinical' | 'compliance_privacy' | 'security'>;
+}
+
+export interface CommercialReadinessDto {
+  checkpoint: 'CR-4';
+  status: 'review_ready_synthetic';
+  generatedAt: string;
+  traceId: string;
+  sections: CommercialReadinessSectionDto[];
+  decisionGate: CommercialReadinessDecisionGateDto;
+  disabledCapabilities: string[];
+  requiredApprovals: string[];
+  nextStep: string;
+  productionLaunchReady: false;
+}
+
+export interface CommercialReadinessResponseDto {
+  readiness: CommercialReadinessDto;
   auditEvent: AuditEventDto;
   domainEvents: Array<AuraNoteEvent<Record<string, unknown>>>;
 }

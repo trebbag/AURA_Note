@@ -4,9 +4,9 @@ This file tracks missing, conflicting, unsafe, or deliberately deferred product 
 
 ## Active gaps
 
-No active gaps as of post-`WO-070` AI governance runtime boundary review on 2026-06-01.
+No active gaps as of post-`WO-075` commercial readiness decision gate review on 2026-06-01.
 
-This supersedes the prior marker: No active gaps as of post-`WO-069` athenahealth sandbox and vendor-neutral EHR runtime boundary review. The repo remains not production-ready. The items below are deferred production decisions rather than active blockers for the current post-`WO-070` synthetic/local AI governance runtime boundary scope.
+This supersedes the prior marker: No active gaps as of post-`WO-070` AI governance runtime boundary review. The repo remains not production-ready. The items below are deferred production decisions rather than active blockers for the current post-`WO-075` CR-4 commercial readiness review package.
 
 ## Deferred production decisions
 
@@ -14,10 +14,10 @@ These items must stay visible and must be resolved before the related production
 
 ### Deferred Decision — Commercial readiness implementation and launch approval
 
-- **Related future work:** `WO-061` through `WO-075`; any later founder-approved production launch work order
+- **Related future work:** any later founder-approved production launch work order
 - **Status:** deferred
 - **Decision needed before production launch:** founder/clinical/compliance/security/legal approval, beta scope, production environment, credential source, operational owner, incident response, access review, backup/restore, vendor contracts, PHI governance, live integrations, support ownership, launch go/no-go, and rollback authority.
-- **Safe current posture:** `WO-060` reopened implementation rails, `WO-061` added synthetic/local runtime persistence evidence, `WO-062` hardened the API request boundary with validation, request correlation, PHI-safe error envelopes, redacted logs, security headers, body-size guardrails, and local throttle scaffolding, `WO-063` added the explicit `AURA_NOTE_AUTH_MODE` identity runtime boundary with local demo/strict synthetic modes and production/preview/delegated fail-closed behavior, `WO-064` converted primary production-intended routes to typed API-backed synthetic/local runtime state, `WO-065` added read-only Figma handoff inventory docs plus `/aura-note/figma-handoff`, `WO-066` completed synthetic/local standalone workflow evidence without ClinicOS dependency, `WO-067` added the shared ModeResolver and adapter-boundary evidence with live ClinicOS delegation and raw payload storage disabled, `WO-068` added the server-side transcription runtime boundary with deterministic mock processing and disabled live-provider fail-closed evidence, `WO-069` hardened the vendor-neutral EHR runtime boundary around athenahealth-first sandbox metadata, credential-disabled posture, patient lookup, appointment import, encounter context, and human-gated writeback lifecycle evidence, and `WO-070` expanded the AI Gateway runtime boundary, deterministic prohibited-behavior evaluation harness, PHI rejection/redaction evidence, source-freshness/schema/confidence validation metadata, unsafe-output rejection, and human-review-required events. Production launch remains false and no live vendor, credential, PHI, claim, autonomous clinical/coding/billing, or production deployment behavior is enabled.
+- **Safe current posture:** `WO-060` reopened implementation rails, `WO-061` through `WO-070` added runtime persistence, API, identity, frontend, standalone, integration, transcription, EHR, ClinicOS, and AI governance evidence, and `WO-071` through `WO-075` packaged CR-4 security/privacy/compliance, observability/support, billing/revenue integrity, beta-pilot, and commercial-readiness decision evidence. Production launch remains false and no live vendor, credential, PHI, claim, autonomous clinical/coding/billing, or production deployment behavior is enabled.
 
 ### Deferred Decision — Production SIEM/APM vendor and operational monitoring posture
 

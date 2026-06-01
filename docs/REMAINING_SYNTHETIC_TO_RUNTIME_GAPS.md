@@ -18,11 +18,11 @@ This register keeps the post-P11 implementation gap visible. It is not a defect 
 | Transcription provider boundary | `WO-068` added server-side transcription provider adapters, deterministic mock processing, disabled live-provider fail-closed evidence, runtime state metadata, retry/dead-letter posture, and retention evidence. Live provider selection, credentials, BAA, consent/legal policy, and production audio storage remain deferred. | `WO-068` complete; live provider deferred |
 | EHR sandbox runtime boundary | `WO-069` added vendor-neutral EHR runtime boundary metadata, athenahealth-first sandbox posture, disabled credential evidence, sandbox patient lookup, appointment import, encounter context, human-gated payload preparation, attempt, acknowledgement, denial, retry/dead-letter/reconciliation metadata, and no-live/no-raw-payload evidence. Production credentialing, live writeback delivery, raw payload retention policy, vendor acknowledgement taxonomy, and legal/privacy approval remain deferred. | `WO-069` complete; live EHR deferred |
 | AI governance runtime evidence | `WO-070` expanded the server-side AI Gateway runtime boundary, deterministic prohibited-behavior evaluation harness, source-freshness/schema/confidence metadata, PHI rejection/redaction evidence, unsafe-output rejection, and human-review-required events. Live AI credentials, private/BAA approval, production prompt store, drift monitoring ownership, live model calls, and raw-PHI-to-external-AI transfer remain deferred. | `WO-070` complete; live AI deferred |
-| Security/privacy runtime review | Threat model, privacy checklist, minimum necessary, support scope, PHI redaction, and route denial evidence need commercial packaging. | `WO-071` |
-| Operations and support readiness | Observability taxonomy, SRE/support runbooks, incident operations, and status surfaces need review-ready evidence. | `WO-072` |
-| Billing and revenue integrity boundary | Candidate-only billing, patient-summary exclusion, triggered transcript access, and claim-disabled posture need completion. | `WO-073` |
-| Beta pilot package | Controlled pilot onboarding, training, support, rollback, metrics, and synthetic smoke evidence need packaging. | `WO-074` |
-| Commercial decision packet | Final readiness matrix and decision gate need an honest review packet. | `WO-075` |
+| Security/privacy runtime review | Threat model, privacy checklist, minimum necessary, support scope, PHI redaction, and route denial evidence are packaged for CR-4 review. | `WO-071` complete |
+| Operations and support readiness | Observability taxonomy, SRE/support runbooks, incident operations, and status surfaces are packaged for CR-4 review. | `WO-072` complete |
+| Billing and revenue integrity boundary | Candidate-only billing, patient-summary exclusion, triggered transcript access, and claim-disabled posture are packaged for CR-4 review. | `WO-073` complete |
+| Beta pilot package | Controlled pilot onboarding, training, support, rollback, metrics, and synthetic smoke evidence are packaged for CR-4 review. | `WO-074` complete |
+| Commercial decision packet | Final readiness matrix and decision gate are packaged in `docs/COMMERCIAL_READINESS_REVIEW_PACKET.md`. | `WO-075` complete |
 
 ## Explicitly not authorized
 

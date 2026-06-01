@@ -36,7 +36,7 @@ check(
 check(
   'status.checkpoint-post-p11',
   'P11 is retained or the approved commercial-readiness rails move the repo through CR checkpoints',
-  repoStatus.current_checkpoint === 'P11' || repoStatus.current_checkpoint === 'CR-0' || repoStatus.current_checkpoint === 'CR-1' || repoStatus.current_checkpoint === 'CR-2' || repoStatus.current_checkpoint === 'CR-3',
+  ['P11', 'CR-0', 'CR-1', 'CR-2', 'CR-3', 'CR-4'].includes(repoStatus.current_checkpoint),
   repoStatus.current_checkpoint
 );
 check('work-order.file', 'WO-052 work-order file exists', exists('work_orders/WO-052_post_p11_continuation_rails.md'), 'work_orders/WO-052_post_p11_continuation_rails.md');
@@ -67,7 +67,9 @@ check(
     specGaps.includes('No active gaps as of post-`WO-061` runtime persistence switchover review') ||
     specGaps.includes('No active gaps as of post-`WO-062` API runtime hardening and request-boundary review') ||
     specGaps.includes('No active gaps as of post-`WO-063` identity runtime boundary review') ||
-    specGaps.includes('No active gaps as of post-`WO-069` athenahealth sandbox and vendor-neutral EHR runtime boundary review'),
+    specGaps.includes('No active gaps as of post-`WO-069` athenahealth sandbox and vendor-neutral EHR runtime boundary review') ||
+    specGaps.includes('No active gaps as of post-`WO-070` AI governance runtime boundary review') ||
+    specGaps.includes('No active gaps as of post-`WO-075` commercial readiness decision gate review'),
   'SPEC_GAPS.md'
 );
 check('runlog.wo052', 'RUN_LOG records WO-052 evidence', runLog.includes('WO-052 post-P11 continuation rails'), 'RUN_LOG.md');

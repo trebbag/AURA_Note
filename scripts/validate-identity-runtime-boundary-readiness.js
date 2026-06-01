@@ -198,7 +198,9 @@ check(
   'spec-gaps.wo063',
   'SPEC_GAPS records no active WO-063 gaps',
   gaps.includes('No active gaps as of post-`WO-063` identity runtime boundary review') ||
-    gaps.includes('No active gaps as of post-`WO-069` athenahealth sandbox and vendor-neutral EHR runtime boundary review'),
+    gaps.includes('No active gaps as of post-`WO-069` athenahealth sandbox and vendor-neutral EHR runtime boundary review') ||
+    gaps.includes('No active gaps as of post-`WO-070` AI governance runtime boundary review') ||
+    gaps.includes('No active gaps as of post-`WO-075` commercial readiness decision gate review'),
   'SPEC_GAPS.md'
 );
 

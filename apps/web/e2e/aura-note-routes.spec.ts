@@ -258,6 +258,12 @@ test.describe('AURA Note route accessibility smoke suite', () => {
     await expect(page.getByRole('region', { name: 'Secure storage and restore states' })).toContainText('recovery window required');
     await expect(page.getByRole('region', { name: 'Operational evidence states' })).toContainText('productionLaunchReady=false');
     await expect(page.getByRole('region', { name: 'Operational evidence states' })).toContainText('metadata only');
+    await expect(page.getByRole('region', { name: 'Commercial readiness review' })).toContainText('CR-4 Commercial Readiness');
+    await expect(page.getByRole('region', { name: 'Commercial readiness review' })).toContainText('WO-071, WO-072, WO-073, WO-074, WO-075');
+    await expect(page.getByRole('region', { name: 'Commercial readiness review' })).toContainText('productionLaunchReady=false');
+    await expect(page.getByRole('region', { name: 'CR-4 work order evidence' })).toContainText('Security, Privacy, Compliance');
+    await expect(page.getByRole('region', { name: 'CR-4 work order evidence' })).toContainText('Billing, Revenue Integrity');
+    await expect(page.getByRole('region', { name: 'CR-4 work order evidence' })).toContainText('Commercial Readiness Decision Gate');
     await expect(page.getByRole('region', { name: 'Launch operations readiness' })).toContainText('Launch Ops Drills');
     await expect(page.getByRole('region', { name: 'Launch operations readiness' })).toContainText('Rollback rehearsal');
     await expect(page.getByRole('region', { name: 'Launch operations readiness' })).toContainText('Vendor outage drill');

@@ -355,3 +355,9 @@ No new production runtime service is enabled. Existing support/platform boundari
 `WO-051` adds no live payer backend behavior. It records the P11 claim/payer decision package through docs, support-status UI evidence, and `pnpm claim-decision:readiness`. Current backend posture remains draft claim preview and billing review only with `submittedClaim=false`. No clearinghouse API, payer API, denial automation, payment posting, charge finalization, medical-necessity determination, or patient-facing financial conclusion is implemented.
 
 Any future claim submission backend must be a separate approved work order with tenant/site scoping, RBAC/ABAC, human billing approval, clinician/final-note prerequisites where applicable, durable audit/event records, idempotency, claim status reconciliation, void/reversal controls, PHI-safe logging, credential-source governance, and test-payer evidence before live execution.
+
+## WO-071 through WO-075 CR-4 commercial readiness backend status
+
+`WO-071` through `WO-075` add the `/support/commercial-readiness` backend review boundary. The endpoint is permission checked through existing support/audit access controls, emits audit-safe CR-4 review events, and returns review metadata only for security/privacy/compliance, observability/support, billing/revenue integrity, beta-pilot, and final decision-gate evidence.
+
+The backend posture remains no-launch: `productionLaunchReady=false`, `liveVendorEnabled=false`, `claimSubmissionEnabled=false`, no certification claim, no live credentials, no live PHI, no raw support payloads, no live telemetry sink, no live AI/EHR/ClinicOS/transcription/storage execution, no charge finalization, no medical-necessity determination, and no autonomous clinical/coding/billing behavior.

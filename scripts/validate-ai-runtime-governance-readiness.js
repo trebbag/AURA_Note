@@ -118,7 +118,13 @@ assertIncludes('docs/TEST_PLAN.md', ['WO-070', 'ai:runtime-governance-readiness'
 assertIncludes('docs/PRODUCTION_BUILD_PLAN.md', ['Implementation status as of `WO-070`']);
 assertIncludes('docs/REMAINING_SYNTHETIC_TO_RUNTIME_GAPS.md', ['WO-070', 'live AI']);
 assertIncludes('RUN_LOG.md', ['WO-070 AI governance runtime boundary']);
-assertIncludes('SPEC_GAPS.md', ['No active gaps as of post-`WO-070` AI governance runtime boundary review']);
+const specGaps = read('SPEC_GAPS.md');
+if (
+  !specGaps.includes('No active gaps as of post-`WO-070` AI governance runtime boundary review') &&
+  !specGaps.includes('No active gaps as of post-`WO-075` commercial readiness decision gate review')
+) {
+  throw new Error('SPEC_GAPS.md must retain WO-070 or later no-active-gap evidence');
+}
 assertIncludes('CHECKPOINT_REPORT.md', ['CR-3', 'WO-070']);
 assertIncludes('work_orders/README.md', ['`WO-070` is complete', 'CR-3']);
 
@@ -139,8 +145,8 @@ const status = JSON.parse(read('repo_status.json'));
 if (status.work_orders?.['WO-070'] !== 'done') {
   throw new Error('repo_status.json must mark WO-070 done before AI runtime-governance readiness passes');
 }
-if (status.current_checkpoint !== 'CR-3') {
-  throw new Error(`repo_status.json must remain at CR-3 for the checkpoint stop; found ${status.current_checkpoint}`);
+if (!['CR-3', 'CR-4'].includes(status.current_checkpoint)) {
+  throw new Error(`repo_status.json must remain at CR-3 or later CR-4 checkpoint; found ${status.current_checkpoint}`);
 }
 if (status.next_work_order !== null) {
   throw new Error(`repo_status.json must stop at the CR-3 checkpoint with next_work_order null; found ${status.next_work_order}`);

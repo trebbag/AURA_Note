@@ -189,7 +189,17 @@ Post-CP4 productionization candidates are documented in `docs/POST_CP4_PRODUCTIO
 
 `WO-069` is complete as the third CR-3 integration/governance runtime tranche. It adds the vendor-neutral EHR runtime boundary, athenahealth-first sandbox posture, disabled credential evidence, sandbox patient lookup, appointment import, encounter context, human-gated writeback denial/payload-preparation/attempt/acknowledgement metadata, browser/API tests, and `pnpm ehr:sandbox-runtime-readiness`.
 
-`WO-070` is complete as the fourth CR-3 integration/governance runtime tranche. It adds the server-side AI Gateway runtime boundary, deterministic prohibited-behavior evaluation expansion, source-freshness/schema/confidence/blocked-behavior validation metadata, PHI rejection/redaction evidence, human-review-required and regression-blocked events, browser/API tests, and `pnpm ai:runtime-governance-readiness`. CR-3 is complete and stops for checkpoint review before promoting `WO-071`.
+`WO-070` is complete as the fourth CR-3 integration/governance runtime tranche. It adds the server-side AI Gateway runtime boundary, deterministic prohibited-behavior evaluation expansion, source-freshness/schema/confidence/blocked-behavior validation metadata, PHI rejection/redaction evidence, human-review-required and regression-blocked events, browser/API tests, and `pnpm ai:runtime-governance-readiness`. CR-3 is complete.
+
+`WO-071` is complete as the first CR-4 commercial readiness tranche. It adds the security/privacy/compliance and threat-model review package, commercial readiness API security section, support metadata-only and denial evidence, audit-safe security/privacy events, and `pnpm security:commercial-readiness`.
+
+`WO-072` is complete as the second CR-4 commercial readiness tranche. It adds the observability/SRE/support/incident operations package, incident severity taxonomy, runbook/support metadata evidence, disabled SIEM/APM/on-call posture, commercial readiness API operations section, and `pnpm ops:commercial-readiness`.
+
+`WO-073` is complete as the third CR-4 commercial readiness tranche. It adds the billing/revenue integrity boundary package, verifies candidate-only and `submittedClaim=false` posture, keeps patient summaries free of internal billing/revenue detail, preserves triggered-context transcript access, emits billing review evidence, and adds `pnpm billing:revenue-integrity-readiness`.
+
+`WO-074` is complete as the fourth CR-4 commercial readiness tranche. It adds the beta pilot package, onboarding/training/support/rollback/disabled-feature evidence, synthetic pilot-smoke gate coverage, commercial readiness API beta section, and `pnpm beta:pilot-package-readiness`.
+
+`WO-075` is complete as the final CR-4 commercial readiness tranche. It adds `docs/COMMERCIAL_READINESS_REVIEW_PACKET.md`, `/support/commercial-readiness` review packet evidence, final readiness matrix, disabled/live-vendor/founder-decision inventory, `pnpm commercial:readiness`, and CR-4 checkpoint evidence. This is not production launch approval.
 
 `WO-061` through `WO-063` form the CR-1 runtime foundation candidate. They move core runtime services behind repository ports with local Prisma/PostgreSQL as the production-shaped local runtime path, harden the Nest API request boundary, and make synthetic header identity fail closed outside explicit local/demo modes.
 
@@ -197,4 +207,4 @@ Post-CP4 productionization candidates are documented in `docs/POST_CP4_PRODUCTIO
 
 `WO-067` through `WO-070` form the CR-3 integration and governance runtime candidate. They are complete as synthetic/local evidence: standalone/ClinicOS mode adapter boundaries are enforced, and transcription, EHR, AI, and ClinicOS integration paths are production-shaped but safely disabled or mock/sandbox-governed runtime paths.
 
-`WO-071` through `WO-075` form the CR-4 commercial readiness review candidate. They harden security/privacy/compliance, observability/support, billing/revenue integrity, beta-pilot packaging, and the final commercial-readiness decision packet without granting production launch approval.
+`WO-071` through `WO-075` form the CR-4 commercial readiness review candidate. They are complete as review-ready synthetic evidence and harden security/privacy/compliance, observability/support, billing/revenue integrity, beta-pilot packaging, and the final commercial-readiness decision packet without granting production launch approval. CR-4 is complete and stops with `next_work_order: null` until a later founder-approved launch or post-CR-4 work order is created.

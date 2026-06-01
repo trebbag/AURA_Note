@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from 'react';
 import type {
   AuditExportResponseDto,
   BackupRestoreReadinessResponseDto,
+  CommercialReadinessResponseDto,
   OperationalEvidenceResponseDto,
   OperationalReadinessResponseDto,
   SupportStatusResponseDto
@@ -16,6 +17,7 @@ interface SupportRuntimeState {
   support?: SupportStatusResponseDto;
   operations?: OperationalReadinessResponseDto;
   backup?: BackupRestoreReadinessResponseDto;
+  commercial?: CommercialReadinessResponseDto;
   auditExport?: AuditExportResponseDto;
   operationalEvidence?: OperationalEvidenceResponseDto;
   deniedMessage?: string;
@@ -82,10 +84,11 @@ export default function SupportStatusPage() {
   const refreshRuntimeState = async () => {
     setRouteState('loading');
     setMessage('Loading support runtime state from typed API clients.');
-    const [support, operations, backup, clinicianDenied] = await Promise.allSettled([
+    const [support, operations, backup, commercial, clinicianDenied] = await Promise.allSettled([
       supportClient.getSupportStatus(),
       supportClient.getOperationalReadiness(),
       complianceClient.getBackupRestoreReadiness(),
+      supportClient.getCommercialReadiness(),
       clinicianClient.getSupportStatus()
     ]);
 
@@ -94,6 +97,7 @@ export default function SupportStatusPage() {
       ...(support.status === 'fulfilled' ? { support: support.value.data } : {}),
       ...(operations.status === 'fulfilled' ? { operations: operations.value.data } : {}),
       ...(backup.status === 'fulfilled' ? { backup: backup.value.data } : {}),
+      ...(commercial.status === 'fulfilled' ? { commercial: commercial.value.data } : {}),
       deniedMessage:
         clinicianDenied.status === 'rejected'
           ? clinicianDenied.reason instanceof Error
@@ -102,14 +106,14 @@ export default function SupportStatusPage() {
           : 'permission-denied path did not reject'
     }));
 
-    if (support.status === 'fulfilled' && operations.status === 'fulfilled' && backup.status === 'fulfilled') {
+    if (support.status === 'fulfilled' && operations.status === 'fulfilled' && backup.status === 'fulfilled' && commercial.status === 'fulfilled') {
       setRouteState(support.value.data.status.featureFlags.length === 0 ? 'empty' : 'ready');
-      setMessage('Support status, operational readiness, backup/restore, and denial evidence loaded from the API.');
+      setMessage('Support status, operational readiness, backup/restore, commercial readiness, and denial evidence loaded from the API.');
       return;
     }
 
     setRouteState('failed');
-    const firstFailure = [support, operations, backup].find((result) => result.status === 'rejected');
+    const firstFailure = [support, operations, backup, commercial].find((result) => result.status === 'rejected');
     setMessage(firstFailure?.status === 'rejected' && firstFailure.reason instanceof Error ? firstFailure.reason.message : 'Support runtime load failed.');
   };
 
@@ -172,6 +176,7 @@ export default function SupportStatusPage() {
   const status = runtime.support?.status;
   const operations = runtime.operations?.readiness;
   const backup = runtime.backup?.readiness;
+  const commercial = runtime.commercial?.readiness;
   const auditExport = runtime.auditExport?.auditExport;
   const operationalEvidence = runtime.operationalEvidence?.evidence;
 
@@ -206,11 +211,19 @@ export default function SupportStatusPage() {
           </div>
           <div>
             <dt>Checkpoint</dt>
-            <dd>{status?.checkpoint ?? 'loading'}</dd>
+            <dd>{commercial?.checkpoint ?? status?.checkpoint ?? 'loading'}</dd>
           </div>
           <div>
             <dt>Read only</dt>
             <dd>true</dd>
+          </div>
+          <div>
+            <dt>Commercial review</dt>
+            <dd>{commercial?.status ?? 'loading'}</dd>
+          </div>
+          <div>
+            <dt>Production launch</dt>
+            <dd>productionLaunchReady={String(commercial?.productionLaunchReady ?? false)}</dd>
           </div>
         </dl>
         <p>{message}</p>
@@ -228,6 +241,84 @@ export default function SupportStatusPage() {
             Demo Clinician Denied
           </button>
         </div>
+      </section>
+
+      <section className="support-grid" aria-label="Commercial readiness review">
+        <section className="support-panel">
+          <h2>CR-4 Commercial Readiness</h2>
+          <dl className="state-grid">
+            <div>
+              <dt>Decision gate</dt>
+              <dd>{commercial?.decisionGate.status ?? 'loading'}</dd>
+            </div>
+            <div>
+              <dt>Completed work orders</dt>
+              <dd>{commercial?.decisionGate.completedWorkOrders.join(', ') ?? 'loading'}</dd>
+            </div>
+            <div>
+              <dt>Beta package</dt>
+              <dd>{String(commercial?.decisionGate.betaPilotPackageReady ?? false)}</dd>
+            </div>
+            <div>
+              <dt>Launch ready</dt>
+              <dd>productionLaunchReady={String(commercial?.decisionGate.productionLaunchReady ?? false)}</dd>
+            </div>
+          </dl>
+          <p>{commercial?.nextStep ?? 'CR-4 commercial readiness package is loading from the API.'}</p>
+        </section>
+
+        <section className="support-panel">
+          <h2>Required Final Reviews</h2>
+          <div className="analytics-list">
+            {(commercial?.requiredApprovals ?? []).map((approval) => (
+              <div key={approval}>
+                <span>{approval}</span>
+                <strong>required</strong>
+                <small>review gate only; no live production behavior enabled</small>
+              </div>
+            ))}
+          </div>
+        </section>
+      </section>
+
+      <section className="support-grid" aria-label="CR-4 work order evidence">
+        {(commercial?.sections ?? []).map((section) => (
+          <section className="support-panel" key={section.workOrder}>
+            <h2>
+              {section.workOrder} {section.title}
+            </h2>
+            <dl className="state-grid">
+              <div>
+                <dt>Status</dt>
+                <dd>{section.status}</dd>
+              </div>
+              <div>
+                <dt>PHI safe</dt>
+                <dd>{String(section.phiSafe)}</dd>
+              </div>
+              <div>
+                <dt>Live vendor</dt>
+                <dd>{String(section.liveVendorEnabled)}</dd>
+              </div>
+              <div>
+                <dt>Launch ready</dt>
+                <dd>{String(section.productionLaunchReady)}</dd>
+              </div>
+            </dl>
+            <div className="analytics-list">
+              {section.checklist.map((item) => (
+                <div key={item.itemId}>
+                  <span>{item.label}</span>
+                  <strong>{item.status}</strong>
+                  <small>
+                    {item.evidence}; owner={item.ownerRole}; launchBlocker={String(item.productionLaunchBlocker)}
+                  </small>
+                </div>
+              ))}
+            </div>
+            <small>Missing approvals: {section.missingApprovals.join(', ')}</small>
+          </section>
+        ))}
       </section>
 
       <section className="support-grid" aria-label="Support route states">

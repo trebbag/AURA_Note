@@ -112,7 +112,9 @@ assertIncludes('docs/PRODUCTION_BUILD_PLAN.md', ['Implementation status as of `W
 const workOrderIndex = read('work_orders/README.md');
 if (
   !workOrderIndex.includes('`WO-069` is the next active CR-3 work order') &&
-  !workOrderIndex.includes('`WO-069` is complete')
+  !workOrderIndex.includes('`WO-069` is complete') &&
+  !workOrderIndex.includes('`WO-075` is complete') &&
+  !workOrderIndex.includes('CR-4 is complete')
 ) {
   throw new Error('work_orders/README.md must retain WO-069 next-work-order or completion evidence after WO-068');
 }
@@ -121,7 +123,9 @@ assertIncludes('RUN_LOG.md', ['WO-068 transcription runtime boundary', 'transcri
 const specGaps = read('SPEC_GAPS.md');
 if (
   !specGaps.includes('No active gaps as of post-`WO-068` transcription runtime boundary review') &&
-  !specGaps.includes('No active gaps as of post-`WO-069` athenahealth sandbox and vendor-neutral EHR runtime boundary review')
+  !specGaps.includes('No active gaps as of post-`WO-069` athenahealth sandbox and vendor-neutral EHR runtime boundary review') &&
+  !specGaps.includes('No active gaps as of post-`WO-070` AI governance runtime boundary review') &&
+  !specGaps.includes('No active gaps as of post-`WO-075` commercial readiness decision gate review')
 ) {
   throw new Error('SPEC_GAPS.md must retain WO-068 or later no-active-gap evidence');
 }
@@ -141,8 +145,8 @@ if (nextWorkOrderNumber !== null && nextWorkOrderNumber < 69) {
 if (!['todo', 'in_progress', 'done'].includes(status.work_orders?.['WO-069'])) {
   throw new Error('repo_status.json must keep WO-069 represented as todo, in_progress, or done after WO-068 is complete');
 }
-if (status.current_checkpoint !== 'CR-3') {
-  throw new Error(`repo_status.json must remain in CR-3 after WO-068; found ${status.current_checkpoint}`);
+if (!['CR-3', 'CR-4'].includes(status.current_checkpoint)) {
+  throw new Error(`repo_status.json must remain in CR-3 or later CR-4 after WO-068; found ${status.current_checkpoint}`);
 }
 
 assertNoForbiddenClaims();

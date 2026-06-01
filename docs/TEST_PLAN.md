@@ -601,3 +601,15 @@ This gate is operational rehearsal only. It does not approve production deployme
 `WO-051` adds `pnpm claim-decision:readiness` as the P11 decision gate. Verification includes decision-package docs, the WO-051 runbook, support-status browser assertions for Claim/Payer Decision Gate, Draft Claim Boundary, No Live Clearinghouse, No Payer API, No Denial Automation, No Payment Posting, `submittedClaim=false`, and `claimSubmissionEnabled=false`. Existing schedule/finalization tests continue proving draft claim preview remains unsubmitted and patient-facing summaries exclude internal billing/revenue details.
 
 This gate must fail if any current document/status evidence claims live claim submission, payer API calls, clearinghouse integration, denial automation, payment posting, charge finalization, medical-necessity determination, or patient financial conclusions are enabled.
+
+## WO-071 through WO-075 CR-4 commercial readiness
+
+CR-4 adds five review gates:
+
+- `pnpm security:commercial-readiness` verifies the security/privacy/compliance and threat-model package, support denial evidence, commercial readiness API security section, and no-certification/no-launch posture.
+- `pnpm ops:commercial-readiness` verifies observability/SRE/support/incident operations evidence, incident taxonomy, disabled SIEM/APM posture, and support metadata-only evidence.
+- `pnpm billing:revenue-integrity-readiness` verifies candidate-only billing/revenue integrity evidence, draft claim preview `submittedClaim=false`, patient-summary internal-detail exclusion posture, triggered transcript access, and claim submission disabled posture.
+- `pnpm beta:pilot-package-readiness` verifies the beta pilot package, synthetic pilot smoke, support route beta evidence, disabled feature inventory, and no real tenant/live PHI/live vendor posture.
+- `pnpm commercial:readiness` verifies all CR-4 work orders, the `/support/commercial-readiness` contract, `docs/COMMERCIAL_READINESS_REVIEW_PACKET.md`, CR-4 checkpoint evidence, `repo_status.json`, `SPEC_GAPS.md`, CI wiring, and no production launch claim.
+
+API service and e2e tests cover `/support/commercial-readiness`, role denial, CR-4 completed work-order metadata, audit-safe domain events, and `productionLaunchReady=false`. Browser tests cover the support route CR-4 commercial readiness and work-order evidence panels. These gates do not approve production launch.

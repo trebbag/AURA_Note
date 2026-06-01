@@ -28,6 +28,7 @@ import type {
   ClinicOsMapVisitResponseDto,
   CoachingDashboardDto,
   CoachingReportDto,
+  CommercialReadinessResponseDto,
   ComplianceReviewDto,
   CorrectTranscriptSegmentRequestDto,
   CreateAppointmentRequestDto,
@@ -370,6 +371,7 @@ export function createAuraNoteApiClient(options: AuraNoteApiClientOptions = {}) 
       post<SecureDownloadResponseDto>(`/support/audit-exports/${auditExportId}/download`, body),
     getBackupRestoreReadiness: () => request<BackupRestoreReadinessResponseDto>('/support/backup-restore/readiness'),
     getOperationalReadiness: () => request<OperationalReadinessResponseDto>('/support/operations/readiness'),
+    getCommercialReadiness: () => request<CommercialReadinessResponseDto>('/support/commercial-readiness'),
     recordOperationalEvidence: (body: OperationalEvidenceRequestDto) =>
       post<OperationalEvidenceResponseDto>('/support/operations/evidence', body)
   };

@@ -1,7 +1,7 @@
 {
   "project": "AURA Note v1",
   "mode": "production_build_in_progress",
-  "current_checkpoint": "CR-3",
+  "current_checkpoint": "CR-4",
   "next_work_order": null,
   "work_orders": {
     "WO-000": "done",
@@ -75,13 +75,13 @@
     "WO-068": "done",
     "WO-069": "done",
     "WO-070": "done",
-    "WO-071": "planned",
-    "WO-072": "planned",
-    "WO-073": "planned",
-    "WO-074": "planned",
-    "WO-075": "planned"
+    "WO-071": "done",
+    "WO-072": "done",
+    "WO-073": "done",
+    "WO-074": "done",
+    "WO-075": "done"
   },
-  "last_updated_by": "Codex WO-070 AI governance runtime boundary",
-  "last_updated_at": "2026-06-01T17:12:28Z",
-  "notes": "WO-070 completed the fourth CR-3 integration/governance runtime tranche and closes CR-3 for checkpoint review. AURA Note now has a server-side AI Gateway runtime boundary with liveModelCallsEnabled=false, rawPhiToExternalAiAllowed=false, productionPromptStoreEnabled=false, privateBaaPathwayApproved=false, driftMonitoringStatus=placeholder_disabled, expanded deterministic prohibited-behavior evaluation cases, source-freshness/schema/confidence/blocked-behavior validation metadata, PHI rejection/redaction evidence, human-review-required events, and regression-blocked evidence. The AI governance route displays API-backed runtime boundary and rejection/scrub states, and pnpm ai:runtime-governance-readiness verifies code, contracts, docs/status/run-log/checkpoint rails, and no-live/no-launch posture. This is a checkpoint stop, not a production launch claim: no live PHI, production credential, live OIDC, live SAML, live ClinicOS delegated identity, live ClinicOS event bus, raw ClinicOS payload storage, live EHR API call, live EHR writeback delivery, live transcription vendor, raw PHI audio transport, production audio storage, live external AI, production prompt store, raw PHI transfer to external AI, live Azure PHI storage, claim submission, autonomous clinical/coding/billing behavior, medical-necessity determination, charge finalization, order placement, patient-facing financial conclusion, or production launch behavior is authorized or introduced."
+  "last_updated_by": "Codex WO-071 through WO-075 CR-4 commercial readiness batch",
+  "last_updated_at": "2026-06-01T19:32:18Z",
+  "notes": "WO-071 through WO-075 completed the CR-4 commercial readiness review candidate batch. AURA Note now has a permission-checked /support/commercial-readiness API boundary, browser-visible CR-4 support route evidence, security/privacy/compliance threat-model package, observability/SRE/support incident operations package, billing/revenue integrity boundary package, beta pilot package, final commercial readiness review packet, CR-4 checkpoint evidence, and readiness gates for security:commercial-readiness, ops:commercial-readiness, billing:revenue-integrity-readiness, beta:pilot-package-readiness, and commercial:readiness. This is a commercial review package, not production launch approval: no live PHI, production credential, live OIDC, live SAML, live ClinicOS delegated identity, live ClinicOS event bus, raw ClinicOS payload storage, live EHR API call, live EHR writeback delivery, live transcription vendor, raw PHI audio transport, production audio storage, live external AI, production prompt store, raw PHI transfer to external AI, live Azure PHI storage, claim submission, autonomous clinical/coding/billing behavior, medical-necessity determination, charge finalization, order placement, patient-facing financial conclusion, certification claim, or production launch behavior is authorized or introduced."
 }

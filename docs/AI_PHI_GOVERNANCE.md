@@ -168,3 +168,9 @@ PHI handling remains fail-closed: raw PHI is rejected before any model boundary,
 ## WO-051 claim/payer decision gate
 
 `WO-051` does not add AI behavior or payer connectivity. AI remains prohibited from determining medical necessity, finalizing codes, finalizing charges, submitting claims, managing denials autonomously, posting payments, or creating patient-facing financial conclusions. Draft payer-readable support language and draft claim-preview support may remain human-review-required only. No raw PHI, payer payload, production credential, claim payload, denial evidence, or payment data is sent to external AI.
+
+## WO-071 through WO-075 CR-4 commercial readiness PHI boundary
+
+CR-4 is a commercial readiness review package only. `/support/commercial-readiness`, `docs/COMMERCIAL_READINESS_REVIEW_PACKET.md`, and the CR-4 gates expose metadata about security/privacy/compliance, operations, billing/revenue integrity, beta-pilot readiness, and final decision posture. They do not add AI behavior, live PHI processing, live vendor calls, raw prompts, raw transcripts, final-note text, billing detail payloads, coaching output, claim payloads, production credentials, or production launch approval.
+
+The CR-4 packet preserves `productionLaunchReady=false`, `liveVendorEnabled=false`, `submittedClaim=false`, no certification claim, no autonomous clinical/coding/billing behavior, and no raw PHI transfer to external AI.

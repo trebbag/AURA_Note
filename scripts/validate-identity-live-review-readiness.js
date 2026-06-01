@@ -30,7 +30,7 @@ function check(id, description, passed, evidence) {
 
 check('status.wo053-done', 'WO-053 is marked done', status.work_orders?.['WO-053'] === 'done', status.work_orders?.['WO-053']);
 check('status.next-production-build-safe', 'Post-P11 planning/control remains valid while commercial-readiness runtime work is active', status.next_work_order === null || Number.parseInt(String(status.next_work_order || '').replace('WO-', ''), 10) >= 61, status.next_work_order);
-check('status.checkpoint-production-build-safe', 'P11 or commercial-readiness checkpoint remains current', status.current_checkpoint === 'P11' || status.current_checkpoint === 'CR-0' || status.current_checkpoint === 'CR-1' || status.current_checkpoint === 'CR-2' || status.current_checkpoint === 'CR-3', status.current_checkpoint);
+check('status.checkpoint-production-build-safe', 'P11 or commercial-readiness checkpoint remains current', ['P11', 'CR-0', 'CR-1', 'CR-2', 'CR-3', 'CR-4'].includes(status.current_checkpoint), status.current_checkpoint);
 check('work-order.file', 'WO-053 work-order file exists', exists('work_orders/WO-053_production_identity_account_lifecycle_review_intake.md'), 'work_orders/WO-053_production_identity_account_lifecycle_review_intake.md');
 check('work-order.index', 'Work-order index records WO-053 completion', workOrderIndex.includes('WO-053') && workOrderIndex.includes('production identity'), 'work_orders/README.md');
 check('plan.wo053', 'Production build plan includes WO-053', plan.includes('## WO-053 ') && plan.includes('Production Identity'), 'docs/PRODUCTION_BUILD_PLAN.md');
@@ -77,7 +77,9 @@ check(
     specGaps.includes('No active gaps as of post-`WO-061` runtime persistence switchover review') ||
     specGaps.includes('No active gaps as of post-`WO-062` API runtime hardening and request-boundary review') ||
     specGaps.includes('No active gaps as of post-`WO-063` identity runtime boundary review') ||
-    specGaps.includes('No active gaps as of post-`WO-069` athenahealth sandbox and vendor-neutral EHR runtime boundary review'),
+    specGaps.includes('No active gaps as of post-`WO-069` athenahealth sandbox and vendor-neutral EHR runtime boundary review') ||
+    specGaps.includes('No active gaps as of post-`WO-070` AI governance runtime boundary review') ||
+    specGaps.includes('No active gaps as of post-`WO-075` commercial readiness decision gate review'),
   'SPEC_GAPS.md'
 );
 check('spec-gaps.deferred-identity', 'SPEC_GAPS preserves production identity as deferred before live use', specGaps.includes('Production identity provider and account lifecycle') && specGaps.includes('future approved identity implementation work order'), 'SPEC_GAPS.md');

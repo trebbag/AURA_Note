@@ -218,3 +218,11 @@ Standalone beta pilot setup remains possible without ClinicOS. Tenant onboarding
 In standalone mode, AURA Note keeps claim activity at draft claim preview and human billing review only. Live clearinghouse submission, payer API calls, denial automation, payment posting, charge finalization, medical-necessity determination, and patient financial conclusions remain disabled.
 
 In ClinicOS-integrated mode, any future ClinicOS/M21 Charge Integrity or clearinghouse handoff must remain adapter-scoped and cannot bypass AURA Note permissions, human approval, audit, tenant/site scope, or `submittedClaim=false` default behavior. `WO-051` does not implement live ClinicOS charge submission, payer connectivity, claim submission, denial automation, or payment workflows.
+
+## WO-071 through WO-075 CR-4 commercial readiness mode behavior
+
+In standalone mode, CR-4 packages the commercial readiness review evidence needed to inspect AURA Note as a standalone-first product: security/privacy/compliance, observability/support, billing/revenue integrity, beta-pilot readiness, and final decision-gate posture.
+
+In ClinicOS-integrated mode, the CR-4 packet preserves the adapter-bound rule. ClinicOS cannot bypass AURA Note permissions, support metadata-only limits, tenant/site scope, AI/PHI policy, billing boundaries, human-review gates, audit evidence, or no-launch posture. ClinicOS integration remains disabled/degraded unless a later founder-approved work order authorizes live behavior.
+
+`WO-071` through `WO-075` do not enable production launch, live ClinicOS event-bus delivery, delegated identity bypass, live PHI, live vendors, claim submission, charge finalization, medical-necessity determination, patient-facing financial conclusions, or autonomous clinical/coding/billing behavior.

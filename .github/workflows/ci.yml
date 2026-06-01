@@ -74,6 +74,11 @@ jobs:
       - run: pnpm retention:production-readiness
       - run: pnpm storage:live-review-readiness
       - run: pnpm claim-decision:readiness
+      - run: pnpm security:commercial-readiness
+      - run: pnpm ops:commercial-readiness
+      - run: pnpm billing:revenue-integrity-readiness
+      - run: pnpm beta:pilot-package-readiness
+      - run: pnpm commercial:readiness
       - run: pnpm commercial:readiness-plan
       - run: pnpm post-p11:readiness
       - run: pnpm production:readiness

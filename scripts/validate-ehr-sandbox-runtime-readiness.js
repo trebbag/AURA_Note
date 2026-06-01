@@ -115,7 +115,7 @@ const checks = [
   {
     id: 'spec-gaps.wo069',
     path: 'SPEC_GAPS.md',
-    snippets: ['No active gaps as of post-`WO-070` AI governance runtime boundary review']
+    snippets: ['No active gaps as of post-`WO-075` commercial readiness decision gate review']
   },
   {
     id: 'work-order.next',
@@ -160,8 +160,8 @@ if (status.work_orders?.['WO-069'] !== 'done') {
 if (status.next_work_order !== 'WO-070' && status.next_work_order !== null) {
   failures.push({ id: 'status.next', path: 'repo_status.json', missing: 'next_work_order WO-070 or CR-3 checkpoint null' });
 }
-if (status.current_checkpoint !== 'CR-3') {
-  failures.push({ id: 'status.checkpoint', path: 'repo_status.json', missing: 'CR-3' });
+if (!['CR-3', 'CR-4'].includes(status.current_checkpoint)) {
+  failures.push({ id: 'status.checkpoint', path: 'repo_status.json', missing: 'CR-3 or CR-4' });
 }
 
 const forbidden = [

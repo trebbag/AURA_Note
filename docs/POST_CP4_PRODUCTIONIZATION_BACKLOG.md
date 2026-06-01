@@ -593,4 +593,21 @@ Do not implement these tranches directly from this backlog. Promote one tranche 
 
 **Known risks:**
 
-- CR-4 still needs security/privacy/compliance hardening, operations/support readiness, billing/revenue integrity boundary completion, beta-pilot packaging, and the final commercial-readiness decision packet before any founder launch review can proceed.
+- CR-4 has now been completed as review-ready synthetic evidence. Future production launch still needs a later founder-approved work order with named live-vendor, PHI, security, compliance/privacy, clinical, operational, and launch-approval evidence.
+
+## Commercial Readiness Runtime Note - CR-4 Completion
+
+**Promotion status:** `WO-071` through `WO-075` are complete as synthetic/local CR-4 commercial readiness review evidence.
+
+**Objective:** Package security/privacy/compliance, observability/SRE/support, billing/revenue integrity, beta-pilot, and commercial decision-gate evidence without approving production launch.
+
+**Acceptance evidence:**
+
+- `pnpm security:commercial-readiness`, `pnpm ops:commercial-readiness`, `pnpm billing:revenue-integrity-readiness`, `pnpm beta:pilot-package-readiness`, and `pnpm commercial:readiness` are the CR-4 gates.
+- `/support/commercial-readiness` exposes the CR-4 review package through a permission-checked API boundary.
+- `/aura-note/support/status` renders CR-4 commercial readiness, work-order evidence, required final reviews, and `productionLaunchReady=false`.
+- `docs/COMMERCIAL_READINESS_REVIEW_PACKET.md` records Figma readiness, beta-pilot package readiness, commercial-review readiness, disabled capability inventory, and no-launch posture.
+
+**Known risks:**
+
+- Production launch, real tenant onboarding, live PHI, production credentials, live OIDC/SAML, live ClinicOS delegation, live ClinicOS event bus, live EHR/writeback, live transcription, live external AI, live Azure PHI storage, claim submission, charge finalization, medical-necessity determination, patient-facing financial conclusions, certification claims, and autonomous clinical/coding/billing behavior remain deferred.

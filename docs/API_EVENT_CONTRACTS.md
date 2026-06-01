@@ -393,3 +393,15 @@ Payloads are audit-safe metadata only. They must not include raw EHR payloads, p
 New or expanded AI event types are `ai.runtime_boundary_checked.v1`, `ai.prompt_model_reviewed.v1`, `ai.context_package_created.v1`, `ai.request_denied.v1`, `ai.output_validated.v1`, `ai.human_review_required.v1`, `ai.regression_blocked.v1`, and `ai.incident_metadata_recorded.v1`, alongside the existing request-prepared, context-scrubbed, PHI-rejected, response-recorded, output-rejected, prompt/model config, and evaluation-run events.
 
 Payloads are audit-safe metadata only. They must not include raw prompts, raw model responses, note text, transcript text, raw EHR/ClinicOS payloads, credentials, production URLs, final diagnosis/code/charge behavior, medical-necessity determinations, orders, claim submissions, or patient-facing financial conclusions.
+
+## WO-071 through WO-075 CR-4 commercial readiness contracts
+
+`WO-071` through `WO-075` add the CR-4 commercial readiness review API surface while keeping production launch disabled:
+
+- `GET /support/commercial-readiness` returns `CommercialReadinessResponse`, including security/privacy/compliance, observability/support/incident operations, billing/revenue integrity, beta-pilot package, and commercial decision-gate sections.
+- Each section records `productionLaunchReady=false`, `liveVendorEnabled=false`, `phiSafe=true`, required states, missing approvals, and evidence references.
+- The final decision gate records completed work orders `WO-071` through `WO-075`, Figma readiness, beta-package readiness, commercial-review readiness, required final review roles, and live-vendor decision requirements.
+
+New event types are `security.privacy_review_checked.v1`, `threat_model.reviewed.v1`, `support.incident_taxonomy_checked.v1`, `billing.revenue_integrity_checked.v1`, `beta.pilot_package_checked.v1`, and `commercial.readiness_decision_checked.v1`.
+
+Payloads are audit-safe metadata only. They must not include PHI-bearing support content, raw logs, credentials, vendor payloads, final clinical/coding/billing determinations, claim submissions, certification claims, or production launch approval.
