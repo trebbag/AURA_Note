@@ -95,6 +95,10 @@ AURA Note must enforce role permissions and relationship-to-patient constraints.
 
 The runtime `modeAdapterBoundaries` evidence records all adapter seams as `permissionBoundary='aura_note_authoritative'` with `liveDelegationEnabled=false`. Support users remain metadata-only; ordinary clinicians cannot write mappings; authorized admins and service accounts may write metadata only inside tenant/site scope. Degraded or unavailable ClinicOS mode fails closed for writes and does not weaken transcript, final-note, billing, coaching, AI governance, writeback, storage/download, human-review, or claim-boundary checks.
 
+## WO-068 transcription runtime access
+
+`WO-068` keeps transcription runtime access behind AURA Note permissions in both standalone and ClinicOS-integrated modes. Treating clinicians linked to the visit can record microphone permission metadata, append metadata-only chunks, request deterministic mock transcription, request the disabled live-provider fail-closed check, view transcripts, and record corrections. Billing staff transcript access remains limited to triggered billing-review context. Support users remain metadata-only and cannot view transcripts, record corrections, invoke transcription jobs, or access raw audio. ClinicOS cannot bypass AURA Note transcript, recording, retention, correction, billing-review, purpose-of-use, or tenant/site checks.
+
 ## WO-049 launch operations access
 
 `WO-049` documents `launch_operations:view` and future `launch_operations:record` posture for operational rehearsal evidence. Authorized admin, compliance/privacy lead, clinic manager, support, and service-account contexts may view metadata-only launch operations evidence. Recording production launch approval remains out of scope. Support users remain metadata-only and cannot access transcripts, final notes, billing details, coaching outputs, raw prompts, raw EHR/ClinicOS payloads, audit export payloads, production credentials, or PHI-bearing logs. ClinicOS-integrated mode cannot bypass AURA Note launch operations permissions.

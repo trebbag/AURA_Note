@@ -89,7 +89,7 @@ assertIncludes('docs/RBAC_ABAC_MATRIX.md', ['WO-067', 'ClinicOS cannot bypass AU
 assertIncludes('docs/DATA_MODEL.md', ['WO-067', 'modeAdapterBoundaries']);
 assertIncludes('docs/TEST_PLAN.md', ['WO-067', 'mode:adapter-readiness']);
 assertIncludes('docs/PRODUCTION_BUILD_PLAN.md', ['Implementation status as of `WO-067`']);
-assertIncludes('work_orders/README.md', ['`WO-067` is complete', '`WO-068` is the next active CR-3 work order']);
+assertIncludes('work_orders/README.md', ['`WO-067` is complete', '`WO-068`']);
 assertIncludes('RUN_LOG.md', ['WO-067 ModeResolver and adapter runtime wiring', 'mode:adapter-readiness']);
 assertIncludes('SPEC_GAPS.md', ['No active gaps as of post-`WO-067` ModeResolver and adapter runtime wiring review']);
 
@@ -101,11 +101,11 @@ const status = JSON.parse(read('repo_status.json'));
 if (status.work_orders?.['WO-067'] !== 'done') {
   throw new Error('repo_status.json must mark WO-067 done before mode adapter readiness passes');
 }
-if (status.next_work_order !== 'WO-068') {
-  throw new Error(`repo_status.json must advance next_work_order to WO-068 after WO-067; found ${status.next_work_order}`);
+if (!['WO-068', 'WO-069', 'WO-070', 'WO-071'].includes(status.next_work_order)) {
+  throw new Error(`repo_status.json must be at WO-068 or later after WO-067; found ${status.next_work_order}`);
 }
-if (status.work_orders?.['WO-068'] !== 'todo') {
-  throw new Error('repo_status.json must mark WO-068 todo after WO-067 is complete');
+if (!['todo', 'done'].includes(status.work_orders?.['WO-068'])) {
+  throw new Error('repo_status.json must mark WO-068 todo or done after WO-067 is complete');
 }
 if (status.current_checkpoint !== 'CR-3') {
   throw new Error(`repo_status.json must remain in CR-3 after WO-067; found ${status.current_checkpoint}`);

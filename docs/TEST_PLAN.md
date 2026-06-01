@@ -545,6 +545,18 @@ This gate closes CR-2 as synthetic/local product UX runtime evidence only. It do
 
 This gate proves synthetic/local CR-3 mode adapter readiness only. It does not enable live ClinicOS credentials, live event bus delivery, delegated identity, raw ClinicOS payload storage, live EHR/writeback routing, live AI, live transcription, production PHI, charge finalization, medical-necessity determination, claim submission, or production launch.
 
+## WO-068 transcription runtime boundary
+
+`WO-068` adds `pnpm transcription:runtime-boundary-readiness`:
+
+- API unit tests cover the deterministic mock provider, the disabled live provider, provider runtime state metadata, retry/dead-letter policy, and no live provider calls.
+- API service/e2e tests cover microphone permission metadata, metadata-only chunk acceptance and replay, mock transcription, disabled-live-provider fail-closed evidence, correction history, support denial, raw-audio retention, and transcript purge count zero.
+- Worker tests continue covering deterministic mock transcription and retention evidence with server-side adapter metadata.
+- Browser tests verify the documentation workspace displays API-backed transcription runtime states, provider boundary, retry/dead-letter posture, mock transcript processing, correction history, and disabled live-provider evidence.
+- The readiness script verifies contracts/OpenAPI, docs/status/run-log evidence, next-work-order rails, CI wiring, and no-live/no-launch posture.
+
+This gate proves synthetic/local transcription runtime boundary readiness only. It does not enable live transcription credentials, live vendor calls, raw PHI audio transport, production audio storage, external AI, charge finalization, medical-necessity determination, claim submission, or production launch.
+
 ## WO-049 launch operations readiness
 
 `WO-049` adds synthetic/local deployment, performance, reliability, and operational drill evidence:

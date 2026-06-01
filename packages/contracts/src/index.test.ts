@@ -1892,7 +1892,19 @@ describe('audio capture and transcription contracts', () => {
         baaRequiredBeforeLiveUse: true,
         supportsDiarization: false,
         speakerLabelMode: 'placeholder',
-        confidenceMetadataAvailable: true
+        confidenceMetadataAvailable: true,
+        providerBoundary: 'server_side_adapter',
+        credentialState: 'not_configured',
+        runtimeStates: ['ready', 'provider_unavailable', 'diarization_degraded', 'correction_history'],
+        retryPolicy: {
+          maxAttempts: 3,
+          retryableStates: ['upload_interrupted', 'provider_unavailable'],
+          deadLetterState: 'dead_lettered_metadata_only'
+        },
+        rawAudioRetentionPolicy: 'one_week',
+        transcriptRetentionPolicy: 'indefinite',
+        rawAudioPayloadStorageEnabled: false,
+        diarizationState: 'placeholder_degraded'
       },
       segments: [
         {

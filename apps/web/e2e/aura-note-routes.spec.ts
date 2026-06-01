@@ -213,6 +213,11 @@ test.describe('AURA Note route accessibility smoke suite', () => {
     await page.getByRole('button', { name: 'Process Mock Transcription' }).click();
     await expect(page.getByRole('article', { name: 'Transcript segments' })).toContainText('Synthetic mock transcript from metadata chunk 1');
     await expect(page.getByRole('article', { name: 'Transcript segments' })).toContainText('91%');
+    await expect(page.getByRole('region', { name: 'Audio capture and transcription status' })).toContainText('server_side_adapter');
+    await expect(page.getByRole('region', { name: 'Transcription runtime states' })).toContainText('provider_unavailable');
+    await expect(page.getByRole('region', { name: 'Transcription runtime states' })).toContainText('diarization_degraded');
+    await page.getByRole('button', { name: 'Verify Live Provider Disabled' }).click();
+    await expect(page.getByText(/Disabled live transcription provider failed closed through API metadata/)).toBeVisible();
     await page.getByRole('button', { name: 'Correct Transcript' }).click();
     await expect(page.getByRole('article', { name: 'Transcript segments' })).toContainText('Synthetic corrected transcript segment');
 

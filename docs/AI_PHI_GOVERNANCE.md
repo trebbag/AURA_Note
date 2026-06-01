@@ -137,6 +137,12 @@ AI Gateway invocation payloads remain governed by the AI Gateway policy instead 
 
 `WO-063` does not change AI behavior or authorize PHI access. External AI remains disabled, raw PHI remains blocked from external AI, and all AI/coding/billing/coaching/patient-summary/payer-support outputs remain draft/candidate/human-review-required.
 
+## WO-068 transcription runtime PHI posture
+
+`WO-068` keeps transcription production-shaped but local/synthetic. No raw PHI audio leaves the governed local path, no live transcription vendor is called, and no external AI is invoked for transcription. Recording chunks remain metadata-only with `rawPhiAudioStored=false`; provider status records `rawAudioPayloadStorageEnabled=false`; raw-audio retention remains one week; transcript retention remains indefinite; support users remain metadata-only.
+
+The disabled live-provider path fails closed until vendor, BAA, credential, consent, PHI transport, monitoring, and security/privacy approvals exist. Transcript corrections continue to reject forbidden PHI-like keys/text before mutation. Event payloads are audit-safe metadata and must not include raw audio, credentials, live provider payloads, production URLs, autonomous diagnosis/coding/billing evidence, charge finalization, medical-necessity determinations, or claim submission evidence.
+
 ## WO-049 launch operations PHI boundary
 
 `WO-049` launch operations readiness uses synthetic operational metadata only. Performance baselines, rollback rehearsal, reliability drills, incident response, access review, and support escalation evidence must not include PHI, secrets, production URLs, raw transcripts, final notes, billing details, coaching output, raw prompts, raw EHR/ClinicOS payloads, storage object payloads, medical-necessity determinations, charge finalization, or claim submission evidence.

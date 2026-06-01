@@ -95,6 +95,18 @@ export function processMockTranscriptionWorkerJob(
         supportsDiarization: false,
         speakerLabelMode: 'placeholder',
         confidenceMetadataAvailable: true,
+        providerBoundary: 'server_side_adapter',
+        credentialState: 'not_configured',
+        runtimeStates: ['demo_fixture', 'ready', 'provider_unavailable', 'diarization_degraded', 'correction_history'],
+        retryPolicy: {
+          maxAttempts: 3,
+          retryableStates: ['upload_interrupted', 'provider_unavailable'],
+          deadLetterState: 'dead_lettered_metadata_only'
+        },
+        rawAudioRetentionPolicy: 'one_week',
+        transcriptRetentionPolicy: 'indefinite',
+        rawAudioPayloadStorageEnabled: false,
+        diarizationState: 'placeholder_degraded',
         disabledReason: 'Live transcription providers are disabled in the worker candidate.'
       }
     }

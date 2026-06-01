@@ -909,6 +909,8 @@ This gate does not authorize live EHR writeback, live AI, live transcription, pr
 - **Stop conditions:** provider selection, BAA, consent policy, or live audio transport policy is required.
 - **Risks and deferred decisions:** live provider, diarization reliability, production audio storage, and consent/legal policy remain deferred.
 
+**Implementation status as of `WO-068`:** complete as synthetic/local CR-3 transcription runtime boundary evidence. The API now has server-side transcription provider adapters for deterministic mock processing and disabled live-provider fail-closed evidence. Provider status exposes runtime state coverage, retry/dead-letter metadata, one-week raw-audio retention posture, indefinite transcript retention posture, `rawAudioPayloadStorageEnabled=false`, and `providerBoundary='server_side_adapter'`. The web workspace displays API-backed provider boundary and runtime states, and tests cover mock transcription, disabled live-provider denial, correction history, support denial, raw-audio retention, and transcript purge count zero. `pnpm transcription:runtime-boundary-readiness` verifies code, contracts, docs, status, run-log, and no-live/no-launch posture. CR-3 remains in progress; this does not enable live transcription credentials, raw PHI audio transport, live provider calls, production audio storage, live AI, live EHR/ClinicOS, production PHI, charge finalization, medical-necessity determination, claim submission, or production launch.
+
 ## WO-069 — Athenahealth Sandbox And Vendor-Neutral EHR Runtime Boundary
 
 - **Objective:** Harden the EHR adapter path around athenahealth-first sandbox readiness while preserving vendor-neutral interfaces.

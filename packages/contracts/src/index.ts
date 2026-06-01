@@ -41,14 +41,22 @@ export type CoreEventType =
   | 'visit.stopped.v1'
   | 'recording.started.v1'
   | 'microphone.permission_recorded.v1'
+  | 'recording.chunk_authorized.v1'
+  | 'recording.chunk_denied.v1'
   | 'recording.chunk_received.v1'
   | 'recording.exception_approved.v1'
   | 'recording.stopped.v1'
   | 'raw_audio.retention_scheduled.v1'
   | 'transcription.provider_status_checked.v1'
+  | 'transcription.provider_disabled.v1'
+  | 'transcription.provider_unavailable.v1'
+  | 'transcription.job_requested.v1'
+  | 'transcription.job_denied.v1'
   | 'transcription.job_queued.v1'
   | 'transcription.job_processed.v1'
   | 'transcription.job_failed.v1'
+  | 'transcription.segment_received.v1'
+  | 'transcription.correction_recorded.v1'
   | 'transcript.segment_appended.v1'
   | 'transcript.segment_corrected.v1'
   | 'suggestions.evaluated.v1'
@@ -454,6 +462,33 @@ export type MicrophonePermissionStateDto = 'prompt_required' | 'granted' | 'deni
 export type RecordingTransportModeDto = 'metadata_only_synthetic';
 export type TranscriptionProviderModeDto = 'mock_only' | 'external_disabled';
 export type TranscriptionJobStatusDto = 'queued' | 'processed' | 'failed';
+export type TranscriptionRuntimeStateDto =
+  | 'loading'
+  | 'empty'
+  | 'ready'
+  | 'saving'
+  | 'failed'
+  | 'permission_denied'
+  | 'read_only'
+  | 'demo_fixture'
+  | 'microphone_permission_denied'
+  | 'device_unavailable'
+  | 'upload_interrupted'
+  | 'provider_unavailable'
+  | 'low_confidence'
+  | 'diarization_degraded'
+  | 'correction_history'
+  | 'recording_exception_approved';
+export type TranscriptionProviderBoundaryDto = 'server_side_adapter';
+export type TranscriptionCredentialStateDto = 'not_configured';
+export type TranscriptionDeadLetterStateDto = 'dead_lettered_metadata_only';
+export type TranscriptionDiarizationStateDto = 'placeholder_degraded';
+
+export interface TranscriptionRetryPolicyDto {
+  maxAttempts: 3;
+  retryableStates: Array<'upload_interrupted' | 'provider_unavailable'>;
+  deadLetterState: TranscriptionDeadLetterStateDto;
+}
 
 export interface RecordingPermissionDto {
   appointmentId: string;
@@ -508,6 +543,14 @@ export interface TranscriptionProviderStatusDto {
   speakerLabelMode: 'placeholder';
   confidenceMetadataAvailable: true;
   disabledReason?: string;
+  providerBoundary?: TranscriptionProviderBoundaryDto;
+  credentialState?: TranscriptionCredentialStateDto;
+  runtimeStates?: TranscriptionRuntimeStateDto[];
+  retryPolicy?: TranscriptionRetryPolicyDto;
+  rawAudioRetentionPolicy?: 'one_week';
+  transcriptRetentionPolicy?: 'indefinite';
+  rawAudioPayloadStorageEnabled?: false;
+  diarizationState?: TranscriptionDiarizationStateDto;
 }
 
 export interface TranscriptionJobDto {

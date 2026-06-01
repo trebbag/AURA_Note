@@ -175,7 +175,8 @@ check(
     specGaps.includes('No active gaps as of post-`WO-064` primary UI runtime API conversion review') ||
     specGaps.includes('No active gaps as of post-`WO-065` Figma handoff inventory review') ||
     specGaps.includes('No active gaps as of post-`WO-066` standalone workflow completion / CR-2 review') ||
-    specGaps.includes('No active gaps as of post-`WO-067` ModeResolver and adapter runtime wiring review'),
+    specGaps.includes('No active gaps as of post-`WO-067` ModeResolver and adapter runtime wiring review') ||
+    specGaps.includes('No active gaps as of post-`WO-068` transcription runtime boundary review'),
   'SPEC_GAPS.md active gaps section'
 );
 

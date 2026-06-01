@@ -316,6 +316,14 @@ The API runtime CORS boundary now accepts the ClinicOS mode headers required by 
 
 Standalone remains the default runtime posture and AURA Note remains authoritative in every mode. `WO-067` is not live ClinicOS integration: no production credentials, event bus, delegated identity, raw ClinicOS payload, production PHI, autonomous clinical/coding/billing behavior, charge finalization, medical-necessity determination, claim submission, or production launch behavior is enabled.
 
+## WO-068 transcription runtime boundary backend status
+
+`WO-068` adds a server-side transcription provider adapter boundary without enabling live provider execution. `DeterministicMockTranscriptionProvider` processes metadata-only chunks into deterministic synthetic transcript segments and exposes provider status metadata for browser/device/permission/interruption/retry/no-audio/provider-unavailable/low-confidence/diarization-degraded/correction-history states. `DisabledLiveTranscriptionProvider` returns a failed job with `liveProviderCalled=false`, `configured=false`, and a fail-closed reason until vendor, BAA, credential, consent, and PHI-transport approvals exist.
+
+The documentation workspace API now includes a disabled-live-provider job endpoint for testable fail-closed evidence. Provider status records `providerBoundary='server_side_adapter'`, `rawAudioPayloadStorageEnabled=false`, a one-week raw-audio retention policy, indefinite transcript retention, and retry/dead-letter metadata. Transcript correction remains permission checked and PHI-rejected; support users remain denied transcript/correction access.
+
+No live transcription credential, raw PHI audio payload, live vendor request, production audio storage, live AI call, autonomous clinical/coding/billing behavior, charge finalization, medical-necessity determination, claim submission, or production launch behavior is enabled.
+
 ## WO-049 launch operations readiness
 
 `WO-049` adds synthetic/local backend operational readiness evidence. `pnpm launch:ops-readiness` combines the deterministic performance baseline, browser support-status drill assertions, and a static verifier for environment promotion, smoke checks, rollback rehearsal, incident response, access review, and support escalation evidence.

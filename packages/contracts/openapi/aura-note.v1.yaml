@@ -581,6 +581,22 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/TranscriptionJobResponse'
+  /documentation-workspace/appointments/{appointmentId}/transcription/jobs/disabled-live-provider:
+    post:
+      operationId: requestDisabledLiveTranscriptionProviderJob
+      description: Return fail-closed metadata for a disabled live transcription provider request without calling a vendor.
+      parameters:
+        - name: appointmentId
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        '201':
+          description: Disabled live transcription provider request denied with audit-safe metadata.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TranscriptionJobResponse'
   /documentation-workspace/appointments/{appointmentId}/transcript:
     get:
       operationId: getMockTranscript
@@ -2985,6 +3001,41 @@ components:
         speakerLabelMode: { type: string, enum: [placeholder] }
         confidenceMetadataAvailable: { type: boolean }
         disabledReason: { type: string }
+        providerBoundary: { type: string, enum: [server_side_adapter] }
+        credentialState: { type: string, enum: [not_configured] }
+        runtimeStates:
+          type: array
+          items:
+            type: string
+            enum:
+              - loading
+              - empty
+              - ready
+              - saving
+              - failed
+              - permission_denied
+              - read_only
+              - demo_fixture
+              - microphone_permission_denied
+              - device_unavailable
+              - upload_interrupted
+              - provider_unavailable
+              - low_confidence
+              - diarization_degraded
+              - correction_history
+              - recording_exception_approved
+        retryPolicy:
+          type: object
+          properties:
+            maxAttempts: { type: integer, enum: [3] }
+            retryableStates:
+              type: array
+              items: { type: string, enum: [upload_interrupted, provider_unavailable] }
+            deadLetterState: { type: string, enum: [dead_lettered_metadata_only] }
+        rawAudioRetentionPolicy: { type: string, enum: [one_week] }
+        transcriptRetentionPolicy: { type: string, enum: [indefinite] }
+        rawAudioPayloadStorageEnabled: { type: boolean, enum: [false] }
+        diarizationState: { type: string, enum: [placeholder_degraded] }
     TranscriptionProviderStatusResponse:
       type: object
       required: [data, meta]

@@ -2,7 +2,7 @@
   "project": "AURA Note v1",
   "mode": "production_build_in_progress",
   "current_checkpoint": "CR-3",
-  "next_work_order": "WO-068",
+  "next_work_order": "WO-069",
   "work_orders": {
     "WO-000": "done",
     "WO-001": "done",
@@ -72,8 +72,8 @@
     "WO-065": "done",
     "WO-066": "done",
     "WO-067": "done",
-    "WO-068": "todo",
-    "WO-069": "planned",
+    "WO-068": "done",
+    "WO-069": "todo",
     "WO-070": "planned",
     "WO-071": "planned",
     "WO-072": "planned",
@@ -81,7 +81,7 @@
     "WO-074": "planned",
     "WO-075": "planned"
   },
-  "last_updated_by": "Codex WO-067 ModeResolver and adapter runtime wiring",
-  "last_updated_at": "2026-06-01T15:49:16Z",
-  "notes": "WO-067 completed the first CR-3 integration/governance runtime tranche. AURA Note now has a shared API ModeResolver that normalizes standalone and ClinicOS mode headers into typed runtime mode, ClinicOS module boundaries, and adapter-boundary evidence for schedule source, patient context, VisitGraph, tasks, audit, AI governance, Charge Integrity, EHR, export, and identity seams. ClinicOS status/action APIs expose modeAdapterBoundaries with AURA Note permission authority, live delegation disabled, raw payload storage disabled, degraded/unavailable fail-closed behavior, role-denial coverage, and cross-tenant denial evidence. pnpm mode:adapter-readiness verifies the resolver, service/e2e tests, contracts, docs/status/run-log rails, and no-live/no-launch posture. WO-068 is the next active CR-3 work order for transcription runtime boundary and provider-ready interface. This is not a production launch claim: no live PHI, production credential, live OIDC, live SAML, live ClinicOS delegated identity, live ClinicOS event bus, raw ClinicOS payload storage, live EHR, live transcription vendor, live external AI, live Azure PHI storage, claim submission, autonomous clinical/coding/billing behavior, medical-necessity determination, charge finalization, or production launch behavior is authorized or introduced."
+  "last_updated_by": "Codex WO-068 transcription runtime boundary",
+  "last_updated_at": "2026-06-01T16:08:20Z",
+  "notes": "WO-068 completed the second CR-3 integration/governance runtime tranche. AURA Note now has server-side transcription provider adapters for deterministic mock processing and disabled live-provider fail-closed evidence. Provider status exposes runtime state coverage, retry/dead-letter metadata, one-week raw-audio retention posture, indefinite transcript retention posture, rawAudioPayloadStorageEnabled=false, and providerBoundary='server_side_adapter'. The browser workspace displays API-backed provider boundary and transcription runtime states, and tests cover mock transcription, disabled live-provider denial, correction history, support denial, raw-audio retention, and transcript purge count zero. pnpm transcription:runtime-boundary-readiness verifies code, contracts, docs/status/run-log rails, and no-live/no-launch posture. WO-069 is the next active CR-3 work order for athenahealth sandbox and vendor-neutral EHR runtime boundary. This is not a production launch claim: no live PHI, production credential, live OIDC, live SAML, live ClinicOS delegated identity, live ClinicOS event bus, raw ClinicOS payload storage, live EHR, live transcription vendor, raw PHI audio transport, production audio storage, live external AI, live Azure PHI storage, claim submission, autonomous clinical/coding/billing behavior, medical-necessity determination, charge finalization, or production launch behavior is authorized or introduced."
 }

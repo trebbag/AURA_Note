@@ -4,9 +4,9 @@ This file tracks missing, conflicting, unsafe, or deliberately deferred product 
 
 ## Active gaps
 
-No active gaps as of post-`WO-067` ModeResolver and adapter runtime wiring review on 2026-06-01.
+No active gaps as of post-`WO-068` transcription runtime boundary review on 2026-06-01.
 
-This supersedes the prior marker: No active gaps as of post-`WO-066` standalone workflow completion / CR-2 review. The repo remains not production-ready. The items below are deferred production decisions rather than active blockers for the current post-`WO-067` synthetic/local ModeResolver and adapter runtime wiring scope.
+This supersedes the prior marker: No active gaps as of post-`WO-067` ModeResolver and adapter runtime wiring review. The repo remains not production-ready. The items below are deferred production decisions rather than active blockers for the current post-`WO-068` synthetic/local transcription runtime boundary scope.
 
 ## Deferred production decisions
 
@@ -17,7 +17,7 @@ These items must stay visible and must be resolved before the related production
 - **Related future work:** `WO-061` through `WO-075`; any later founder-approved production launch work order
 - **Status:** deferred
 - **Decision needed before production launch:** founder/clinical/compliance/security/legal approval, beta scope, production environment, credential source, operational owner, incident response, access review, backup/restore, vendor contracts, PHI governance, live integrations, support ownership, launch go/no-go, and rollback authority.
-- **Safe current posture:** `WO-060` reopened implementation rails, `WO-061` added synthetic/local runtime persistence evidence, `WO-062` hardened the API request boundary with validation, request correlation, PHI-safe error envelopes, redacted logs, security headers, body-size guardrails, and local throttle scaffolding, `WO-063` added the explicit `AURA_NOTE_AUTH_MODE` identity runtime boundary with local demo/strict synthetic modes and production/preview/delegated fail-closed behavior, `WO-064` converted primary production-intended routes to typed API-backed synthetic/local runtime state, `WO-065` added read-only Figma handoff inventory docs plus `/aura-note/figma-handoff`, `WO-066` completed synthetic/local standalone workflow evidence without ClinicOS dependency, and `WO-067` added the shared ModeResolver and adapter-boundary evidence with live ClinicOS delegation and raw payload storage disabled. Production launch remains false and no live vendor, credential, PHI, claim, autonomous clinical/coding/billing, or production deployment behavior is enabled.
+- **Safe current posture:** `WO-060` reopened implementation rails, `WO-061` added synthetic/local runtime persistence evidence, `WO-062` hardened the API request boundary with validation, request correlation, PHI-safe error envelopes, redacted logs, security headers, body-size guardrails, and local throttle scaffolding, `WO-063` added the explicit `AURA_NOTE_AUTH_MODE` identity runtime boundary with local demo/strict synthetic modes and production/preview/delegated fail-closed behavior, `WO-064` converted primary production-intended routes to typed API-backed synthetic/local runtime state, `WO-065` added read-only Figma handoff inventory docs plus `/aura-note/figma-handoff`, `WO-066` completed synthetic/local standalone workflow evidence without ClinicOS dependency, `WO-067` added the shared ModeResolver and adapter-boundary evidence with live ClinicOS delegation and raw payload storage disabled, and `WO-068` added the server-side transcription runtime boundary with deterministic mock processing and disabled live-provider fail-closed evidence. Production launch remains false and no live vendor, credential, PHI, claim, autonomous clinical/coding/billing, or production deployment behavior is enabled.
 
 ### Deferred Decision — Production SIEM/APM vendor and operational monitoring posture
 
@@ -52,7 +52,7 @@ These items must stay visible and must be resolved before the related production
 - **Related future work:** `WO-056`; future approved transcription implementation work order before live use
 - **Status:** deferred
 - **Decision needed before live use:** transcription vendor, BAA/privacy review, audio transport constraints, diarization support, confidence metadata, correction retention, and failure-handling policy.
-- **Safe current posture:** browser permission UX, metadata-only recording chunks, deterministic mock transcription, and correction history only. `WO-056` captures the live-readiness intake and future acceptance criteria. No live transcription credential, PHI-bearing audio transport, live provider call, production raw-audio storage, PHI-bearing support transcript access, or launch behavior is enabled.
+- **Safe current posture:** browser permission UX, metadata-only recording chunks, deterministic mock transcription, correction history, server-side provider adapter metadata, retry/dead-letter posture, disabled live-provider fail-closed evidence, one-week raw-audio retention metadata, and indefinite transcript retention only. `WO-056` captures the live-readiness intake and future acceptance criteria, and `WO-068` keeps runtime provider behavior mock-only or disabled. No live transcription credential, PHI-bearing audio transport, live provider call, production raw-audio storage, PHI-bearing support transcript access, or launch behavior is enabled.
 
 ### Deferred Decision — External AI provider and PHI governance
 

@@ -146,7 +146,7 @@ export function WorkspaceClient({ appointmentId }: WorkspaceClientProps) {
         appointmentId,
         {
           sequence,
-          durationMs: 1_000,
+          durationMs: 15_000,
           contentLengthBytes: 0,
           checksum: `metadata-only-workspace-${sequence}`
         },
@@ -158,6 +158,12 @@ export function WorkspaceClient({ appointmentId }: WorkspaceClientProps) {
 
   function processMockTranscription() {
     void runAction('Deterministic mock transcription job processed through API.', () => client.processMockTranscriptionJob(appointmentId));
+  }
+
+  function requestDisabledLiveProvider() {
+    void runAction('Disabled live transcription provider failed closed through API metadata.', () =>
+      client.requestDisabledLiveTranscriptionJob(appointmentId)
+    );
   }
 
   function correctFirstTranscriptSegment() {
@@ -228,6 +234,7 @@ export function WorkspaceClient({ appointmentId }: WorkspaceClientProps) {
   const panelRows = useMemo(() => workspace?.panels ?? [], [workspace]);
   const transcriptSegments = transcript?.segments ?? workspace?.transcript?.segments ?? [];
   const correctionCount = transcript?.corrections?.length ?? 0;
+  const providerRuntimeStates = providerStatus?.runtimeStates ?? [];
 
   return (
     <main className="workspace-shell">
@@ -307,6 +314,9 @@ export function WorkspaceClient({ appointmentId }: WorkspaceClientProps) {
         <button type="button" disabled={recordingChunks === 0} onClick={processMockTranscription}>
           Process Mock Transcription
         </button>
+        <button type="button" disabled={timerState === 'not_started'} onClick={requestDisabledLiveProvider}>
+          Verify Live Provider Disabled
+        </button>
         <button type="button" disabled={transcriptSegments.length === 0} onClick={correctFirstTranscriptSegment}>
           Correct Transcript
         </button>
@@ -341,6 +351,14 @@ export function WorkspaceClient({ appointmentId }: WorkspaceClientProps) {
             <dd>{providerStatus?.mode ?? 'mock_only'}</dd>
           </div>
           <div>
+            <dt>Provider boundary</dt>
+            <dd>{providerStatus?.providerBoundary ?? 'server_side_adapter'}</dd>
+          </div>
+          <div>
+            <dt>Retry policy</dt>
+            <dd>{providerStatus?.retryPolicy ? `${providerStatus.retryPolicy.maxAttempts} attempts / ${providerStatus.retryPolicy.deadLetterState}` : '3 attempts / dead_lettered_metadata_only'}</dd>
+          </div>
+          <div>
             <dt>Raw audio retention</dt>
             <dd>{workspace?.rawAudioRetention ? `${workspace.rawAudioRetention.retentionClass} until ${workspace.rawAudioRetention.purgeAfter}` : 'one_week'}</dd>
           </div>
@@ -349,6 +367,11 @@ export function WorkspaceClient({ appointmentId }: WorkspaceClientProps) {
             <dd>{transcript?.retentionPolicy ?? 'indefinite'}</dd>
           </div>
         </dl>
+        <section className="state-grid" aria-label="Transcription runtime states">
+          {providerRuntimeStates.map((state) => (
+            <span key={state}>{state}</span>
+          ))}
+        </section>
       </section>
 
       <section className="review-board" aria-label="Suggestions and review panels" aria-live="polite">

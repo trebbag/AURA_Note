@@ -354,3 +354,15 @@ The identity boundary does not emit durable tenant-owned identity events yet. Du
 `WO-067` extends the existing ClinicOS status, mapping, and publication contracts with `AuraModeAdapterBoundary` / `modeAdapterBoundaries` response metadata. The boundary metadata covers schedule source, patient context, VisitGraph, tasks, audit, AI governance, Charge Integrity, EHR, export, and identity seams and records `permissionBoundary='aura_note_authoritative'`, `liveDelegationEnabled=false`, `rawPayloadStorageEnabled=false`, and `humanReviewRequired=true`.
 
 The existing event family remains the source of runtime evidence: `clinicos.mode_resolved.v1`, `clinicos.mapping_recorded.v1`, `clinicos.mapping_stale_detected.v1`, `clinicos.event_published.v1`, `clinicos.event_publication_failed.v1`, `clinicos.permission_denied.v1`, and `clinicos.unavailable.v1`. `WO-067` payloads add audit-safe fields such as `modeAdapterBoundaryCount`, `liveDelegationEnabled=false`, and `rawPayloadStorageEnabled=false`. They must not include raw ClinicOS payloads, event-bus messages, transcripts, final-note text, billing details, coaching output, identity tokens, credentials, production URLs, charge finalization, medical-necessity determinations, or claim submission evidence.
+
+## WO-068 transcription runtime boundary contracts
+
+`WO-068` extends the transcription API/event surface while keeping live provider calls disabled:
+
+- `GET /documentation-workspace/appointments/{appointmentId}/transcription/provider-status` returns server-side adapter status, retry/dead-letter metadata, raw-audio one-week retention posture, indefinite transcript retention posture, and documented runtime states.
+- `POST /documentation-workspace/appointments/{appointmentId}/transcription/jobs/mock` processes deterministic mock transcription from metadata-only chunks.
+- `POST /documentation-workspace/appointments/{appointmentId}/transcription/jobs/disabled-live-provider` records a fail-closed live-provider request with `liveProviderCalled=false`.
+
+New event stubs are `recording.chunk_authorized.v1`, `recording.chunk_denied.v1`, `transcription.job_requested.v1`, `transcription.job_denied.v1`, `transcription.provider_disabled.v1`, `transcription.provider_unavailable.v1`, `transcription.segment_received.v1`, and `transcription.correction_recorded.v1`. Existing runtime events remain `microphone.permission_recorded.v1`, `recording.chunk_received.v1`, `raw_audio.retention_scheduled.v1`, `transcription.provider_status_checked.v1`, `transcription.job_queued.v1`, `transcription.job_processed.v1`, `transcription.job_failed.v1`, `transcript.segment_appended.v1`, and `transcript.segment_corrected.v1`.
+
+Payloads are audit-safe metadata only. They must not include raw audio, transcript text except through existing transcript DTO access policy, credentials, live provider payloads, production URLs, autonomous diagnosis/coding/billing evidence, charge finalization, medical-necessity determinations, or claim submission evidence.

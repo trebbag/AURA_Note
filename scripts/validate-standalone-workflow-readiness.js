@@ -65,7 +65,8 @@ assertIncludes('work_orders/README.md', ['`WO-066` is complete']);
 const workOrderIndex = read('work_orders/README.md');
 if (
   !workOrderIndex.includes('`WO-067` is the next active CR-3 work order') &&
-  !workOrderIndex.includes('`WO-068` is the next active CR-3 work order')
+  !workOrderIndex.includes('`WO-068` is the next active CR-3 work order') &&
+  !workOrderIndex.includes('`WO-069` is the next active CR-3 work order')
 ) {
   throw new Error('work_orders/README.md must retain WO-067 or later next-work-order evidence after WO-066');
 }
@@ -73,7 +74,8 @@ assertIncludes('RUN_LOG.md', ['WO-066 standalone workflow completion', 'standalo
 const specGaps = read('SPEC_GAPS.md');
 if (
   !specGaps.includes('No active gaps as of post-`WO-066` standalone workflow completion / CR-2 review') &&
-  !specGaps.includes('No active gaps as of post-`WO-067` ModeResolver and adapter runtime wiring review')
+  !specGaps.includes('No active gaps as of post-`WO-067` ModeResolver and adapter runtime wiring review') &&
+  !specGaps.includes('No active gaps as of post-`WO-068` transcription runtime boundary review')
 ) {
   throw new Error('SPEC_GAPS.md must retain WO-066 or later no-active-gap evidence');
 }

@@ -47,6 +47,7 @@ jobs:
       - run: pnpm standalone:patient-schedule-readiness
       - run: pnpm standalone:operations-readiness
       - run: pnpm audio:transcription-readiness
+      - run: pnpm transcription:runtime-boundary-readiness
       - run: pnpm transcription:live-review-readiness
       - run: pnpm identity:production-readiness
       - run: pnpm identity:live-review-readiness

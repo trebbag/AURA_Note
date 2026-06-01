@@ -36,6 +36,7 @@
     "standalone:operations-readiness": "node scripts/validate-standalone-operations-readiness.js",
     "standalone:workflow-readiness": "pnpm --filter @aura-note/web test:e2e && node scripts/validate-standalone-workflow-readiness.js",
     "audio:transcription-readiness": "node scripts/validate-audio-transcription-readiness.js",
+    "transcription:runtime-boundary-readiness": "pnpm --filter @aura-note/api test:transcription-runtime && pnpm --filter @aura-note/worker test && node scripts/validate-transcription-runtime-boundary-readiness.js",
     "transcription:live-review-readiness": "node scripts/validate-transcription-live-review-readiness.js",
     "identity:production-readiness": "node scripts/validate-production-identity-readiness.js",
     "identity:live-review-readiness": "node scripts/validate-identity-live-review-readiness.js",

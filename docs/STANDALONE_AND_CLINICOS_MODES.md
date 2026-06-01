@@ -179,6 +179,14 @@ ClinicOS-integrated mode is still mock/degraded metadata only. The ClinicOS stat
 
 `WO-067` does not enable live ClinicOS credentials, live event bus delivery, raw ClinicOS payload storage, delegated identity, live EHR/writeback routing, live AI, live transcription, production PHI, charge finalization, medical-necessity determination, claim submission, or production launch behavior.
 
+## WO-068 transcription runtime boundary
+
+In standalone mode, transcription now runs through a server-side provider adapter boundary. The deterministic mock provider processes metadata-only recording chunks, returns confidence/source/speaker-label placeholder metadata, records retry/dead-letter posture, preserves raw-audio one-week retention metadata, and keeps transcript retention indefinite. The disabled live provider path fails closed with metadata only and `liveProviderCallsEnabled=false`.
+
+In ClinicOS-integrated mode, ClinicOS may supply visit context metadata through adapter boundaries, but ClinicOS cannot bypass AURA Note recording, transcript, correction, retention, role, or human-review permissions. Missing or degraded ClinicOS delegation does not block standalone transcription workflow and does not enable live provider calls.
+
+`WO-068` does not enable live transcription credentials, raw PHI audio transport, live vendor calls, production audio storage, production PHI, charge finalization, medical-necessity determination, claim submission, or production launch behavior.
+
 ## WO-049 launch operations readiness mode behavior
 
 In standalone mode, `WO-049` launch operations readiness proves AURA Note can rehearse build, smoke, rollback, disabled-vendor, performance, incident, access-review, and support-escalation controls without ClinicOS.

@@ -15,7 +15,7 @@ This register keeps the post-P11 implementation gap visible. It is not a defect 
 | Figma product map | `WO-065` added the Figma-ready screen, component, state, role, workflow, data/API, copy, and interaction inventory. Final Figma visual design remains deferred. | `WO-065` complete |
 | Standalone daily-use workflow | `WO-066` proved a coherent synthetic/local standalone workflow that does not require ClinicOS. | `WO-066` complete |
 | Runtime mode resolution | `WO-067` added a shared API `ModeResolver` and explicit adapter-boundary evidence for standalone and ClinicOS contexts. Live ClinicOS contracts and event-bus semantics remain deferred. | `WO-067` complete; live ClinicOS deferred |
-| Transcription provider boundary | Browser/audio/transcription path needs provider-ready runtime boundaries while live calls remain disabled. | `WO-068` |
+| Transcription provider boundary | `WO-068` added server-side transcription provider adapters, deterministic mock processing, disabled live-provider fail-closed evidence, runtime state metadata, retry/dead-letter posture, and retention evidence. Live provider selection, credentials, BAA, consent/legal policy, and production audio storage remain deferred. | `WO-068` complete; live provider deferred |
 | EHR sandbox runtime boundary | Athenahealth-first and vendor-neutral EHR runtime paths need hardened sandbox, queue, approval, retry, and reconciliation evidence. | `WO-069` |
 | AI governance runtime evidence | Prompt/model/eval/source/human-review governance needs expansion without live external AI. | `WO-070` |
 | Security/privacy runtime review | Threat model, privacy checklist, minimum necessary, support scope, PHI redaction, and route denial evidence need commercial packaging. | `WO-071` |

@@ -227,10 +227,16 @@ export function createAuraNoteApiClient(options: AuraNoteApiClientOptions = {}) 
       post<RecordingChunkResponseDto>(`/documentation-workspace/appointments/${appointmentId}/recording/chunks`, body, idempotencyKey),
     getRecordingRetention: (appointmentId: string) =>
       request<RecordingRetentionResponseDto>(`/documentation-workspace/appointments/${appointmentId}/recording/retention`),
-    getTranscriptionProviderStatus: (appointmentId: string) =>
-      request<TranscriptionProviderStatusDto>(`/documentation-workspace/appointments/${appointmentId}/transcription/provider-status`),
+    getTranscriptionProviderStatus: async (appointmentId: string) => {
+      const response = await request<{ providerStatus: TranscriptionProviderStatusDto }>(
+        `/documentation-workspace/appointments/${appointmentId}/transcription/provider-status`
+      );
+      return { ...response, data: response.data.providerStatus };
+    },
     processMockTranscriptionJob: (appointmentId: string) =>
       post<TranscriptionJobResponseDto>(`/documentation-workspace/appointments/${appointmentId}/transcription/jobs/mock`),
+    requestDisabledLiveTranscriptionJob: (appointmentId: string) =>
+      post<TranscriptionJobResponseDto>(`/documentation-workspace/appointments/${appointmentId}/transcription/jobs/disabled-live-provider`),
     getTranscript: (appointmentId: string) =>
       request<TranscriptViewDto>(`/documentation-workspace/appointments/${appointmentId}/transcript`),
     appendTranscriptSegment: (appointmentId: string, body: AppendTranscriptSegmentRequestDto, idempotencyKey?: string) =>
