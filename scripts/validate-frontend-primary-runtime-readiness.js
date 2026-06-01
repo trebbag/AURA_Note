@@ -91,8 +91,11 @@ assertIncludes('apps/web/e2e/aura-note-routes.spec.ts', [
   'unsafe-output-rejected'
 ]);
 
+const frontendRuntimeInventory = read('docs/FRONTEND_RUNTIME_INTEGRATION.md');
+if (!frontendRuntimeInventory.includes('Status as of `WO-064`') && !frontendRuntimeInventory.includes('Status as of `WO-065`')) {
+  throw new Error('docs/FRONTEND_RUNTIME_INTEGRATION.md must retain WO-064 or later frontend runtime status evidence');
+}
 assertIncludes('docs/FRONTEND_RUNTIME_INTEGRATION.md', [
-  'Status as of `WO-064`',
   'API-backed primary runtime',
   'Synthetic local React state is limited to transient control state',
   'frontend:primary-runtime-readiness'
@@ -101,7 +104,11 @@ assertIncludes('docs/TEST_PLAN.md', ['WO-064', 'frontend:primary-runtime-readine
 assertIncludes('docs/UX_BUILD_SPEC.md', ['WO-064', 'typed API-backed route state']);
 assertIncludes('docs/BACKEND_BUILD_SPEC.md', ['WO-064', 'typed API clients']);
 assertIncludes('docs/PRODUCTION_BUILD_PLAN.md', ['Implementation status as of `WO-064`']);
-assertIncludes('work_orders/README.md', ['`WO-064` is complete', '`WO-065` is the next active CR-2 work order']);
+assertIncludes('work_orders/README.md', ['`WO-064` is complete']);
+const workOrderIndex = read('work_orders/README.md');
+if (!workOrderIndex.includes('`WO-065` is the next active CR-2 work order') && !workOrderIndex.includes('`WO-066` is the next active CR-2 work order')) {
+  throw new Error('work_orders/README.md must retain CR-2 next-work-order evidence after WO-064');
+}
 assertIncludes('RUN_LOG.md', ['WO-064 primary UI runtime API conversion', 'frontend:primary-runtime-readiness']);
 assertIncludes('SPEC_GAPS.md', ['No active gaps as of post-`WO-064` primary UI runtime API conversion review']);
 
@@ -109,11 +116,12 @@ const status = JSON.parse(read('repo_status.json'));
 if (status.work_orders?.['WO-064'] !== 'done') {
   throw new Error('repo_status.json must mark WO-064 done before frontend primary runtime readiness passes');
 }
-if (status.next_work_order !== 'WO-065') {
-  throw new Error(`repo_status.json must advance next_work_order to WO-065; found ${status.next_work_order}`);
+const nextWorkOrderNumber = status.next_work_order ? Number(String(status.next_work_order).slice(3)) : null;
+if (nextWorkOrderNumber !== null && nextWorkOrderNumber < 65) {
+  throw new Error(`repo_status.json must keep WO-065 or later as next_work_order after WO-064; found ${status.next_work_order}`);
 }
-if (status.work_orders?.['WO-065'] !== 'todo') {
-  throw new Error('repo_status.json must mark WO-065 todo after WO-064 is complete');
+if (!['todo', 'in_progress', 'done'].includes(status.work_orders?.['WO-065'])) {
+  throw new Error('repo_status.json must keep WO-065 represented as todo, in_progress, or done after WO-064 is complete');
 }
 if (!exists('work_orders/WO-065_figma_ready_basic_ui_scaffold_screen_inventory.md')) {
   throw new Error('WO-065 active work-order file must exist before advancing next_work_order');

@@ -1,5 +1,7 @@
 # Figma Handoff Plan
 
+Status as of `WO-065`: the basic Figma handoff inventory is implemented as read-only docs plus `/aura-note/figma-handoff`. This is a design-handoff scaffold, not final Figma fidelity, brand approval, production launch approval, live PHI processing, live vendor enablement, autonomous finalization, or claim submission.
+
 ## Purpose
 
 Figma design should happen after the product map is complete enough to design the real application, not while core workflows are still implicit. `WO-065` creates the detailed handoff inventory and basic UI scaffold; this file defines the path to that handoff.

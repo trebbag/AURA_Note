@@ -840,6 +840,8 @@ This gate does not authorize live EHR writeback, live AI, live transcription, pr
 - **Stop conditions:** a screen/action requires unspecified product policy or high-risk workflow behavior.
 - **Risks and deferred decisions:** final visual design, exact component library, and brand polish remain deferred.
 
+**Implementation status as of `WO-065`:** complete as synthetic/local CR-2 Figma handoff evidence. The repo now has the eight required Figma handoff inventory docs, a read-only `/aura-note/figma-handoff` route, Playwright coverage for the handoff route, and `pnpm figma:handoff-readiness` to verify screen/state/role/workflow/data/API/copy/checklist coverage. The handoff route is metadata-only and does not add clinical, billing, AI, EHR, ClinicOS, payer, claim, live-vendor, PHI-bearing, or production launch behavior.
+
 ## WO-066 — Standalone Workflow Completion
 
 - **Objective:** Make standalone AURA Note usable end to end without ClinicOS.

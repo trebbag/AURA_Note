@@ -513,6 +513,16 @@ This gate proves synthetic/local frontend runtime integration evidence only. Exi
 
 This gate proves synthetic/local primary route runtime evidence only. It does not enable live EHR, ClinicOS, AI, transcription, storage, payer, claim, production identity, production PHI, or production launch behavior.
 
+## WO-065 Figma handoff readiness
+
+`WO-065` adds `pnpm figma:handoff-readiness`:
+
+- Playwright opens `/aura-note/figma-handoff` and verifies the read-only handoff route exposes the screen inventory, route states, role views, workflow map, ClinicOS adapter-boundary copy, and AI suggestions remain draft-only safety copy.
+- `scripts/validate-figma-handoff-readiness.js` verifies the eight Figma handoff docs, required screen surfaces, required states, role views, typed API and documented mock mappings, content copy constraints, CI wiring, status/run-log evidence, and no-launch safety posture.
+- The gate preserves `pnpm frontend:primary-runtime-readiness` and `pnpm frontend:runtime-integration-readiness` so design handoff inventory does not replace backend-backed route evidence.
+
+This gate is design-handoff evidence only. It does not enable live PHI, live EHR, live ClinicOS, live AI, live transcription, live storage, claim submission, autonomous clinical/coding/billing behavior, medical-necessity determination, charge finalization, production design approval, or production launch.
+
 ## WO-049 launch operations readiness
 
 `WO-049` adds synthetic/local deployment, performance, reliability, and operational drill evidence:

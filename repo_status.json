@@ -2,7 +2,7 @@
   "project": "AURA Note v1",
   "mode": "production_build_in_progress",
   "current_checkpoint": "CR-2",
-  "next_work_order": "WO-065",
+  "next_work_order": "WO-066",
   "work_orders": {
     "WO-000": "done",
     "WO-001": "done",
@@ -69,8 +69,8 @@
     "WO-062": "done",
     "WO-063": "done",
     "WO-064": "done",
-    "WO-065": "todo",
-    "WO-066": "planned",
+    "WO-065": "done",
+    "WO-066": "todo",
     "WO-067": "planned",
     "WO-068": "planned",
     "WO-069": "planned",
@@ -81,7 +81,7 @@
     "WO-074": "planned",
     "WO-075": "planned"
   },
-  "last_updated_by": "Codex WO-064 primary UI runtime API conversion",
-  "last_updated_at": "2026-06-01T14:34:38Z",
-  "notes": "WO-064 completed the first CR-2 product UX runtime tranche. Primary production-intended AURA Note routes now use typed API clients and API-backed runtime state, with local React state limited to transient controls, form text, tabs, and documented disabled/demo adapter presentation. pnpm frontend:primary-runtime-readiness verifies the route conversion, typed client expansion, Playwright backend-backed workflow evidence, route inventory, docs/status/run-log evidence, and no-launch posture. WO-065 is the next active CR-2 work order for Figma-ready basic UI scaffold and screen inventory. This is not a production launch claim: no live PHI, production credential, live OIDC, live SAML, live ClinicOS delegated identity, live WAF/CDN, live SIEM/APM, live EHR, live transcription vendor, live external AI, live Azure PHI storage, claim submission, autonomous clinical/coding/billing behavior, medical-necessity determination, charge finalization, or production launch behavior is authorized or introduced."
+  "last_updated_by": "Codex WO-065 Figma handoff inventory",
+  "last_updated_at": "2026-06-01T15:12:00Z",
+  "notes": "WO-065 completed the second CR-2 product UX runtime tranche. AURA Note now has the Figma-ready screen, component, state, workflow, role/permission, data/API, copy, and handoff checklist docs plus a read-only /aura-note/figma-handoff route and pnpm figma:handoff-readiness evidence. WO-066 is the next active CR-2 work order for standalone workflow completion. This is not a production launch claim: no live PHI, production credential, live OIDC, live SAML, live ClinicOS delegated identity, live WAF/CDN, live SIEM/APM, live EHR, live transcription vendor, live external AI, live Azure PHI storage, claim submission, autonomous clinical/coding/billing behavior, medical-necessity determination, charge finalization, or production launch behavior is authorized or introduced."
 }

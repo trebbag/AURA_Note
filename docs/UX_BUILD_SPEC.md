@@ -424,6 +424,8 @@ The route is AI governance-review evidence, not a live AI operations console. It
 
 `WO-064` converts the primary production-intended AURA Note routes to typed API-backed route state. Local React state on those routes is now limited to transient control state, form text, selected tabs, and documented disabled/demo adapter presentation; it is not the authoritative product data source. Each affected route must keep loading, empty, ready, saving, failed, permission-denied, and read-only states visible through API responses or documented mocks, and high-risk disabled live-vendor actions must remain blocked without implying production readiness.
 
+`WO-065` adds the Figma handoff inventory route at `/aura-note/figma-handoff` and the accompanying screen, component, state, workflow, role/permission, data/API, copy, and checklist documents. The route is a read-only, metadata-only design scaffold that inventories standalone home, schedule, patients, chart context, draft notes, workspace panels, audio/transcription, Suggestions, Visit Selections, Compliance Review, History Gap Review, finalization, finalized notes, exports, writeback, task inbox, MA worklist, billing review, settings/admin/integrations, templates, dot phrases, estimates, rules catalog, EHR, ClinicOS, AI governance, coaching, support status, and commercial readiness surfaces. It is not final Figma fidelity and does not add new product behavior.
+
 ## Required accessibility and UX states
 
 Every screen must have empty, loading, ready, saving, blocked, failed, permission-denied, and read-only states.

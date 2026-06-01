@@ -57,10 +57,40 @@ button:disabled {
 .wizard-shell,
 .coaching-shell,
 .support-shell,
-.operations-shell {
+.operations-shell,
+.page-shell {
   width: min(1180px, calc(100vw - 32px));
   margin: 0 auto;
   padding: 24px 0 40px;
+}
+
+.section-nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-bottom: 18px;
+}
+
+.section-nav a {
+  display: inline-flex;
+  min-height: 38px;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--aura-color-action-primary);
+  border-radius: var(--aura-radius-control);
+  padding: 8px 12px;
+  background: #fff;
+  color: var(--aura-color-action-primary);
+  text-decoration: none;
+}
+
+.hero-band {
+  display: grid;
+  gap: 10px;
+  margin-bottom: 20px;
+  border: 1px solid var(--aura-color-border);
+  padding: 18px;
+  background: var(--aura-color-surface);
 }
 
 .page-header,
@@ -615,6 +645,37 @@ textarea {
   color: var(--aura-color-text-muted);
 }
 
+.figma-screen-grid,
+.figma-detail-list,
+.figma-workflow-list {
+  display: grid;
+  gap: 14px;
+}
+
+.figma-screen-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  align-items: start;
+  margin-top: 20px;
+}
+
+.figma-detail-list div {
+  display: grid;
+  gap: 4px;
+  border-top: 1px solid var(--aura-color-border);
+  padding-top: 10px;
+}
+
+.figma-detail-list dd,
+.figma-workflow-list li {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.figma-workflow-list {
+  margin: 0;
+  padding-left: 22px;
+}
+
 .analytics-list div {
   flex-wrap: wrap;
 }
@@ -727,6 +788,7 @@ textarea {
   .artifact-status-grid,
   .coaching-grid,
   .support-grid,
+  .figma-screen-grid,
   .coaching-signal {
     grid-template-columns: 1fr;
   }

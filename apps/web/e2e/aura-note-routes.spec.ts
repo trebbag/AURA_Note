@@ -84,6 +84,11 @@ const routeExpectations = [
     path: '/aura-note/runtime-integration',
     heading: 'Frontend Runtime Integration Evidence',
     nav: true
+  },
+  {
+    path: '/aura-note/figma-handoff',
+    heading: 'Figma Handoff Inventory',
+    nav: true
   }
 ];
 
@@ -413,6 +418,20 @@ test.describe('AURA Note route accessibility smoke suite', () => {
     await page.getByRole('button', { name: 'Reject Unsafe Output' }).click();
     await expect(page.getByRole('article', { name: 'Output validation' })).toContainText('unsafe-output-rejected');
     await expect(page.getByRole('region', { name: 'AI governance safety summary' })).toContainText('does not autonomously diagnose');
+  });
+
+  test('figma handoff route inventories screens, states, roles, and safe copy', async ({ page }) => {
+    await page.goto('/aura-note/figma-handoff');
+
+    await expect(page.getByRole('heading', { level: 1, name: 'Figma Handoff Inventory' })).toBeVisible();
+    await expect(page.getByRole('region', { name: 'Screen inventory' })).toContainText('Schedule Builder, patients, and chart context');
+    await expect(page.getByRole('region', { name: 'Screen inventory' })).toContainText('Documentation Workspace panels');
+    await expect(page.getByRole('region', { name: 'Screen inventory' })).toContainText('Finalization Wizard steps 1-6');
+    await expect(page.getByRole('region', { name: 'Figma handoff status' })).toContainText('permission-denied');
+    await expect(page.getByRole('region', { name: 'Figma handoff status' })).toContainText('billing staff');
+    await expect(page.getByRole('region', { name: 'Workflow map' })).toContainText('appointment creation to one note shell');
+    await expect(page.getByRole('region', { name: 'Safety and mode boundaries' })).toContainText('ClinicOS-integrated mode stays adapter-bound');
+    await expect(page.getByRole('region', { name: 'Safety and mode boundaries' })).toContainText('AI suggestions remain draft-only');
   });
 
   test('frontend runtime integration gate exercises backend-backed appointment through finalization export and reload evidence', async ({ page }) => {
