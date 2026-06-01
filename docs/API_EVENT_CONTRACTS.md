@@ -366,3 +366,17 @@ The existing event family remains the source of runtime evidence: `clinicos.mode
 New event stubs are `recording.chunk_authorized.v1`, `recording.chunk_denied.v1`, `transcription.job_requested.v1`, `transcription.job_denied.v1`, `transcription.provider_disabled.v1`, `transcription.provider_unavailable.v1`, `transcription.segment_received.v1`, and `transcription.correction_recorded.v1`. Existing runtime events remain `microphone.permission_recorded.v1`, `recording.chunk_received.v1`, `raw_audio.retention_scheduled.v1`, `transcription.provider_status_checked.v1`, `transcription.job_queued.v1`, `transcription.job_processed.v1`, `transcription.job_failed.v1`, `transcript.segment_appended.v1`, and `transcript.segment_corrected.v1`.
 
 Payloads are audit-safe metadata only. They must not include raw audio, transcript text except through existing transcript DTO access policy, credentials, live provider payloads, production URLs, autonomous diagnosis/coding/billing evidence, charge finalization, medical-necessity determinations, or claim submission evidence.
+
+## WO-069 EHR sandbox runtime boundary contracts
+
+`WO-069` extends the EHR runtime API/event surface while keeping live EHR calls and live writeback disabled:
+
+- `GET /integrations/ehr/runtime-boundary` returns vendor-neutral adapter metadata, athenahealth-first sandbox posture, credential-disabled evidence, runtime states, supported writeback targets, retry/dead-letter policy, and no-live/no-raw-payload flags.
+- `GET /integrations/ehr/patients/search` returns synthetic sandbox patient lookup metadata and does not expose raw vendor payloads or production identifiers.
+- `GET /integrations/ehr/appointments/import` returns synthetic appointment-import metadata with `localAppointmentCreated=false` until a later work order authorizes durable import behavior.
+- `GET /integrations/ehr/encounters/{externalEncounterId}` returns synthetic encounter/chart-context slice metadata only.
+- `POST /integrations/ehr/writeback-queue/{writebackJobId}/actions` now supports `deny`, `prepare_payload`, `record_attempt`, and `acknowledge` in addition to the existing approval/retry/dead-letter/reconciliation actions.
+
+New event types are `ehr.config_reviewed.v1`, `ehr.credential_disabled.v1`, `ehr.patient_lookup_performed.v1`, `ehr.appointment_imported.v1`, `ehr.encounter_context_loaded.v1`, `ehr.writeback_payload_prepared.v1`, `ehr.writeback_denied.v1`, `ehr.writeback_attempt_recorded.v1`, and `ehr.writeback_acknowledged.v1`.
+
+Payloads are audit-safe metadata only. They must not include raw EHR payloads, production patient identifiers, final-note text, transcript text, billing details, credentials, production URLs, autonomous finalization evidence, charge finalization, medical-necessity determinations, or claim submission evidence.

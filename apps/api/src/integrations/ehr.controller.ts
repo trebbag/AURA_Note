@@ -11,6 +11,45 @@ export class EhrController {
     return this.ehrService.getStatus(headers);
   }
 
+  @Get('runtime-boundary')
+  getRuntimeBoundary(@Headers() headers: Record<string, string | string[] | undefined>) {
+    return this.ehrService.getRuntimeBoundary(headers);
+  }
+
+  @Get('patients/search')
+  searchPatients(
+    @Query('safePatientId') safePatientId: string | undefined,
+    @Query('externalPatientRef') externalPatientRef: string | undefined,
+    @Query('searchToken') searchToken: string | undefined,
+    @Headers() headers: Record<string, string | string[] | undefined>
+  ) {
+    return this.ehrService.searchPatients(
+      {
+        ...(safePatientId ? { safePatientId } : {}),
+        ...(externalPatientRef ? { externalPatientRef } : {}),
+        ...(searchToken ? { searchToken } : {})
+      },
+      headers
+    );
+  }
+
+  @Get('appointments/import')
+  importAppointments(
+    @Query('startIso') startIso: string | undefined,
+    @Query('endIso') endIso: string | undefined,
+    @Headers() headers: Record<string, string | string[] | undefined>
+  ) {
+    return this.ehrService.importAppointments(startIso, endIso, headers);
+  }
+
+  @Get('encounters/:externalEncounterId')
+  getEncounterContext(
+    @Param('externalEncounterId') externalEncounterId: string,
+    @Headers() headers: Record<string, string | string[] | undefined>
+  ) {
+    return this.ehrService.getEncounterContext(externalEncounterId, headers);
+  }
+
   @Get('chart-context/:safePatientId/:externalEncounterId')
   getChartContext(
     @Param('safePatientId') safePatientId: string,

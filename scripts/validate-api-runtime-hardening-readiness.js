@@ -96,7 +96,8 @@ check(
   'spec-gaps.wo062-or-later',
   'SPEC_GAPS records no active WO-062 or later runtime-boundary gaps',
   gaps.includes('No active gaps as of post-`WO-062` API runtime hardening and request-boundary review') ||
-    gaps.includes('No active gaps as of post-`WO-063` identity runtime boundary review'),
+    gaps.includes('No active gaps as of post-`WO-063` identity runtime boundary review') ||
+    gaps.includes('No active gaps as of post-`WO-069` athenahealth sandbox and vendor-neutral EHR runtime boundary review'),
   'SPEC_GAPS.md'
 );
 

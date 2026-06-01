@@ -932,6 +932,8 @@ This gate does not authorize live EHR writeback, live AI, live transcription, pr
 - **Stop conditions:** production credentialing, live vendor calls, or writeback payload policy is required.
 - **Risks and deferred decisions:** production credentialing, vendor acknowledgements, and legal/privacy review remain deferred.
 
+**Implementation status as of `WO-069`:** complete as synthetic/local CR-3 EHR sandbox runtime boundary evidence. The EHR adapter package now exposes a vendor-neutral runtime boundary with athenahealth-first sandbox metadata, disabled credential state, supported runtime states, `liveApiCallsEnabled=false`, `liveWritebackEnabled=false`, and `rawPayloadStorageEnabled=false`. The API exposes runtime boundary, sandbox patient lookup, appointment import, encounter context, and expanded writeback lifecycle metadata for denial, payload preparation, delivery attempt, acknowledgement, retry/dead-letter, and reconciliation. The browser route `/aura-note/integrations/ehr` displays sandbox context and human-gated writeback states, and `pnpm ehr:sandbox-runtime-readiness` verifies code, contracts, docs/status/run-log evidence, and no-live/no-launch posture. CR-3 remains in progress; this does not enable production EHR credentials, raw EHR payload storage, live EHR API calls, live writeback delivery, autonomous finalization, charge finalization, medical-necessity determination, claim submission, or production launch.
+
 ## WO-070 — AI Governance Runtime Boundary And Evaluation Harness Expansion
 
 - **Objective:** Prepare AI governance for future private/BAA model use without enabling live external AI.

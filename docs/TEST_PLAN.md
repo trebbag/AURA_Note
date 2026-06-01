@@ -557,6 +557,18 @@ This gate proves synthetic/local CR-3 mode adapter readiness only. It does not e
 
 This gate proves synthetic/local transcription runtime boundary readiness only. It does not enable live transcription credentials, live vendor calls, raw PHI audio transport, production audio storage, external AI, charge finalization, medical-necessity determination, claim submission, or production launch.
 
+## WO-069 EHR sandbox runtime boundary
+
+`WO-069` adds `pnpm ehr:sandbox-runtime-readiness`:
+
+- EHR adapter package tests cover the vendor-neutral runtime boundary, athenahealth-first sandbox posture, disabled credential metadata, chart-context retrieval, and no-live-call/no-raw-payload flags;
+- API service and e2e tests cover `/integrations/ehr/runtime-boundary`, sandbox patient lookup, appointment import, encounter context retrieval, payload preparation, delivery-attempt metadata, acknowledgement, denial, and role/approval gates;
+- contracts tests cover EHR runtime boundary DTOs, patient lookup/import/context DTOs, expanded queue lifecycle states, and new audit-safe event types;
+- browser tests cover `/aura-note/integrations/ehr` loading, ready, read-only, permission-denied, sandbox context, approval-required, denied, pending, dead-lettered, and reconciliation-needed states;
+- the readiness script verifies code, contracts/OpenAPI, docs/status/run-log evidence, CI wiring, `WO-070` next-work-order rails, and no-live/no-launch posture.
+
+This gate proves synthetic/local athenahealth sandbox and vendor-neutral EHR runtime boundary readiness only. It does not enable production EHR credentials, raw EHR payload storage, live API calls, live writeback delivery, autonomous finalization, charge finalization, medical-necessity determination, claim submission, or production launch.
+
 ## WO-049 launch operations readiness
 
 `WO-049` adds synthetic/local deployment, performance, reliability, and operational drill evidence:

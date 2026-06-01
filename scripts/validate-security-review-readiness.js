@@ -56,7 +56,7 @@ check(
   status.work_orders?.['WO-048'] && status.work_orders?.['WO-048'] !== 'planned',
   { nextWorkOrder: status.next_work_order, wo048: status.work_orders?.['WO-048'] }
 );
-check('status.p10-or-commercial-readiness', 'repo_status current checkpoint advances to P10/P11 or commercial-readiness work after P9 completion', ['P10', 'P11', 'CR-0', 'CR-1', 'CR-2'].includes(status.current_checkpoint), status.current_checkpoint);
+check('status.p10-or-commercial-readiness', 'repo_status current checkpoint advances to P10/P11 or commercial-readiness work after P9 completion', ['P10', 'P11', 'CR-0', 'CR-1', 'CR-2', 'CR-3'].includes(status.current_checkpoint), status.current_checkpoint);
 check('checkpoint.p9', 'P9 checkpoint report records WO-044 through WO-047', ['P9', 'WO-044', 'WO-045', 'WO-046', 'WO-047'].every((snippet) => checkpointReport.includes(snippet)), 'CHECKPOINT_REPORT.md');
 check('runlog.wo047', 'RUN_LOG records WO-047 evidence', runLog.includes('WO-047 security privacy compliance and threat-model remediation'), 'RUN_LOG.md');
 check(
@@ -78,7 +78,8 @@ check(
     specGaps.includes('No active gaps as of post-`WO-060` commercial readiness rebaseline/runtime rails review') ||
     specGaps.includes('No active gaps as of post-`WO-061` runtime persistence switchover review') ||
     specGaps.includes('No active gaps as of post-`WO-062` API runtime hardening and request-boundary review') ||
-    specGaps.includes('No active gaps as of post-`WO-063` identity runtime boundary review'),
+    specGaps.includes('No active gaps as of post-`WO-063` identity runtime boundary review') ||
+    specGaps.includes('No active gaps as of post-`WO-069` athenahealth sandbox and vendor-neutral EHR runtime boundary review'),
   'SPEC_GAPS.md'
 );
 check('work-order.next-file', 'WO-048 work-order file exists for the next tranche', fs.readdirSync(path.join(root, 'work_orders')).some((file) => file.startsWith('WO-048_')), 'work_orders');

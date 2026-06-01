@@ -109,9 +109,22 @@ assertIncludes('docs/AI_PHI_GOVERNANCE.md', ['WO-068', 'No raw PHI audio']);
 assertIncludes('docs/STANDALONE_AND_CLINICOS_MODES.md', ['WO-068', 'ClinicOS cannot bypass']);
 assertIncludes('docs/TEST_PLAN.md', ['WO-068', 'transcription:runtime-boundary-readiness']);
 assertIncludes('docs/PRODUCTION_BUILD_PLAN.md', ['Implementation status as of `WO-068`']);
-assertIncludes('work_orders/README.md', ['`WO-068` is complete', '`WO-069` is the next active CR-3 work order']);
+const workOrderIndex = read('work_orders/README.md');
+if (
+  !workOrderIndex.includes('`WO-069` is the next active CR-3 work order') &&
+  !workOrderIndex.includes('`WO-069` is complete')
+) {
+  throw new Error('work_orders/README.md must retain WO-069 next-work-order or completion evidence after WO-068');
+}
+assertIncludes('work_orders/README.md', ['`WO-068` is complete']);
 assertIncludes('RUN_LOG.md', ['WO-068 transcription runtime boundary', 'transcription:runtime-boundary-readiness']);
-assertIncludes('SPEC_GAPS.md', ['No active gaps as of post-`WO-068` transcription runtime boundary review']);
+const specGaps = read('SPEC_GAPS.md');
+if (
+  !specGaps.includes('No active gaps as of post-`WO-068` transcription runtime boundary review') &&
+  !specGaps.includes('No active gaps as of post-`WO-069` athenahealth sandbox and vendor-neutral EHR runtime boundary review')
+) {
+  throw new Error('SPEC_GAPS.md must retain WO-068 or later no-active-gap evidence');
+}
 
 if (!exists('work_orders/WO-069_ehr_writeback_runtime_sandbox_boundary.md')) {
   throw new Error('WO-069 active work-order file must exist after WO-068 advances CR-3');
@@ -121,11 +134,12 @@ const status = JSON.parse(read('repo_status.json'));
 if (status.work_orders?.['WO-068'] !== 'done') {
   throw new Error('repo_status.json must mark WO-068 done before transcription runtime readiness passes');
 }
-if (status.next_work_order !== 'WO-069') {
-  throw new Error(`repo_status.json must advance next_work_order to WO-069 after WO-068; found ${status.next_work_order}`);
+const nextWorkOrderNumber = status.next_work_order ? Number(String(status.next_work_order).slice(3)) : null;
+if (nextWorkOrderNumber !== null && nextWorkOrderNumber < 69) {
+  throw new Error(`repo_status.json must advance next_work_order to WO-069 or later after WO-068; found ${status.next_work_order}`);
 }
-if (status.work_orders?.['WO-069'] !== 'todo') {
-  throw new Error('repo_status.json must mark WO-069 todo after WO-068 is complete');
+if (!['todo', 'in_progress', 'done'].includes(status.work_orders?.['WO-069'])) {
+  throw new Error('repo_status.json must keep WO-069 represented as todo, in_progress, or done after WO-068 is complete');
 }
 if (status.current_checkpoint !== 'CR-3') {
   throw new Error(`repo_status.json must remain in CR-3 after WO-068; found ${status.current_checkpoint}`);

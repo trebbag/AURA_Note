@@ -354,12 +354,24 @@ test.describe('AURA Note route accessibility smoke suite', () => {
 
     await expect(page.getByRole('region', { name: 'EHR integration readiness' })).toContainText('disabled');
     await expect(page.getByRole('article', { name: 'Adapter status' })).toContainText('Athenahealth');
+    await expect(page.getByRole('article', { name: 'Adapter status' })).toContainText('vendor_neutral_ehr_adapter');
+    await expect(page.getByRole('article', { name: 'Adapter status' })).toContainText('liveApiCallsEnabled=false');
+    await expect(page.getByRole('article', { name: 'Sandbox patient appointment encounter context' })).toContainText('patient_lookup_performed');
+    await expect(page.getByRole('article', { name: 'Sandbox patient appointment encounter context' })).toContainText('localAppointmentCreated=false');
+    await expect(page.getByRole('article', { name: 'Sandbox patient appointment encounter context' })).toContainText('rawPayloadStored=false');
     await expect(page.getByRole('article', { name: 'Writeback queue' })).toContainText('pending_approval');
     await expect(page.getByRole('article', { name: 'Permission and payload boundaries' })).toContainText('payloadStored=false');
     await expect(page.getByRole('region', { name: 'EHR route states' })).toContainText('permission-denied');
+    await expect(page.getByRole('region', { name: 'EHR route states' })).toContainText('reconciliation-needed');
 
     await page.getByRole('button', { name: 'Record Approval' }).click();
     await expect(page.getByRole('article', { name: 'Writeback queue' })).toContainText('approved');
+    await page.getByRole('button', { name: 'Prepare Payload' }).click();
+    await expect(page.getByRole('article', { name: 'Writeback queue' })).toContainText('prepared');
+    await page.getByRole('button', { name: 'Record Attempt' }).click();
+    await expect(page.getByRole('article', { name: 'Writeback queue' })).toContainText('attempted');
+    await page.getByRole('button', { name: 'Acknowledge' }).click();
+    await expect(page.getByRole('article', { name: 'Writeback queue' })).toContainText('acknowledged');
     await page.getByRole('button', { name: 'Schedule Retry' }).click();
     await expect(page.getByRole('article', { name: 'Writeback queue' })).toContainText('retrying');
     await page.getByRole('button', { name: 'Dead Letter' }).click();

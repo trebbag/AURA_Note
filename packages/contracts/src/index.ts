@@ -113,9 +113,18 @@ export type CoreEventType =
   | 'ehr_writeback.queued.v1'
   | 'ehr_writeback.failed.v1'
   | 'ehr.adapter_status_checked.v1'
+  | 'ehr.config_reviewed.v1'
+  | 'ehr.credential_disabled.v1'
   | 'ehr.patient_matched.v1'
+  | 'ehr.patient_lookup_performed.v1'
+  | 'ehr.appointment_imported.v1'
+  | 'ehr.encounter_context_loaded.v1'
   | 'ehr.chart_context_loaded.v1'
+  | 'ehr.writeback_payload_prepared.v1'
   | 'ehr.writeback_approval_recorded.v1'
+  | 'ehr.writeback_denied.v1'
+  | 'ehr.writeback_attempt_recorded.v1'
+  | 'ehr.writeback_acknowledged.v1'
   | 'ehr.writeback_retry_scheduled.v1'
   | 'ehr.writeback_dead_lettered.v1'
   | 'ehr.writeback_reconciliation_checked.v1'
@@ -1298,6 +1307,63 @@ export interface EhrWritebackCapabilityMatrixDto {
   unsupportedReasons: string[];
 }
 
+export type EhrRuntimeStateDto =
+  | 'disabled'
+  | 'configured'
+  | 'degraded'
+  | 'failed'
+  | 'approval_required'
+  | 'denied'
+  | 'pending'
+  | 'delivered'
+  | 'dead_lettered'
+  | 'reconciliation_needed'
+  | 'permission_denied'
+  | 'read_only'
+  | 'loading'
+  | 'empty'
+  | 'ready'
+  | 'demo_fixture';
+
+export interface EhrRuntimeBoundaryDto {
+  adapterBoundary: 'vendor_neutral_ehr_adapter';
+  primaryVendor: 'athenahealth';
+  vendorNeutralInterface: true;
+  tenantId: string;
+  siteId: string;
+  mode: EhrAdapterModeDto;
+  credentialState: 'disabled' | 'metadata_reference_present' | 'missing';
+  credentialReference: string;
+  liveApiCallsEnabled: false;
+  liveWritebackEnabled: false;
+  rawPayloadStorageEnabled: false;
+  sandboxFixtureOnly: true;
+  patientLookupSupported: true;
+  appointmentImportSupported: true;
+  encounterContextSupported: true;
+  chartContextSlicesSupported: EhrChartContextSliceTypeDto[];
+  writebackTargetsSupported: EhrWritebackTarget[];
+  runtimeStates: EhrRuntimeStateDto[];
+  retryPolicy: {
+    maxAttempts: number;
+    retryDelaySeconds: number;
+    deadLetterAfterAttempts: number;
+    reconciliationRequiredAfterAcknowledgement: true;
+  };
+  approvalPolicy: {
+    humanApprovalRequired: true;
+    supportMetadataOnly: true;
+    clinicOsCannotBypassAuraPermissions: true;
+  };
+  warnings: string[];
+}
+
+export interface EhrRuntimeBoundaryResponseDto {
+  boundary: EhrRuntimeBoundaryDto;
+  auditEvent: AuditEventDto;
+  domainEvents: Array<AuraNoteEvent<Record<string, unknown>>>;
+}
+
 export interface EhrPatientSearchResultDto {
   safePatientId: string;
   externalPatientRef: string;
@@ -1305,6 +1371,52 @@ export interface EhrPatientSearchResultDto {
   displayLabel: string;
   matchConfidence: number;
   source: 'mock' | 'athenahealth_sandbox';
+}
+
+export interface EhrPatientLookupResponseDto {
+  results: EhrPatientSearchResultDto[];
+  runtimeBoundary: EhrRuntimeBoundaryDto;
+  auditEvent: AuditEventDto;
+  domainEvents: Array<AuraNoteEvent<Record<string, unknown>>>;
+}
+
+export interface EhrAppointmentImportDto {
+  externalAppointmentId: string;
+  safePatientId: string;
+  externalPatientRef: string;
+  clinicianId: string;
+  startsAt: string;
+  durationMinutes: number;
+  visitType: string;
+  sourceSystem: EhrVendorDto;
+  importMode: 'sandbox_metadata_only';
+  localAppointmentCreated: false;
+}
+
+export interface EhrAppointmentImportResponseDto {
+  appointments: EhrAppointmentImportDto[];
+  runtimeBoundary: EhrRuntimeBoundaryDto;
+  auditEvent: AuditEventDto;
+  domainEvents: Array<AuraNoteEvent<Record<string, unknown>>>;
+}
+
+export interface EhrEncounterContextDto {
+  externalEncounterId: string;
+  externalAppointmentId: string;
+  safePatientId: string;
+  externalPatientRef: string;
+  visitType: string;
+  sourceSystem: EhrVendorDto;
+  status: 'open' | 'locked' | 'closed' | 'unknown';
+  contextMode: 'sandbox_metadata_only';
+  rawPayloadStored: false;
+}
+
+export interface EhrEncounterContextResponseDto {
+  encounter: EhrEncounterContextDto;
+  runtimeBoundary: EhrRuntimeBoundaryDto;
+  auditEvent: AuditEventDto;
+  domainEvents: Array<AuraNoteEvent<Record<string, unknown>>>;
 }
 
 export interface EhrChartContextSliceDto {
@@ -1437,14 +1549,26 @@ export interface EhrChartContextResponseDto {
 export type EhrWritebackLifecycleStatusDto =
   | 'disabled'
   | 'pending_approval'
+  | 'denied'
   | 'approved'
+  | 'prepared'
+  | 'attempted'
+  | 'acknowledged'
   | 'queued'
   | 'retrying'
   | 'failed'
   | 'dead_lettered'
   | 'reconciled';
 
-export type EhrWritebackQueueActionDto = 'approve' | 'retry' | 'dead_letter' | 'reconcile';
+export type EhrWritebackQueueActionDto =
+  | 'approve'
+  | 'deny'
+  | 'prepare_payload'
+  | 'record_attempt'
+  | 'acknowledge'
+  | 'retry'
+  | 'dead_letter'
+  | 'reconcile';
 
 export interface EhrWritebackQueueItemDto {
   writebackJobId: string;
@@ -1467,6 +1591,7 @@ export interface EhrWritebackQueueItemDto {
   approvedAt?: string;
   approvedBy?: string;
   approvalId?: string;
+  acknowledgementId?: string;
   lastAttemptAt?: string;
   nextRetryAt?: string;
   failedAt?: string;
@@ -1497,6 +1622,7 @@ export interface EhrWritebackQueueActionRequestDto {
   action: EhrWritebackQueueActionDto;
   approvalId?: string;
   reason?: string;
+  acknowledgementId?: string;
   reconciliationId?: string;
 }
 

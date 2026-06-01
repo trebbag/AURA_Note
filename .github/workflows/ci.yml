@@ -54,6 +54,7 @@ jobs:
       - run: pnpm config:production-readiness
       - run: pnpm observability:production-readiness
       - run: pnpm ehr:integration-readiness
+      - run: pnpm ehr:sandbox-runtime-readiness
       - run: pnpm ehr:live-review-readiness
       - run: pnpm clinicos:integration-readiness
       - run: pnpm clinicos:live-review-readiness

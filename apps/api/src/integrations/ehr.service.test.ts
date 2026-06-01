@@ -21,19 +21,30 @@ describe('EHR integration service', () => {
 
   it('loads sandbox chart context with source-linked slices for linked clinicians', async () => {
     const service = new EhrService();
+    const headers = {
+      'x-aura-role': 'clinician',
+      'x-aura-linked-patient': 'true',
+      'x-aura-linked-visit': 'true',
+      'x-aura-ehr-mode': 'sandbox',
+      'x-trace-id': 'trace-ehr-chart-001'
+    };
+    const boundary = await service.getRuntimeBoundary(headers);
+    const patients = await service.searchPatients({ safePatientId: 'safe-patient-synthetic-001' }, headers);
+    const appointments = await service.importAppointments('2026-05-26T14:00:00.000Z', '2026-05-26T22:00:00.000Z', headers);
+    const encounter = await service.getEncounterContext('athena-encounter-synthetic-001', headers);
     const chart = await service.getChartContext(
       'safe-patient-synthetic-001',
       'athena-encounter-synthetic-001',
       'problems,medications,allergies,labs,documents',
-      {
-        'x-aura-role': 'clinician',
-        'x-aura-linked-patient': 'true',
-        'x-aura-linked-visit': 'true',
-        'x-aura-ehr-mode': 'sandbox',
-        'x-trace-id': 'trace-ehr-chart-001'
-      }
+      headers
     );
 
+    assert.equal(boundary.data.boundary.adapterBoundary, 'vendor_neutral_ehr_adapter');
+    assert.equal(boundary.data.boundary.liveApiCallsEnabled, false);
+    assert.equal(boundary.data.domainEvents[0]?.eventType, 'ehr.config_reviewed.v1');
+    assert.equal(patients.data.results[0]?.source, 'athenahealth_sandbox');
+    assert.equal(appointments.data.appointments[0]?.localAppointmentCreated, false);
+    assert.equal(encounter.data.encounter.rawPayloadStored, false);
     assert.equal(chart.data.chartContext.sourceSystem, 'athenahealth');
     assert.equal(chart.data.chartContext.slices.length, 5);
     assert.equal(chart.data.chartContext.slices.every((slice) => slice.evidenceIds.length > 0), true);
@@ -99,6 +110,13 @@ describe('EHR integration service', () => {
       { ...clinicianHeaders, 'idempotency-key': 'idem-approve-ehr-wb' }
     );
     const retry = await service.actOnWritebackJob('ehr-wb-failed-001', { action: 'retry' }, adminHeaders);
+    const prepared = await service.actOnWritebackJob('ehr-wb-pending-001', { action: 'prepare_payload' }, clinicianHeaders);
+    const attempted = await service.actOnWritebackJob('ehr-wb-pending-001', { action: 'record_attempt' }, adminHeaders);
+    const acknowledged = await service.actOnWritebackJob(
+      'ehr-wb-pending-001',
+      { action: 'acknowledge', acknowledgementId: 'ack-synthetic-001' },
+      adminHeaders
+    );
     const deadLetter = await service.actOnWritebackJob(
       'ehr-wb-failed-001',
       { action: 'dead_letter', reason: 'synthetic vendor error exhausted' },
@@ -114,6 +132,12 @@ describe('EHR integration service', () => {
     assert.equal(approved.data.domainEvents[0]?.eventType, 'ehr.writeback_approval_recorded.v1');
     assert.equal(replayed.data.domainEvents[0]?.payload.replayed, true);
     assert.equal(retry.data.writeback.status, 'retrying');
+    assert.equal(prepared.data.writeback.status, 'prepared');
+    assert.equal(prepared.data.domainEvents[0]?.eventType, 'ehr.writeback_payload_prepared.v1');
+    assert.equal(attempted.data.writeback.status, 'attempted');
+    assert.equal(attempted.data.domainEvents[0]?.eventType, 'ehr.writeback_attempt_recorded.v1');
+    assert.equal(acknowledged.data.writeback.status, 'acknowledged');
+    assert.equal(acknowledged.data.domainEvents[0]?.eventType, 'ehr.writeback_acknowledged.v1');
     assert.equal(deadLetter.data.writeback.status, 'dead_lettered');
     assert.equal(reconciled.data.writeback.status, 'reconciled');
     assert.equal(reconciled.data.writeback.liveDeliveryEnabled, false);

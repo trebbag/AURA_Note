@@ -23,8 +23,12 @@ import {
   type RecordingPermissionResponseDto,
   type DocumentationWorkspaceDto,
   type DraftNoteSummaryDto,
+  type EhrAppointmentImportResponseDto,
   type EhrChartContextPackageDto,
+  type EhrEncounterContextResponseDto,
   type EhrIntegrationStatusDto,
+  type EhrPatientLookupResponseDto,
+  type EhrRuntimeBoundaryResponseDto,
   type EhrWritebackQueueActionResponseDto,
   type EhrWritebackQueueResponseDto,
   type ExportActionResponseDto,
@@ -976,6 +980,123 @@ describe('AI gateway contracts', () => {
 });
 
 describe('EHR adapter contracts', () => {
+  it('represents W069 runtime boundary, patient lookup, appointment import, and encounter context metadata', () => {
+    const boundary: EhrRuntimeBoundaryResponseDto = {
+      boundary: {
+        adapterBoundary: 'vendor_neutral_ehr_adapter',
+        primaryVendor: 'athenahealth',
+        vendorNeutralInterface: true,
+        tenantId: 'tenant-001',
+        siteId: 'site-001',
+        mode: 'sandbox',
+        credentialState: 'disabled',
+        credentialReference: 'credential-ref-disabled-synthetic',
+        liveApiCallsEnabled: false,
+        liveWritebackEnabled: false,
+        rawPayloadStorageEnabled: false,
+        sandboxFixtureOnly: true,
+        patientLookupSupported: true,
+        appointmentImportSupported: true,
+        encounterContextSupported: true,
+        chartContextSlicesSupported: ['demographics', 'encounter', 'appointment', 'problems'],
+        writebackTargetsSupported: ['final_note', 'patient_summary'],
+        runtimeStates: ['disabled', 'configured', 'degraded', 'failed', 'approval_required', 'denied', 'pending', 'delivered', 'dead_lettered', 'reconciliation_needed', 'permission_denied', 'read_only', 'loading', 'empty', 'ready', 'demo_fixture'],
+        retryPolicy: {
+          maxAttempts: 3,
+          retryDelaySeconds: 900,
+          deadLetterAfterAttempts: 3,
+          reconciliationRequiredAfterAcknowledgement: true
+        },
+        approvalPolicy: {
+          humanApprovalRequired: true,
+          supportMetadataOnly: true,
+          clinicOsCannotBypassAuraPermissions: true
+        },
+        warnings: ['Sandbox fixtures only; no live EHR calls are made.']
+      },
+      auditEvent: {
+        auditEventId: 'audit-ehr-runtime-001',
+        tenantId: 'tenant-001',
+        action: 'ehr.runtime_boundary_reviewed',
+        entityType: 'EhrRuntimeBoundary',
+        entityId: 'athenahealth',
+        traceId: 'trace-ehr-runtime-001',
+        createdAt: '2026-06-01T16:20:00.000Z'
+      },
+      domainEvents: [
+        createEventEnvelope({
+          eventId: 'evt-ehr-config-001',
+          eventType: 'ehr.config_reviewed.v1',
+          tenantId: 'tenant-001',
+          siteId: 'site-001',
+          producer: 'aura-note-api',
+          traceId: 'trace-ehr-runtime-001',
+          idempotencyKey: 'idem-ehr-runtime-001',
+          sensitivity: 'restricted',
+          retentionClass: 'audit',
+          payload: { vendor: 'athenahealth', liveApiCallsEnabled: false, rawPayloadStorageEnabled: false }
+        })
+      ]
+    };
+    const patientLookup: EhrPatientLookupResponseDto = {
+      results: [
+        {
+          safePatientId: 'safe-patient-synthetic-001',
+          externalPatientRef: 'athena-patient-ref-synthetic-001',
+          sourceSystem: 'athenahealth',
+          displayLabel: 'Synthetic patient record',
+          matchConfidence: 0.96,
+          source: 'athenahealth_sandbox'
+        }
+      ],
+      runtimeBoundary: boundary.boundary,
+      auditEvent: boundary.auditEvent,
+      domainEvents: boundary.domainEvents
+    };
+    const appointmentImport: EhrAppointmentImportResponseDto = {
+      appointments: [
+        {
+          externalAppointmentId: 'athena-appointment-synthetic-001',
+          safePatientId: 'safe-patient-synthetic-001',
+          externalPatientRef: 'athena-patient-ref-synthetic-001',
+          clinicianId: 'clinician-synthetic-001',
+          startsAt: '2026-05-26T14:00:00.000Z',
+          durationMinutes: 30,
+          visitType: 'Chronic follow-up',
+          sourceSystem: 'athenahealth',
+          importMode: 'sandbox_metadata_only',
+          localAppointmentCreated: false
+        }
+      ],
+      runtimeBoundary: boundary.boundary,
+      auditEvent: boundary.auditEvent,
+      domainEvents: boundary.domainEvents
+    };
+    const encounterContext: EhrEncounterContextResponseDto = {
+      encounter: {
+        externalEncounterId: 'athena-encounter-synthetic-001',
+        externalAppointmentId: 'athenahealth-appointment-synthetic-001',
+        safePatientId: 'safe-patient-synthetic-001',
+        externalPatientRef: 'athenahealth-patient-ref-synthetic-001',
+        visitType: 'Chronic follow-up',
+        sourceSystem: 'athenahealth',
+        status: 'open',
+        contextMode: 'sandbox_metadata_only',
+        rawPayloadStored: false
+      },
+      runtimeBoundary: boundary.boundary,
+      auditEvent: boundary.auditEvent,
+      domainEvents: boundary.domainEvents
+    };
+
+    assert.equal(boundary.boundary.adapterBoundary, 'vendor_neutral_ehr_adapter');
+    assert.equal(boundary.boundary.liveApiCallsEnabled, false);
+    assert.equal(patientLookup.results[0]?.source, 'athenahealth_sandbox');
+    assert.equal(appointmentImport.appointments[0]?.localAppointmentCreated, false);
+    assert.equal(encounterContext.encounter.rawPayloadStored, false);
+    assert.equal(boundary.domainEvents[0]?.eventType, 'ehr.config_reviewed.v1');
+  });
+
   it('represents disabled-safe standalone EHR status', () => {
     const status: EhrIntegrationStatusDto = {
       status: {
@@ -1074,7 +1195,7 @@ describe('EHR adapter contracts', () => {
         sandboxMode: 'sandbox',
         liveProductionWritebackEnabled: false,
         payloadsExcluded: true,
-        states: ['disabled', 'pending_approval', 'approved', 'queued', 'retrying', 'failed', 'dead_lettered', 'reconciled'],
+        states: ['disabled', 'pending_approval', 'denied', 'approved', 'prepared', 'attempted', 'acknowledged', 'queued', 'retrying', 'failed', 'dead_lettered', 'reconciled'],
         warnings: ['Writeback queue contains audit-safe metadata only.']
       },
       auditEvent: {

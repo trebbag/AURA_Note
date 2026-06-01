@@ -130,7 +130,8 @@ check('work-order.wo051-file', 'WO-051 work-order file exists for the next gate'
         contents.includes('No active gaps as of post-`WO-060` commercial readiness rebaseline/runtime rails review') ||
         contents.includes('No active gaps as of post-`WO-061` runtime persistence switchover review') ||
         contents.includes('No active gaps as of post-`WO-062` API runtime hardening and request-boundary review') ||
-        contents.includes('No active gaps as of post-`WO-063` identity runtime boundary review');
+        contents.includes('No active gaps as of post-`WO-063` identity runtime boundary review') ||
+        contents.includes('No active gaps as of post-`WO-069` athenahealth sandbox and vendor-neutral EHR runtime boundary review');
   check(id, `${id} includes ${snippet} or later P11 no-active-gap evidence`, passed, snippet);
 });
 

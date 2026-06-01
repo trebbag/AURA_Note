@@ -15,6 +15,7 @@
     "test:identity-runtime": "node --import tsx --test src/runtime/identity-runtime.e2e.test.ts",
     "test:mode-adapter": "AURA_NOTE_AUTH_MODE=local_demo node --import tsx --test src/runtime/mode-resolver.test.ts src/integrations/clinicos.service.test.ts src/integrations/clinicos.e2e.test.ts",
     "test:transcription-runtime": "AURA_NOTE_AUTH_MODE=local_demo node --import tsx --test src/transcription/transcription-provider.test.ts src/schedule/schedule.service.test.ts src/schedule/schedule.e2e.test.ts",
+    "test:ehr-sandbox-runtime": "AURA_NOTE_AUTH_MODE=local_demo node --import tsx --test src/integrations/ehr.service.test.ts src/integrations/ehr.e2e.test.ts",
     "test:prisma-schedule-adapter": "node --import tsx --test src/schedule/prisma-schedule.repository.integration.test.ts",
     "test:tenant-isolation": "node --import tsx --test src/schedule/prisma-schedule.tenant-isolation.integration.test.ts",
     "test:visit-capture-adapter": "node --import tsx --test src/schedule/prisma-visit-capture.repository.integration.test.ts",

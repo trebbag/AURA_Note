@@ -43,6 +43,7 @@
     "config:production-readiness": "node scripts/validate-production-config-readiness.js",
     "observability:production-readiness": "pnpm --filter @aura-note/security test && pnpm --filter @aura-note/api test && node scripts/validate-observability-production-readiness.js",
     "ehr:integration-readiness": "pnpm --filter @aura-note/ehr-adapters test && pnpm --filter @aura-note/api test && node scripts/validate-ehr-integration-readiness.js",
+    "ehr:sandbox-runtime-readiness": "pnpm --filter @aura-note/ehr-adapters test && pnpm --filter @aura-note/api test:ehr-sandbox-runtime && node scripts/validate-ehr-sandbox-runtime-readiness.js",
     "ehr:live-review-readiness": "node scripts/validate-ehr-live-review-readiness.js",
     "clinicos:integration-readiness": "pnpm --filter @aura-note/clinicos-adapter test && pnpm --filter @aura-note/api test && node scripts/validate-clinicos-integration-readiness.js",
     "clinicos:live-review-readiness": "node scripts/validate-clinicos-live-review-readiness.js",

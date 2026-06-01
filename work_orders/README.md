@@ -185,7 +185,9 @@ Post-CP4 productionization candidates are documented in `docs/POST_CP4_PRODUCTIO
 
 `WO-067` is complete as the first CR-3 integration/governance runtime tranche. It adds the shared API ModeResolver, explicit mode adapter boundaries for schedule source, patient context, VisitGraph, tasks, audit, AI governance, Charge Integrity, EHR, export, and identity seams, ClinicOS status/action `modeAdapterBoundaries`, degraded/unavailable fail-closed evidence, role/cross-tenant denial coverage, and `pnpm mode:adapter-readiness`.
 
-`WO-068` is complete as the second CR-3 integration/governance runtime tranche. It adds the server-side transcription provider boundary, deterministic mock provider, disabled live-provider fail-closed evidence, runtime state metadata, retry/dead-letter posture, one-week raw-audio retention and indefinite transcript retention evidence, browser/API tests, and `pnpm transcription:runtime-boundary-readiness`. `WO-069` is the next active CR-3 work order.
+`WO-068` is complete as the second CR-3 integration/governance runtime tranche. It adds the server-side transcription provider boundary, deterministic mock provider, disabled live-provider fail-closed evidence, runtime state metadata, retry/dead-letter posture, one-week raw-audio retention and indefinite transcript retention evidence, browser/API tests, and `pnpm transcription:runtime-boundary-readiness`.
+
+`WO-069` is complete as the third CR-3 integration/governance runtime tranche. It adds the vendor-neutral EHR runtime boundary, athenahealth-first sandbox posture, disabled credential evidence, sandbox patient lookup, appointment import, encounter context, human-gated writeback denial/payload-preparation/attempt/acknowledgement metadata, browser/API tests, and `pnpm ehr:sandbox-runtime-readiness`. `WO-070` is the next active CR-3 work order.
 
 `WO-061` through `WO-063` form the CR-1 runtime foundation candidate. They move core runtime services behind repository ports with local Prisma/PostgreSQL as the production-shaped local runtime path, harden the Nest API request boundary, and make synthetic header identity fail closed outside explicit local/demo modes.
 

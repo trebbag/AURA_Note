@@ -698,3 +698,11 @@ The metadata records source-of-truth posture, adapter status, optional ClinicOS 
 `WO-068` adds no production audio payload store and no live provider payload persistence. It extends transcription DTO/OpenAPI metadata with `providerBoundary='server_side_adapter'`, `credentialState='not_configured'`, runtime state coverage, retry/dead-letter policy, `rawAudioRetentionPolicy='one_week'`, `transcriptRetentionPolicy='indefinite'`, `rawAudioPayloadStorageEnabled=false`, and `diarizationState='placeholder_degraded'`.
 
 Current runtime evidence remains metadata-only over the existing visit-session, recording-chunk, transcript, transcript-segment, correction-history, raw-audio retention, audit, and domain-event records. Retry/dead-letter state is represented as audit-safe job metadata until a later durable queue work order promotes it into a production queue. No real audio, live provider payload, production transcript sample, credential, private key, production URL, charge-finalization record, medical-necessity record, or submitted claim is persisted.
+
+## WO-069 EHR sandbox runtime boundary data status
+
+`WO-069` adds no production EHR payload store and no live vendor-payload persistence. It extends EHR DTO/OpenAPI metadata with `EhrRuntimeBoundaryDto`, `EhrPatientLookupResponseDto`, `EhrAppointmentImportResponseDto`, and `EhrEncounterContextResponseDto`.
+
+Runtime boundary records include vendor-neutral adapter posture, primary vendor metadata, credential state, supported runtime states, chart-context slice support, writeback target support, retry/dead-letter policy, `liveApiCallsEnabled=false`, `liveWritebackEnabled=false`, and `rawPayloadStorageEnabled=false`. Writeback queue metadata now represents denied, prepared, attempted, and acknowledged states without storing payload contents.
+
+Current runtime evidence remains audit-safe metadata over existing EHR status, chart-context, writeback queue, audit, and domain-event shapes. Synthetic patient lookup, appointment import, and encounter context responses use fixture identifiers only and do not persist production EHR identifiers or raw vendor responses. No credential, private key, production URL, raw EHR payload, charge-finalization record, medical-necessity record, or submitted claim is persisted.

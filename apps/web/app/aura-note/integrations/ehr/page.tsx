@@ -2,16 +2,44 @@
 
 import Link from 'next/link';
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import type { EhrIntegrationStatusDto, EhrWritebackQueueResponseDto } from '@aura-note/contracts';
+import type {
+  EhrAppointmentImportResponseDto,
+  EhrEncounterContextResponseDto,
+  EhrIntegrationStatusDto,
+  EhrPatientLookupResponseDto,
+  EhrRuntimeBoundaryResponseDto,
+  EhrWritebackQueueResponseDto
+} from '@aura-note/contracts';
 import { createAuraNoteApiClient } from '../../../../lib/aura-note-api-client';
 
-const screenStates = ['empty', 'loading', 'ready', 'degraded', 'failed', 'permission-denied', 'disabled', 'retrying', 'dead-letter', 'reconciled', 'demo fixture'];
+const screenStates = [
+  'empty',
+  'loading',
+  'ready',
+  'degraded',
+  'failed',
+  'permission-denied',
+  'read-only',
+  'disabled',
+  'configured',
+  'approval-required',
+  'denied',
+  'pending',
+  'delivered',
+  'dead-lettered',
+  'reconciliation-needed',
+  'demo fixture'
+];
 
 export default function EhrIntegrationPage() {
   const clinicianClient = useMemo(() => createAuraNoteApiClient({ role: 'clinician' }), []);
   const adminClient = useMemo(() => createAuraNoteApiClient({ role: 'admin' }), []);
   const billingClient = useMemo(() => createAuraNoteApiClient({ role: 'billing_staff' }), []);
   const [status, setStatus] = useState<EhrIntegrationStatusDto | null>(null);
+  const [boundary, setBoundary] = useState<EhrRuntimeBoundaryResponseDto | null>(null);
+  const [patientLookup, setPatientLookup] = useState<EhrPatientLookupResponseDto | null>(null);
+  const [appointmentImport, setAppointmentImport] = useState<EhrAppointmentImportResponseDto | null>(null);
+  const [encounterContext, setEncounterContext] = useState<EhrEncounterContextResponseDto | null>(null);
   const [queue, setQueue] = useState<EhrWritebackQueueResponseDto | null>(null);
   const [routeState, setRouteState] = useState('loading');
   const [message, setMessage] = useState('Loading EHR status and writeback queue from API.');
@@ -19,11 +47,19 @@ export default function EhrIntegrationPage() {
   const refreshEhr = useCallback(async () => {
     setRouteState('loading');
     try {
-      const [statusResponse, queueResponse] = await Promise.all([
+      const [statusResponse, boundaryResponse, patientResponse, appointmentResponse, encounterResponse, queueResponse] = await Promise.all([
         clinicianClient.getEhrStatus(),
+        clinicianClient.getEhrRuntimeBoundary(),
+        clinicianClient.searchEhrPatients(),
+        clinicianClient.importEhrAppointments(),
+        clinicianClient.getEhrEncounterContext('athena-encounter-synthetic-001'),
         clinicianClient.listEhrWritebackQueue()
       ]);
       setStatus(statusResponse.data);
+      setBoundary(boundaryResponse.data);
+      setPatientLookup(patientResponse.data);
+      setAppointmentImport(appointmentResponse.data);
+      setEncounterContext(encounterResponse.data);
       setQueue(queueResponse.data);
       setRouteState(queueResponse.data.queue.items.length === 0 ? 'empty' : 'ready');
       setMessage('Sandbox queue loaded from typed API metadata; no payloads are displayed.');
@@ -60,6 +96,44 @@ export default function EhrIntegrationPage() {
       clinicianClient.actOnEhrWritebackJob(job.writebackJobId, {
         action: 'approve',
         approvalId: 'approval-wo-064-ehr'
+      })
+    );
+  }
+
+  function denyWriteback() {
+    const job = jobByStatus('pending_approval');
+    if (!job) return;
+    void runAction('Writeback denial recorded as audit-safe metadata through API.', () =>
+      clinicianClient.actOnEhrWritebackJob(job.writebackJobId, {
+        action: 'deny',
+        reason: 'Synthetic clinician denial before payload preparation'
+      })
+    );
+  }
+
+  function preparePayload() {
+    const job = jobByStatus('approved');
+    if (!job) return;
+    void runAction('Payload preparation metadata recorded without storing raw EHR payloads.', () =>
+      clinicianClient.actOnEhrWritebackJob(job.writebackJobId, { action: 'prepare_payload' })
+    );
+  }
+
+  function recordAttempt() {
+    const job = jobByStatus('prepared') ?? jobByStatus('approved');
+    if (!job) return;
+    void runAction('Sandbox delivery attempt metadata recorded without a live EHR call.', () =>
+      adminClient.actOnEhrWritebackJob(job.writebackJobId, { action: 'record_attempt' })
+    );
+  }
+
+  function acknowledgeAttempt() {
+    const job = jobByStatus('attempted');
+    if (!job) return;
+    void runAction('Sandbox acknowledgement metadata recorded; reconciliation remains required.', () =>
+      adminClient.actOnEhrWritebackJob(job.writebackJobId, {
+        action: 'acknowledge',
+        acknowledgementId: 'ack-wo-069-ehr'
       })
     );
   }
@@ -110,7 +184,9 @@ export default function EhrIntegrationPage() {
 
   const summary = [
     ['Vendor', status?.status.vendor ?? 'athenahealth first, vendor-neutral adapter'],
-    ['Mode', status?.status.mode ?? queue?.queue.sandboxMode ?? 'sandbox-ready mock'],
+    ['Mode', boundary?.boundary.mode ?? status?.status.mode ?? queue?.queue.sandboxMode ?? 'sandbox-ready mock'],
+    ['Boundary', boundary?.boundary.adapterBoundary ?? 'vendor_neutral_ehr_adapter'],
+    ['Credential', boundary?.boundary.credentialState ?? 'disabled'],
     ['Live delivery', String(queue?.queue.liveProductionWritebackEnabled ?? false)],
     ['Payloads', queue?.queue.payloadsExcluded ? 'excluded from browser/support views' : 'not loaded']
   ];
@@ -119,7 +195,7 @@ export default function EhrIntegrationPage() {
     <main className="operations-shell">
       <header className="page-header">
         <div>
-          <p className="eyebrow">CR-2 / WO-064</p>
+          <p className="eyebrow">CR-3 / WO-069</p>
           <h1>EHR Sandbox Integration</h1>
         </div>
         <nav className="header-nav" aria-label="AURA Note sections">
@@ -156,10 +232,32 @@ export default function EhrIntegrationPage() {
           <p>Athenahealth remains behind the generic EHR adapter. Sandbox behavior uses deterministic fixture metadata.</p>
           <div className="state-grid">
             <span>adapter_status_checked</span>
+            <span>config_reviewed</span>
+            <span>credential_disabled</span>
             <span>chart_context_loaded</span>
+            <span>{boundary?.boundary.adapterBoundary ?? 'vendor_neutral_ehr_adapter'}</span>
             <span>sandbox credentials: not committed</span>
+            <span>liveApiCallsEnabled=false</span>
+            <span>liveApiCallsEnabled={String(boundary?.boundary.liveApiCallsEnabled ?? false)}</span>
+            <span>rawPayloadStorageEnabled={String(boundary?.boundary.rawPayloadStorageEnabled ?? false)}</span>
             <span>production writeback: {String(queue?.queue.liveProductionWritebackEnabled ?? false)}</span>
             <span>Athenahealth: {status?.status.health ?? 'disabled'}</span>
+          </div>
+        </article>
+
+        <article className="appointment-form" aria-label="Sandbox patient appointment encounter context">
+          <h2>Sandbox Context</h2>
+          <p>Patient lookup, appointment import, and encounter context are API-backed sandbox metadata only.</p>
+          <div className="state-grid">
+            <span>patient_lookup_performed</span>
+            <span>appointment_imported</span>
+            <span>encounter_context_loaded</span>
+            <span>{patientLookup?.results[0]?.externalPatientRef ?? 'athena-patient-ref-synthetic-001'}</span>
+            <span>{appointmentImport?.appointments[0]?.externalAppointmentId ?? 'athena-appointment-synthetic-001'}</span>
+            <span>{encounterContext?.encounter.externalEncounterId ?? 'athena-encounter-synthetic-001'}</span>
+            <span>localAppointmentCreated={String(appointmentImport?.appointments[0]?.localAppointmentCreated ?? false)}</span>
+            <span>rawPayloadStored=false</span>
+            <span>rawPayloadStored={String(encounterContext?.encounter.rawPayloadStored ?? false)}</span>
           </div>
         </article>
 
@@ -180,6 +278,18 @@ export default function EhrIntegrationPage() {
           <div className="action-row">
             <button type="button" onClick={recordApproval}>
               Record Approval
+            </button>
+            <button type="button" className="secondary-action" onClick={denyWriteback}>
+              Deny
+            </button>
+            <button type="button" onClick={preparePayload}>
+              Prepare Payload
+            </button>
+            <button type="button" onClick={recordAttempt}>
+              Record Attempt
+            </button>
+            <button type="button" onClick={acknowledgeAttempt}>
+              Acknowledge
             </button>
             <button type="button" onClick={scheduleRetry}>
               Schedule Retry

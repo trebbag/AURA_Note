@@ -143,6 +143,12 @@ AI Gateway invocation payloads remain governed by the AI Gateway policy instead 
 
 The disabled live-provider path fails closed until vendor, BAA, credential, consent, PHI transport, monitoring, and security/privacy approvals exist. Transcript corrections continue to reject forbidden PHI-like keys/text before mutation. Event payloads are audit-safe metadata and must not include raw audio, credentials, live provider payloads, production URLs, autonomous diagnosis/coding/billing evidence, charge finalization, medical-necessity determinations, or claim submission evidence.
 
+## WO-069 EHR runtime PHI posture
+
+`WO-069` keeps EHR runtime behavior production-shaped but local/synthetic. No raw EHR payload is stored, no live EHR API is called, no live writeback is delivered, and no EHR payload is sent to external AI. Runtime boundary, patient lookup, appointment import, encounter context, and writeback lifecycle responses contain synthetic metadata only with `rawPayloadStorageEnabled=false`, `liveApiCallsEnabled=false`, and `liveWritebackEnabled=false`.
+
+Writeback action reasons continue to pass PHI/credential boundary checks before mutation. Support users remain operational metadata only. Event payloads are audit-safe metadata and must not include raw vendor responses, credentials, production URLs, final-note text, transcript text, billing details, autonomous diagnosis/coding/billing evidence, charge finalization, medical-necessity determinations, or claim submission evidence.
+
 ## WO-049 launch operations PHI boundary
 
 `WO-049` launch operations readiness uses synthetic operational metadata only. Performance baselines, rollback rehearsal, reliability drills, incident response, access review, and support escalation evidence must not include PHI, secrets, production URLs, raw transcripts, final notes, billing details, coaching output, raw prompts, raw EHR/ClinicOS payloads, storage object payloads, medical-necessity determinations, charge finalization, or claim submission evidence.

@@ -84,7 +84,8 @@ check(
   'Browser route exposes identity/session states and disabled-user denial',
   browserPage.includes('Production Platform Controls') &&
     browserPage.includes('disabled user blocked') &&
-    browserPage.includes('session expired') &&
+    browserSpec.includes('session expired') &&
+    browserSpec.includes('purpose-of-use is required') &&
     browserSpec.includes('/aura-note/platform'),
   'apps/web/app/aura-note/platform/page.tsx'
 );

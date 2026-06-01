@@ -1,4 +1,4 @@
-import type { EhrWritebackTarget } from '@aura-note/contracts';
+import type { EhrChartContextSliceTypeDto, EhrRuntimeBoundaryDto, EhrWritebackTarget } from '@aura-note/contracts';
 
 export type EhrVendor = 'athenahealth' | 'epic' | 'eclinicalworks' | 'generic_mock';
 export type EhrAdapterMode = 'disabled' | 'mock' | 'sandbox' | 'production';
@@ -40,6 +40,7 @@ export interface EhrAdapterConfig {
   apiBaseUrl?: string;
   clientIdConfigured?: boolean;
   clientSecretConfigured?: boolean;
+  credentialReference?: string;
   simulateFailure?: boolean;
 }
 
@@ -149,6 +150,7 @@ export interface AdapterHealth {
 
 export interface EhrAdapter {
   readonly vendor: EhrVendor;
+  getRuntimeBoundary(): Promise<EhrRuntimeBoundaryDto>;
   getConnectionStatus(): Promise<EhrConnectionStatus>;
   healthCheck(): Promise<AdapterHealth>;
   searchPatients(query: PatientSearchQuery): Promise<PatientSearchResult[]>;
@@ -195,6 +197,17 @@ export class DisabledEhrAdapter implements EhrAdapter {
       health: 'disabled',
       warnings: ['EHR adapter disabled. Standalone mode remains available.']
     };
+  }
+
+  async getRuntimeBoundary(): Promise<EhrRuntimeBoundaryDto> {
+    return createRuntimeBoundary({
+      vendor: this.vendor,
+      mode: this.config.mode,
+      tenantId: this.config.tenantId,
+      siteId: this.config.siteId,
+      configured: false,
+      ...(this.config.credentialReference ? { credentialReference: this.config.credentialReference } : {})
+    });
   }
 
   async healthCheck(): Promise<AdapterHealth> {
@@ -296,6 +309,17 @@ export class MockEhrAdapter extends DisabledEhrAdapter {
     };
   }
 
+  override async getRuntimeBoundary(): Promise<EhrRuntimeBoundaryDto> {
+    return createRuntimeBoundary({
+      vendor: this.vendor,
+      mode: 'mock',
+      tenantId: this.config.tenantId,
+      siteId: this.config.siteId,
+      configured: true,
+      ...(this.config.credentialReference ? { credentialReference: this.config.credentialReference } : {})
+    });
+  }
+
   override async searchPatients(query: PatientSearchQuery): Promise<PatientSearchResult[]> {
     return [
       {
@@ -393,6 +417,7 @@ export class AthenahealthAdapter extends MockEhrAdapter {
       ...(config.apiBaseUrl ? { apiBaseUrl: config.apiBaseUrl } : {}),
       clientIdConfigured: config.clientIdConfigured ?? false,
       clientSecretConfigured: config.clientSecretConfigured ?? false,
+      credentialReference: config.credentialReference ?? 'athenahealth-sandbox-credential-ref-disabled',
       simulateFailure: config.simulateFailure ?? false
     };
   }
@@ -421,6 +446,19 @@ export class AthenahealthAdapter extends MockEhrAdapter {
         ? ['Athenahealth sandbox scaffold only; no live API calls are made in WO-010.']
         : ['Athenahealth credentials are not configured; using sandbox fixture behavior only.']
     };
+  }
+
+  override async getRuntimeBoundary(): Promise<EhrRuntimeBoundaryDto> {
+    const configured = this.athenaConfig.clientIdConfigured === true && this.athenaConfig.clientSecretConfigured === true;
+    return createRuntimeBoundary({
+      vendor: this.vendor,
+      mode: this.athenaConfig.mode,
+      tenantId: this.athenaConfig.tenantId,
+      siteId: this.athenaConfig.siteId,
+      configured,
+      ...(this.athenaConfig.credentialReference ? { credentialReference: this.athenaConfig.credentialReference } : {}),
+      ...(this.athenaConfig.simulateFailure === undefined ? {} : { failed: this.athenaConfig.simulateFailure })
+    });
   }
 
   override async searchPatients(query: PatientSearchQuery): Promise<PatientSearchResult[]> {
@@ -539,6 +577,90 @@ export function validateChartContextPackage(context: ChartContextPackage): strin
     }
   }
   return errors;
+}
+
+function createRuntimeBoundary(input: {
+  vendor: EhrVendor;
+  mode: EhrAdapterMode;
+  tenantId: string;
+  siteId: string;
+  configured: boolean;
+  credentialReference?: string;
+  failed?: boolean;
+}): EhrRuntimeBoundaryDto {
+  const runtimeStates: EhrRuntimeBoundaryDto['runtimeStates'] = [
+    'disabled',
+    'configured',
+    'degraded',
+    'failed',
+    'approval_required',
+    'denied',
+    'pending',
+    'delivered',
+    'dead_lettered',
+    'reconciliation_needed',
+    'permission_denied',
+    'read_only',
+    'loading',
+    'empty',
+    'ready',
+    'demo_fixture'
+  ];
+  const chartContextSlicesSupported: EhrChartContextSliceTypeDto[] = [
+    'demographics',
+    'encounter',
+    'appointment',
+    'problems',
+    'diagnoses_history',
+    'medications',
+    'allergies',
+    'immunizations',
+    'vitals',
+    'labs',
+    'documents',
+    'prior_notes',
+    'procedures',
+    'social_history',
+    'quality',
+    'payer',
+    'tasks',
+    'billing_context'
+  ];
+  return {
+    adapterBoundary: 'vendor_neutral_ehr_adapter',
+    primaryVendor: 'athenahealth',
+    vendorNeutralInterface: true,
+    tenantId: input.tenantId,
+    siteId: input.siteId,
+    mode: input.mode,
+    credentialState: input.configured ? 'metadata_reference_present' : input.mode === 'disabled' ? 'disabled' : 'missing',
+    credentialReference: input.credentialReference ?? `${input.vendor}-credential-ref-disabled`,
+    liveApiCallsEnabled: false,
+    liveWritebackEnabled: false,
+    rawPayloadStorageEnabled: false,
+    sandboxFixtureOnly: true,
+    patientLookupSupported: true,
+    appointmentImportSupported: true,
+    encounterContextSupported: true,
+    chartContextSlicesSupported,
+    writebackTargetsSupported: ['final_note', 'patient_summary'],
+    runtimeStates,
+    retryPolicy: {
+      maxAttempts: 3,
+      retryDelaySeconds: 900,
+      deadLetterAfterAttempts: 3,
+      reconciliationRequiredAfterAcknowledgement: true
+    },
+    approvalPolicy: {
+      humanApprovalRequired: true,
+      supportMetadataOnly: true,
+      clinicOsCannotBypassAuraPermissions: true
+    },
+    warnings: [
+      input.failed ? 'Synthetic EHR sandbox failure is active for readiness testing.' : 'Sandbox fixtures only; no live EHR API calls are made.',
+      'Raw EHR payload storage and production writeback remain disabled.'
+    ]
+  };
 }
 
 function createSyntheticPatient(vendor: EhrVendor, externalPatientRef: string): PatientCanonical {

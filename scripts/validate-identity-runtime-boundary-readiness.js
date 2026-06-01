@@ -185,7 +185,7 @@ check(
   status.next_work_order === null || Number.parseInt(String(status.next_work_order || '').replace('WO-', ''), 10) >= 64,
   status.next_work_order
 );
-check('status.checkpoint-cr2', 'repo_status advances to CR-2 after CR-1 checkpoint report', status.current_checkpoint === 'CR-2', status.current_checkpoint);
+check('status.checkpoint-cr2-or-later', 'repo_status advances to CR-2 or later after CR-1 checkpoint report', ['CR-2', 'CR-3', 'CR-4'].includes(status.current_checkpoint), status.current_checkpoint);
 check(
   'work-order.readme',
   'work-order index records WO-063 completion and CR-1 closure',
@@ -197,7 +197,8 @@ check('runlog.wo063', 'RUN_LOG records WO-063 evidence', runLog.includes('WO-063
 check(
   'spec-gaps.wo063',
   'SPEC_GAPS records no active WO-063 gaps',
-  gaps.includes('No active gaps as of post-`WO-063` identity runtime boundary review'),
+  gaps.includes('No active gaps as of post-`WO-063` identity runtime boundary review') ||
+    gaps.includes('No active gaps as of post-`WO-069` athenahealth sandbox and vendor-neutral EHR runtime boundary review'),
   'SPEC_GAPS.md'
 );
 

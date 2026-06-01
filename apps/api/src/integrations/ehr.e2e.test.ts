@@ -37,6 +37,54 @@ describe('EHR integration API e2e', () => {
   });
 
   it('loads athenahealth sandbox chart context with no live credentials', async () => {
+    const boundary = await request(app.getHttpServer())
+      .get('/api/v1/integrations/ehr/runtime-boundary')
+      .set('x-aura-role', 'clinician')
+      .set('x-aura-linked-patient', 'true')
+      .set('x-aura-linked-visit', 'true')
+      .set('x-aura-ehr-mode', 'sandbox')
+      .expect(200);
+
+    assert.equal(boundary.body.data.boundary.adapterBoundary, 'vendor_neutral_ehr_adapter');
+    assert.equal(boundary.body.data.boundary.liveApiCallsEnabled, false);
+    assert.equal(boundary.body.data.domainEvents[0].eventType, 'ehr.config_reviewed.v1');
+
+    const patients = await request(app.getHttpServer())
+      .get('/api/v1/integrations/ehr/patients/search')
+      .query({ safePatientId: 'safe-patient-synthetic-001' })
+      .set('x-aura-role', 'clinician')
+      .set('x-aura-linked-patient', 'true')
+      .set('x-aura-linked-visit', 'true')
+      .set('x-aura-ehr-mode', 'sandbox')
+      .expect(200);
+
+    assert.equal(patients.body.data.results[0].source, 'athenahealth_sandbox');
+    assert.equal(patients.body.data.domainEvents[0].eventType, 'ehr.patient_lookup_performed.v1');
+
+    const appointments = await request(app.getHttpServer())
+      .get('/api/v1/integrations/ehr/appointments/import')
+      .query({ startIso: '2026-05-26T14:00:00.000Z', endIso: '2026-05-26T22:00:00.000Z' })
+      .set('x-aura-role', 'clinician')
+      .set('x-aura-linked-patient', 'true')
+      .set('x-aura-linked-visit', 'true')
+      .set('x-aura-ehr-mode', 'sandbox')
+      .expect(200);
+
+    assert.equal(appointments.body.data.appointments[0].importMode, 'sandbox_metadata_only');
+    assert.equal(appointments.body.data.appointments[0].localAppointmentCreated, false);
+    assert.equal(appointments.body.data.domainEvents[0].eventType, 'ehr.appointment_imported.v1');
+
+    const encounter = await request(app.getHttpServer())
+      .get('/api/v1/integrations/ehr/encounters/athena-encounter-synthetic-001')
+      .set('x-aura-role', 'clinician')
+      .set('x-aura-linked-patient', 'true')
+      .set('x-aura-linked-visit', 'true')
+      .set('x-aura-ehr-mode', 'sandbox')
+      .expect(200);
+
+    assert.equal(encounter.body.data.encounter.rawPayloadStored, false);
+    assert.equal(encounter.body.data.domainEvents[0].eventType, 'ehr.encounter_context_loaded.v1');
+
     const chart = await request(app.getHttpServer())
       .get('/api/v1/integrations/ehr/chart-context/safe-patient-synthetic-001/athena-encounter-synthetic-001')
       .query({ slices: 'problems,medications,allergies,labs,documents' })
@@ -77,6 +125,38 @@ describe('EHR integration API e2e', () => {
     assert.equal(approved.body.data.writeback.payloadStored, false);
     assert.equal(approved.body.data.domainEvents[0].eventType, 'ehr.writeback_approval_recorded.v1');
 
+    const prepared = await request(app.getHttpServer())
+      .post('/api/v1/integrations/ehr/writeback-queue/ehr-wb-pending-001/actions')
+      .set('x-aura-role', 'clinician')
+      .set('x-aura-linked-patient', 'true')
+      .set('x-aura-linked-visit', 'true')
+      .send({ action: 'prepare_payload' })
+      .expect(201);
+
+    assert.equal(prepared.body.data.writeback.status, 'prepared');
+    assert.equal(prepared.body.data.writeback.payloadStored, false);
+    assert.equal(prepared.body.data.domainEvents[0].eventType, 'ehr.writeback_payload_prepared.v1');
+
+    const attempt = await request(app.getHttpServer())
+      .post('/api/v1/integrations/ehr/writeback-queue/ehr-wb-pending-001/actions')
+      .set('x-aura-role', 'admin')
+      .send({ action: 'record_attempt' })
+      .expect(201);
+
+    assert.equal(attempt.body.data.writeback.status, 'attempted');
+    assert.equal(attempt.body.data.writeback.liveDeliveryEnabled, false);
+    assert.equal(attempt.body.data.domainEvents[0].eventType, 'ehr.writeback_attempt_recorded.v1');
+
+    const acknowledged = await request(app.getHttpServer())
+      .post('/api/v1/integrations/ehr/writeback-queue/ehr-wb-pending-001/actions')
+      .set('x-aura-role', 'admin')
+      .send({ action: 'acknowledge', acknowledgementId: 'ack-e2e-synthetic-001' })
+      .expect(201);
+
+    assert.equal(acknowledged.body.data.writeback.status, 'acknowledged');
+    assert.equal(acknowledged.body.data.writeback.acknowledgementId, 'ack-e2e-synthetic-001');
+    assert.equal(acknowledged.body.data.domainEvents[0].eventType, 'ehr.writeback_acknowledged.v1');
+
     const retry = await request(app.getHttpServer())
       .post('/api/v1/integrations/ehr/writeback-queue/ehr-wb-failed-001/actions')
       .set('x-aura-role', 'compliance_privacy_lead')
@@ -87,6 +167,17 @@ describe('EHR integration API e2e', () => {
   });
 
   it('denies support approval and PHI-like writeback evidence', async () => {
+    const denied = await request(app.getHttpServer())
+      .post('/api/v1/integrations/ehr/writeback-queue/ehr-wb-pending-001/actions')
+      .set('x-aura-role', 'clinician')
+      .set('x-aura-linked-patient', 'true')
+      .set('x-aura-linked-visit', 'true')
+      .send({ action: 'deny', reason: 'Synthetic denial before EHR payload preparation' })
+      .expect(201);
+
+    assert.equal(denied.body.data.writeback.status, 'denied');
+    assert.equal(denied.body.data.domainEvents[0].eventType, 'ehr.writeback_denied.v1');
+
     await request(app.getHttpServer())
       .post('/api/v1/integrations/ehr/writeback-queue/ehr-wb-pending-001/actions')
       .set('x-aura-role', 'support')

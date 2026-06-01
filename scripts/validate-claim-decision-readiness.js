@@ -123,13 +123,14 @@ check('doc.runbook-exists', 'WO-051 claim/payer runbook exists', exists('docs/ru
         contents.includes('No active gaps as of post-`WO-060` commercial readiness rebaseline/runtime rails review') ||
         contents.includes('No active gaps as of post-`WO-061` runtime persistence switchover review') ||
         contents.includes('No active gaps as of post-`WO-062` API runtime hardening and request-boundary review') ||
-        contents.includes('No active gaps as of post-`WO-063` identity runtime boundary review');
+        contents.includes('No active gaps as of post-`WO-063` identity runtime boundary review') ||
+        contents.includes('No active gaps as of post-`WO-069` athenahealth sandbox and vendor-neutral EHR runtime boundary review');
   check(id, `${id} includes ${snippet} or later post-P11 no-active-gap evidence`, passed, snippet);
 });
 
 check('status.wo051-done', 'WO-051 is marked done', status.work_orders?.['WO-051'] === 'done', status.work_orders?.['WO-051']);
 check('status.post-p11-next-work-order', 'Post-P11 decision gate remains safe while commercial-readiness runtime work is active', status.next_work_order === null || Number.parseInt(String(status.next_work_order || '').replace('WO-', ''), 10) >= 61, status.next_work_order);
-check('status.post-p11-checkpoint', 'Current checkpoint remains P11 or commercial-readiness work', status.current_checkpoint === 'P11' || status.current_checkpoint === 'CR-0' || status.current_checkpoint === 'CR-1' || status.current_checkpoint === 'CR-2', status.current_checkpoint);
+check('status.post-p11-checkpoint', 'Current checkpoint remains P11 or commercial-readiness work', status.current_checkpoint === 'P11' || status.current_checkpoint === 'CR-0' || status.current_checkpoint === 'CR-1' || status.current_checkpoint === 'CR-2' || status.current_checkpoint === 'CR-3', status.current_checkpoint);
 
 check('tests.submitted-claim-false', 'Existing tests prove draft claim preview remains unsubmitted', scheduleTests.includes('submittedClaim') && scheduleTests.includes('false'), 'schedule service/e2e tests');
 check('ux.operations-claim-boundary', 'Operations route keeps claim submission disabled', operationsPage.includes('Claim submission remains disabled.'), 'apps/web/app/aura-note/operations/page.tsx');

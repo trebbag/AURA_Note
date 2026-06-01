@@ -158,10 +158,16 @@ check(
 check(
   'spec-gaps.current',
   'SPEC_GAPS reflects the post-WO-060 or later no-active-gap state',
-  specGaps.includes('No active gaps as of post-`WO-060` commercial readiness rebaseline/runtime rails review') ||
+    specGaps.includes('No active gaps as of post-`WO-060` commercial readiness rebaseline/runtime rails review') ||
     specGaps.includes('No active gaps as of post-`WO-061` runtime persistence switchover review') ||
     specGaps.includes('No active gaps as of post-`WO-062` API runtime hardening and request-boundary review') ||
-    specGaps.includes('No active gaps as of post-`WO-063` identity runtime boundary review'),
+    specGaps.includes('No active gaps as of post-`WO-063` identity runtime boundary review') ||
+    specGaps.includes('No active gaps as of post-`WO-064` primary UI runtime API conversion review') ||
+    specGaps.includes('No active gaps as of post-`WO-065` Figma handoff inventory review') ||
+    specGaps.includes('No active gaps as of post-`WO-066` standalone workflow completion / CR-2 review') ||
+    specGaps.includes('No active gaps as of post-`WO-067` ModeResolver and adapter runtime wiring review') ||
+    specGaps.includes('No active gaps as of post-`WO-068` transcription runtime boundary review') ||
+    specGaps.includes('No active gaps as of post-`WO-069` athenahealth sandbox and vendor-neutral EHR runtime boundary review'),
   'SPEC_GAPS.md'
 );
 

@@ -324,6 +324,14 @@ The documentation workspace API now includes a disabled-live-provider job endpoi
 
 No live transcription credential, raw PHI audio payload, live vendor request, production audio storage, live AI call, autonomous clinical/coding/billing behavior, charge finalization, medical-necessity determination, claim submission, or production launch behavior is enabled.
 
+## WO-069 EHR sandbox runtime boundary backend status
+
+`WO-069` extends the EHR integration runtime through the existing vendor-neutral adapter boundary. `EhrAdapter.getRuntimeBoundary()` now exposes athenahealth-first sandbox metadata, credential-disabled posture, supported runtime states, retry/dead-letter policy, `liveApiCallsEnabled=false`, `liveWritebackEnabled=false`, and `rawPayloadStorageEnabled=false`.
+
+The EHR API now exposes sandbox-safe runtime evidence through `/integrations/ehr/runtime-boundary`, `/integrations/ehr/patients/search`, `/integrations/ehr/appointments/import`, and `/integrations/ehr/encounters/{externalEncounterId}`. These routes return synthetic patient, appointment, and encounter metadata only. The writeback queue action path now records explicit denial, payload-preparation metadata, delivery-attempt metadata, and acknowledgement metadata while preserving human approval and reconciliation gates.
+
+All state-changing EHR actions remain tenant/site scoped through the local identity boundary, permission checked, purpose-of-use checked, audit/domain-event emitting, and payload-safe. No live EHR credential, raw EHR payload storage, live API call, live writeback delivery, autonomous note submission, charge finalization, medical-necessity determination, claim submission, or production launch behavior is enabled.
+
 ## WO-049 launch operations readiness
 
 `WO-049` adds synthetic/local backend operational readiness evidence. `pnpm launch:ops-readiness` combines the deterministic performance baseline, browser support-status drill assertions, and a static verifier for environment promotion, smoke checks, rollback rehearsal, incident response, access review, and support escalation evidence.

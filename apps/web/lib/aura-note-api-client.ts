@@ -36,8 +36,12 @@ import type {
   CreateTemplateRequestDto,
   DocumentationWorkspaceDto,
   DraftNotesViewDto,
+  EhrAppointmentImportResponseDto,
   EhrChartContextResponseDto,
+  EhrEncounterContextResponseDto,
   EhrIntegrationStatusDto,
+  EhrPatientLookupResponseDto,
+  EhrRuntimeBoundaryResponseDto,
   EhrWritebackActionResponseDto,
   EhrWritebackQueueActionRequestDto,
   EhrWritebackQueueActionResponseDto,
@@ -324,6 +328,15 @@ export function createAuraNoteApiClient(options: AuraNoteApiClientOptions = {}) 
     updateFeatureFlag: (key: string, body: UpdateGovernedFeatureFlagRequestDto) =>
       patch<PlatformActionResponseDto>(`/platform/feature-flags/${key}`, body),
     getEhrStatus: () => request<EhrIntegrationStatusDto>('/integrations/ehr/status'),
+    getEhrRuntimeBoundary: () => request<EhrRuntimeBoundaryResponseDto>('/integrations/ehr/runtime-boundary'),
+    searchEhrPatients: (safePatientId = 'safe-patient-synthetic-001') =>
+      request<EhrPatientLookupResponseDto>(`/integrations/ehr/patients/search?safePatientId=${encodeURIComponent(safePatientId)}`),
+    importEhrAppointments: () =>
+      request<EhrAppointmentImportResponseDto>(
+        `/integrations/ehr/appointments/import?startIso=${encodeURIComponent('2026-05-26T14:00:00.000Z')}&endIso=${encodeURIComponent('2026-05-26T22:00:00.000Z')}`
+      ),
+    getEhrEncounterContext: (externalEncounterId: string) =>
+      request<EhrEncounterContextResponseDto>(`/integrations/ehr/encounters/${encodeURIComponent(externalEncounterId)}`),
     getEhrChartContext: (safePatientId: string, externalEncounterId: string, slices?: string[]) => {
       const suffix = slices && slices.length > 0 ? `?slices=${encodeURIComponent(slices.join(','))}` : '';
       return request<EhrChartContextResponseDto>(`/integrations/ehr/chart-context/${safePatientId}/${externalEncounterId}${suffix}`);

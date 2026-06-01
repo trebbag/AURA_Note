@@ -66,7 +66,8 @@ const workOrderIndex = read('work_orders/README.md');
 if (
   !workOrderIndex.includes('`WO-067` is the next active CR-3 work order') &&
   !workOrderIndex.includes('`WO-068` is the next active CR-3 work order') &&
-  !workOrderIndex.includes('`WO-069` is the next active CR-3 work order')
+  !workOrderIndex.includes('`WO-069` is the next active CR-3 work order') &&
+  !workOrderIndex.includes('`WO-070` is the next active CR-3 work order')
 ) {
   throw new Error('work_orders/README.md must retain WO-067 or later next-work-order evidence after WO-066');
 }
@@ -75,7 +76,8 @@ const specGaps = read('SPEC_GAPS.md');
 if (
   !specGaps.includes('No active gaps as of post-`WO-066` standalone workflow completion / CR-2 review') &&
   !specGaps.includes('No active gaps as of post-`WO-067` ModeResolver and adapter runtime wiring review') &&
-  !specGaps.includes('No active gaps as of post-`WO-068` transcription runtime boundary review')
+  !specGaps.includes('No active gaps as of post-`WO-068` transcription runtime boundary review') &&
+  !specGaps.includes('No active gaps as of post-`WO-069` athenahealth sandbox and vendor-neutral EHR runtime boundary review')
 ) {
   throw new Error('SPEC_GAPS.md must retain WO-066 or later no-active-gap evidence');
 }

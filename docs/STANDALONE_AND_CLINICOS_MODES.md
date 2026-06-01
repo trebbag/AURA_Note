@@ -187,6 +187,14 @@ In ClinicOS-integrated mode, ClinicOS may supply visit context metadata through 
 
 `WO-068` does not enable live transcription credentials, raw PHI audio transport, live vendor calls, production audio storage, production PHI, charge finalization, medical-necessity determination, claim submission, or production launch behavior.
 
+## WO-069 EHR sandbox runtime boundary
+
+In standalone mode, EHR remains optional and safely disabled. AURA Note can surface athenahealth-first sandbox metadata, synthetic patient lookup, synthetic appointment import evidence, synthetic encounter context, and writeback lifecycle metadata without requiring live EHR credentials or blocking the documentation/finalization/export workflow.
+
+In ClinicOS-integrated mode, future M25 Integration Hub routing remains adapter-bound. ClinicOS may provide mapping or context metadata in later work, but it cannot bypass AURA Note writeback approval, role checks, tenant/site scope, purpose-of-use, audit, reconciliation, no-raw-payload, or no-live-delivery boundaries.
+
+`WO-069` does not enable production EHR credentials, raw EHR payload storage, live EHR API calls, live writeback delivery, autonomous finalization, charge finalization, medical-necessity determination, claim submission, or production launch behavior.
+
 ## WO-049 launch operations readiness mode behavior
 
 In standalone mode, `WO-049` launch operations readiness proves AURA Note can rehearse build, smoke, rollback, disabled-vendor, performance, incident, access-review, and support-escalation controls without ClinicOS.

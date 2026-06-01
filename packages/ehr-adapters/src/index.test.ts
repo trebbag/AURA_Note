@@ -46,7 +46,10 @@ describe('EHR adapter contract', () => {
   it('isolates athenahealth as a sandbox adapter without live credentials', async () => {
     const adapter = new AthenahealthAdapter({ mode: 'sandbox' });
     const health = await adapter.healthCheck();
+    const boundary = await adapter.getRuntimeBoundary();
     const patients = await adapter.searchPatients({ safePatientId: 'safe-patient-synthetic-001' });
+    const schedule = await adapter.getSchedule('2026-05-26T14:00:00.000Z', '2026-05-26T22:00:00.000Z');
+    const encounter = await adapter.getEncounter('athena-encounter-synthetic-001');
     const context = await adapter.getChartContext({
       safePatientId: 'safe-patient-synthetic-001',
       externalPatientRef: 'athena-patient-ref-synthetic-001',
@@ -58,7 +61,12 @@ describe('EHR adapter contract', () => {
     assert.equal(health.status.mode, 'sandbox');
     assert.equal(health.status.connected, true);
     assert.equal(health.capabilities.configured, false);
+    assert.equal(boundary.adapterBoundary, 'vendor_neutral_ehr_adapter');
+    assert.equal(boundary.liveApiCallsEnabled, false);
+    assert.equal(boundary.rawPayloadStorageEnabled, false);
     assert.equal(patients[0]?.source, 'athenahealth_sandbox');
+    assert.equal(schedule[0]?.sourceSystem, 'athenahealth');
+    assert.equal(encounter.sourceSystem, 'athenahealth');
     assert.equal(context.sourceSystem, 'athenahealth');
   });
 
