@@ -179,11 +179,13 @@ Post-CP4 productionization candidates are documented in `docs/POST_CP4_PRODUCTIO
 
 `WO-064` is complete as the first CR-2 product UX runtime tranche. It converts primary production-intended AURA Note routes to typed API-backed runtime state, expands the web API client, preserves API-backed loading/empty/ready/saving/failed/permission-denied/read-only/degraded/disabled states, keeps local React state transient or documented-demo only, and adds `pnpm frontend:primary-runtime-readiness` evidence.
 
-`WO-065` is complete as the second CR-2 product UX runtime tranche. It adds the Figma-ready screen, component, state, workflow, role/permission, data/API, copy, and checklist inventory docs; adds the read-only `/aura-note/figma-handoff` route; and adds `pnpm figma:handoff-readiness` evidence. `WO-066` is the next active CR-2 work order.
+`WO-065` is complete as the second CR-2 product UX runtime tranche. It adds the Figma-ready screen, component, state, workflow, role/permission, data/API, copy, and checklist inventory docs; adds the read-only `/aura-note/figma-handoff` route; and adds `pnpm figma:handoff-readiness` evidence.
+
+`WO-066` is complete as the third CR-2 product UX runtime tranche. It adds standalone workflow completion browser evidence and `pnpm standalone:workflow-readiness`, proving the synthetic/local standalone path across runtime home, schedule, finalized artifacts, export metadata, operations/billing review, and ClinicOS adapter-boundary states. `WO-067` is the next active CR-3 work order.
 
 `WO-061` through `WO-063` form the CR-1 runtime foundation candidate. They move core runtime services behind repository ports with local Prisma/PostgreSQL as the production-shaped local runtime path, harden the Nest API request boundary, and make synthetic header identity fail closed outside explicit local/demo modes.
 
-`WO-064` through `WO-066` form the CR-2 product UX runtime candidate. `WO-064` and `WO-065` are complete; `WO-066` remains to prove a standalone daily workflow without ClinicOS dependency.
+`WO-064` through `WO-066` form the CR-2 product UX runtime candidate. `WO-064`, `WO-065`, and `WO-066` are complete; CR-2 is complete as synthetic/local product UX runtime evidence.
 
 `WO-067` through `WO-070` form the CR-3 integration and governance runtime candidate. They enforce standalone/ClinicOS mode adapter boundaries and prepare transcription, EHR, AI, and ClinicOS integration paths as production-shaped but safely disabled or mock/sandbox-governed runtime paths.
 

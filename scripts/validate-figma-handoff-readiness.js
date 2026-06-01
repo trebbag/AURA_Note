@@ -184,19 +184,33 @@ assertIncludes('docs/FIGMA_HANDOFF_PLAN.md', ['Status as of `WO-065`']);
 assertIncludes('docs/TEST_PLAN.md', ['WO-065', 'figma:handoff-readiness']);
 assertIncludes('docs/UX_BUILD_SPEC.md', ['WO-065', 'Figma handoff']);
 assertIncludes('docs/PRODUCTION_BUILD_PLAN.md', ['Implementation status as of `WO-065`']);
-assertIncludes('work_orders/README.md', ['`WO-065` is complete', '`WO-066` is the next active CR-2 work order']);
+assertIncludes('work_orders/README.md', ['`WO-065` is complete']);
+const workOrderIndex = read('work_orders/README.md');
+if (
+  !workOrderIndex.includes('`WO-066` is the next active CR-2 work order') &&
+  !workOrderIndex.includes('`WO-067` is the next active CR-3 work order')
+) {
+  throw new Error('work_orders/README.md must retain WO-066 or later next-work-order evidence after WO-065');
+}
 assertIncludes('RUN_LOG.md', ['WO-065 Figma-ready basic UI scaffold and screen inventory', 'figma:handoff-readiness']);
-assertIncludes('SPEC_GAPS.md', ['No active gaps as of post-`WO-065` Figma handoff inventory review']);
+const specGaps = read('SPEC_GAPS.md');
+if (
+  !specGaps.includes('No active gaps as of post-`WO-065` Figma handoff inventory review') &&
+  !specGaps.includes('No active gaps as of post-`WO-066` standalone workflow completion / CR-2 review')
+) {
+  throw new Error('SPEC_GAPS.md must retain WO-065 or later no-active-gap evidence');
+}
 
 const status = JSON.parse(read('repo_status.json'));
 if (status.work_orders?.['WO-065'] !== 'done') {
   throw new Error('repo_status.json must mark WO-065 done before Figma handoff readiness passes');
 }
-if (status.next_work_order !== 'WO-066') {
-  throw new Error(`repo_status.json must advance next_work_order to WO-066; found ${status.next_work_order}`);
+const nextWorkOrderNumber = status.next_work_order ? Number(String(status.next_work_order).slice(3)) : null;
+if (nextWorkOrderNumber !== null && nextWorkOrderNumber < 66) {
+  throw new Error(`repo_status.json must keep WO-066 or later as next_work_order after WO-065; found ${status.next_work_order}`);
 }
-if (status.work_orders?.['WO-066'] !== 'todo') {
-  throw new Error('repo_status.json must mark WO-066 todo after WO-065 is complete');
+if (!['todo', 'in_progress', 'done'].includes(status.work_orders?.['WO-066'])) {
+  throw new Error('repo_status.json must keep WO-066 represented as todo, in_progress, or done after WO-065 is complete');
 }
 
 assertNoForbiddenClaims();

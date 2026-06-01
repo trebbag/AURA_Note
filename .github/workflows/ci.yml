@@ -62,6 +62,7 @@ jobs:
       - run: pnpm frontend:runtime-integration-readiness
       - run: pnpm frontend:primary-runtime-readiness
       - run: pnpm figma:handoff-readiness
+      - run: pnpm standalone:workflow-readiness
       - run: pnpm launch:readiness
       - run: pnpm storage:azure-adapter-readiness
       - run: pnpm storage:secure-download-readiness

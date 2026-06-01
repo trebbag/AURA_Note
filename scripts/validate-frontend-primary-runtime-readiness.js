@@ -92,7 +92,11 @@ assertIncludes('apps/web/e2e/aura-note-routes.spec.ts', [
 ]);
 
 const frontendRuntimeInventory = read('docs/FRONTEND_RUNTIME_INTEGRATION.md');
-if (!frontendRuntimeInventory.includes('Status as of `WO-064`') && !frontendRuntimeInventory.includes('Status as of `WO-065`')) {
+if (
+  !frontendRuntimeInventory.includes('Status as of `WO-064`') &&
+  !frontendRuntimeInventory.includes('Status as of `WO-065`') &&
+  !frontendRuntimeInventory.includes('Status as of `WO-066`')
+) {
   throw new Error('docs/FRONTEND_RUNTIME_INTEGRATION.md must retain WO-064 or later frontend runtime status evidence');
 }
 assertIncludes('docs/FRONTEND_RUNTIME_INTEGRATION.md', [
@@ -106,11 +110,22 @@ assertIncludes('docs/BACKEND_BUILD_SPEC.md', ['WO-064', 'typed API clients']);
 assertIncludes('docs/PRODUCTION_BUILD_PLAN.md', ['Implementation status as of `WO-064`']);
 assertIncludes('work_orders/README.md', ['`WO-064` is complete']);
 const workOrderIndex = read('work_orders/README.md');
-if (!workOrderIndex.includes('`WO-065` is the next active CR-2 work order') && !workOrderIndex.includes('`WO-066` is the next active CR-2 work order')) {
+if (
+  !workOrderIndex.includes('`WO-065` is the next active CR-2 work order') &&
+  !workOrderIndex.includes('`WO-066` is the next active CR-2 work order') &&
+  !workOrderIndex.includes('`WO-067` is the next active CR-3 work order')
+) {
   throw new Error('work_orders/README.md must retain CR-2 next-work-order evidence after WO-064');
 }
 assertIncludes('RUN_LOG.md', ['WO-064 primary UI runtime API conversion', 'frontend:primary-runtime-readiness']);
-assertIncludes('SPEC_GAPS.md', ['No active gaps as of post-`WO-064` primary UI runtime API conversion review']);
+const specGaps = read('SPEC_GAPS.md');
+if (
+  !specGaps.includes('No active gaps as of post-`WO-064` primary UI runtime API conversion review') &&
+  !specGaps.includes('No active gaps as of post-`WO-065` Figma handoff inventory review') &&
+  !specGaps.includes('No active gaps as of post-`WO-066` standalone workflow completion / CR-2 review')
+) {
+  throw new Error('SPEC_GAPS.md must retain WO-064 or later no-active-gap evidence');
+}
 
 const status = JSON.parse(read('repo_status.json'));
 if (status.work_orders?.['WO-064'] !== 'done') {

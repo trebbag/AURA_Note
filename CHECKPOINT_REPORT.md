@@ -1014,3 +1014,57 @@ Deferred decisions remain tracked in `SPEC_GAPS.md`, including production IdP se
 ## Next recommended batch
 
 Stop at the CR-1 checkpoint until review rules allow the next batch. The next implementation target is `WO-064` — Primary UI Runtime API Conversion, which opens CR-2 Product UX Runtime Candidate work.
+
+---
+
+# CR-2 Product UX Runtime Candidate
+
+## Completed work orders
+
+- `WO-064` — Primary UI runtime API conversion.
+- `WO-065` — Figma-ready basic UI scaffold and screen inventory.
+- `WO-066` — Standalone workflow completion.
+
+## Acceptance evidence
+
+- `WO-064` converted primary production-intended AURA Note routes to typed API-backed runtime state and added `pnpm frontend:primary-runtime-readiness`.
+- `WO-065` added the Figma-ready screen, component, state, workflow, role/permission, data/API, content copy, and checklist inventory docs plus `/aura-note/figma-handoff` and `pnpm figma:handoff-readiness`.
+- `WO-066` added standalone workflow completion evidence proving runtime home, schedule, finalized artifacts, export metadata, operations/billing review, and ClinicOS adapter-boundary states can be tested without ClinicOS dependency.
+- `repo_status.json` now records `current_checkpoint: CR-3`, `next_work_order: WO-067`, `WO-064: done`, `WO-065: done`, `WO-066: done`, and `WO-067: todo`.
+- No live vendors, production PHI, production credentials, autonomous clinical/coding/billing behavior, charge finalization, medical-necessity determination, claim submission, or production launch behavior were introduced.
+
+## Tests and gates
+
+- `pnpm figma:handoff-readiness`
+- `pnpm frontend:runtime-integration-readiness`
+- `pnpm frontend:primary-runtime-readiness`
+- `pnpm standalone:workflow-readiness`
+- `pnpm install --frozen-lockfile`
+- `pnpm db:client:generate`
+- `pnpm lint`
+- `pnpm lint:phi`
+- `pnpm typecheck`
+- `pnpm test`
+- `pnpm test:e2e`
+- `pnpm test:browser`
+- `pnpm build`
+- `pnpm production:readiness`
+- `node scripts/status.js`
+- `git diff --check`
+
+## Open risks
+
+- CR-2 remains synthetic/local product UX runtime evidence. Final Figma visual fidelity, live identity, live ClinicOS, live EHR, live transcription, live external AI, live Azure PHI storage, production PHI database use, production launch approval, and live vendor contracts remain out of scope.
+- ClinicOS mode remains mock/degraded/disabled evidence only until `WO-067` and later CR-3 tranches harden runtime adapter boundaries.
+
+## Active SPEC_GAPs
+
+None active as of the post-`WO-066` standalone workflow completion / CR-2 review.
+
+## Deferred production decisions
+
+Deferred decisions remain tracked in `SPEC_GAPS.md`, including production launch approval, production identity/account lifecycle, production PHI persistence, production Azure storage/deletion/restore, live transcription, external AI private/BAA pathway, production EHR writeback, ClinicOS live integration, revenue estimate policy, claim/payer strategy, and commercial readiness approval.
+
+## Next recommended batch
+
+Proceed to `WO-067` — ModeResolver And Adapter Runtime Wiring. The next checkpoint is CR-3 after `WO-067` through `WO-070`.

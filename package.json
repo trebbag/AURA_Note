@@ -34,6 +34,7 @@
     "persistence:phi-db-review-readiness": "node scripts/validate-phi-db-review-readiness.js",
     "standalone:patient-schedule-readiness": "node scripts/validate-standalone-patient-schedule-readiness.js",
     "standalone:operations-readiness": "node scripts/validate-standalone-operations-readiness.js",
+    "standalone:workflow-readiness": "pnpm --filter @aura-note/web test:e2e && node scripts/validate-standalone-workflow-readiness.js",
     "audio:transcription-readiness": "node scripts/validate-audio-transcription-readiness.js",
     "transcription:live-review-readiness": "node scripts/validate-transcription-live-review-readiness.js",
     "identity:production-readiness": "node scripts/validate-production-identity-readiness.js",

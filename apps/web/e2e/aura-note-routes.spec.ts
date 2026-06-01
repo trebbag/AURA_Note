@@ -105,7 +105,7 @@ async function createRuntimeAppointment(seedLabel: string) {
       safePatientId: `safe-patient-${idSuffix}`,
       clinicianId: `clinician-${seedLabel}`,
       visitType: 'Chronic follow-up',
-      startsAt: '2026-05-28T15:00:00.000Z',
+      startsAt: '2026-05-27T15:00:00.000Z',
       durationMinutes: 30,
       modality: 'in_person',
       reasonForVisit: `Synthetic Playwright ${seedLabel} workflow`
@@ -432,6 +432,34 @@ test.describe('AURA Note route accessibility smoke suite', () => {
     await expect(page.getByRole('region', { name: 'Workflow map' })).toContainText('appointment creation to one note shell');
     await expect(page.getByRole('region', { name: 'Safety and mode boundaries' })).toContainText('ClinicOS-integrated mode stays adapter-bound');
     await expect(page.getByRole('region', { name: 'Safety and mode boundaries' })).toContainText('AI suggestions remain draft-only');
+  });
+
+  test('standalone workflow completion proves daily-use flow without ClinicOS dependency', async ({ page }) => {
+    const seeded = await createFinalizedNoteForTest('standalone-complete');
+
+    await page.goto('/aura-note');
+    await expect(page.getByRole('heading', { level: 1, name: 'AURA Note Runtime Home' })).toBeVisible();
+    await expect(page.getByRole('article', { name: 'Operations' })).toContainText('typed_api_client');
+
+    await page.goto('/aura-note/schedule');
+    await expect(page.getByRole('region', { name: 'day schedule' })).toContainText(seeded.safePatientId);
+    await expect(page.getByRole('region', { name: 'day schedule' })).toContainText(seeded.noteId);
+
+    await page.goto(`/aura-note/finalized/${seeded.noteId}`);
+    await expect(page.getByLabel('Signed finalized artifact')).toContainText('This viewer cannot reopen the active editor.');
+    await page.getByRole('button', { name: 'Download Note PDF' }).click();
+    await expect(page.getByLabel('Artifact statuses')).toContainText('Final Note PDF');
+    await expect(page.getByLabel('Artifact statuses')).toContainText('generated');
+
+    await page.goto('/aura-note/operations');
+    await expect(page.getByRole('region', { name: 'Standalone operations readiness' })).toContainText('Claim submission remains disabled.');
+    await page.getByRole('button', { name: 'Billing Review' }).click();
+    await expect(page.getByRole('article', { name: 'Billing review queue' })).toContainText('triggered review only');
+    await expect(page.getByRole('article', { name: 'Billing review queue' })).toContainText('submittedClaim=false');
+
+    await page.goto('/aura-note/integrations/clinicos');
+    await expect(page.getByRole('region', { name: 'ClinicOS integration readiness' })).toContainText('AURA Note authoritative');
+    await expect(page.getByRole('region', { name: 'ClinicOS safety summary' })).toContainText('does not build ClinicOS modules');
   });
 
   test('frontend runtime integration gate exercises backend-backed appointment through finalization export and reload evidence', async ({ page }) => {

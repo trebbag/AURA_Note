@@ -523,6 +523,17 @@ This gate proves synthetic/local primary route runtime evidence only. It does no
 
 This gate is design-handoff evidence only. It does not enable live PHI, live EHR, live ClinicOS, live AI, live transcription, live storage, claim submission, autonomous clinical/coding/billing behavior, medical-necessity determination, charge finalization, production design approval, or production launch.
 
+## WO-066 standalone workflow completion
+
+`WO-066` adds `pnpm standalone:workflow-readiness`:
+
+- Playwright seeds a backend-backed standalone appointment, drives the API finalization/export workflow, and verifies browser-visible standalone continuity through runtime home, schedule, finalized note, operations, and ClinicOS adapter-boundary routes.
+- The route checks prove the workflow does not require ClinicOS, finalized artifacts are read-only, claim submission remains disabled, and ClinicOS cannot bypass AURA Note permissions.
+- `scripts/validate-standalone-workflow-readiness.js` checks route evidence, docs/status/run-log/checkpoint evidence, next-work-order rails, and the no-live/no-launch posture.
+- The gate preserves `pnpm figma:handoff-readiness`, `pnpm frontend:primary-runtime-readiness`, and `pnpm frontend:runtime-integration-readiness`.
+
+This gate closes CR-2 as synthetic/local product UX runtime evidence only. It does not enable live PHI, live EHR, live ClinicOS, live AI, live transcription, live storage, claim submission, autonomous clinical/coding/billing behavior, medical-necessity determination, charge finalization, or production launch.
+
 ## WO-049 launch operations readiness
 
 `WO-049` adds synthetic/local deployment, performance, reliability, and operational drill evidence:

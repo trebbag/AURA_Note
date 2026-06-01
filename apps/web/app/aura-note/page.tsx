@@ -37,8 +37,8 @@ export default async function AuraNoteRuntimeHomePage() {
         </section>
 
         <section className="panel-grid" aria-label="Primary runtime route summary">
-          <article className="panel-card">
-            <h2>Clinical Workflow</h2>
+          <article className="panel-card" aria-labelledby="runtime-home-clinical-workflow">
+            <h2 id="runtime-home-clinical-workflow">Clinical Workflow</h2>
             <dl className="metric-list">
               <div>
                 <dt>Appointments</dt>
@@ -59,8 +59,8 @@ export default async function AuraNoteRuntimeHomePage() {
             </dl>
           </article>
 
-          <article className="panel-card">
-            <h2>Operations</h2>
+          <article className="panel-card" aria-labelledby="runtime-home-operations">
+            <h2 id="runtime-home-operations">Operations</h2>
             <dl className="metric-list">
               <div>
                 <dt>Tasks</dt>
@@ -77,8 +77,8 @@ export default async function AuraNoteRuntimeHomePage() {
             </dl>
           </article>
 
-          <article className="panel-card">
-            <h2>Support Status</h2>
+          <article className="panel-card" aria-labelledby="runtime-home-support-status">
+            <h2 id="runtime-home-support-status">Support Status</h2>
             <dl className="metric-list">
               <div>
                 <dt>Health</dt>

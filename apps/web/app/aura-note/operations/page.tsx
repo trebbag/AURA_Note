@@ -198,7 +198,7 @@ export default function StandaloneOperationsPage() {
           </div>
           <div>
             <dt>Claims</dt>
-            <dd>not submitted</dd>
+            <dd>Claim submission remains disabled.</dd>
           </div>
         </dl>
       </section>

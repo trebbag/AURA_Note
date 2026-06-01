@@ -4,9 +4,9 @@ This file tracks missing, conflicting, unsafe, or deliberately deferred product 
 
 ## Active gaps
 
-No active gaps as of post-`WO-065` Figma handoff inventory review on 2026-06-01.
+No active gaps as of post-`WO-066` standalone workflow completion / CR-2 review on 2026-06-01.
 
-This supersedes the prior marker: No active gaps as of post-`WO-064` primary UI runtime API conversion review. The repo remains not production-ready. The items below are deferred production decisions rather than active blockers for the current post-`WO-065` synthetic/local Figma handoff inventory scope.
+This supersedes the prior marker: No active gaps as of post-`WO-065` Figma handoff inventory review. The repo remains not production-ready. The items below are deferred production decisions rather than active blockers for the current post-`WO-066` synthetic/local standalone workflow completion scope.
 
 ## Deferred production decisions
 
@@ -17,7 +17,7 @@ These items must stay visible and must be resolved before the related production
 - **Related future work:** `WO-061` through `WO-075`; any later founder-approved production launch work order
 - **Status:** deferred
 - **Decision needed before production launch:** founder/clinical/compliance/security/legal approval, beta scope, production environment, credential source, operational owner, incident response, access review, backup/restore, vendor contracts, PHI governance, live integrations, support ownership, launch go/no-go, and rollback authority.
-- **Safe current posture:** `WO-060` reopened implementation rails, `WO-061` added synthetic/local runtime persistence evidence, `WO-062` hardened the API request boundary with validation, request correlation, PHI-safe error envelopes, redacted logs, security headers, body-size guardrails, and local throttle scaffolding, `WO-063` added the explicit `AURA_NOTE_AUTH_MODE` identity runtime boundary with local demo/strict synthetic modes and production/preview/delegated fail-closed behavior, `WO-064` converted primary production-intended routes to typed API-backed synthetic/local runtime state, and `WO-065` added read-only Figma handoff inventory docs plus `/aura-note/figma-handoff`. Production launch remains false and no live vendor, credential, PHI, claim, autonomous clinical/coding/billing, or production deployment behavior is enabled.
+- **Safe current posture:** `WO-060` reopened implementation rails, `WO-061` added synthetic/local runtime persistence evidence, `WO-062` hardened the API request boundary with validation, request correlation, PHI-safe error envelopes, redacted logs, security headers, body-size guardrails, and local throttle scaffolding, `WO-063` added the explicit `AURA_NOTE_AUTH_MODE` identity runtime boundary with local demo/strict synthetic modes and production/preview/delegated fail-closed behavior, `WO-064` converted primary production-intended routes to typed API-backed synthetic/local runtime state, `WO-065` added read-only Figma handoff inventory docs plus `/aura-note/figma-handoff`, and `WO-066` completed synthetic/local standalone workflow evidence without ClinicOS dependency. Production launch remains false and no live vendor, credential, PHI, claim, autonomous clinical/coding/billing, or production deployment behavior is enabled.
 
 ### Deferred Decision — Production SIEM/APM vendor and operational monitoring posture
 

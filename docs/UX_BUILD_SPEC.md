@@ -426,6 +426,8 @@ The route is AI governance-review evidence, not a live AI operations console. It
 
 `WO-065` adds the Figma handoff inventory route at `/aura-note/figma-handoff` and the accompanying screen, component, state, workflow, role/permission, data/API, copy, and checklist documents. The route is a read-only, metadata-only design scaffold that inventories standalone home, schedule, patients, chart context, draft notes, workspace panels, audio/transcription, Suggestions, Visit Selections, Compliance Review, History Gap Review, finalization, finalized notes, exports, writeback, task inbox, MA worklist, billing review, settings/admin/integrations, templates, dot phrases, estimates, rules catalog, EHR, ClinicOS, AI governance, coaching, support status, and commercial readiness surfaces. It is not final Figma fidelity and does not add new product behavior.
 
+`WO-066` completes CR-2 as a standalone workflow evidence tranche. The browser test suite now includes a single seeded standalone workflow that starts from API-backed runtime state, verifies schedule visibility, opens the read-only finalized artifact, proves export metadata remains available, confirms operations/billing review keeps claim submission disabled, and checks ClinicOS remains an adapter-bound optional surface. This is workflow completion evidence for synthetic/local standalone mode, not final visual design or production launch approval.
+
 ## Required accessibility and UX states
 
 Every screen must have empty, loading, ready, saving, blocked, failed, permission-denied, and read-only states.

@@ -858,10 +858,12 @@ This gate does not authorize live EHR writeback, live AI, live transcription, pr
 - **ClinicOS-integrated behavior:** ClinicOS remains optional and degraded safely when unavailable.
 - **AI/PHI/security requirements:** suggestions are candidate-only; no claim submission; no autonomous finalization; synthetic data only.
 - **Testing requirements:** complete standalone E2E journey from admin setup through appointment, documentation, finalization, export metadata, read-only final note, and coaching signal.
-- **Required scripts/gates:** `pnpm standalone:e2e-readiness`; default local gate.
+- **Required scripts/gates:** `pnpm standalone:workflow-readiness`; default local gate.
 - **Definition of Done:** standalone app has a coherent v1 daily-use workflow and proves no claim submission or autonomous finalization.
 - **Stop conditions:** product policy is missing for a required standalone action or finalization/billing boundary.
 - **Risks and deferred decisions:** production patient matching, live vendors, and final Figma design remain deferred.
+
+**Implementation status as of `WO-066`:** complete as synthetic/local CR-2 standalone workflow evidence. The browser suite now includes a seeded backend-backed standalone workflow that verifies runtime home, schedule, finalized artifact, export metadata, operations/billing review, and ClinicOS adapter-boundary states without requiring ClinicOS. `pnpm standalone:workflow-readiness` verifies the workflow test, docs/status/run-log/checkpoint evidence, next-work-order rails, and no-live/no-launch posture. CR-2 is complete; this does not enable live vendors, production PHI, production credentials, autonomous clinical/coding/billing behavior, claim submission, charge finalization, medical-necessity determination, or production launch.
 
 ## WO-067 — ModeResolver And Adapter Runtime Wiring
 
