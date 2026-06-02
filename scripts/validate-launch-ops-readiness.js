@@ -128,7 +128,8 @@ check('doc.runbook-exists', 'WO-049 launch ops runbook exists', exists('docs/run
         contents.includes('No active gaps as of post-`WO-063` identity runtime boundary review') ||
         contents.includes('No active gaps as of post-`WO-069` athenahealth sandbox and vendor-neutral EHR runtime boundary review') ||
         contents.includes('No active gaps as of post-`WO-070` AI governance runtime boundary review') ||
-        contents.includes('No active gaps as of post-`WO-075` commercial readiness decision gate review');
+        contents.includes('No active gaps as of post-`WO-075` commercial readiness decision gate review') ||
+        contents.includes('No active gaps as of post-`WO-076` post-CR4 launch governance intake review');
   check(id, `${id} includes ${snippet} or later P10 no-active-gap evidence`, passed, snippet);
 });
 

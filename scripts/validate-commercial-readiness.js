@@ -59,7 +59,8 @@ const workOrderReadme = read('work_orders/README.md');
 check('status.cr4', 'repo_status records CR-4', status.current_checkpoint === 'CR-4', status.current_checkpoint);
 check('status.next-null', 'repo_status stops after CR-4 with no active work order', status.next_work_order === null, status.next_work_order);
 check('checkpoint.cr4', 'CR-4 checkpoint report exists', checkpoint.includes('CR-4 Commercial Readiness Review Candidate'), 'CHECKPOINT_REPORT.md');
-check('spec-gaps.none', 'SPEC_GAPS records no active post-WO-075 gaps', specGaps.includes('No active gaps as of post-`WO-075` commercial readiness decision gate review'), 'SPEC_GAPS.md');
+check('spec-gaps.none', 'SPEC_GAPS records no active post-WO-075 gaps', specGaps.includes('No active gaps as of post-`WO-075` commercial readiness decision gate review') ||
+    specGaps.includes('No active gaps as of post-`WO-076` post-CR4 launch governance intake review'), 'SPEC_GAPS.md');
 check('work-order.index', 'Work-order index records CR-4 completion', workOrderReadme.includes('CR-4 is complete') && workOrderReadme.includes('`WO-075` is complete'), 'work_orders/README.md');
 check('api.contracts', 'Contracts expose commercial readiness DTO and events', contracts.includes('CommercialReadinessResponseDto') && contracts.includes('commercial.readiness_decision_checked.v1'), 'packages/contracts/src/index.ts');
 check('api.openapi', 'OpenAPI exposes commercial readiness endpoint', openapi.includes('/support/commercial-readiness') && openapi.includes('CommercialReadinessResponse'), 'packages/contracts/openapi/aura-note.v1.yaml');

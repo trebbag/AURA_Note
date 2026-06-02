@@ -81,7 +81,8 @@ check(
     specGaps.includes('No active gaps as of post-`WO-063` identity runtime boundary review') ||
     specGaps.includes('No active gaps as of post-`WO-069` athenahealth sandbox and vendor-neutral EHR runtime boundary review') ||
     specGaps.includes('No active gaps as of post-`WO-070` AI governance runtime boundary review') ||
-    specGaps.includes('No active gaps as of post-`WO-075` commercial readiness decision gate review'),
+    specGaps.includes('No active gaps as of post-`WO-075` commercial readiness decision gate review') ||
+    specGaps.includes('No active gaps as of post-`WO-076` post-CR4 launch governance intake review'),
   'SPEC_GAPS.md'
 );
 check('work-order.next-file', 'WO-048 work-order file exists for the next tranche', fs.readdirSync(path.join(root, 'work_orders')).some((file) => file.startsWith('WO-048_')), 'work_orders');

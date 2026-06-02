@@ -85,7 +85,8 @@ check(
     specGaps.includes('No active gaps as of post-`WO-063` identity runtime boundary review') ||
     specGaps.includes('No active gaps as of post-`WO-069` athenahealth sandbox and vendor-neutral EHR runtime boundary review') ||
     specGaps.includes('No active gaps as of post-`WO-070` AI governance runtime boundary review') ||
-    specGaps.includes('No active gaps as of post-`WO-075` commercial readiness decision gate review'),
+    specGaps.includes('No active gaps as of post-`WO-075` commercial readiness decision gate review') ||
+    specGaps.includes('No active gaps as of post-`WO-076` post-CR4 launch governance intake review'),
   'SPEC_GAPS.md'
 );
 check('spec-gaps.deferred-ehr', 'SPEC_GAPS preserves production EHR credentialing and live writeback delivery as deferred before live use', specGaps.includes('Production EHR credentialing and live writeback delivery') && specGaps.includes('future approved EHR implementation work order'), 'SPEC_GAPS.md');

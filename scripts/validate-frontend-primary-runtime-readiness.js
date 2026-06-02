@@ -133,7 +133,8 @@ if (
   !specGaps.includes('No active gaps as of post-`WO-068` transcription runtime boundary review') &&
   !specGaps.includes('No active gaps as of post-`WO-069` athenahealth sandbox and vendor-neutral EHR runtime boundary review') &&
   !specGaps.includes('No active gaps as of post-`WO-070` AI governance runtime boundary review') &&
-  !specGaps.includes('No active gaps as of post-`WO-075` commercial readiness decision gate review')
+  !specGaps.includes('No active gaps as of post-`WO-075` commercial readiness decision gate review') &&
+  !specGaps.includes('No active gaps as of post-`WO-076` post-CR4 launch governance intake review')
 ) {
   throw new Error('SPEC_GAPS.md must retain WO-064 or later no-active-gap evidence');
 }

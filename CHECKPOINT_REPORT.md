@@ -1184,3 +1184,46 @@ Deferred decisions remain tracked in `SPEC_GAPS.md`, including production launch
 ## Next recommended batch
 
 Stop at the CR-4 checkpoint. The next work must be a later founder-approved post-CR-4 or production-launch decision work order. `repo_status.json` intentionally has `next_work_order: null`.
+
+---
+
+# WO-076 Post-CR4 Launch Governance Intake
+
+## Completed work order
+
+- `WO-076` — Post-CR4 launch governance, branch/CI, and duplicate artifact intake.
+
+## Acceptance evidence
+
+- `docs/POST_CR4_LAUNCH_GOVERNANCE_INTAKE.md` records the post-CR4 launch-governance posture, GitHub branch/PR follow-up state, duplicate artifact inventory, cleanup decision rules, and launch decision intake.
+- `work_orders/WO-076_post_cr4_launch_governance_branch_ci_duplicate_artifact_intake.md` defines the bounded governance work order with no production behavior changes.
+- `.gitignore` now ignores nested generated build output via `**/.next/` and `**/dist/`, preventing generated app/package output from polluting source-control status.
+- `pnpm post-cr4:launch-governance` verifies the work-order file, status, run-log/checkpoint evidence, duplicate artifact review posture, CI hook, and no-launch/no-live behavior markers.
+- `repo_status.json` records `current_checkpoint: CR-4`, `next_work_order: null`, and `WO-076: done`.
+
+## Tests and gates
+
+- `pnpm post-cr4:launch-governance`
+- `pnpm commercial:readiness-plan`
+- `pnpm production:readiness`
+- `pnpm acceptance:readiness`
+- `node scripts/status.js`
+- `git diff --check`
+
+## Open risks
+
+- `WO-076` does not approve production launch, live PHI, live vendors, production credentials, claim submission, charge finalization, medical-necessity determination, certification claims, or autonomous clinical/coding/billing behavior.
+- Non-identical duplicate source/doc/script files remain review-required artifacts; they were not deleted.
+- GitHub Actions still requires branch push/PR execution and remote check inspection.
+
+## Active SPEC_GAPs
+
+None active as of the post-`WO-076` post-CR4 launch governance intake review.
+
+## Deferred production decisions
+
+Deferred decisions remain tracked in `SPEC_GAPS.md`, including duplicate artifact deletion approval, production launch approval, live identity/account lifecycle, production PHI persistence, production Azure storage/deletion/restore, live transcription, external AI private/BAA pathway, production EHR writeback, ClinicOS live integration, revenue estimate policy, claim/payer strategy, support/on-call ownership, legal/compliance/privacy/security approval, and live vendor credentials.
+
+## Next recommended batch
+
+Push the branch, open or update a draft PR into `main`, inspect GitHub Actions, and create a later founder-approved work order for either duplicate artifact cleanup, launch-governance execution, beta pilot execution, production credentialing, or another explicit post-CR4 production decision sequence.

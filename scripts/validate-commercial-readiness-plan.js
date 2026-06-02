@@ -28,7 +28,7 @@ function check(id, description, passed, evidence) {
   checks.push({ id, description, passed: Boolean(passed), evidence });
 }
 
-const commercialWorkOrders = Array.from({ length: 16 }, (_, index) => `WO-${String(index + 60).padStart(3, '0')}`);
+const commercialWorkOrders = Array.from({ length: 17 }, (_, index) => `WO-${String(index + 60).padStart(3, '0')}`);
 const checkpoints = ['CR-0', 'CR-1', 'CR-2', 'CR-3', 'CR-4'];
 const commercialImplementationWorkOrders = commercialWorkOrders.slice(1);
 const activeOrProgressedStatuses = ['todo', 'in_progress', 'done'];
@@ -37,7 +37,8 @@ const supportingDocs = [
   'docs/COMMERCIAL_READINESS_ROADMAP.md',
   'docs/COMMERCIAL_READINESS_DEFINITION_OF_DONE.md',
   'docs/REMAINING_SYNTHETIC_TO_RUNTIME_GAPS.md',
-  'docs/FIGMA_HANDOFF_PLAN.md'
+  'docs/FIGMA_HANDOFF_PLAN.md',
+  'docs/POST_CR4_LAUNCH_GOVERNANCE_INTAKE.md'
 ];
 const prohibitedLaunchClaims = [
   'productionLaunchApproved=true',
@@ -94,7 +95,7 @@ check(
 const plannedAfter061 = commercialWorkOrders.slice(2);
 check(
   'status.future-planned-or-progressed',
-  'WO-062 through WO-075 are planned or have progressed through the commercial sequence',
+  'WO-062 through WO-076 are planned or have progressed through the commercial sequence',
   plannedAfter061.every((workOrder) => plannedOrProgressedStatuses.includes(repoStatus.work_orders?.[workOrder])),
   plannedAfter061.map((workOrder) => [workOrder, repoStatus.work_orders?.[workOrder]])
 );
@@ -169,7 +170,8 @@ check(
     specGaps.includes('No active gaps as of post-`WO-068` transcription runtime boundary review') ||
     specGaps.includes('No active gaps as of post-`WO-069` athenahealth sandbox and vendor-neutral EHR runtime boundary review') ||
     specGaps.includes('No active gaps as of post-`WO-070` AI governance runtime boundary review') ||
-    specGaps.includes('No active gaps as of post-`WO-075` commercial readiness decision gate review'),
+    specGaps.includes('No active gaps as of post-`WO-075` commercial readiness decision gate review') ||
+    specGaps.includes('No active gaps as of post-`WO-076` post-CR4 launch governance intake review'),
   'SPEC_GAPS.md'
 );
 

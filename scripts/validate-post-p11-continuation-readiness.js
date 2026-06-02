@@ -69,7 +69,8 @@ check(
     specGaps.includes('No active gaps as of post-`WO-063` identity runtime boundary review') ||
     specGaps.includes('No active gaps as of post-`WO-069` athenahealth sandbox and vendor-neutral EHR runtime boundary review') ||
     specGaps.includes('No active gaps as of post-`WO-070` AI governance runtime boundary review') ||
-    specGaps.includes('No active gaps as of post-`WO-075` commercial readiness decision gate review'),
+    specGaps.includes('No active gaps as of post-`WO-075` commercial readiness decision gate review') ||
+    specGaps.includes('No active gaps as of post-`WO-076` post-CR4 launch governance intake review'),
   'SPEC_GAPS.md'
 );
 check('runlog.wo052', 'RUN_LOG records WO-052 evidence', runLog.includes('WO-052 post-P11 continuation rails'), 'RUN_LOG.md');

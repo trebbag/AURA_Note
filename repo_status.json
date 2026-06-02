@@ -79,9 +79,10 @@
     "WO-072": "done",
     "WO-073": "done",
     "WO-074": "done",
-    "WO-075": "done"
+    "WO-075": "done",
+    "WO-076": "done"
   },
-  "last_updated_by": "Codex WO-071 through WO-075 CR-4 commercial readiness batch",
-  "last_updated_at": "2026-06-01T19:32:18Z",
-  "notes": "WO-071 through WO-075 completed the CR-4 commercial readiness review candidate batch. AURA Note now has a permission-checked /support/commercial-readiness API boundary, browser-visible CR-4 support route evidence, security/privacy/compliance threat-model package, observability/SRE/support incident operations package, billing/revenue integrity boundary package, beta pilot package, final commercial readiness review packet, CR-4 checkpoint evidence, and readiness gates for security:commercial-readiness, ops:commercial-readiness, billing:revenue-integrity-readiness, beta:pilot-package-readiness, and commercial:readiness. This is a commercial review package, not production launch approval: no live PHI, production credential, live OIDC, live SAML, live ClinicOS delegated identity, live ClinicOS event bus, raw ClinicOS payload storage, live EHR API call, live EHR writeback delivery, live transcription vendor, raw PHI audio transport, production audio storage, live external AI, production prompt store, raw PHI transfer to external AI, live Azure PHI storage, claim submission, autonomous clinical/coding/billing behavior, medical-necessity determination, charge finalization, order placement, patient-facing financial conclusion, certification claim, or production launch behavior is authorized or introduced."
+  "last_updated_by": "Codex WO-076 post-CR4 launch governance intake",
+  "last_updated_at": "2026-06-02T15:14:15Z",
+  "notes": "WO-076 completed the post-CR4 launch governance intake. The repo now has a post-CR4 launch governance decision package, duplicate artifact inventory, recursive ignore rules for nested generated build outputs, a post-cr4:launch-governance readiness gate, CI coverage for that gate, and status evidence that the current branch still requires push/PR/CI follow-up outside the committed files. This is governance and cleanup-intake evidence only, not production launch approval: no live PHI, production credential, live OIDC, live SAML, live ClinicOS delegated identity, live ClinicOS event bus, raw ClinicOS payload storage, live EHR API call, live EHR writeback delivery, live transcription vendor, raw PHI audio transport, production audio storage, live external AI, production prompt store, raw PHI transfer to external AI, live Azure PHI storage, claim submission, autonomous clinical/coding/billing behavior, medical-necessity determination, charge finalization, order placement, patient-facing financial conclusion, certification claim, duplicate-source deletion approval, or production launch behavior is authorized or introduced."
 }

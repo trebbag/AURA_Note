@@ -86,6 +86,7 @@ git diff --check
 - **CR-2 — Product UX Runtime Candidate:** required after `WO-064` through `WO-066`.
 - **CR-3 — Integration and Governance Runtime Candidate:** required after `WO-067` through `WO-070`.
 - **CR-4 — Commercial Readiness Review Candidate:** required after `WO-071` through `WO-075`.
+- **Post-CR4 Launch Governance Intake:** `WO-076` may run after CR-4 only when explicitly requested. It creates branch/CI/cleanup governance evidence and does not approve production launch.
 
 Checkpoint reports must list completed work orders, evidence, tests, open risks, active and deferred `SPEC_GAP`s, and the next recommended batch.
 
@@ -1071,6 +1072,29 @@ This gate does not authorize live EHR writeback, live AI, live transcription, pr
 - **Risks and deferred decisions:** final approval, contracts, real pilot scope, live credentials, and production deployment remain decision-gated.
 
 **Implementation status as of `WO-075`:** complete as the CR-4 commercial readiness review candidate. The repo now includes `docs/COMMERCIAL_READINESS_REVIEW_PACKET.md`, final CR-4 readiness matrix, `/support/commercial-readiness`, `pnpm commercial:readiness`, CR-4 checkpoint evidence, and `repo_status.json` with `next_work_order: null`. Commercial review package readiness is true; production launch ready remains false.
+
+## WO-076 — Post-CR4 Launch Governance, Branch/CI, And Duplicate Artifact Intake
+
+- **Objective:** Convert the post-CR4 stop state into an explicit launch-governance intake without enabling production behavior.
+- **Why this exists:** After CR-4, the repo needed a safe next step for branch/PR/CI validation, duplicate-file triage, and production-launch decision intake while preserving `productionLaunchReady=false`.
+- **Prerequisites:** `WO-071` through `WO-075` complete, CR-4 checkpoint evidence present, no active SPEC_GAP for the synthetic/local review package.
+- **In scope:** post-CR4 governance doc, duplicate artifact inventory, recursive ignore rules for nested generated build output, readiness validator, CI hook, status/log/checkpoint updates, PR/CI follow-up instructions.
+- **Out of scope:** production launch approval, real beta launch execution, live vendor credentials, live PHI, destructive source deletion without review, production deployment execution, or new product runtime behavior.
+- **UX requirements:** no user-facing product route change; support/commercial review posture remains visible through existing CR-4 surfaces.
+- **Backend/API requirements:** no API behavior change; readiness is script/documentation/status evidence only.
+- **Data model/persistence requirements:** no schema or migration change.
+- **Event/audit requirements:** no runtime event change; governance evidence is recorded in `RUN_LOG.md`, `CHECKPOINT_REPORT.md`, and the post-CR4 intake document.
+- **RBAC/ABAC requirements:** no permission expansion; support and commercial readiness access remains role-limited by existing API behavior.
+- **Standalone-mode behavior:** unchanged; standalone remains the safe default mode.
+- **ClinicOS-integrated behavior:** unchanged; live ClinicOS delegation/event-bus behavior remains disabled until a later approved work order.
+- **AI/PHI/security requirements:** no real PHI, no live AI, no credentials, no claim submission, no clinical/coding/billing autonomy, and no production launch claim.
+- **Testing requirements:** `pnpm post-cr4:launch-governance`, `pnpm production:readiness`, `pnpm acceptance:readiness`, `node scripts/status.js`, `git diff --check`.
+- **Required scripts/gates:** `pnpm post-cr4:launch-governance`; default local/readiness gate as appropriate for documentation/status-only work.
+- **Definition of Done:** `WO-076` is discoverable, status-tracked, run-log evidenced, readiness-script verified, CI-hooked, and does not authorize production launch or delete differing duplicate files.
+- **Stop conditions:** founder asks to approve launch, delete non-identical duplicates, enable live vendors, configure credentials, process live PHI, or execute production deployment without required governance decisions.
+- **Risks and deferred decisions:** duplicate source/doc merge-vs-delete decisions, GitHub Actions result after branch push, launch approval, live credentials, vendor contracts, and production deployment remain deferred.
+
+**Implementation status as of `WO-076`:** complete as a post-CR4 governance intake. The repo now includes `docs/POST_CR4_LAUNCH_GOVERNANCE_INTAKE.md`, `pnpm post-cr4:launch-governance`, recursive nested build-output ignore rules, and status evidence for duplicate artifact triage and branch/PR follow-up. Production launch ready remains false.
 
 ## Overall production-launch criteria
 

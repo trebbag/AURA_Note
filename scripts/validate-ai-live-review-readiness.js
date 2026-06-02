@@ -90,7 +90,8 @@ check(
     specGaps.includes('No active gaps as of post-`WO-063` identity runtime boundary review') ||
     specGaps.includes('No active gaps as of post-`WO-069` athenahealth sandbox and vendor-neutral EHR runtime boundary review') ||
     specGaps.includes('No active gaps as of post-`WO-070` AI governance runtime boundary review') ||
-    specGaps.includes('No active gaps as of post-`WO-075` commercial readiness decision gate review'),
+    specGaps.includes('No active gaps as of post-`WO-075` commercial readiness decision gate review') ||
+    specGaps.includes('No active gaps as of post-`WO-076` post-CR4 launch governance intake review'),
   'SPEC_GAPS.md'
 );
 check('spec-gaps.deferred-ai', 'SPEC_GAPS preserves external AI provider and PHI governance as deferred before live use', specGaps.includes('External AI provider and PHI governance') && specGaps.includes('future approved AI implementation work order'), 'SPEC_GAPS.md');

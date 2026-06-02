@@ -4,9 +4,9 @@ This file tracks missing, conflicting, unsafe, or deliberately deferred product 
 
 ## Active gaps
 
-No active gaps as of post-`WO-075` commercial readiness decision gate review on 2026-06-01.
+No active gaps as of post-`WO-076` post-CR4 launch governance intake review on 2026-06-02.
 
-This supersedes the prior marker: No active gaps as of post-`WO-070` AI governance runtime boundary review. The repo remains not production-ready. The items below are deferred production decisions rather than active blockers for the current post-`WO-075` CR-4 commercial readiness review package.
+This supersedes the prior marker: No active gaps as of post-`WO-075` commercial readiness decision gate review. The repo remains not production-ready. The items below are deferred production decisions rather than active blockers for the current post-`WO-076` launch governance intake package.
 
 ## Deferred production decisions
 
@@ -18,6 +18,13 @@ These items must stay visible and must be resolved before the related production
 - **Status:** deferred
 - **Decision needed before production launch:** founder/clinical/compliance/security/legal approval, beta scope, production environment, credential source, operational owner, incident response, access review, backup/restore, vendor contracts, PHI governance, live integrations, support ownership, launch go/no-go, and rollback authority.
 - **Safe current posture:** `WO-060` reopened implementation rails, `WO-061` through `WO-070` added runtime persistence, API, identity, frontend, standalone, integration, transcription, EHR, ClinicOS, and AI governance evidence, and `WO-071` through `WO-075` packaged CR-4 security/privacy/compliance, observability/support, billing/revenue integrity, beta-pilot, and commercial-readiness decision evidence. Production launch remains false and no live vendor, credential, PHI, claim, autonomous clinical/coding/billing, or production deployment behavior is enabled.
+
+### Deferred Decision — Duplicate artifact deletion approval
+
+- **Related future work:** a later cleanup work order or explicit founder-approved deletion pass
+- **Status:** deferred
+- **Decision needed before deletion:** whether non-byte-identical copied files ending in ` 2` or ` 3` contain useful work that should be merged into tracked sources, archived as evidence, or deleted. Byte-identical files may be removed by a later cleanup pass after confirming they were generated duplicates, but this work order records inventory only.
+- **Safe current posture:** `WO-076` inventories duplicate artifacts and ignores nested generated build outputs, but it does not delete non-identical source, docs, scripts, Prisma, or test files without explicit review.
 
 ### Deferred Decision — Production SIEM/APM vendor and operational monitoring posture
 

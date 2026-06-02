@@ -84,6 +84,7 @@ Codex must complete work orders sequentially unless a checkpoint or blocker stop
 - `WO-073` — Billing, revenue integrity, claim-decision, and compliance boundary completion.
 - `WO-074` — Beta pilot commercial readiness package.
 - `WO-075` — Commercial readiness decision gate.
+- `WO-076` — Post-CR4 launch governance, branch/CI, and duplicate artifact intake.
 
 ## Work order rules
 
@@ -201,10 +202,14 @@ Post-CP4 productionization candidates are documented in `docs/POST_CP4_PRODUCTIO
 
 `WO-075` is complete as the final CR-4 commercial readiness tranche. It adds `docs/COMMERCIAL_READINESS_REVIEW_PACKET.md`, `/support/commercial-readiness` review packet evidence, final readiness matrix, disabled/live-vendor/founder-decision inventory, `pnpm commercial:readiness`, and CR-4 checkpoint evidence. This is not production launch approval.
 
+`WO-076` is complete as the post-CR4 launch governance intake. It adds `docs/POST_CR4_LAUNCH_GOVERNANCE_INTAKE.md`, a duplicate artifact inventory, recursive ignore rules for nested generated build outputs, `pnpm post-cr4:launch-governance`, and CI coverage for the new gate. It does not delete differing duplicate source/doc files, approve production launch, enable live vendors, or authorize live PHI.
+
 `WO-061` through `WO-063` form the CR-1 runtime foundation candidate. They move core runtime services behind repository ports with local Prisma/PostgreSQL as the production-shaped local runtime path, harden the Nest API request boundary, and make synthetic header identity fail closed outside explicit local/demo modes.
 
 `WO-064` through `WO-066` form the CR-2 product UX runtime candidate. `WO-064`, `WO-065`, and `WO-066` are complete; CR-2 is complete as synthetic/local product UX runtime evidence.
 
 `WO-067` through `WO-070` form the CR-3 integration and governance runtime candidate. They are complete as synthetic/local evidence: standalone/ClinicOS mode adapter boundaries are enforced, and transcription, EHR, AI, and ClinicOS integration paths are production-shaped but safely disabled or mock/sandbox-governed runtime paths.
 
-`WO-071` through `WO-075` form the CR-4 commercial readiness review candidate. They are complete as review-ready synthetic evidence and harden security/privacy/compliance, observability/support, billing/revenue integrity, beta-pilot packaging, and the final commercial-readiness decision packet without granting production launch approval. CR-4 is complete and stops with `next_work_order: null` until a later founder-approved launch or post-CR-4 work order is created.
+`WO-071` through `WO-075` form the CR-4 commercial readiness review candidate. They are complete as review-ready synthetic evidence and harden security/privacy/compliance, observability/support, billing/revenue integrity, beta-pilot packaging, and the final commercial-readiness decision packet without granting production launch approval. CR-4 is complete.
+
+`WO-076` is complete as a post-CR4 governance intake after the founder asked Codex to continue with the recommended work order. It keeps `next_work_order: null` after completion until a later founder-approved production-launch, beta execution, live credentialing, duplicate deletion, or post-CR4 implementation sequence is created.
