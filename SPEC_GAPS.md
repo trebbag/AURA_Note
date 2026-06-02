@@ -4,13 +4,13 @@ This file tracks missing, conflicting, unsafe, or deliberately deferred product 
 
 ## Active gaps
 
-No active gaps as of post-`WO-076` post-CR4 launch governance intake review on 2026-06-02.
+No active gaps as of post-`WO-077` duplicate artifact cleanup and next-sequence rails review on 2026-06-02.
 
-This supersedes the prior marker: No active gaps as of post-`WO-075` commercial readiness decision gate review. The repo remains not production-ready. The items below are deferred production decisions rather than active blockers for the current post-`WO-076` launch governance intake package.
+This supersedes the prior marker: No active gaps as of post-`WO-076` post-CR4 launch governance intake review. The repo remains not production-ready. The items below are deferred production decisions rather than active blockers for the current post-`WO-077` cleanup and planned-sequence package.
 
 ## Deferred production decisions
 
-These items must stay visible and must be resolved before the related production work can be declared complete. They are not blockers for the completed `WO-062` synthetic/local API runtime boundary tranche because the active work explicitly excludes legal certification claims, production deployment, production launch approval, live WAF/CDN configuration, live SIEM/APM vendors, production observability credentials, PHI-bearing logs, live Azure credentials, PHI-bearing object payloads, public object URLs, live destructive deletion, production restore execution, PHI-bearing audit exports, live IdP credentials, live OIDC/SAML, live ClinicOS delegation, live ClinicOS event-bus sync, delegated identity bypass, raw ClinicOS payload storage, live EHR/ClinicOS synchronization, production database credentials, production PHI database storage, live migrations, production backup/restore execution, support database access, production EHR credentials, raw EHR payload storage, live EHR writeback delivery, writeback without human approval, live transcription credentials, live transcription provider calls, PHI-bearing audio transport, production raw-audio storage, PHI-bearing support transcript access, live external AI credentials, raw PHI transfer to external AI, live model calls, production prompt stores, support AI PHI content access, autonomous billing, charge finalization, medical-necessity determination, claim submission, denial automation, payment posting, patient-facing financial conclusions, and production launch behavior.
+These items must stay visible and must be resolved before the related production work can be declared complete. They are not blockers for the completed synthetic/local and post-CR4 cleanup scope because the active work explicitly excludes legal certification claims, production deployment, production launch approval, live WAF/CDN configuration, live SIEM/APM vendors, production observability credentials, PHI-bearing logs, live Azure credentials, PHI-bearing object payloads, public object URLs, live destructive production deletion, production restore execution, PHI-bearing audit exports, live IdP credentials, live OIDC/SAML, live ClinicOS delegation, live ClinicOS event-bus sync, delegated identity bypass, raw ClinicOS payload storage, live EHR/ClinicOS synchronization, production database credentials, production PHI database storage, live migrations, production backup/restore execution, support database access, production EHR credentials, raw EHR payload storage, live EHR writeback delivery, writeback without human approval, live transcription credentials, live transcription provider calls, PHI-bearing audio transport, production raw-audio storage, PHI-bearing support transcript access, live external AI credentials, raw PHI transfer to external AI, live model calls, production prompt stores, support AI PHI content access, autonomous billing, charge finalization, medical-necessity determination, claim submission, denial automation, payment posting, patient-facing financial conclusions, and production launch behavior.
 
 ### Deferred Decision — Commercial readiness implementation and launch approval
 
@@ -18,13 +18,6 @@ These items must stay visible and must be resolved before the related production
 - **Status:** deferred
 - **Decision needed before production launch:** founder/clinical/compliance/security/legal approval, beta scope, production environment, credential source, operational owner, incident response, access review, backup/restore, vendor contracts, PHI governance, live integrations, support ownership, launch go/no-go, and rollback authority.
 - **Safe current posture:** `WO-060` reopened implementation rails, `WO-061` through `WO-070` added runtime persistence, API, identity, frontend, standalone, integration, transcription, EHR, ClinicOS, and AI governance evidence, and `WO-071` through `WO-075` packaged CR-4 security/privacy/compliance, observability/support, billing/revenue integrity, beta-pilot, and commercial-readiness decision evidence. Production launch remains false and no live vendor, credential, PHI, claim, autonomous clinical/coding/billing, or production deployment behavior is enabled.
-
-### Deferred Decision — Duplicate artifact deletion approval
-
-- **Related future work:** a later cleanup work order or explicit founder-approved deletion pass
-- **Status:** deferred
-- **Decision needed before deletion:** whether non-byte-identical copied files ending in ` 2` or ` 3` contain useful work that should be merged into tracked sources, archived as evidence, or deleted. Byte-identical files may be removed by a later cleanup pass after confirming they were generated duplicates, but this work order records inventory only.
-- **Safe current posture:** `WO-076` inventories duplicate artifacts and ignores nested generated build outputs, but it does not delete non-identical source, docs, scripts, Prisma, or test files without explicit review.
 
 ### Deferred Decision — Production SIEM/APM vendor and operational monitoring posture
 
@@ -95,6 +88,16 @@ These items must stay visible and must be resolved before the related production
 - **Status:** deferred
 - **Decision needed before implementation:** whether live claim submission belongs in v1 or later, clearinghouse/payer strategy, billing compliance requirements, human approval model, audit model, denial/payment scope, patient-facing financial language, and rollback/void/reversal procedures.
 - **Safe current posture:** `WO-051` captured the P11 decision gate. Draft claim preview remains internal and human-reviewed with `submittedClaim = false`; no clearinghouse API, payer API, autonomous charge finalization, medical-necessity determination, claim submission, denial automation, payment posting, or patient-facing financial conclusion is enabled.
+
+## Resolved decisions
+
+### Resolved Decision — Duplicate artifact deletion approval
+
+- **Resolved in work order:** `WO-077`
+- **Status:** resolved for the reviewed accidental local duplicate-pattern artifacts only.
+- **Decision:** the founder asked Codex to do duplicate artifact adjudication. Codex compared 103 visible duplicate-pattern files, removed 40 byte-identical copies, removed 62 stale historical copies, reviewed the one unique duplicate difference, and rejected that unique script variant because it weakened the committed PostgreSQL/Prisma migration-readiness behavior.
+- **Evidence:** `docs/DUPLICATE_ARTIFACT_ADJUDICATION.md`
+- **Boundary:** this does not authorize deletion of tracked source, production records, evidence artifacts, PHI, secrets, credentials, or future non-reviewed files.
 
 ## Gap entry format
 

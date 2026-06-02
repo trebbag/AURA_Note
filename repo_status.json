@@ -80,9 +80,22 @@
     "WO-073": "done",
     "WO-074": "done",
     "WO-075": "done",
-    "WO-076": "done"
+    "WO-076": "done",
+    "WO-077": "done",
+    "WO-078": "planned",
+    "WO-079": "planned",
+    "WO-080": "planned",
+    "WO-081": "planned",
+    "WO-082": "planned",
+    "WO-083": "planned",
+    "WO-084": "planned",
+    "WO-085": "planned",
+    "WO-086": "planned",
+    "WO-087": "planned",
+    "WO-088": "planned",
+    "WO-089": "planned"
   },
-  "last_updated_by": "Codex WO-076 post-CR4 launch governance intake",
-  "last_updated_at": "2026-06-02T15:14:15Z",
-  "notes": "WO-076 completed the post-CR4 launch governance intake. The repo now has a post-CR4 launch governance decision package, duplicate artifact inventory, recursive ignore rules for nested generated build outputs, a post-cr4:launch-governance readiness gate, CI coverage for that gate, and status evidence that the current branch still requires push/PR/CI follow-up outside the committed files. This is governance and cleanup-intake evidence only, not production launch approval: no live PHI, production credential, live OIDC, live SAML, live ClinicOS delegated identity, live ClinicOS event bus, raw ClinicOS payload storage, live EHR API call, live EHR writeback delivery, live transcription vendor, raw PHI audio transport, production audio storage, live external AI, production prompt store, raw PHI transfer to external AI, live Azure PHI storage, claim submission, autonomous clinical/coding/billing behavior, medical-necessity determination, charge finalization, order placement, patient-facing financial conclusion, certification claim, duplicate-source deletion approval, or production launch behavior is authorized or introduced."
+  "last_updated_by": "Codex WO-077 duplicate artifact cleanup and next-work-order rails",
+  "last_updated_at": "2026-06-02T18:26:23Z",
+  "notes": "WO-077 completed duplicate artifact adjudication and post-CR4 next-work-order rails after PR #67 merged to main. The repo now has no visible duplicate-pattern local artifacts outside ignored generated folders, a cleanup evidence document, a post-CR4 planned work-order sequence through WO-089, a production decision input checklist, and a post-cr4:next-work-orders readiness gate. WO-078 through WO-089 remain planned, not active, and next_work_order stays null until the required founder/clinical/compliance/security/legal/vendor/operations inputs are available and a planned work order is deliberately promoted. This is governance, cleanup, and planning evidence only, not production launch approval: no live PHI, production credential, live OIDC, live SAML, live ClinicOS delegated identity, live ClinicOS event bus, raw ClinicOS payload storage, live EHR API call, live EHR writeback delivery, live transcription vendor, raw PHI audio transport, production audio storage, live external AI, production prompt store, raw PHI transfer to external AI, live Azure PHI storage, claim submission, autonomous clinical/coding/billing behavior, medical-necessity determination, charge finalization, order placement, patient-facing financial conclusion, certification claim, or production launch behavior is authorized or introduced."
 }

@@ -66,8 +66,10 @@ const intakeRecordsDuplicateInventory =
   intake.includes('141 duplicate-pattern files') &&
   intake.includes('43 files were byte-identical') &&
   intake.includes('98 files differed') &&
-  intake.includes('remaining visible untracked duplicate source/doc/script files') &&
-  intake.includes('duplicateSourceDeletionApproved=false');
+  (intake.includes('remaining visible untracked duplicate source/doc/script files') ||
+    intake.includes('103 visible duplicate-pattern files were reviewed')) &&
+  (intake.includes('duplicateSourceDeletionApproved=false') ||
+    (intake.includes('duplicateSourceDeletionCompleted=true') && intake.includes('WO-077')));
 
 check('status.wo076-done', 'repo_status marks WO-076 done', status.work_orders?.['WO-076'] === 'done', status.work_orders?.['WO-076']);
 check('status.checkpoint-cr4', 'repo_status remains at CR-4 post-governance intake', status.current_checkpoint === 'CR-4', status.current_checkpoint);
@@ -77,15 +79,15 @@ check('work-order.index', 'Work-order index records WO-076 completion', readme.i
 check('plan.wo076', 'Production build plan includes WO-076', plan.includes('## WO-076 '), 'docs/PRODUCTION_BUILD_PLAN.md');
 check('runlog.wo076', 'RUN_LOG records WO-076', runLog.includes('WO-076 post-CR4 launch governance intake'), 'RUN_LOG.md');
 check('checkpoint.wo076', 'CHECKPOINT_REPORT records WO-076 post-CR4 evidence', checkpoint.includes('WO-076 Post-CR4 Launch Governance Intake'), 'CHECKPOINT_REPORT.md');
-check('spec-gaps.no-active', 'SPEC_GAPS records no active post-WO-076 gaps', specGaps.includes('No active gaps as of post-`WO-076` post-CR4 launch governance intake review'), 'SPEC_GAPS.md');
-check('spec-gaps.duplicate-deferred', 'SPEC_GAPS tracks duplicate artifact deletion approval as deferred', specGaps.includes('Deferred Decision — Duplicate artifact deletion approval'), 'SPEC_GAPS.md');
+check('spec-gaps.no-active', 'SPEC_GAPS records no active post-WO-076 or later post-CR4 gaps', specGaps.includes('No active gaps as of post-`WO-076` post-CR4 launch governance intake review') || specGaps.includes('No active gaps as of post-`WO-077` duplicate artifact cleanup and next-sequence rails review'), 'SPEC_GAPS.md');
+check('spec-gaps.duplicate-tracked', 'SPEC_GAPS tracks duplicate artifact deletion as deferred or resolved', specGaps.includes('Deferred Decision — Duplicate artifact deletion approval') || specGaps.includes('Resolved Decision — Duplicate artifact deletion approval'), 'SPEC_GAPS.md');
 check('doc.intake', 'Post-CR4 governance intake document exists', exists('docs/POST_CR4_LAUNCH_GOVERNANCE_INTAKE.md'), 'docs/POST_CR4_LAUNCH_GOVERNANCE_INTAKE.md');
 check('doc.no-launch', 'Intake document preserves launch false posture', intake.includes('productionLaunchReady=false') && intake.includes('productionLaunchApproved=false'), 'docs/POST_CR4_LAUNCH_GOVERNANCE_INTAKE.md');
-check('doc.duplicate-inventory', 'Intake document records duplicate artifact inventory', intake.includes('Duplicate Artifact Inventory') && intake.includes('duplicateSourceDeletionApproved=false'), 'docs/POST_CR4_LAUNCH_GOVERNANCE_INTAKE.md');
+check('doc.duplicate-inventory', 'Intake document records duplicate artifact inventory and cleanup posture', intake.includes('Duplicate Artifact Inventory') && (intake.includes('duplicateSourceDeletionApproved=false') || intake.includes('duplicateSourceDeletionCompleted=true')), 'docs/POST_CR4_LAUNCH_GOVERNANCE_INTAKE.md');
 check('gitignore.next', 'Nested Next.js build outputs are ignored recursively', gitignore.includes('**/.next/'), '.gitignore');
 check('gitignore.dist', 'Nested dist build outputs are ignored recursively', gitignore.includes('**/dist/'), '.gitignore');
 check('duplicates.generated-hidden', 'No untracked duplicate artifacts from nested generated output remain visible to git', duplicateArtifacts.every((relativePath) => !relativePath.includes('/.next/') && !relativePath.includes('/dist/')), duplicateArtifacts.filter((relativePath) => relativePath.includes('/.next/') || relativePath.includes('/dist/')).slice(0, 20));
-check('duplicates.review-required', 'Duplicate source/doc/script artifacts are inventoried for later review, not silently deleted', (sourceDuplicateArtifacts.length > 0 && differingDuplicates.length > 0) || (sourceDuplicateArtifacts.length === 0 && intakeRecordsDuplicateInventory), {
+check('duplicates.review-required', 'Duplicate source/doc/script artifacts are inventoried or cleanup-completed with committed evidence', (sourceDuplicateArtifacts.length > 0 && differingDuplicates.length > 0) || (sourceDuplicateArtifacts.length === 0 && intakeRecordsDuplicateInventory), {
   sourceDuplicateCount: sourceDuplicateArtifacts.length,
   exactDuplicateCount: exactDuplicates.length,
   differingDuplicateCount: differingDuplicates.length,
@@ -111,7 +113,8 @@ console.log(JSON.stringify({
   checkpointContext: 'CR-4',
   productionLaunchReady: false,
   productionLaunchApproved: false,
-  duplicateSourceDeletionApproved: false,
+  duplicateSourceDeletionApproved: intake.includes('duplicateSourceDeletionApproved=true'),
+  duplicateSourceDeletionCompleted: intake.includes('duplicateSourceDeletionCompleted=true'),
   visibleDuplicateSourceCount: sourceDuplicateArtifacts.length,
   exactDuplicateCount: exactDuplicates.length,
   differingDuplicateCount: differingDuplicates.length,

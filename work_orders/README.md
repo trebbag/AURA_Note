@@ -85,6 +85,19 @@ Codex must complete work orders sequentially unless a checkpoint or blocker stop
 - `WO-074` — Beta pilot commercial readiness package.
 - `WO-075` — Commercial readiness decision gate.
 - `WO-076` — Post-CR4 launch governance, branch/CI, and duplicate artifact intake.
+- `WO-077` — Duplicate artifact cleanup and post-CR4 next-work-order rails.
+- `WO-078` — Production launch governance inputs and approval dossier.
+- `WO-079` — Production identity provider and account lifecycle activation.
+- `WO-080` — Production PHI persistence and database operations activation.
+- `WO-081` — Production Azure storage, backup/restore, and retention deletion activation.
+- `WO-082` — Live transcription provider and audio transport activation.
+- `WO-083` — External AI private/BAA pathway activation.
+- `WO-084` — Production EHR writeback credentialing and sandbox-to-live activation.
+- `WO-085` — ClinicOS live integration contract and event-bus activation.
+- `WO-086` — Production observability, SIEM/APM, and support operations activation.
+- `WO-087` — Revenue estimate and patient-facing financial policy activation.
+- `WO-088` — Claim, clearinghouse, payer, denial, and payment strategy decision gate.
+- `WO-089` — Beta pilot execution and production launch go/no-go.
 
 ## Work order rules
 
@@ -213,3 +226,7 @@ Post-CP4 productionization candidates are documented in `docs/POST_CP4_PRODUCTIO
 `WO-071` through `WO-075` form the CR-4 commercial readiness review candidate. They are complete as review-ready synthetic evidence and harden security/privacy/compliance, observability/support, billing/revenue integrity, beta-pilot packaging, and the final commercial-readiness decision packet without granting production launch approval. CR-4 is complete.
 
 `WO-076` is complete as a post-CR4 governance intake after the founder asked Codex to continue with the recommended work order. It keeps `next_work_order: null` after completion until a later founder-approved production-launch, beta execution, live credentialing, duplicate deletion, or post-CR4 implementation sequence is created.
+
+`WO-077` is complete as a post-CR4 cleanup and rails tranche. PR #67 was merged to `main`, visible duplicate-pattern local artifacts were reviewed and removed, the single unique duplicate difference was documented and rejected as a weaker migration-readiness variant, and `WO-078` through `WO-089` were added as planned future production decision/activation work orders.
+
+`WO-078` through `WO-089` are planned only. They are discoverable so Codex can see the remaining sequence, but they must not be promoted to `todo` until the required founder/clinical/compliance/security/legal/vendor/operations inputs are supplied and the relevant work-order file is created. `next_work_order` intentionally remains `null` while all remaining post-CR4 work is planned and input-gated.

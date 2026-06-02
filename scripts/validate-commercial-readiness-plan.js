@@ -38,7 +38,10 @@ const supportingDocs = [
   'docs/COMMERCIAL_READINESS_DEFINITION_OF_DONE.md',
   'docs/REMAINING_SYNTHETIC_TO_RUNTIME_GAPS.md',
   'docs/FIGMA_HANDOFF_PLAN.md',
-  'docs/POST_CR4_LAUNCH_GOVERNANCE_INTAKE.md'
+  'docs/POST_CR4_LAUNCH_GOVERNANCE_INTAKE.md',
+  'docs/DUPLICATE_ARTIFACT_ADJUDICATION.md',
+  'docs/POST_CR4_NEXT_WORK_ORDER_SEQUENCE.md',
+  'docs/POST_CR4_PRODUCTION_DECISION_INPUTS.md'
 ];
 const prohibitedLaunchClaims = [
   'productionLaunchApproved=true',
@@ -171,7 +174,8 @@ check(
     specGaps.includes('No active gaps as of post-`WO-069` athenahealth sandbox and vendor-neutral EHR runtime boundary review') ||
     specGaps.includes('No active gaps as of post-`WO-070` AI governance runtime boundary review') ||
     specGaps.includes('No active gaps as of post-`WO-075` commercial readiness decision gate review') ||
-    specGaps.includes('No active gaps as of post-`WO-076` post-CR4 launch governance intake review'),
+    specGaps.includes('No active gaps as of post-`WO-076` post-CR4 launch governance intake review') ||
+    specGaps.includes('No active gaps as of post-`WO-077` duplicate artifact cleanup and next-sequence rails review'),
   'SPEC_GAPS.md'
 );
 

@@ -1227,3 +1227,48 @@ Deferred decisions remain tracked in `SPEC_GAPS.md`, including duplicate artifac
 ## Next recommended batch
 
 Push the branch, open or update a draft PR into `main`, inspect GitHub Actions, and create a later founder-approved work order for either duplicate artifact cleanup, launch-governance execution, beta pilot execution, production credentialing, or another explicit post-CR4 production decision sequence.
+
+---
+
+# WO-077 Duplicate Artifact Cleanup And Next-Work-Order Rails
+
+## Completed work order
+
+- `WO-077` — Duplicate artifact cleanup and post-CR4 next-work-order rails.
+
+## Acceptance evidence
+
+- PR #67 was marked ready and merged to `main` with merge commit `015b03102abd4da8a3b0b95a393fa9380351a27b`.
+- `docs/DUPLICATE_ARTIFACT_ADJUDICATION.md` records the duplicate cleanup decision, counts, unique-difference review, and safety boundary.
+- 103 visible duplicate-pattern files were reviewed and removed: 40 byte-identical copies, 62 stale historical copies, and 1 unique but rejected weaker migration-readiness script variant.
+- `docs/POST_CR4_NEXT_WORK_ORDER_SEQUENCE.md` records `WO-078` through `WO-089` as planned work only.
+- `docs/POST_CR4_PRODUCTION_DECISION_INPUTS.md` records the exact founder/reviewer/vendor/operations inputs required before planned production decisions can be promoted.
+- `repo_status.json` records `WO-077: done`, `WO-078` through `WO-089: planned`, `current_checkpoint: CR-4`, and `next_work_order: null`.
+- `pnpm post-cr4:next-work-orders` verifies cleanup, status, planned sequence, docs, CI hook, and no-launch/no-live markers.
+
+## Tests and gates
+
+- `pnpm post-cr4:next-work-orders`
+- `pnpm post-cr4:launch-governance`
+- `pnpm commercial:readiness-plan`
+- `pnpm production:readiness`
+- `pnpm acceptance:readiness`
+- `node scripts/status.js`
+- `git diff --check`
+
+## Open risks
+
+- `WO-078` through `WO-089` remain planned and input-gated. None are active implementation work.
+- Production launch, live PHI, live vendors, production credentials, live EHR/writeback, live transcription, live external AI, live Azure PHI storage, live ClinicOS integration, claim submission, charge finalization, medical-necessity determination, certification claims, and autonomous clinical/coding/billing behavior remain disabled or deferred.
+
+## Active SPEC_GAPs
+
+None active as of the post-`WO-077` duplicate artifact cleanup and next-sequence rails review.
+
+## Deferred production decisions
+
+Deferred decisions remain tracked in `SPEC_GAPS.md` and are mapped to planned `WO-078` through `WO-089`. Duplicate artifact deletion approval is now resolved only for the reviewed accidental local duplicate-pattern artifacts.
+
+## Next recommended batch
+
+Do not promote a planned work order until the required inputs in `docs/POST_CR4_PRODUCTION_DECISION_INPUTS.md` are available. Recommended next candidate is `WO-078` if the founder is ready to assemble launch governance approvals; otherwise choose the planned work order matching the first available production decision package.

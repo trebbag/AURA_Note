@@ -80,6 +80,7 @@ jobs:
       - run: pnpm beta:pilot-package-readiness
       - run: pnpm commercial:readiness
       - run: pnpm post-cr4:launch-governance
+      - run: pnpm post-cr4:next-work-orders
       - run: pnpm commercial:readiness-plan
       - run: pnpm post-p11:readiness
       - run: pnpm production:readiness
