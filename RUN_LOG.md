@@ -1019,3 +1019,14 @@ Codex must append a dated entry after each work order or meaningful implementati
 - **Open SPEC_GAPs:** None active as of post-`WO-077` duplicate artifact cleanup and next-sequence rails review. Deferred production decisions remain in `SPEC_GAPS.md`.
 - **Safety boundary:** Duplicate cleanup did not change runtime behavior and did not delete tracked source. The next work-order sequence remains planned and input-gated.
 - **Next step:** Push the `codex/post-cr4-cleanup-next-rails` branch, open a draft PR, inspect GitHub Actions, and promote a planned work order only after the required inputs from `docs/POST_CR4_PRODUCTION_DECISION_INPUTS.md` are available.
+
+## 2026-06-02T18:46:04Z — WO-077 PR #68 CI repair
+
+- **Work order:** `WO-077` — Duplicate Artifact Cleanup And Post-CR4 Next-Work-Order Rails.
+- **Summary:** GitHub Actions for draft PR #68 failed at `pnpm ehr:sandbox-runtime-readiness` after earlier install, typecheck, test, browser, build, persistence, identity, transcription, config, observability, and EHR integration gates passed. The EHR tests passed; the validator failed because it still expected the old post-`WO-075` `SPEC_GAPS.md` no-active-gap marker after `WO-077` correctly updated the marker. The validator now checks the current post-`WO-077` marker.
+- **Files changed:** `RUN_LOG.md` and `scripts/validate-ehr-sandbox-runtime-readiness.js`.
+- **Tests run:** `pnpm ehr:sandbox-runtime-readiness`.
+- **Tests not run:** Full local gate rerun is deferred to the GitHub Actions rerun for PR #68 because the repair is a single stale-validator literal and the exact failed command now passes locally.
+- **Accepted risks:** None beyond the existing `WO-077` planned-only production decision posture.
+- **Open SPEC_GAPs:** None active as of post-`WO-077` duplicate artifact cleanup and next-sequence rails review. Deferred production decisions remain in `SPEC_GAPS.md`.
+- **Next step:** Commit and push the CI repair, then confirm PR #68 GitHub Actions passes.
