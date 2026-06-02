@@ -18,6 +18,7 @@ const workflow = readText('.github/workflows/ci.yml');
 const plan = readText('docs/PRODUCTION_BUILD_PLAN.md');
 const continuation = readText('docs/POST_P11_CONTINUATION_PLAN.md');
 const storageReview = readText('docs/PRODUCTION_AZURE_STORAGE_DELETION_RESTORE_REVIEW.md');
+const storageDecisionRecord = readText('docs/PRODUCTION_AZURE_STORAGE_DECISION_RECORD.md');
 const workOrderIndex = readText('work_orders/README.md');
 const specGaps = readText('SPEC_GAPS.md');
 const runLog = readText('RUN_LOG.md');
@@ -36,6 +37,7 @@ check('work-order.index', 'Work-order index records WO-055 completion', workOrde
 check('plan.wo055', 'Production build plan includes WO-055', plan.includes('## WO-055 ') && plan.includes('Production Azure Storage'), 'docs/PRODUCTION_BUILD_PLAN.md');
 check('continuation.promoted', 'Continuation plan records Azure storage/deletion/restore as promoted to WO-055', continuation.includes('Promoted as `WO-055`') && continuation.includes('Production Azure storage'), 'docs/POST_P11_CONTINUATION_PLAN.md');
 check('storage-review.exists', 'Production Azure storage/deletion/restore review document exists', exists('docs/PRODUCTION_AZURE_STORAGE_DELETION_RESTORE_REVIEW.md'), 'docs/PRODUCTION_AZURE_STORAGE_DELETION_RESTORE_REVIEW.md');
+check('storage-decision-record.exists', 'Production Azure storage decision record exists', exists('docs/PRODUCTION_AZURE_STORAGE_DECISION_RECORD.md'), 'docs/PRODUCTION_AZURE_STORAGE_DECISION_RECORD.md');
 
 [
   'Azure account and container topology',
@@ -72,6 +74,44 @@ check('storage-review.exists', 'Production Azure storage/deletion/restore review
   check(`storage-review.event.${eventName}`, `Storage review includes future event ${eventName}`, storageReview.includes(eventName), eventName);
 });
 
+[
+  'auranoteeastus91d0',
+  'AURA_resource_group',
+  'eastus',
+  'Standard ZRS',
+  'managed_identity',
+  'aura-note-storage-mi',
+  'aura-note-kv-91d0',
+  'aura-final-note-pdfs',
+  'aura-patient-summary-pdfs',
+  'aura-structured-exports',
+  'aura-audit-export-bundles',
+  'aura-raw-audio',
+  'aura-transcripts',
+  'aura-storage-evidence',
+  'aura-restore-drill-evidence',
+  'Public blob access disabled',
+  'Shared key access disabled',
+  'Private endpoint required',
+  'server-mediated',
+  'Final note PDF | 10 minutes',
+  'Redacted audit export bundle | 15 minutes',
+  'Raw audio: purge-eligible after 7 days',
+  'Transcript objects: indefinite retention',
+  'Blob soft delete: 14 days',
+  'Container soft delete: 14 days',
+  'Blob versioning: enabled',
+  'Quarterly synthetic restore-readiness drill',
+  'No live Azure resource was provisioned'
+].forEach((snippet) => {
+  check(
+    `storage-decision-record.${snippet.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`,
+    `Storage decision record includes ${snippet}`,
+    storageDecisionRecord.includes(snippet),
+    snippet
+  );
+});
+
 check(
   'spec-gaps.current',
   'SPEC_GAPS reflects post-WO-055 or later post-P11 planning/control with no active gaps',
@@ -106,7 +146,7 @@ check('ci.script', 'CI runs storage live review readiness before post-P11 readin
   'azureProductionLaunchApproved=true',
   'productionStorageLaunchApproved=true'
 ].forEach((needle) => {
-  check(`prohibited.${needle}`, `WO-055 files do not enable ${needle}`, ![plan, continuation, storageReview, runLog].some((contents) => contents.includes(needle)), needle);
+  check(`prohibited.${needle}`, `WO-055 files do not enable ${needle}`, ![plan, continuation, storageReview, storageDecisionRecord, runLog].some((contents) => contents.includes(needle)), needle);
 });
 
 const failed = checks.filter((item) => !item.passed);

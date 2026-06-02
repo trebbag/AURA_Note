@@ -1289,3 +1289,22 @@ Do not promote a planned work order until the required inputs in `docs/POST_CR4_
 ## Remaining boundary
 
 This input capture does not promote `WO-078` through `WO-081`, approve production launch, enable live PHI, configure production credentials, approve live vendors, create/approve a storage account or containers, approve PHI-bearing Azure object storage, or change any production launch flag. The remaining required inputs are listed in `docs/POST_CR4_PRODUCTION_DECISION_INPUTS.md`.
+
+---
+
+# Post-WO-077 Azure Storage Decision Capture
+
+## Captured decisions
+
+- The founder/operator confirmed `eastus` is acceptable for production Azure storage planning and authorized Codex to make the remaining non-secret storage/deletion/restore choices.
+- `docs/PRODUCTION_AZURE_STORAGE_DECISION_RECORD.md` records candidate storage account `auranoteeastus91d0`; Azure reported the name available on 2026-06-02.
+- The decision record selects `StorageV2`, `Standard ZRS`, managed identity, candidate managed identity `aura-note-storage-mi`, candidate Key Vault reference `aura-note-kv-91d0`, artifact-class containers, tenant/site object-key partitioning, private endpoint requirement, server-mediated download TTLs, raw-audio 7-day purge eligibility, transcript indefinite retention, 14-day Blob/container soft delete, versioning, legal-hold deletion blocking, quarterly synthetic restore-readiness, evidence retention, and monitoring requirements.
+
+## Remaining boundary
+
+This decision capture does not promote `WO-081`, provision Azure resources, create containers, create or bind managed identity, configure private endpoints, configure production credentials, enable PHI-bearing object storage, enable public URLs, approve destructive production deletion, execute restore drills, or approve production launch.
+
+## Acceptance evidence
+
+- `az storage account check-name --name auranoteeastus91d0` returned `nameAvailable: true` on 2026-06-02.
+- `pnpm storage:live-review-readiness` now verifies that the decision record exists and contains the required non-secret decisions while prohibited live/launch markers remain absent.

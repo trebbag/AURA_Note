@@ -130,10 +130,16 @@ Captured partial input:
 - Candidate Azure posture should reference Flow's Azure resource/runbook pattern, Azure Key Vault secret posture, Azure Blob soft-delete/versioning recovery posture, and private Blob deployment-package usage.
 - Flow's private Blob run-from-package deployment packaging is not the same as AURA Note PHI-bearing export/audio/audit artifact storage.
 - Azure CLI verified the AURA Note resource baseline: tenant `b9b1d566-d7ed-44a4-b3cc-cf8786d6a6ed`, subscription `Subscription Malady` (`91d0e7fe-e9c6-40a0-af0f-98a9dc07b218`), resource group `AURA_resource_group`, location `eastus`, provisioning state `Succeeded`.
+- The founder/operator confirmed `eastus` is acceptable and authorized Codex to make the remaining non-secret storage/deletion/restore choices.
+- `docs/PRODUCTION_AZURE_STORAGE_DECISION_RECORD.md` now selects candidate storage account `auranoteeastus91d0` (`az storage account check-name` reported available on 2026-06-02), artifact-class containers, `Standard ZRS`, managed identity, candidate identity/key-vault names, private endpoint requirement, server-mediated download TTLs, tenant/site object-key partitioning, raw-audio 7-day purge eligibility, transcript indefinite retention, 14-day Blob/container soft delete, versioning, legal-hold deletion blocking, quarterly synthetic restore-readiness, evidence retention, and monitoring/alerting requirements.
 
 Still needed before `WO-081` can be promoted:
 
-- AURA Note-specific storage account and container names by artifact class; confirmation that `eastus` is acceptable for storage residency or a different storage region if required; private networking; encryption/key management; soft-delete/versioning/legal-hold configuration; signed-download expiration policy; artifact retention classes; raw-audio deletion approval role and approval-record source; recovery window; backup/restore drill criteria; evidence-retention policy; monitoring/alerting; and approved managed identity or credential secret names.
+- If the candidate storage account name is no longer available at provisioning time, a fresh deterministic replacement name and `az storage account check-name` evidence.
+- Actual Azure resource provisioning evidence for the storage account, containers, managed identity, private endpoint, private DNS, firewall, Blob public-access denial, shared-key denial, TLS, soft delete, container soft delete, versioning, legal-hold support, and least-privilege RBAC assignments.
+- Actual managed identity client ID, resource IDs, approved config/secret-store references, and deployment environment names recorded in approved secret/config stores, not source control.
+- Synthetic no-PHI live Azure readiness tests proving upload/download-token/deletion-block/restore-readiness behavior against the configured resource.
+- Explicit production flag approval before PHI-bearing object delivery, destructive production deletion, PHI restore execution, or production launch is enabled.
 
 ## 5. Live Transcription Provider And PHI-Bearing Audio Transport
 

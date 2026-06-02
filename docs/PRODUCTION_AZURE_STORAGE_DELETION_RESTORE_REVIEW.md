@@ -39,60 +39,76 @@ Azure CLI verification succeeded for the founder-provided resource group:
 
 This confirms the non-secret Azure tenant/subscription/resource-group baseline for future AURA Note storage planning. It does not create or approve a storage account, containers, managed identity, credentials, private networking, PHI object delivery, destructive deletion, restore execution, or production launch.
 
+## AURA Note Storage Decisions Captured 2026-06-02
+
+The founder/operator confirmed that `eastus` is acceptable and authorized Codex to make the remaining non-secret production Azure storage, deletion, and restore choices for planning purposes.
+
+`docs/PRODUCTION_AZURE_STORAGE_DECISION_RECORD.md` now records:
+
+- candidate storage account `auranoteeastus91d0`, which Azure reported as available during `az storage account check-name` on 2026-06-02;
+- one `StorageV2` account in `eastus`, `Standard ZRS`, `Hot` tier, TLS 1.2 or later, secure transfer required, public blob access disabled, shared key access disabled, and managed-identity access;
+- candidate managed identity `aura-note-storage-mi` and candidate Key Vault reference `aura-note-kv-91d0`;
+- containers for final note PDFs, patient summary PDFs, structured exports, redacted audit export bundles, raw audio, transcripts, storage evidence, and restore-drill evidence;
+- tenant/site object-key prefixing, private endpoint requirement, server-mediated download tokens, TTLs, role/tenant/site/purpose checks, patient-summary internal-detail exclusions, and redacted audit export posture;
+- raw-audio 7-day purge eligibility, transcript indefinite retention, 14-day Blob and container soft delete, versioning, legal-hold deletion blocking, evidence retention, restore-readiness cadence, and monitoring/alerting requirements.
+
+This removes ambiguity for future `WO-081` implementation. It does not provision Azure resources, enable PHI-bearing production object storage, enable public URLs, enable destructive production deletion, execute restore drills, or approve launch.
+
 ## Required Production Decisions
 
 ### Azure account and container topology
 
-- Select the production storage account, storage region if different from `eastus`, redundancy tier, and container topology inside the verified AURA Note Azure baseline.
-- Define tenant/site object-key partitioning and whether tenants share a storage account with strict prefixes or use isolated accounts/containers.
-- Define private-networking, firewall, and managed private endpoint requirements before PHI-bearing storage is enabled.
+- Selected for future activation evidence: candidate storage account `auranoteeastus91d0`, `eastus`, `StorageV2`, `Standard ZRS`, `Hot`, shared-account with strict tenant/site prefixes, and artifact-class containers listed in `docs/PRODUCTION_AZURE_STORAGE_DECISION_RECORD.md`.
+- Production object keys must use tenant/site prefixes and activation should add date partitioning without weakening the current tenant-scoped key invariant.
+- Private endpoint, private DNS, deny-by-default firewall, and no public Blob access remain required before PHI-bearing storage is enabled.
 
 ### Credential source and access model
 
-- Select the credential source, such as managed identity or a secret-manager-mediated credential.
+- Selected credential source: managed identity.
 - Prohibit committed credentials, `.env` secrets, shared access keys in source control, and browser-side storage credentials.
-- Define least-privilege roles for upload, server-mediated download, deletion, restore-readiness verification, support review, and audit export delivery.
+- Candidate managed identity: `aura-note-storage-mi`; candidate Key Vault reference: `aura-note-kv-91d0`.
+- Future activation must define least-privilege roles for upload, server-mediated download, deletion, restore-readiness verification, support review, and audit export delivery.
 
 ### Encryption and key management
 
-- Decide whether customer-managed keys are required.
+- Current default: Microsoft-managed encryption at rest until a later customer-managed-key requirement is explicitly approved.
 - Define key rotation, disabled-key recovery, key access review, and alerting requirements.
-- Define whether tenant-level key isolation is required before PHI-bearing object delivery.
+- Tenant-level key isolation is deferred; tenant/site object-key partitioning and RBAC/ABAC remain required before PHI-bearing object delivery.
 
 ### Secure download policy
 
-- Define signed-download TTLs, token audience, tenant/site scoping, role checks, purpose-of-use checks, revocation behavior, and audit requirements.
+- Signed-download TTLs are selected in `docs/PRODUCTION_AZURE_STORAGE_DECISION_RECORD.md`: 10 minutes for final note PDF, patient summary PDF, and structured export; 15 minutes for redacted audit export bundles; 5 minutes for support or restore evidence metadata.
 - Confirm that production downloads are server-mediated and never public container/object URLs.
 - Define patient-summary detail exclusions and final-note/transcript/billing/coaching access boundaries before launch readiness.
 
 ### Soft delete, versioning, immutability, and legal hold
 
-- Define Azure Blob soft-delete, versioning, point-in-time restore, immutability, and legal-hold posture.
-- Define how legal hold or incident hold blocks deletion jobs.
+- Selected posture: 14-day Blob soft delete, 14-day container soft delete, Blob versioning enabled, legal hold supported and deletion-blocking, and scoped immutability for evidence/incident/legal-hold objects only.
+- Legal hold or incident hold blocks deletion jobs.
 - Define the evidence required to prove an object was recoverable during the documented recovery window.
 
 ### Raw-audio retention and deletion authority
 
-- Confirm the one-week raw-audio retention policy and the exact purge eligibility clock.
-- Define deletion approval authority, approval-token source, recovery-window handling, skipped/deferred deletion reasons, and emergency suspension controls.
+- Confirmed planning default: raw audio is purge-eligible after 7 days from recording upload completion or recording stop, whichever is later.
+- Selected planning default: deletion requires `AZURE_STORAGE_RETENTION_DELETION_ENABLED=true`, a persisted deletion approval record, recovery-window evidence, no legal hold, skipped/deferred deletion reason handling, emergency suspension controls, and audit-safe trace evidence.
 - Confirm that transcript retention remains indefinite and that transcript objects are not deleted by raw-audio retention jobs.
 
 ### Backup and restore drills
 
-- Define backup/replication expectations, restore-drill cadence, restore-drill owner, pass/fail evidence, and incident escalation path.
-- Define whether restore drills operate against isolated synthetic/staging objects only until a security/privacy review authorizes PHI-bearing drills.
-- Define restore-readiness evidence retention and whether restore execution requires separate founder/security/privacy approval.
+- Selected cadence: quarterly synthetic restore-readiness drill plus one staging restore-readiness drill before any production PHI storage activation.
+- Restore drills operate against isolated synthetic/staging objects until a security/privacy review authorizes PHI-bearing drills.
+- Production PHI restore execution requires separate founder/security/privacy approval.
 
 ### Evidence retention and audit export delivery
 
-- Define how download, export, deletion, legal hold, restore-readiness, and support-access evidence is retained.
-- Define audit export bundle delivery posture, redaction requirements, storage retention class, and authorized request roles.
+- Selected evidence posture: audit export bundles and storage evidence retain at least 7 years unless a longer tenant/legal policy applies.
+- Audit export bundle delivery remains redacted by default and requires authorized compliance/privacy lead or authorized admin roles.
 - Preserve `includePhi=false` unless a later approved privacy/legal work order explicitly governs PHI-bearing audit exports.
 
 ### Incident response
 
-- Define escalation for suspected public exposure, credential compromise, failed deletion, failed restore-readiness, unexpected object access, and legal-hold conflicts.
-- Define who can pause deletion workers and how the pause is audited.
+- Selected alert set is listed in `docs/PRODUCTION_AZURE_STORAGE_DECISION_RECORD.md`, including public access, shared key, TLS, firewall, private endpoint/DNS, soft-delete/versioning, legal-hold, deletion, restore-readiness, wrong-tenant/download-denial, high-egress, Key Vault, managed identity, and role-assignment changes.
+- Future activation must wire deletion-worker pause authority to founder/operator, compliance/privacy lead, or security incident authority and audit the pause.
 
 ## Future Acceptance Criteria
 
@@ -149,3 +165,7 @@ ClinicOS-integrated mode may map storage delivery and evidence to ClinicOS or In
 - Production restore execution.
 - PHI-bearing audit export delivery.
 - Production launch approval.
+
+## Future Activation Evidence Now Narrowed By Decision Record
+
+`WO-081` no longer needs to invent the storage account/container names, `eastus` region decision, basic redundancy tier, credential source, download TTLs, raw-audio retention window, transcript retention posture, Blob soft-delete/versioning window, or restore-readiness cadence. It still must provision and verify the resources, managed identity, private endpoint, private DNS, firewall, RBAC assignments, live Azure configuration, and synthetic no-PHI readiness evidence before any production storage flag can be changed.
