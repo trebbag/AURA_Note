@@ -38,6 +38,11 @@ export class SupportController {
     return this.supportService.getOperationalReadiness(headers);
   }
 
+  @Get('commercial-readiness')
+  getCommercialReadiness(@Headers() headers: Record<string, string | string[] | undefined>) {
+    return this.supportService.getCommercialReadiness(headers);
+  }
+
   @Post('operations/evidence')
   recordOperationalEvidence(
     @Headers() headers: Record<string, string | string[] | undefined>,

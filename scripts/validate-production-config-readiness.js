@@ -103,10 +103,13 @@ check(
 check(
   'browser.config-and-flags',
   'Browser route exposes unsafe-config and approval-required states',
-  browserPage.includes('fail-closed missing OIDC_CLIENT_SECRET') &&
-    browserPage.includes('approval required') &&
-    browserPage.includes('metadata_only_no_live_execution') &&
-    browserSpec.includes('Validate Production Config'),
+  browserPage.includes('secretValuesReturned=false') &&
+    browserPage.includes('Validate Production Config') &&
+    browserPage.includes('Attempt Enable Without Approval') &&
+    browserPage.includes('Record Approval') &&
+    browserSpec.includes('fail-closed errors=3') &&
+    browserSpec.includes('high-risk feature flags require approval evidence before enablement') &&
+    browserSpec.includes('metadata_only_no_live_execution'),
   'apps/web/app/aura-note/platform/page.tsx'
 );
 check(

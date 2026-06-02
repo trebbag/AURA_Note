@@ -29,8 +29,8 @@ function check(id, description, passed, evidence) {
 }
 
 check('status.wo058-done', 'WO-058 is marked done', status.work_orders?.['WO-058'] === 'done', status.work_orders?.['WO-058']);
-check('status.next-production-build-safe', 'Post-P11 planning/control remains valid while commercial-readiness runtime work is active', status.next_work_order === null || status.next_work_order === 'WO-061' || status.next_work_order === 'WO-062' || status.next_work_order === 'WO-063' || status.next_work_order === 'WO-064', status.next_work_order);
-check('status.checkpoint-production-build-safe', 'P11 or commercial-readiness checkpoint remains current', status.current_checkpoint === 'P11' || status.current_checkpoint === 'CR-0' || status.current_checkpoint === 'CR-1' || status.current_checkpoint === 'CR-2', status.current_checkpoint);
+check('status.next-production-build-safe', 'Post-P11 planning/control remains valid while commercial-readiness runtime work is active', status.next_work_order === null || Number.parseInt(String(status.next_work_order || '').replace('WO-', ''), 10) >= 61, status.next_work_order);
+check('status.checkpoint-production-build-safe', 'P11 or commercial-readiness checkpoint remains current', ['P11', 'CR-0', 'CR-1', 'CR-2', 'CR-3', 'CR-4'].includes(status.current_checkpoint), status.current_checkpoint);
 check('work-order.file', 'WO-058 work-order file exists', exists('work_orders/WO-058_production_ehr_writeback_credentialing_review_intake.md'), 'work_orders/WO-058_production_ehr_writeback_credentialing_review_intake.md');
 check('work-order.index', 'Work-order index records WO-058 completion', workOrderIndex.includes('WO-058') && workOrderIndex.includes('Production EHR writeback'), 'work_orders/README.md');
 check('plan.wo058', 'Production build plan includes WO-058', plan.includes('## WO-058 ') && plan.includes('Production EHR Writeback'), 'docs/PRODUCTION_BUILD_PLAN.md');
@@ -82,7 +82,11 @@ check(
     specGaps.includes('No active gaps as of post-`WO-060` commercial readiness rebaseline/runtime rails review') ||
     specGaps.includes('No active gaps as of post-`WO-061` runtime persistence switchover review') ||
     specGaps.includes('No active gaps as of post-`WO-062` API runtime hardening and request-boundary review') ||
-    specGaps.includes('No active gaps as of post-`WO-063` identity runtime boundary review'),
+    specGaps.includes('No active gaps as of post-`WO-063` identity runtime boundary review') ||
+    specGaps.includes('No active gaps as of post-`WO-069` athenahealth sandbox and vendor-neutral EHR runtime boundary review') ||
+    specGaps.includes('No active gaps as of post-`WO-070` AI governance runtime boundary review') ||
+    specGaps.includes('No active gaps as of post-`WO-075` commercial readiness decision gate review') ||
+    specGaps.includes('No active gaps as of post-`WO-076` post-CR4 launch governance intake review'),
   'SPEC_GAPS.md'
 );
 check('spec-gaps.deferred-ehr', 'SPEC_GAPS preserves production EHR credentialing and live writeback delivery as deferred before live use', specGaps.includes('Production EHR credentialing and live writeback delivery') && specGaps.includes('future approved EHR implementation work order'), 'SPEC_GAPS.md');

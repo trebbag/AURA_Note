@@ -1,8 +1,8 @@
 {
   "project": "AURA Note v1",
   "mode": "production_build_in_progress",
-  "current_checkpoint": "CR-2",
-  "next_work_order": "WO-064",
+  "current_checkpoint": "CR-4",
+  "next_work_order": null,
   "work_orders": {
     "WO-000": "done",
     "WO-001": "done",
@@ -68,20 +68,21 @@
     "WO-061": "done",
     "WO-062": "done",
     "WO-063": "done",
-    "WO-064": "todo",
-    "WO-065": "planned",
-    "WO-066": "planned",
-    "WO-067": "planned",
-    "WO-068": "planned",
-    "WO-069": "planned",
-    "WO-070": "planned",
-    "WO-071": "planned",
-    "WO-072": "planned",
-    "WO-073": "planned",
-    "WO-074": "planned",
-    "WO-075": "planned"
+    "WO-064": "done",
+    "WO-065": "done",
+    "WO-066": "done",
+    "WO-067": "done",
+    "WO-068": "done",
+    "WO-069": "done",
+    "WO-070": "done",
+    "WO-071": "done",
+    "WO-072": "done",
+    "WO-073": "done",
+    "WO-074": "done",
+    "WO-075": "done",
+    "WO-076": "done"
   },
-  "last_updated_by": "Codex WO-063 identity runtime boundary",
-  "last_updated_at": "2026-05-29T20:54:23Z",
-  "notes": "WO-063 completed the third CR-1 runtime foundation tranche and closes CR-1 for checkpoint review. The Nest API now requires explicit AURA_NOTE_AUTH_MODE outside /health, labels local_demo synthetic identity headers, requires role/user/session/purpose in strict local_synthetic mode, rejects synthetic headers in preview/production/delegated auth postures, and fails closed for missing identity context, invalid identity context, disabled users, expired sessions, wrong tenant/site, wrong purpose, and delegated providers until configured. pnpm identity:runtime-boundary-readiness verifies the boundary files, contracts, tests, docs, CI wiring, status, run-log/checkpoint evidence, and no-launch posture. WO-064 is the next active CR-2 product UX runtime work order after checkpoint review. This is not a production launch claim: no live PHI, production credential, live OIDC, live SAML, live ClinicOS delegated identity, live WAF/CDN, live SIEM/APM, live EHR, live transcription vendor, live external AI, live Azure PHI storage, claim submission, autonomous clinical/coding/billing behavior, medical-necessity determination, charge finalization, or production launch behavior is authorized or introduced."
+  "last_updated_by": "Codex WO-076 post-CR4 launch governance intake",
+  "last_updated_at": "2026-06-02T15:14:15Z",
+  "notes": "WO-076 completed the post-CR4 launch governance intake. The repo now has a post-CR4 launch governance decision package, duplicate artifact inventory, recursive ignore rules for nested generated build outputs, a post-cr4:launch-governance readiness gate, CI coverage for that gate, and status evidence that the current branch still requires push/PR/CI follow-up outside the committed files. This is governance and cleanup-intake evidence only, not production launch approval: no live PHI, production credential, live OIDC, live SAML, live ClinicOS delegated identity, live ClinicOS event bus, raw ClinicOS payload storage, live EHR API call, live EHR writeback delivery, live transcription vendor, raw PHI audio transport, production audio storage, live external AI, production prompt store, raw PHI transfer to external AI, live Azure PHI storage, claim submission, autonomous clinical/coding/billing behavior, medical-necessity determination, charge finalization, order placement, patient-facing financial conclusion, certification claim, duplicate-source deletion approval, or production launch behavior is authorized or introduced."
 }

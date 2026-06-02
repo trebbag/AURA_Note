@@ -133,6 +133,17 @@ export class NotesController {
     return this.scheduleService.processMockTranscriptionJob(appointmentId, this.scheduleService.createRequestContext(headers));
   }
 
+  @Post('documentation-workspace/appointments/:appointmentId/transcription/jobs/disabled-live-provider')
+  requestDisabledLiveTranscriptionJob(
+    @Param('appointmentId') appointmentId: string,
+    @Headers() headers: Record<string, string | string[] | undefined>
+  ) {
+    return this.scheduleService.requestDisabledLiveTranscriptionJob(
+      appointmentId,
+      this.scheduleService.createRequestContext(headers)
+    );
+  }
+
   @Get('documentation-workspace/appointments/:appointmentId/transcript')
   getTranscript(@Param('appointmentId') appointmentId: string, @Headers() headers: Record<string, string | string[] | undefined>) {
     return this.scheduleService.getTranscriptByAppointment(appointmentId, this.scheduleService.createRequestContext(headers));

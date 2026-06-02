@@ -1,10 +1,9 @@
 'use client';
 
 import Link from 'next/link';
-import { useMemo, useState } from 'react';
-
-type MappingStatus = 'active' | 'stale' | 'degraded' | 'unavailable' | 'failed';
-type PublicationStatus = 'queued' | 'skipped_disabled' | 'failed_unavailable' | 'degraded';
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import type { ClinicOsIntegrationStatusDto, ClinicOsPublishedEventDto } from '@aura-note/contracts';
+import { createAuraNoteApiClient } from '../../../../lib/aura-note-api-client';
 
 const screenStates = [
   'empty',
@@ -20,80 +19,150 @@ const screenStates = [
   'demo fixture'
 ];
 
-const moduleBoundaries = [
-  ['M03', 'VisitGraph', 'appointment and visit context', 'clinicos'],
-  ['M04', 'WorkOS Tasks', 'blocker tasks and MA follow-up', 'clinicos'],
-  ['M17', 'NP Cockpit', 'workspace launch context', 'clinicos'],
-  ['M21', 'Charge Integrity', 'draft claim preview metadata', 'clinicos'],
-  ['M23', 'Copilot Runtime', 'AI request metadata only', 'clinicos'],
-  ['M24', 'AI Governance', 'prompt and review metadata', 'clinicos'],
-  ['M25', 'Integration Hub', 'EHR and writeback metadata', 'hybrid'],
-  ['M26', 'Data Cloud', 'coaching and analytics metadata', 'clinicos']
-];
-
-const initialMappings: Array<{
-  id: string;
-  module: string;
-  object: string;
-  status: MappingStatus;
-  reason: string;
-}> = [
-  {
-    id: 'clinicos-map-active-m03-001',
-    module: 'M03 VisitGraph',
-    object: 'appt-demo-001',
-    status: 'active',
-    reason: 'Synthetic appointment context is mapped.'
-  },
-  {
-    id: 'clinicos-map-stale-m04-001',
-    module: 'M04 WorkOS',
-    object: 'task-ma-follow-up-001',
-    status: 'stale',
-    reason: 'Local blocker task is newer than the ClinicOS projection.'
-  },
-  {
-    id: 'clinicos-map-degraded-m25-001',
-    module: 'M25 Integration Hub',
-    object: 'ehr-wb-pending-001',
-    status: 'degraded',
-    reason: 'Live writeback routing is disabled; metadata only.'
-  }
-];
-
 export default function ClinicOsIntegrationPage() {
-  const [mappings, setMappings] = useState(initialMappings);
-  const [publicationStatus, setPublicationStatus] = useState<PublicationStatus>('skipped_disabled');
-  const [message, setMessage] = useState('ClinicOS disabled state loaded; standalone AURA Note remains authoritative.');
-
-  const summary = useMemo(
-    () => [
-      ['Host modes', 'standalone / ClinicOS-integrated / EHR-embedded / hybrid'],
-      ['Live sync', 'disabled'],
-      ['Raw payload storage', 'false'],
-      ['Permission boundary', 'AURA Note authoritative']
-    ],
+  const adminClient = useMemo(() => createAuraNoteApiClient({ role: 'authorized_admin' }), []);
+  const degradedClient = useMemo(
+    () => createAuraNoteApiClient({ role: 'authorized_admin', clinicOsMode: 'clinicos_integrated', clinicOsDegraded: true }),
     []
   );
+  const unavailableClient = useMemo(
+    () => createAuraNoteApiClient({ role: 'authorized_admin', clinicOsMode: 'clinicos_integrated', clinicOsUnavailable: true }),
+    []
+  );
+  const clinicianClient = useMemo(() => createAuraNoteApiClient({ role: 'clinician' }), []);
+  const [status, setStatus] = useState<ClinicOsIntegrationStatusDto | null>(null);
+  const [lastPublishedEvent, setLastPublishedEvent] = useState<ClinicOsPublishedEventDto | null>(null);
+  const [routeState, setRouteState] = useState('loading');
+  const [message, setMessage] = useState('Loading ClinicOS adapter status from API.');
 
-  function updateMapping(id: string, status: MappingStatus, reason: string) {
-    setMappings((current) => current.map((mapping) => (mapping.id === id ? { ...mapping, status, reason } : mapping)));
-    setMessage(reason);
+  const refreshClinicOs = useCallback(async () => {
+    setRouteState('loading');
+    try {
+      const response = await adminClient.getClinicOsStatus();
+      setStatus(response.data);
+      setRouteState(response.data.modeContext.availability === 'available' ? 'ready' : 'degraded');
+      setMessage('ClinicOS disabled/degraded state loaded from typed API; standalone AURA Note remains authoritative.');
+    } catch (error) {
+      setRouteState('failed');
+      setMessage(error instanceof Error ? error.message : 'ClinicOS API load failed.');
+    }
+  }, [adminClient]);
+
+  useEffect(() => {
+    void refreshClinicOs();
+  }, [refreshClinicOs]);
+
+  async function runAction(label: string, action: () => Promise<unknown>) {
+    setRouteState('saving');
+    try {
+      const result = await action();
+      const maybePublished = result as { data?: { publishedEvent?: ClinicOsPublishedEventDto } };
+      await refreshClinicOs();
+      if (maybePublished.data?.publishedEvent) {
+        setLastPublishedEvent(maybePublished.data.publishedEvent);
+        setRouteState(
+          maybePublished.data.publishedEvent.status === 'failed_unavailable'
+            ? 'failed'
+            : maybePublished.data.publishedEvent.status === 'degraded'
+              ? 'degraded'
+              : 'ready'
+        );
+      }
+      setMessage(label);
+    } catch (error) {
+      setRouteState('failed');
+      setMessage(error instanceof Error ? error.message : label);
+    }
   }
 
-  function publish(status: PublicationStatus, messageText: string) {
-    setPublicationStatus(status);
-    setMessage(messageText);
+  function reviewStale() {
+    void runAction('Stale mapping review recorded through API; local blocker remains authoritative until sync is approved.', () =>
+      adminClient.upsertClinicOsMapping({
+        localObjectType: 'task',
+        localObjectId: 'task-ma-follow-up-001',
+        clinicosModuleId: 'M04',
+        status: 'stale',
+        reason: 'WO-064 stale mapping review; local blocker remains authoritative'
+      })
+    );
   }
+
+  function markUnavailable() {
+    void runAction('ClinicOS unavailable mapping recorded through API; standalone schedule and note lifecycle continue safely.', () =>
+      adminClient.upsertClinicOsMapping({
+        localObjectType: 'appointment',
+        localObjectId: 'appt-demo-001',
+        clinicosModuleId: 'M03',
+        status: 'unavailable',
+        reason: 'WO-064 unavailable mapping evidence'
+      })
+    );
+  }
+
+  function markFailed() {
+    void runAction('Failed ClinicOS mapping metadata recorded through API without raw payload storage.', () =>
+      adminClient.upsertClinicOsMapping({
+        localObjectType: 'event',
+        localObjectId: 'ehr-wb-pending-001',
+        clinicosModuleId: 'M25',
+        status: 'failed',
+        reason: 'WO-064 failed publication metadata evidence'
+      })
+    );
+  }
+
+  function queueMockEvent() {
+    void runAction('Mock publication queued through API as metadata only.', () =>
+      adminClient.publishClinicOsEvent({ eventType: 'note.signed.v1', targetModules: ['M17'] })
+    );
+  }
+
+  function publishDegraded() {
+    void runAction('ClinicOS degraded publication recorded through API; AURA Note remains read-only for delegated state.', () =>
+      degradedClient.publishClinicOsEvent({ eventType: 'ehr.writeback_approval_recorded.v1', targetModules: ['M25'] })
+    );
+  }
+
+  function failedClosed() {
+    void runAction('ClinicOS unavailable publication failed closed through API.', () =>
+      unavailableClient.publishClinicOsEvent({ eventType: 'clinicos.unavailable.v1', targetModules: ['M17'] })
+    );
+  }
+
+  async function verifyPermissionDeniedState() {
+    setRouteState('loading');
+    try {
+      await clinicianClient.upsertClinicOsMapping({
+        localObjectType: 'task',
+        localObjectId: 'task-denied',
+        clinicosModuleId: 'M04',
+        status: 'active',
+        reason: 'Clinician should not write ClinicOS mappings'
+      });
+      setRouteState('failed');
+      setMessage('Unexpected clinician ClinicOS mapping write succeeded.');
+    } catch (error) {
+      setRouteState('permission-denied');
+      setMessage(error instanceof Error ? error.message : 'Clinician ClinicOS mapping write denied by API.');
+    }
+  }
+
+  const summary = [
+    ['Host modes', status?.modeContext.hostMode ?? 'standalone / ClinicOS-integrated / EHR-embedded / hybrid'],
+    ['Live sync', String(status?.liveClinicOsSyncEnabled ?? false)],
+    ['Raw payload storage', String(status?.rawPayloadsStored ?? false)],
+    ['Permission boundary', status?.permissionsStillEnforcedByAuraNote ? 'AURA Note authoritative' : 'not loaded']
+  ];
 
   return (
     <main className="operations-shell">
       <header className="page-header">
         <div>
-          <p className="eyebrow">P9 / WO-045</p>
+          <p className="eyebrow">CR-2 / WO-064</p>
           <h1>ClinicOS Integration Hardening</h1>
         </div>
         <nav className="header-nav" aria-label="AURA Note sections">
+          <Link href="/aura-note">Runtime Home</Link>
           <Link href="/aura-note/schedule">Schedule</Link>
           <Link href="/aura-note/operations">Operations</Link>
           <Link href="/aura-note/integrations/ehr">EHR</Link>
@@ -105,12 +174,13 @@ export default function ClinicOsIntegrationPage() {
       <section className="status-band" aria-label="ClinicOS integration readiness">
         <div>
           <h2>One Product, Two Host Modes</h2>
-          <p>
-            AURA Note can run standalone or embedded, but ClinicOS context is metadata only here and never bypasses AURA
-            Note permissions, finalization gates, PHI controls, or human approval.
-          </p>
+          <p>{message}</p>
         </div>
         <dl>
+          <div>
+            <dt>Route State</dt>
+            <dd>{routeState}</dd>
+          </div>
           {summary.map(([label, value]) => (
             <div key={label}>
               <dt>{label}</dt>
@@ -124,13 +194,13 @@ export default function ClinicOsIntegrationPage() {
         <article className="appointment-form" aria-label="Module boundary map">
           <h2>Module Boundaries</h2>
           <div className="analytics-list">
-            {moduleBoundaries.map(([id, name, maps, source]) => (
-              <div key={id}>
+            {(status?.moduleBoundaries ?? []).map((boundary) => (
+              <div key={boundary.moduleId}>
                 <span>
-                  {id} / {name}
+                  {boundary.moduleId} / {boundary.moduleName}
                 </span>
-                <strong>{source}</strong>
-                <small>{maps} / aura_note_authoritative</small>
+                <strong>{boundary.sourceOfTruth}</strong>
+                <small>{boundary.maps} / {boundary.permissionBoundary}</small>
               </div>
             ))}
           </div>
@@ -140,52 +210,24 @@ export default function ClinicOsIntegrationPage() {
           <h2>Mapping Review</h2>
           <p>{message}</p>
           <div className="analytics-list">
-            {mappings.map((mapping) => (
-              <div key={mapping.id}>
+            {(status?.mappings ?? []).map((mapping) => (
+              <div key={mapping.mappingId}>
                 <span>
-                  {mapping.module} / {mapping.object}
+                  {mapping.clinicosModuleId} / {mapping.localObjectId}
                 </span>
                 <strong>{mapping.status}</strong>
-                <small>{mapping.reason}</small>
+                <small>{mapping.staleReason ?? mapping.degradedReason ?? mapping.sourceOfTruth}</small>
               </div>
             ))}
           </div>
           <div className="action-row">
-            <button
-              type="button"
-              onClick={() =>
-                updateMapping(
-                  'clinicos-map-stale-m04-001',
-                  'active',
-                  'Stale mapping review recorded; local blocker remains authoritative until sync is approved.'
-                )
-              }
-            >
+            <button type="button" onClick={reviewStale}>
               Review Stale
             </button>
-            <button
-              type="button"
-              onClick={() =>
-                updateMapping(
-                  'clinicos-map-active-m03-001',
-                  'unavailable',
-                  'ClinicOS unavailable; standalone schedule and note lifecycle continue safely.'
-                )
-              }
-            >
+            <button type="button" onClick={markUnavailable}>
               Mark Unavailable
             </button>
-            <button
-              type="button"
-              className="secondary-action"
-              onClick={() =>
-                updateMapping(
-                  'clinicos-map-degraded-m25-001',
-                  'failed',
-                  'Failed publication metadata recorded without raw ClinicOS payload storage.'
-                )
-              }
-            >
+            <button type="button" className="secondary-action" onClick={markFailed}>
               Mark Failed
             </button>
           </div>
@@ -193,7 +235,7 @@ export default function ClinicOsIntegrationPage() {
 
         <article className="appointment-form" aria-label="Publication metadata">
           <h2>Publication Metadata</h2>
-          <p>Published event status: {publicationStatus}</p>
+          <p>Published event status: {lastPublishedEvent?.status ?? status?.publishedEvents.at(-1)?.status ?? 'skipped_disabled'}</p>
           <div className="state-grid">
             <span>payloadStored=false</span>
             <span>permissionBoundaryEnforced=true</span>
@@ -203,20 +245,13 @@ export default function ClinicOsIntegrationPage() {
             <span>service account: scoped, denied cross tenant</span>
           </div>
           <div className="action-row">
-            <button type="button" onClick={() => publish('queued', 'Mock publication queued as metadata only.')}>
+            <button type="button" onClick={queueMockEvent}>
               Queue Mock Event
             </button>
-            <button
-              type="button"
-              onClick={() => publish('degraded', 'ClinicOS degraded; AURA Note remains read-only for delegated state.')}
-            >
+            <button type="button" onClick={publishDegraded}>
               Degraded
             </button>
-            <button
-              type="button"
-              className="secondary-action"
-              onClick={() => publish('failed_unavailable', 'Publication failed closed because ClinicOS is unavailable.')}
-            >
+            <button type="button" className="secondary-action" onClick={failedClosed}>
               Failed Closed
             </button>
           </div>
@@ -231,6 +266,9 @@ export default function ClinicOsIntegrationPage() {
               </span>
             ))}
           </section>
+          <button type="button" className="secondary-action" onClick={() => void verifyPermissionDeniedState()}>
+            Verify Permission Denied
+          </button>
         </article>
       </section>
 

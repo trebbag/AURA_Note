@@ -26,7 +26,7 @@ function check(id, description, passed, evidence) {
 }
 
 const completedBaseline = Array.from({ length: 33 }, (_, index) => `WO-${String(index).padStart(3, '0')}`);
-const futureWorkOrders = Array.from({ length: 43 }, (_, index) => `WO-${String(index + 33).padStart(3, '0')}`);
+const futureWorkOrders = Array.from({ length: 44 }, (_, index) => `WO-${String(index + 33).padStart(3, '0')}`);
 const knownStatuses = new Set(['done', 'todo', 'planned', 'in_progress', 'blocked']);
 const checkpointNeedles = ['P6.5', 'P7', 'P7.5', 'P8', 'P8.5', 'P9', 'P10', 'P11', 'CR-0', 'CR-1', 'CR-2', 'CR-3', 'CR-4'];
 const requiredFields = [
@@ -66,7 +66,7 @@ check(
 
 check(
   'status.future-present',
-  'WO-033 through WO-075 are represented in repo_status.json',
+  'WO-033 through WO-076 are represented in repo_status.json',
   futureWorkOrders.every((workOrder) => repoStatus.work_orders?.[workOrder]),
   futureWorkOrders.filter((workOrder) => !repoStatus.work_orders?.[workOrder])
 );
@@ -171,7 +171,16 @@ check(
     specGaps.includes('No active gaps as of post-`WO-060` commercial readiness rebaseline/runtime rails review') ||
     specGaps.includes('No active gaps as of post-`WO-061` runtime persistence switchover review') ||
     specGaps.includes('No active gaps as of post-`WO-062` API runtime hardening and request-boundary review') ||
-    specGaps.includes('No active gaps as of post-`WO-063` identity runtime boundary review'),
+    specGaps.includes('No active gaps as of post-`WO-063` identity runtime boundary review') ||
+    specGaps.includes('No active gaps as of post-`WO-064` primary UI runtime API conversion review') ||
+    specGaps.includes('No active gaps as of post-`WO-065` Figma handoff inventory review') ||
+    specGaps.includes('No active gaps as of post-`WO-066` standalone workflow completion / CR-2 review') ||
+    specGaps.includes('No active gaps as of post-`WO-067` ModeResolver and adapter runtime wiring review') ||
+    specGaps.includes('No active gaps as of post-`WO-068` transcription runtime boundary review') ||
+    specGaps.includes('No active gaps as of post-`WO-069` athenahealth sandbox and vendor-neutral EHR runtime boundary review') ||
+    specGaps.includes('No active gaps as of post-`WO-070` AI governance runtime boundary review') ||
+    specGaps.includes('No active gaps as of post-`WO-075` commercial readiness decision gate review') ||
+    specGaps.includes('No active gaps as of post-`WO-076` post-CR4 launch governance intake review'),
   'SPEC_GAPS.md active gaps section'
 );
 

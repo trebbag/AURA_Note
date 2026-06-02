@@ -84,14 +84,23 @@ check('docs.backend', 'Backend spec records WO-062 boundary behavior', backendSp
 check('docs.test-plan', 'Test plan records WO-062 runtime boundary coverage', testPlan.includes('WO-062 API runtime hardening evidence') && testPlan.includes('pnpm api:runtime-hardening-readiness'), 'docs/TEST_PLAN.md');
 check('docs.production-plan', 'Production plan records WO-062 implementation status', productionPlan.includes('Implementation status as of `WO-062`'), 'docs/PRODUCTION_BUILD_PLAN.md');
 check('status.wo062-done', 'repo_status marks WO-062 done', status.work_orders?.['WO-062'] === 'done', status.work_orders?.['WO-062']);
-check('status.next-wo063-or-later', 'repo_status advances next work order to WO-063 or later', ['WO-063', 'WO-064'].includes(status.next_work_order), status.next_work_order);
+check(
+  'status.next-wo063-or-later',
+  'repo_status advances next work order to WO-063 or later',
+  status.next_work_order === null || Number.parseInt(String(status.next_work_order || '').replace('WO-', ''), 10) >= 63,
+  status.next_work_order
+);
 check('work-order.readme', 'work-order index records WO-062 completion and WO-063/CR-1 continuity', workOrderReadme.includes('`WO-062` is complete') && workOrderReadme.includes('`WO-063`'), 'work_orders/README.md');
 check('runlog.wo062', 'RUN_LOG records WO-062 evidence', runLog.includes('WO-062 API runtime hardening and request boundary'), 'RUN_LOG.md');
 check(
   'spec-gaps.wo062-or-later',
   'SPEC_GAPS records no active WO-062 or later runtime-boundary gaps',
   gaps.includes('No active gaps as of post-`WO-062` API runtime hardening and request-boundary review') ||
-    gaps.includes('No active gaps as of post-`WO-063` identity runtime boundary review'),
+    gaps.includes('No active gaps as of post-`WO-063` identity runtime boundary review') ||
+    gaps.includes('No active gaps as of post-`WO-069` athenahealth sandbox and vendor-neutral EHR runtime boundary review') ||
+    gaps.includes('No active gaps as of post-`WO-070` AI governance runtime boundary review') ||
+    gaps.includes('No active gaps as of post-`WO-075` commercial readiness decision gate review') ||
+    gaps.includes('No active gaps as of post-`WO-076` post-CR4 launch governance intake review'),
   'SPEC_GAPS.md'
 );
 

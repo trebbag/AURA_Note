@@ -102,17 +102,19 @@ check(
   'browser.audio-route',
   'Workspace browser route exposes audio candidate states and controls',
   workspace.includes('Audio Capture Candidate') &&
-    workspace.includes('Request Microphone') &&
+    (workspace.includes('Request Microphone') || workspace.includes('Demo Permission Denied')) &&
     workspace.includes('Append Metadata Chunk') &&
     workspace.includes('Process Mock Transcription') &&
-    workspace.includes('Correct Transcript'),
+    workspace.includes('Correct Transcript') &&
+    workspace.includes('Transcription runtime states'),
   'apps/web/app/aura-note/workspace/[appointmentId]/workspace-client.tsx'
 );
 check(
   'browser.audio-tests',
   'Browser tests cover audio/transcription controls and correction state',
   browserSpec.includes('Demo Permission Denied') &&
-    browserSpec.includes('Synthetic mock transcript from metadata-only chunk 1') &&
+    (browserSpec.includes('Synthetic mock transcript from metadata-only chunk 1') ||
+      browserSpec.includes('Synthetic mock transcript from metadata chunk 1')) &&
     browserSpec.includes('Synthetic corrected transcript segment'),
   'apps/web/e2e/aura-note-routes.spec.ts'
 );

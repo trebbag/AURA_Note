@@ -14,10 +14,17 @@ import {
   type ApiEnvelope,
   type ApiMeta,
   type AuditEventDto,
+  type EhrAppointmentImportDto,
+  type EhrAppointmentImportResponseDto,
   type EhrChartContextPackageDto,
   type EhrChartContextResponseDto,
   type EhrChartContextSliceTypeDto,
+  type EhrEncounterContextDto,
+  type EhrEncounterContextResponseDto,
   type EhrIntegrationStatusDto,
+  type EhrPatientLookupResponseDto,
+  type EhrRuntimeBoundaryDto,
+  type EhrRuntimeBoundaryResponseDto,
   type EhrWritebackQueueActionRequestDto,
   type EhrWritebackQueueActionResponseDto,
   type EhrWritebackQueueItemDto,
@@ -81,6 +88,168 @@ export class EhrService {
     };
 
     return createApiEnvelope(status, this.createMeta(context));
+  }
+
+  async getRuntimeBoundary(headers: Record<string, string | string[] | undefined>): Promise<ApiEnvelope<EhrRuntimeBoundaryResponseDto>> {
+    const context = this.createRequestContext(headers);
+    if (!canPerform('ehr_adapter:view', context.access)) {
+      throw new ForbiddenException('role cannot view EHR runtime boundary');
+    }
+
+    const adapter = this.createAdapter(headers);
+    const boundary = await adapter.getRuntimeBoundary();
+    const auditEvent = this.createAuditEvent('ehr.runtime_boundary_reviewed', 'EhrRuntimeBoundary', boundary.primaryVendor, context);
+
+    return createApiEnvelope(
+      {
+        boundary,
+        auditEvent,
+        domainEvents: [
+          this.createEhrDomainEvent(context, 'ehr.config_reviewed.v1', {
+            vendor: boundary.primaryVendor,
+            mode: boundary.mode,
+            adapterBoundary: boundary.adapterBoundary,
+            liveApiCallsEnabled: boundary.liveApiCallsEnabled,
+            rawPayloadStorageEnabled: boundary.rawPayloadStorageEnabled
+          }),
+          this.createEhrDomainEvent(context, 'ehr.credential_disabled.v1', {
+            vendor: boundary.primaryVendor,
+            credentialState: boundary.credentialState,
+            credentialReference: boundary.credentialReference,
+            liveWritebackEnabled: boundary.liveWritebackEnabled
+          })
+        ]
+      },
+      this.createMeta(context)
+    );
+  }
+
+  async searchPatients(
+    query: { safePatientId?: string; externalPatientRef?: string; searchToken?: string },
+    headers: Record<string, string | string[] | undefined>
+  ): Promise<ApiEnvelope<EhrPatientLookupResponseDto>> {
+    const context = this.createRequestContext(headers);
+    if (!canPerform('ehr_chart_context:view', context.access)) {
+      throw new ForbiddenException('role cannot search EHR patient context');
+    }
+
+    const adapter = this.createAdapter(headers);
+    const [runtimeBoundary, results] = await Promise.all([adapter.getRuntimeBoundary(), adapter.searchPatients(query)]);
+    const auditEvent = this.createAuditEvent('ehr.patient_lookup_performed', 'EhrPatient', query.safePatientId ?? 'synthetic-search', context);
+
+    return createApiEnvelope(
+      {
+        results: results.map((result) => ({
+          safePatientId: result.patient.safePatientId,
+          externalPatientRef: result.patient.externalPatientRef,
+          sourceSystem: result.patient.sourceSystem,
+          displayLabel: result.patient.displayLabel,
+          matchConfidence: result.matchConfidence,
+          source: result.source
+        })),
+        runtimeBoundary,
+        auditEvent,
+        domainEvents: [
+          this.createEhrDomainEvent(context, 'ehr.patient_lookup_performed.v1', {
+            vendor: runtimeBoundary.primaryVendor,
+            resultCount: results.length,
+            liveApiCallsEnabled: runtimeBoundary.liveApiCallsEnabled,
+            rawPayloadStorageEnabled: runtimeBoundary.rawPayloadStorageEnabled
+          })
+        ]
+      },
+      this.createMeta(context)
+    );
+  }
+
+  async importAppointments(
+    startIso: string | undefined,
+    endIso: string | undefined,
+    headers: Record<string, string | string[] | undefined>
+  ): Promise<ApiEnvelope<EhrAppointmentImportResponseDto>> {
+    const context = this.createRequestContext(headers);
+    if (!canPerform('ehr_adapter:view', context.access)) {
+      throw new ForbiddenException('role cannot import EHR appointment metadata');
+    }
+
+    const adapter = this.createAdapter(headers);
+    const runtimeBoundary = await adapter.getRuntimeBoundary();
+    const start = startIso ?? '2026-05-26T14:00:00.000Z';
+    const end = endIso ?? '2026-05-26T22:00:00.000Z';
+    const appointments = (await adapter.getSchedule(start, end)).map(
+      (appointment): EhrAppointmentImportDto => ({
+        externalAppointmentId: appointment.externalAppointmentId,
+        safePatientId: appointment.safePatientId,
+        externalPatientRef: appointment.externalPatientRef,
+        clinicianId: appointment.clinicianId,
+        startsAt: appointment.startsAt,
+        durationMinutes: appointment.durationMinutes,
+        visitType: appointment.visitType,
+        sourceSystem: appointment.sourceSystem,
+        importMode: 'sandbox_metadata_only',
+        localAppointmentCreated: false
+      })
+    );
+    const auditEvent = this.createAuditEvent('ehr.appointment_imported', 'EhrAppointmentImport', 'synthetic-sandbox-import', context);
+
+    return createApiEnvelope(
+      {
+        appointments,
+        runtimeBoundary,
+        auditEvent,
+        domainEvents: [
+          this.createEhrDomainEvent(context, 'ehr.appointment_imported.v1', {
+            vendor: runtimeBoundary.primaryVendor,
+            appointmentCount: appointments.length,
+            localAppointmentCreated: false,
+            liveApiCallsEnabled: runtimeBoundary.liveApiCallsEnabled
+          })
+        ]
+      },
+      this.createMeta(context)
+    );
+  }
+
+  async getEncounterContext(
+    externalEncounterId: string,
+    headers: Record<string, string | string[] | undefined>
+  ): Promise<ApiEnvelope<EhrEncounterContextResponseDto>> {
+    const context = this.createRequestContext(headers);
+    if (!canPerform('ehr_chart_context:view', context.access)) {
+      throw new ForbiddenException('role cannot view EHR encounter context');
+    }
+
+    const adapter = this.createAdapter(headers);
+    const [runtimeBoundary, encounter] = await Promise.all([adapter.getRuntimeBoundary(), adapter.getEncounter(externalEncounterId)]);
+    const encounterDto: EhrEncounterContextDto = {
+      externalEncounterId: encounter.externalEncounterId,
+      externalAppointmentId: encounter.externalAppointmentId,
+      safePatientId: encounter.safePatientId,
+      externalPatientRef: encounter.externalPatientRef,
+      visitType: encounter.visitType,
+      sourceSystem: encounter.sourceSystem,
+      status: encounter.status,
+      contextMode: 'sandbox_metadata_only',
+      rawPayloadStored: false
+    };
+    const auditEvent = this.createAuditEvent('ehr.encounter_context_loaded', 'EhrEncounter', externalEncounterId, context);
+
+    return createApiEnvelope(
+      {
+        encounter: encounterDto,
+        runtimeBoundary,
+        auditEvent,
+        domainEvents: [
+          this.createEhrDomainEvent(context, 'ehr.encounter_context_loaded.v1', {
+            vendor: runtimeBoundary.primaryVendor,
+            externalEncounterId,
+            rawPayloadStored: false,
+            liveApiCallsEnabled: runtimeBoundary.liveApiCallsEnabled
+          })
+        ]
+      },
+      this.createMeta(context)
+    );
   }
 
   async getChartContext(
@@ -157,7 +326,20 @@ export class EhrService {
           sandboxMode: health.status.mode === 'production' ? 'sandbox' : health.status.mode,
           liveProductionWritebackEnabled: false,
           payloadsExcluded: true,
-          states: ['disabled', 'pending_approval', 'approved', 'queued', 'retrying', 'failed', 'dead_lettered', 'reconciled'],
+          states: [
+            'disabled',
+            'pending_approval',
+            'denied',
+            'approved',
+            'prepared',
+            'attempted',
+            'acknowledged',
+            'queued',
+            'retrying',
+            'failed',
+            'dead_lettered',
+            'reconciled'
+          ],
           warnings: [
             'Writeback queue contains audit-safe metadata only.',
             'Live production EHR delivery remains disabled until a later approved work order.'
@@ -197,7 +379,7 @@ export class EhrService {
     const context = this.createRequestContext(headers);
     this.validateWritebackActionRequest(body);
 
-    const requiredPermission = body.action === 'approve' ? 'ehr_writeback:approve' : 'ehr_writeback:manage';
+    const requiredPermission = ['approve', 'deny', 'prepare_payload'].includes(body.action) ? 'ehr_writeback:approve' : 'ehr_writeback:manage';
     if (!canPerform(requiredPermission, context.access)) {
       throw new ForbiddenException('role cannot update EHR writeback queue');
     }
@@ -225,11 +407,17 @@ export class EhrService {
   }
 
   private validateWritebackActionRequest(body: EhrWritebackQueueActionRequestDto): void {
-    if (!body || !['approve', 'retry', 'dead_letter', 'reconcile'].includes(body.action)) {
+    if (!body || !['approve', 'deny', 'prepare_payload', 'record_attempt', 'acknowledge', 'retry', 'dead_letter', 'reconcile'].includes(body.action)) {
       throw new BadRequestException('EHR writeback action is not supported');
     }
     if (body.action === 'approve' && !body.approvalId) {
       throw new BadRequestException('approvalId is required before EHR writeback approval');
+    }
+    if (body.action === 'deny' && !body.reason) {
+      throw new BadRequestException('reason is required before EHR writeback denial');
+    }
+    if (body.action === 'acknowledge' && !body.acknowledgementId) {
+      throw new BadRequestException('acknowledgementId is required for sandbox acknowledgement evidence');
     }
     if (body.action === 'reconcile' && !body.reconciliationId) {
       throw new BadRequestException('reconciliationId is required for reconciliation evidence');
@@ -275,6 +463,52 @@ export class EhrService {
           ...(existing.configured
             ? { nextRetryAt: new Date(Date.parse(now) + 15 * 60 * 1000).toISOString() }
             : { failureReason: 'Retry blocked because EHR sandbox credentials are not configured.' })
+        };
+      }
+      case 'deny':
+        return {
+          ...existing,
+          status: 'denied',
+          humanApproved: false,
+          retryable: false,
+          failedAt: now,
+          failureReason: body.reason ?? 'Synthetic EHR writeback denial recorded before payload preparation.'
+        };
+      case 'prepare_payload':
+        return {
+          ...existing,
+          status: existing.humanApproved ? 'prepared' : 'pending_approval',
+          payloadStored: false,
+          ...(existing.humanApproved
+            ? {}
+            : { failureReason: 'Human approval is required before payload preparation metadata can proceed.' })
+        };
+      case 'record_attempt': {
+        const { failureReason: _failureReason, nextRetryAt: _nextRetryAt, ...base } = existing;
+        return {
+          ...base,
+          status: 'attempted',
+          retryable: true,
+          retryCount: existing.retryCount + 1,
+          lastAttemptAt: now,
+          externalJobId: existing.externalJobId ?? `athena-sandbox-attempt-${existing.writebackJobId}`,
+          ...(existing.configured && existing.humanApproved
+            ? {}
+            : { failureReason: 'Attempt recorded as metadata only; sandbox credential or approval gate is incomplete.' })
+        };
+      }
+      case 'acknowledge': {
+        const acknowledgementId = body.acknowledgementId;
+        if (!acknowledgementId) {
+          throw new BadRequestException('acknowledgementId is required for sandbox acknowledgement evidence');
+        }
+        return {
+          ...existing,
+          status: 'acknowledged',
+          retryable: false,
+          acknowledgementId,
+          externalJobId: existing.externalJobId ?? `athena-sandbox-ack-${existing.writebackJobId}`,
+          failureReason: 'Acknowledgement is synthetic metadata only and requires reconciliation before closure.'
         };
       }
       case 'dead_letter':
@@ -351,6 +585,14 @@ export class EhrService {
     switch (action) {
       case 'approve':
         return 'ehr.writeback_approval_recorded.v1' as const;
+      case 'deny':
+        return 'ehr.writeback_denied.v1' as const;
+      case 'prepare_payload':
+        return 'ehr.writeback_payload_prepared.v1' as const;
+      case 'record_attempt':
+        return 'ehr.writeback_attempt_recorded.v1' as const;
+      case 'acknowledge':
+        return 'ehr.writeback_acknowledged.v1' as const;
       case 'retry':
         return 'ehr.writeback_retry_scheduled.v1' as const;
       case 'dead_letter':
@@ -519,6 +761,21 @@ export class EhrService {
       traceId: context.traceId,
       createdAt: new Date().toISOString()
     };
+  }
+
+  private createEhrDomainEvent(context: RequestContext, eventType: Parameters<typeof createEventEnvelope>[0]['eventType'], payload: Record<string, unknown>) {
+    return createEventEnvelope({
+      eventId: this.nextId('evt'),
+      eventType,
+      tenantId: TENANT_ID,
+      siteId: SITE_ID,
+      producer: 'aura-note-api',
+      traceId: context.traceId,
+      idempotencyKey: context.idempotencyKey ?? this.nextId('idem'),
+      sensitivity: 'restricted',
+      retentionClass: 'audit',
+      payload
+    });
   }
 
   private createMeta(context: RequestContext): ApiMeta {

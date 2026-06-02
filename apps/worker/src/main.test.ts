@@ -61,6 +61,8 @@ describe('worker scaffold', () => {
     assert.equal(result.transcript.retentionPolicy, 'indefinite');
     assert.equal(result.transcript.segments[0]?.confidence, 0.91);
     assert.equal(result.transcript.providerStatus?.liveProviderCallsEnabled, false);
+    assert.equal(result.transcript.providerStatus?.providerBoundary, 'server_side_adapter');
+    assert.equal(result.transcript.providerStatus?.retryPolicy?.deadLetterState, 'dead_lettered_metadata_only');
   });
 
   it('marks raw audio records purge-eligible after the one-week retention window', () => {
@@ -393,6 +395,21 @@ describe('worker scaffold', () => {
           warnings: []
         },
         moduleBoundaries: [],
+        modeAdapterBoundaries: [
+          {
+            seam: 'visitGraph',
+            displayName: 'VisitGraph context',
+            sourceOfTruth: 'clinicos',
+            adapterStatus: 'unavailable',
+            permissionBoundary: 'aura_note_authoritative',
+            liveDelegationEnabled: false,
+            rawPayloadStorageEnabled: false,
+            humanReviewRequired: true,
+            writesFailClosed: true,
+            notes: 'ClinicOS unavailable; AURA Note retains authority.',
+            clinicOsModuleId: 'M03'
+          }
+        ],
         mappings: [],
         publishedEvents: [
           {

@@ -501,6 +501,86 @@ This gate proves synthetic/local P9 review readiness only. It does not certify H
 
 This gate proves synthetic/local frontend runtime integration evidence only. Existing production-intended scaffold routes must be converted to typed API runtime behavior or explicitly deferred before launch-candidate readiness is claimed.
 
+## WO-064 primary UI runtime API conversion
+
+`WO-064` adds `pnpm frontend:primary-runtime-readiness`:
+
+- the primary production-intended AURA Note routes use the typed web API client for route loaders and state-changing actions;
+- Playwright seeds backend records through the API for schedule, workspace, finalized-note, and frontend runtime integration flows;
+- browser checks cover loading, empty, ready, saving, failed, permission-denied, read-only, blocked, degraded, disabled, and documented demo/fixture states where relevant;
+- route actions for schedule, visit timer, recording metadata, transcript correction, History Gap blocker creation, finalization, export/copy/download/writeback, operations, platform, EHR, ClinicOS, AI governance, coaching, and support status refetch typed API-backed state after mutation;
+- ClinicOS browser calls use typed mode headers and the API CORS boundary permits those headers for local synthetic evidence.
+
+This gate proves synthetic/local primary route runtime evidence only. It does not enable live EHR, ClinicOS, AI, transcription, storage, payer, claim, production identity, production PHI, or production launch behavior.
+
+## WO-065 Figma handoff readiness
+
+`WO-065` adds `pnpm figma:handoff-readiness`:
+
+- Playwright opens `/aura-note/figma-handoff` and verifies the read-only handoff route exposes the screen inventory, route states, role views, workflow map, ClinicOS adapter-boundary copy, and AI suggestions remain draft-only safety copy.
+- `scripts/validate-figma-handoff-readiness.js` verifies the eight Figma handoff docs, required screen surfaces, required states, role views, typed API and documented mock mappings, content copy constraints, CI wiring, status/run-log evidence, and no-launch safety posture.
+- The gate preserves `pnpm frontend:primary-runtime-readiness` and `pnpm frontend:runtime-integration-readiness` so design handoff inventory does not replace backend-backed route evidence.
+
+This gate is design-handoff evidence only. It does not enable live PHI, live EHR, live ClinicOS, live AI, live transcription, live storage, claim submission, autonomous clinical/coding/billing behavior, medical-necessity determination, charge finalization, production design approval, or production launch.
+
+## WO-066 standalone workflow completion
+
+`WO-066` adds `pnpm standalone:workflow-readiness`:
+
+- Playwright seeds a backend-backed standalone appointment, drives the API finalization/export workflow, and verifies browser-visible standalone continuity through runtime home, schedule, finalized note, operations, and ClinicOS adapter-boundary routes.
+- The route checks prove the workflow does not require ClinicOS, finalized artifacts are read-only, claim submission remains disabled, and ClinicOS cannot bypass AURA Note permissions.
+- `scripts/validate-standalone-workflow-readiness.js` checks route evidence, docs/status/run-log/checkpoint evidence, next-work-order rails, and the no-live/no-launch posture.
+- The gate preserves `pnpm figma:handoff-readiness`, `pnpm frontend:primary-runtime-readiness`, and `pnpm frontend:runtime-integration-readiness`.
+
+This gate closes CR-2 as synthetic/local product UX runtime evidence only. It does not enable live PHI, live EHR, live ClinicOS, live AI, live transcription, live storage, claim submission, autonomous clinical/coding/billing behavior, medical-necessity determination, charge finalization, or production launch.
+
+## WO-067 ModeResolver and adapter runtime wiring
+
+`WO-067` adds `pnpm mode:adapter-readiness`:
+
+- API unit tests cover standalone default mode, ClinicOS mock mode, degraded/unavailable fail-closed state, invalid mode fallback, metadata-only adapter seams, and no live delegation or raw payload storage.
+- ClinicOS service/e2e tests cover status, VisitGraph/M17 mapping, stale mapping evidence, failed publication metadata, cross-tenant/service-account denial, ordinary-clinician write denial, degraded mode, and mode adapter boundary metadata.
+- The readiness script verifies the shared ModeResolver, ClinicOS service wiring, contract/OpenAPI DTOs, synthetic fixtures, docs/status/run-log evidence, active next-work-order rails, and no-live/no-launch posture.
+- Existing `pnpm standalone:workflow-readiness`, `pnpm frontend:primary-runtime-readiness`, and `pnpm clinicos:integration-readiness` remain required to prove standalone workflow behavior and the prior ClinicOS metadata boundary were not regressed.
+
+This gate proves synthetic/local CR-3 mode adapter readiness only. It does not enable live ClinicOS credentials, live event bus delivery, delegated identity, raw ClinicOS payload storage, live EHR/writeback routing, live AI, live transcription, production PHI, charge finalization, medical-necessity determination, claim submission, or production launch.
+
+## WO-068 transcription runtime boundary
+
+`WO-068` adds `pnpm transcription:runtime-boundary-readiness`:
+
+- API unit tests cover the deterministic mock provider, the disabled live provider, provider runtime state metadata, retry/dead-letter policy, and no live provider calls.
+- API service/e2e tests cover microphone permission metadata, metadata-only chunk acceptance and replay, mock transcription, disabled-live-provider fail-closed evidence, correction history, support denial, raw-audio retention, and transcript purge count zero.
+- Worker tests continue covering deterministic mock transcription and retention evidence with server-side adapter metadata.
+- Browser tests verify the documentation workspace displays API-backed transcription runtime states, provider boundary, retry/dead-letter posture, mock transcript processing, correction history, and disabled live-provider evidence.
+- The readiness script verifies contracts/OpenAPI, docs/status/run-log evidence, next-work-order rails, CI wiring, and no-live/no-launch posture.
+
+This gate proves synthetic/local transcription runtime boundary readiness only. It does not enable live transcription credentials, live vendor calls, raw PHI audio transport, production audio storage, external AI, charge finalization, medical-necessity determination, claim submission, or production launch.
+
+## WO-069 EHR sandbox runtime boundary
+
+`WO-069` adds `pnpm ehr:sandbox-runtime-readiness`:
+
+- EHR adapter package tests cover the vendor-neutral runtime boundary, athenahealth-first sandbox posture, disabled credential metadata, chart-context retrieval, and no-live-call/no-raw-payload flags;
+- API service and e2e tests cover `/integrations/ehr/runtime-boundary`, sandbox patient lookup, appointment import, encounter context retrieval, payload preparation, delivery-attempt metadata, acknowledgement, denial, and role/approval gates;
+- contracts tests cover EHR runtime boundary DTOs, patient lookup/import/context DTOs, expanded queue lifecycle states, and new audit-safe event types;
+- browser tests cover `/aura-note/integrations/ehr` loading, ready, read-only, permission-denied, sandbox context, approval-required, denied, pending, dead-lettered, and reconciliation-needed states;
+- the readiness script verifies code, contracts/OpenAPI, docs/status/run-log evidence, CI wiring, `WO-070` next-work-order rails, and no-live/no-launch posture.
+
+This gate proves synthetic/local athenahealth sandbox and vendor-neutral EHR runtime boundary readiness only. It does not enable production EHR credentials, raw EHR payload storage, live API calls, live writeback delivery, autonomous finalization, charge finalization, medical-necessity determination, claim submission, or production launch.
+
+## WO-070 AI runtime governance boundary
+
+`WO-070` adds `pnpm ai:runtime-governance-readiness`:
+
+- AI Gateway unit tests cover expanded deterministic evaluation cases for prohibited diagnosis finalization, code finalization, charge finalization, claim submission, medical-necessity determination, order placement, patient-facing financial conclusions, unsafe coaching, unsupported payer language, and stale-source rejection.
+- API service and e2e tests cover `/ai-gateway/runtime-boundary`, prompt/model/evaluation metadata, PHI rejection/redaction, output validation, source-freshness rejection, support-user denial, regression-blocked events, and `liveModelCalled=false`.
+- contracts tests cover `AiRuntimeBoundaryDto`, schema-validation status, source-freshness status, blocked-behavior metadata, and new AI event types.
+- browser tests cover `/aura-note/ai-governance` loading, ready, permission-denied, scrubbed, PHI-rejected, source-stale, unsafe-output-rejected, output-validation-failed, human-review-required, read-only, disabled, degraded, failed, and demo-fixture states through typed API responses.
+- the readiness script verifies code, contracts/OpenAPI, docs/status/run-log/checkpoint evidence, CI wiring, `next_work_order: null` CR-3 checkpoint stop, and no-live/no-launch posture.
+
+This gate closes CR-3 as synthetic/local integration and governance runtime evidence only. It does not enable live model credentials, production prompt stores, raw PHI transfer to external AI, private/BAA pathway approval, autonomous finalization, charge finalization, medical-necessity determination, claim submission, or production launch.
+
 ## WO-049 launch operations readiness
 
 `WO-049` adds synthetic/local deployment, performance, reliability, and operational drill evidence:
@@ -521,3 +601,15 @@ This gate is operational rehearsal only. It does not approve production deployme
 `WO-051` adds `pnpm claim-decision:readiness` as the P11 decision gate. Verification includes decision-package docs, the WO-051 runbook, support-status browser assertions for Claim/Payer Decision Gate, Draft Claim Boundary, No Live Clearinghouse, No Payer API, No Denial Automation, No Payment Posting, `submittedClaim=false`, and `claimSubmissionEnabled=false`. Existing schedule/finalization tests continue proving draft claim preview remains unsubmitted and patient-facing summaries exclude internal billing/revenue details.
 
 This gate must fail if any current document/status evidence claims live claim submission, payer API calls, clearinghouse integration, denial automation, payment posting, charge finalization, medical-necessity determination, or patient financial conclusions are enabled.
+
+## WO-071 through WO-075 CR-4 commercial readiness
+
+CR-4 adds five review gates:
+
+- `pnpm security:commercial-readiness` verifies the security/privacy/compliance and threat-model package, support denial evidence, commercial readiness API security section, and no-certification/no-launch posture.
+- `pnpm ops:commercial-readiness` verifies observability/SRE/support/incident operations evidence, incident taxonomy, disabled SIEM/APM posture, and support metadata-only evidence.
+- `pnpm billing:revenue-integrity-readiness` verifies candidate-only billing/revenue integrity evidence, draft claim preview `submittedClaim=false`, patient-summary internal-detail exclusion posture, triggered transcript access, and claim submission disabled posture.
+- `pnpm beta:pilot-package-readiness` verifies the beta pilot package, synthetic pilot smoke, support route beta evidence, disabled feature inventory, and no real tenant/live PHI/live vendor posture.
+- `pnpm commercial:readiness` verifies all CR-4 work orders, the `/support/commercial-readiness` contract, `docs/COMMERCIAL_READINESS_REVIEW_PACKET.md`, CR-4 checkpoint evidence, `repo_status.json`, `SPEC_GAPS.md`, CI wiring, and no production launch claim.
+
+API service and e2e tests cover `/support/commercial-readiness`, role denial, CR-4 completed work-order metadata, audit-safe domain events, and `productionLaunchReady=false`. Browser tests cover the support route CR-4 commercial readiness and work-order evidence panels. These gates do not approve production launch.

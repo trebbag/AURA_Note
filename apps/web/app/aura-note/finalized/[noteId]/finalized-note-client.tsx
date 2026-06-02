@@ -1,71 +1,131 @@
 'use client';
 
-import { useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import type { ExportArtifactDto, FinalizedNoteDetailDto } from '@aura-note/contracts';
+import { createAuraNoteApiClient } from '../../../../lib/aura-note-api-client';
 
 type ViewerTab = 'final_note' | 'patient_summary';
-type ActionState = 'not_generated' | 'generated' | 'failed';
-type WritebackState = 'not_configured' | 'queued' | 'failed';
+type RouteState = 'loading' | 'empty' | 'ready' | 'saving' | 'failed' | 'permission-denied' | 'read-only';
 
 interface FinalizedNoteClientProps {
   noteId: string;
 }
 
-const finalNoteText = [
-  'Enhanced Synthetic Clinician Note',
-  'Synthetic draft note for Chronic follow-up.',
-  'Payer-readable support is limited to clinician-reviewed synthetic items.',
-  'Signed final note is read-only.'
-].join('\n\n');
-
-const patientSummaryText =
-  'Today we reviewed your follow-up plan. Bring your medication list to the next visit and contact the clinic if symptoms change.';
-
 export function FinalizedNoteClient({ noteId }: FinalizedNoteClientProps) {
+  const client = useMemo(() => createAuraNoteApiClient({ role: 'clinician' }), []);
+  const supportClient = useMemo(() => createAuraNoteApiClient({ role: 'support', userId: 'user-support-finalized-denial' }), []);
   const [activeTab, setActiveTab] = useState<ViewerTab>('final_note');
-  const [notePdfState, setNotePdfState] = useState<ActionState>('not_generated');
-  const [summaryPdfState, setSummaryPdfState] = useState<ActionState>('not_generated');
-  const [copyState, setCopyState] = useState<ActionState>('not_generated');
-  const [summaryCopyState, setSummaryCopyState] = useState<ActionState>('not_generated');
-  const [structuredExportState, setStructuredExportState] = useState<ActionState>('not_generated');
-  const [writebackState, setWritebackState] = useState<WritebackState>('not_configured');
-  const [message, setMessage] = useState('Signed final artifacts are available for role-limited actions.');
+  const [detail, setDetail] = useState<FinalizedNoteDetailDto | null>(null);
+  const [routeState, setRouteState] = useState<RouteState>('loading');
+  const [message, setMessage] = useState('Loading finalized note from the API.');
 
-  const activeText = activeTab === 'final_note' ? finalNoteText : patientSummaryText;
+  const refreshDetail = useCallback(async () => {
+    setRouteState('loading');
+    try {
+      const response = await client.getFinalizedNote(noteId);
+      setDetail(response.data);
+      setRouteState(response.data.finalNoteAvailable ? 'read-only' : 'empty');
+      setMessage(response.data.finalNoteAvailable ? 'Signed final artifacts loaded from API-backed read-only state.' : 'Finalized artifact is not available yet.');
+    } catch (error) {
+      setRouteState('failed');
+      setMessage(error instanceof Error ? error.message : 'Finalized note API request failed.');
+    }
+  }, [client, noteId]);
 
-  function generateNotePdf() {
-    setNotePdfState('generated');
-    setMessage('Final note PDF artifact generated from the signed read-only version.');
-  }
+  useEffect(() => {
+    void refreshDetail();
+  }, [refreshDetail]);
 
-  function generateSummaryPdf() {
-    setSummaryPdfState('generated');
-    setMessage('Patient summary PDF artifact generated with internal billing details excluded.');
+  async function runExportAction(label: string, action: () => Promise<{ data: { artifact?: ExportArtifactDto; finalizedNote?: FinalizedNoteDetailDto } }>) {
+    setRouteState('saving');
+    try {
+      const response = await action();
+      if (response.data.finalizedNote) {
+        setDetail(response.data.finalizedNote);
+      }
+      setMessage(label);
+      setRouteState('read-only');
+    } catch (error) {
+      setRouteState('failed');
+      setMessage(error instanceof Error ? error.message : label);
+    }
   }
 
   function copyFinalNote() {
-    setCopyState('generated');
-    setMessage('Final note copy-safe artifact prepared for manual EHR workflow.');
+    void runExportAction('Final note copy-safe artifact generated through API.', () => client.copyFinalNote(noteId));
   }
 
   function copyPatientSummary() {
-    setSummaryCopyState('generated');
-    setMessage('Patient summary copy-safe artifact prepared without internal revenue or coding logic.');
+    void runExportAction('Patient summary copy-safe artifact generated through API without internal revenue or coding logic.', () =>
+      client.copyPatientSummary(noteId)
+    );
+  }
+
+  function generateNotePdf() {
+    void runExportAction('Final note PDF artifact generated through API.', () => client.generateFinalNotePdf(noteId));
+  }
+
+  function generateSummaryPdf() {
+    void runExportAction('Patient summary PDF artifact generated through API.', () => client.generatePatientSummaryPdf(noteId));
   }
 
   function exportStructured() {
-    setStructuredExportState('generated');
-    setMessage('Structured export artifact generated from signed final note and patient summary.');
+    void runExportAction('Structured export artifact generated through API.', () => client.exportStructuredFinalNote(noteId));
   }
 
-  function queueWriteback() {
-    setWritebackState('queued');
-    setMessage('Mock EHR writeback queued. Production EHR writeback remains configuration-gated.');
+  async function queueWriteback() {
+    setRouteState('saving');
+    try {
+      const response = await client.requestEhrWriteback(noteId, {
+        target: 'both',
+        humanApproved: true,
+        scaffoldMode: 'mock_queue'
+      });
+      setDetail(response.data.finalizedNote);
+      setMessage('Mock EHR writeback queued through API. Production EHR writeback remains configuration-gated.');
+      setRouteState('read-only');
+    } catch (error) {
+      setRouteState('failed');
+      setMessage(error instanceof Error ? error.message : 'EHR writeback request failed.');
+    }
   }
 
-  function recordWritebackFailure() {
-    setWritebackState('failed');
-    setMessage('Synthetic EHR writeback failure recorded; local copy/PDF/export actions remain available.');
+  async function recordWritebackFailure() {
+    setRouteState('saving');
+    try {
+      const response = await client.requestEhrWriteback(noteId, {
+        target: 'final_note',
+        humanApproved: true,
+        scaffoldMode: 'simulate_failure'
+      });
+      setDetail(response.data.finalizedNote);
+      setMessage('Synthetic EHR writeback failure recorded through API.');
+      setRouteState('read-only');
+    } catch (error) {
+      setRouteState('failed');
+      setMessage(error instanceof Error ? error.message : 'Synthetic EHR writeback failure request failed.');
+    }
   }
+
+  async function verifyPermissionDeniedState() {
+    setRouteState('loading');
+    try {
+      await supportClient.generateFinalNotePdf(noteId);
+      setRouteState('failed');
+      setMessage('Unexpected support export generation succeeded.');
+    } catch (error) {
+      setRouteState('permission-denied');
+      setMessage(error instanceof Error ? error.message : 'Support export generation denied by API.');
+    }
+  }
+
+  const activeText =
+    activeTab === 'final_note'
+      ? detail?.finalNote?.finalNoteText ?? 'Final note is not available from the API yet.'
+      : detail?.patientSummary?.patientSummaryText ?? 'Patient summary is not available from the API yet.';
+
+  const artifactStatus = (artifactType: ExportArtifactDto['artifactType']) =>
+    detail?.exportArtifacts.find((artifact) => artifact.artifactType === artifactType)?.status ?? 'not_generated';
 
   return (
     <main className="notes-shell">
@@ -75,6 +135,7 @@ export function FinalizedNoteClient({ noteId }: FinalizedNoteClientProps) {
           <h1>Read-Only Final Note</h1>
         </div>
         <nav className="header-nav" aria-label="AURA Note sections">
+          <a href="/aura-note">Runtime Home</a>
           <a href="/aura-note/finalized">Finalized Notes</a>
           <a href="/aura-note/drafts">Draft Notes</a>
           <a href="/aura-note/schedule">Schedule</a>
@@ -85,12 +146,16 @@ export function FinalizedNoteClient({ noteId }: FinalizedNoteClientProps) {
         <p>{message}</p>
         <dl>
           <div>
+            <dt>Route State</dt>
+            <dd>{routeState}</dd>
+          </div>
+          <div>
             <dt>Signed</dt>
-            <dd>yes</dd>
+            <dd>{detail?.finalNoteAvailable ? 'yes' : 'no'}</dd>
           </div>
           <div>
             <dt>Writeback</dt>
-            <dd>{writebackState}</dd>
+            <dd>{detail?.writeback.status ?? detail?.writebackStatus ?? 'disabled'}</dd>
           </div>
           <div>
             <dt>Editor</dt>
@@ -130,26 +195,29 @@ export function FinalizedNoteClient({ noteId }: FinalizedNoteClientProps) {
 
         <aside className="export-panel" aria-label="Export and writeback actions">
           <h2>Output Actions</h2>
-          <button type="button" onClick={copyFinalNote}>
+          <button type="button" disabled={!detail?.availableActions.copyFinalNote} onClick={copyFinalNote}>
             Copy Final Note
           </button>
-          <button type="button" onClick={copyPatientSummary}>
+          <button type="button" disabled={!detail?.availableActions.copyPatientSummary} onClick={copyPatientSummary}>
             Copy Patient Summary
           </button>
-          <button type="button" onClick={generateNotePdf}>
+          <button type="button" disabled={!detail?.availableActions.downloadFinalNotePdf} onClick={generateNotePdf}>
             Download Note PDF
           </button>
-          <button type="button" onClick={generateSummaryPdf}>
+          <button type="button" disabled={!detail?.availableActions.downloadPatientSummaryPdf} onClick={generateSummaryPdf}>
             Download Patient Summary PDF
           </button>
-          <button type="button" onClick={exportStructured}>
+          <button type="button" disabled={!detail?.availableActions.exportStructured} onClick={exportStructured}>
             Export Structured Note
           </button>
-          <button type="button" onClick={queueWriteback}>
+          <button type="button" disabled={!detail?.availableActions.queueEhrWriteback} onClick={() => void queueWriteback()}>
             Queue Mock Writeback
           </button>
-          <button type="button" className="secondary-action" onClick={recordWritebackFailure}>
+          <button type="button" className="secondary-action" disabled={!detail?.finalNoteAvailable} onClick={() => void recordWritebackFailure()}>
             Record Failure State
+          </button>
+          <button type="button" className="secondary-action" onClick={() => void verifyPermissionDeniedState()}>
+            Verify Permission Denied
           </button>
         </aside>
       </section>
@@ -157,27 +225,27 @@ export function FinalizedNoteClient({ noteId }: FinalizedNoteClientProps) {
       <dl className="artifact-status-grid" aria-label="Artifact statuses">
         <div>
           <dt>Final Note PDF</dt>
-          <dd>{notePdfState}</dd>
+          <dd>{artifactStatus('final_note_pdf')}</dd>
         </div>
         <div>
           <dt>Patient Summary PDF</dt>
-          <dd>{summaryPdfState}</dd>
+          <dd>{artifactStatus('patient_summary_pdf')}</dd>
         </div>
         <div>
           <dt>Final Note Copy</dt>
-          <dd>{copyState}</dd>
+          <dd>{artifactStatus('final_note_copy')}</dd>
         </div>
         <div>
           <dt>Summary Copy</dt>
-          <dd>{summaryCopyState}</dd>
+          <dd>{artifactStatus('patient_summary_copy')}</dd>
         </div>
         <div>
           <dt>Structured Export</dt>
-          <dd>{structuredExportState}</dd>
+          <dd>{artifactStatus('structured_export')}</dd>
         </div>
         <div>
           <dt>EHR Writeback</dt>
-          <dd>{writebackState}</dd>
+          <dd>{detail?.writeback.status ?? 'disabled'}</dd>
         </div>
       </dl>
     </main>

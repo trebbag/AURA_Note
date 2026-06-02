@@ -1,120 +1,64 @@
-const featureFlags = [
-  {
-    key: 'External AI',
-    state: 'disabled',
-    detail: 'Mock-only AI gateway remains the safe degraded mode.'
-  },
-  {
-    key: 'EHR writeback',
-    state: 'metadata-only',
-    detail: 'Copy, PDF, export, and queued status remain available without live EHR delivery.'
-  },
-  {
-    key: 'ClinicOS sync',
-    state: 'mock-boundary',
-    detail: 'AURA Note permissions stay authoritative in standalone and mock integrated modes.'
-  },
-  {
-    key: 'Audit export download',
-    state: 'permission-gated',
-    detail: 'Server-mediated signed downloads are token, tenant, role, and expiration checked; public URLs remain disabled.'
-  }
-];
+'use client';
 
-const retentionPolicies = [
-  { label: 'Raw audio', rule: 'one week', job: 'raw_audio_retention_candidate_scan', eligible: 1 },
-  { label: 'Transcript', rule: 'indefinite', job: 'transcript_retention_indefinite_scan', eligible: 0 },
-  { label: 'Audit events', rule: 'tenant policy', job: 'audit_export_bundle_generation', eligible: 0 }
-];
+import { useEffect, useMemo, useState } from 'react';
+import type {
+  AuditExportResponseDto,
+  BackupRestoreReadinessResponseDto,
+  CommercialReadinessResponseDto,
+  OperationalEvidenceResponseDto,
+  OperationalReadinessResponseDto,
+  SupportStatusResponseDto
+} from '@aura-note/contracts';
+import { createAuraNoteApiClient } from '../../../../lib/aura-note-api-client';
 
-const failureStates = [
-  { component: 'External AI', state: 'disabled', mode: 'Deterministic draft candidates only' },
-  { component: 'EHR writeback', state: 'metadata-only', mode: 'Manual copy/PDF/export fallback' },
-  { component: 'Structured logs', state: 'ready', mode: 'Request-correlated and redacted' },
-  { component: 'Audit export', state: 'ready_synthetic', mode: 'Redacted JSONL plus secure download evidence' },
-  { component: 'Storage download', state: 'denied states covered', mode: 'expired, wrong tenant, wrong role, missing object' }
-];
+type RouteState = 'loading' | 'empty' | 'ready' | 'saving' | 'failed' | 'permission-denied' | 'read-only';
 
-const storageDownloadStates = [
-  { label: 'Download unavailable', state: 'storage-disabled', mode: 'Inline synthetic metadata only' },
-  { label: 'Ready', state: 'token issued', mode: '15 minute server-mediated token' },
-  { label: 'Expired', state: 'denied', mode: 'Token expiry prevents delivery' },
-  { label: 'Wrong role', state: 'denied', mode: 'Billing/support cannot bypass artifact permissions' },
-  { label: 'Missing object', state: 'failed', mode: 'No payload returned; audit-safe denial only' }
-];
+interface SupportRuntimeState {
+  support?: SupportStatusResponseDto;
+  operations?: OperationalReadinessResponseDto;
+  backup?: BackupRestoreReadinessResponseDto;
+  commercial?: CommercialReadinessResponseDto;
+  auditExport?: AuditExportResponseDto;
+  operationalEvidence?: OperationalEvidenceResponseDto;
+  deniedMessage?: string;
+}
 
-const restoreStates = [
-  { label: 'Raw audio deletion', state: 'approval required', mode: 'Feature flag, approval, and recovery window required' },
-  { label: 'Recovery window', state: 'recoverable', mode: 'Soft-delete/versioning evidence required before deletion' },
-  { label: 'Transcript retention', state: 'indefinite', mode: 'Transcript purge count remains zero' },
-  { label: 'Restore readiness', state: 'blocked until review', mode: 'Restore execution disabled; metadata check only' }
-];
-
-const observabilitySinks = [
-  { label: 'Structured logs', state: 'ready local', mode: 'console, redacted, request-correlated' },
-  { label: 'Metrics', state: 'ready local', mode: 'in-memory latency and queue probes' },
-  { label: 'Traces', state: 'ready local', mode: 'in-memory span probes with redacted attributes' },
-  { label: 'Production SIEM', state: 'disabled', mode: 'vendor and credentials not configured' },
-  { label: 'Production APM', state: 'disabled', mode: 'vendor and credentials not configured' }
-];
-
-const deploymentEnvironments = [
-  { label: 'Local', state: 'ready local', mode: 'synthetic data only' },
-  { label: 'Preview', state: 'configuration required', mode: 'database and session secrets required' },
-  { label: 'Staging', state: 'configuration required', mode: 'storage and observability exporters required' },
-  { label: 'Production', state: 'blocked until review', mode: 'security approval and sink selection required' }
-];
-
-const runbooks = [
-  { label: 'Deploy and rollback', state: 'documented', mode: 'environment matrix and release rollback steps' },
-  { label: 'Incident triage', state: 'documented', mode: 'severity, containment, and evidence capture' },
-  { label: 'Audit and retention', state: 'documented', mode: 'metadata export and non-destructive review' },
-  { label: 'Disabled integrations', state: 'documented', mode: 'AI, EHR, ClinicOS, analytics, and download checks' }
-];
-
-const operationalEvidence = [
-  { label: 'Readiness check', state: 'ready_synthetic', mode: 'P8 local evidence; productionLaunchReady=false' },
-  { label: 'Incident runbook viewed', state: 'recorded_synthetic', mode: 'audit-safe runbook view evidence' },
-  { label: 'Degraded mode acknowledged', state: 'recorded_synthetic', mode: 'safe fallback acknowledged without PHI' },
-  { label: 'Access review evidence', state: 'recorded_synthetic', mode: 'metadata-only review evidence' }
-];
-
-const launchOpsDrills = [
+const documentedLaunchOpsDrills = [
   { label: 'Release smoke', state: 'passing_synthetic', mode: 'web, API, worker, persistence, storage, support status' },
   { label: 'Rollback rehearsal', state: 'documented_blocked_live', mode: 'migration rollback requires approval before production execution' },
   { label: 'Vendor outage drill', state: 'fail_closed', mode: 'AI, EHR, ClinicOS, storage, transcription disabled paths remain safe' },
   { label: 'Access review drill', state: 'recorded_synthetic', mode: 'disabled user, expired session, and denied support metadata only' }
 ];
 
-const performanceBaselines = [
+const documentedPerformanceBaselines = [
   { label: 'Schedule list p95', state: 'under 250ms synthetic', mode: 'synthetic_load_baseline no PHI' },
   { label: 'Finalization API p95', state: 'under 500ms synthetic', mode: 'human-review workflow only' },
   { label: 'Export metadata p95', state: 'under 750ms synthetic', mode: 'storage-backed metadata, no public URL' },
   { label: 'Launch load profile', state: '100 synthetic workflows', mode: 'local deterministic harness; no production traffic' }
 ];
 
-const pilotLaunchChecklist = [
+const documentedPilotLaunchChecklist = [
   { label: 'Tenant Onboarding', state: 'checklist_ready', mode: 'synthetic tenant/site provisioning only' },
   { label: 'Role Training', state: 'checklist_ready', mode: 'clinician, MA, billing, admin, privacy, support, service-account' },
   { label: 'Disabled Feature Inventory', state: 'reviewed_synthetic', mode: 'live vendors, charge finalization, and claim submission disabled' },
   { label: 'First-Week Monitoring', state: 'placeholder_ready', mode: 'daily access, workflow, export, vendor-disabled, and support review' }
 ];
 
-const pilotApprovals = [
+const documentedPilotApprovals = [
   { label: 'Founder approval', state: 'required_before_live_launch', mode: 'productionLaunchApproved=false' },
   { label: 'Clinical approval', state: 'required_before_live_launch', mode: 'human-review gates remain required' },
   { label: 'Compliance/privacy approval', state: 'required_before_live_launch', mode: 'no real PHI in pilot evidence' },
   { label: 'Security approval', state: 'required_before_live_launch', mode: 'no production credentials or live vendors' }
 ];
 
-const pilotGoNoGo = [
+const documentedPilotGoNoGo = [
   { label: 'Frontend Runtime Integration Gate', state: 'ready_synthetic', mode: 'typed API client and persisted reload evidence' },
   { label: 'Rollback Criteria', state: 'documented', mode: 'unauthorized access, privacy incident, smoke failure, vendor misroute' },
   { label: 'Support Escalation', state: 'placeholder_ready', mode: 'release, clinical, privacy, security, infrastructure owners required' },
   { label: 'Draft Claim Boundary', state: 'blocked_live_submission', mode: 'submittedClaim=false' }
 ];
 
-const claimDecisionItems = [
+const documentedClaimDecisionItems = [
   { label: 'Draft Claim Boundary', state: 'internal_review_only', mode: 'submittedClaim=false' },
   { label: 'No Live Clearinghouse', state: 'disabled', mode: 'claimSubmissionEnabled=false' },
   { label: 'No Payer API', state: 'deferred', mode: 'vendor and legal strategy required' },
@@ -122,7 +66,7 @@ const claimDecisionItems = [
   { label: 'No Payment Posting', state: 'deferred', mode: 'paymentPostingEnabled=false' }
 ];
 
-const claimApprovalCriteria = [
+const documentedClaimApprovalCriteria = [
   { label: 'Founder/Billing approval', state: 'required_for_future_work', mode: 'live submission cannot be enabled by default' },
   { label: 'Compliance/Privacy approval', state: 'required_for_future_work', mode: 'payer payload and PHI policy required' },
   { label: 'Security/Legal approval', state: 'required_for_future_work', mode: 'credential, contract, and audit posture required' },
@@ -130,6 +74,112 @@ const claimApprovalCriteria = [
 ];
 
 export default function SupportStatusPage() {
+  const supportClient = useMemo(() => createAuraNoteApiClient({ role: 'support' }), []);
+  const complianceClient = useMemo(() => createAuraNoteApiClient({ role: 'compliance_privacy_lead' }), []);
+  const clinicianClient = useMemo(() => createAuraNoteApiClient({ role: 'clinician' }), []);
+  const [routeState, setRouteState] = useState<RouteState>('loading');
+  const [runtime, setRuntime] = useState<SupportRuntimeState>({});
+  const [message, setMessage] = useState('Loading support runtime state from typed API clients.');
+
+  const refreshRuntimeState = async () => {
+    setRouteState('loading');
+    setMessage('Loading support runtime state from typed API clients.');
+    const [support, operations, backup, commercial, clinicianDenied] = await Promise.allSettled([
+      supportClient.getSupportStatus(),
+      supportClient.getOperationalReadiness(),
+      complianceClient.getBackupRestoreReadiness(),
+      supportClient.getCommercialReadiness(),
+      clinicianClient.getSupportStatus()
+    ]);
+
+    setRuntime((current) => ({
+      ...current,
+      ...(support.status === 'fulfilled' ? { support: support.value.data } : {}),
+      ...(operations.status === 'fulfilled' ? { operations: operations.value.data } : {}),
+      ...(backup.status === 'fulfilled' ? { backup: backup.value.data } : {}),
+      ...(commercial.status === 'fulfilled' ? { commercial: commercial.value.data } : {}),
+      deniedMessage:
+        clinicianDenied.status === 'rejected'
+          ? clinicianDenied.reason instanceof Error
+            ? clinicianDenied.reason.message
+            : 'permission-denied'
+          : 'permission-denied path did not reject'
+    }));
+
+    if (support.status === 'fulfilled' && operations.status === 'fulfilled' && backup.status === 'fulfilled' && commercial.status === 'fulfilled') {
+      setRouteState(support.value.data.status.featureFlags.length === 0 ? 'empty' : 'ready');
+      setMessage('Support status, operational readiness, backup/restore, commercial readiness, and denial evidence loaded from the API.');
+      return;
+    }
+
+    setRouteState('failed');
+    const firstFailure = [support, operations, backup, commercial].find((result) => result.status === 'rejected');
+    setMessage(firstFailure?.status === 'rejected' && firstFailure.reason instanceof Error ? firstFailure.reason.message : 'Support runtime load failed.');
+  };
+
+  useEffect(() => {
+    void refreshRuntimeState();
+  }, []);
+
+  const requestAuditExport = async () => {
+    setRouteState('saving');
+    setMessage('Requesting redacted audit export through compliance/privacy API role.');
+    try {
+      const response = await complianceClient.requestAuditExport({
+        startAt: '2026-05-01T00:00:00.000Z',
+        endAt: '2026-06-01T00:00:00.000Z',
+        format: 'jsonl',
+        includePhi: false
+      });
+      setRuntime((current) => ({ ...current, auditExport: response.data }));
+      setRouteState('ready');
+      setMessage('Redacted audit export generated with API-backed delivery metadata.');
+    } catch (error) {
+      setRouteState('failed');
+      setMessage(error instanceof Error ? error.message : 'Audit export request failed.');
+    }
+  };
+
+  const recordRunbookEvidence = async () => {
+    setRouteState('saving');
+    setMessage('Recording operational evidence through support API role.');
+    try {
+      const response = await supportClient.recordOperationalEvidence({
+        actionType: 'incident_runbook_viewed',
+        subjectId: 'WO-064-api-backed-support-route',
+        note: 'metadata only runtime evidence'
+      });
+      setRuntime((current) => ({ ...current, operationalEvidence: response.data }));
+      setRouteState('ready');
+      setMessage('Operational evidence recorded without PHI or launch-readiness claim.');
+    } catch (error) {
+      setRouteState('failed');
+      setMessage(error instanceof Error ? error.message : 'Operational evidence recording failed.');
+    }
+  };
+
+  const tryClinicianDenied = async () => {
+    setRouteState('saving');
+    setMessage('Checking clinician denial through the support status API.');
+    try {
+      await clinicianClient.getSupportStatus();
+      setRouteState('failed');
+      setRuntime((current) => ({ ...current, deniedMessage: 'permission-denied path did not reject' }));
+      setMessage('Clinician support-status access was not denied.');
+    } catch (error) {
+      setRouteState('permission-denied');
+      setRuntime((current) => ({ ...current, deniedMessage: error instanceof Error ? error.message : 'permission-denied' }));
+      setMessage('Clinician support-status access denied before support metadata is exposed.');
+    }
+  };
+
+  const status = runtime.support?.status;
+  const operations = runtime.operations?.readiness;
+  const backup = runtime.backup?.readiness;
+  const commercial = runtime.commercial?.readiness;
+  const auditExport = runtime.auditExport?.auditExport;
+  const operationalEvidence = runtime.operationalEvidence?.evidence;
+
   return (
     <main className="support-shell">
       <header className="page-header">
@@ -138,39 +188,209 @@ export default function SupportStatusPage() {
           <h1>Production Hardening Status</h1>
         </div>
         <nav className="header-nav" aria-label="AURA Note sections">
+          <a href="/aura-note">Home</a>
           <a href="/aura-note/schedule">Schedule</a>
           <a href="/aura-note/coaching">Coaching</a>
-          <a href="/status">Foundation Status</a>
+          <a href="/aura-note/runtime-integration">Runtime Gate</a>
         </nav>
       </header>
 
-      <section className="status-band">
-        <p>P8 platform hardening is synthetic, local-first, and explicitly guarded from live PHI, AI, EHR, analytics, observability, or storage side effects.</p>
+      <section className="status-band" aria-label="Support runtime state">
+        <p>
+          This route is backed by typed support, compliance/privacy, and clinician-denial API calls. It remains synthetic/local
+          evidence only and does not enable live PHI, live vendors, claim submission, or production launch approval.
+        </p>
         <dl>
           <div>
+            <dt>Route state</dt>
+            <dd>{routeState}</dd>
+          </div>
+          <div>
             <dt>Overall</dt>
-            <dd>ok</dd>
+            <dd>{status?.overallHealth ?? 'loading'}</dd>
           </div>
           <div>
             <dt>Checkpoint</dt>
-            <dd>P8</dd>
+            <dd>{commercial?.checkpoint ?? status?.checkpoint ?? 'loading'}</dd>
           </div>
           <div>
-            <dt>Logs</dt>
-            <dd>redacted</dd>
+            <dt>Read only</dt>
+            <dd>true</dd>
+          </div>
+          <div>
+            <dt>Commercial review</dt>
+            <dd>{commercial?.status ?? 'loading'}</dd>
+          </div>
+          <div>
+            <dt>Production launch</dt>
+            <dd>productionLaunchReady={String(commercial?.productionLaunchReady ?? false)}</dd>
           </div>
         </dl>
+        <p>{message}</p>
+        <div className="button-row" role="group" aria-label="Support API actions">
+          <button type="button" onClick={refreshRuntimeState}>
+            Recheck Readiness
+          </button>
+          <button type="button" onClick={requestAuditExport}>
+            Request Redacted Audit Export
+          </button>
+          <button type="button" onClick={recordRunbookEvidence}>
+            Record Runbook Evidence
+          </button>
+          <button type="button" onClick={tryClinicianDenied}>
+            Demo Clinician Denied
+          </button>
+        </div>
+      </section>
+
+      <section className="support-grid" aria-label="Commercial readiness review">
+        <section className="support-panel">
+          <h2>CR-4 Commercial Readiness</h2>
+          <dl className="state-grid">
+            <div>
+              <dt>Decision gate</dt>
+              <dd>{commercial?.decisionGate.status ?? 'loading'}</dd>
+            </div>
+            <div>
+              <dt>Completed work orders</dt>
+              <dd>{commercial?.decisionGate.completedWorkOrders.join(', ') ?? 'loading'}</dd>
+            </div>
+            <div>
+              <dt>Beta package</dt>
+              <dd>{String(commercial?.decisionGate.betaPilotPackageReady ?? false)}</dd>
+            </div>
+            <div>
+              <dt>Launch ready</dt>
+              <dd>productionLaunchReady={String(commercial?.decisionGate.productionLaunchReady ?? false)}</dd>
+            </div>
+          </dl>
+          <p>{commercial?.nextStep ?? 'CR-4 commercial readiness package is loading from the API.'}</p>
+        </section>
+
+        <section className="support-panel">
+          <h2>Required Final Reviews</h2>
+          <div className="analytics-list">
+            {(commercial?.requiredApprovals ?? []).map((approval) => (
+              <div key={approval}>
+                <span>{approval}</span>
+                <strong>required</strong>
+                <small>review gate only; no live production behavior enabled</small>
+              </div>
+            ))}
+          </div>
+        </section>
+      </section>
+
+      <section className="support-grid" aria-label="CR-4 work order evidence">
+        {(commercial?.sections ?? []).map((section) => (
+          <section className="support-panel" key={section.workOrder}>
+            <h2>
+              {section.workOrder} {section.title}
+            </h2>
+            <dl className="state-grid">
+              <div>
+                <dt>Status</dt>
+                <dd>{section.status}</dd>
+              </div>
+              <div>
+                <dt>PHI safe</dt>
+                <dd>{String(section.phiSafe)}</dd>
+              </div>
+              <div>
+                <dt>Live vendor</dt>
+                <dd>{String(section.liveVendorEnabled)}</dd>
+              </div>
+              <div>
+                <dt>Launch ready</dt>
+                <dd>{String(section.productionLaunchReady)}</dd>
+              </div>
+            </dl>
+            <div className="analytics-list">
+              {section.checklist.map((item) => (
+                <div key={item.itemId}>
+                  <span>{item.label}</span>
+                  <strong>{item.status}</strong>
+                  <small>
+                    {item.evidence}; owner={item.ownerRole}; launchBlocker={String(item.productionLaunchBlocker)}
+                  </small>
+                </div>
+              ))}
+            </div>
+            <small>Missing approvals: {section.missingApprovals.join(', ')}</small>
+          </section>
+        ))}
+      </section>
+
+      <section className="support-grid" aria-label="Support route states">
+        <section className="support-panel">
+          <h2>Screen States</h2>
+          <dl className="state-grid">
+            <div>
+              <dt>loading</dt>
+              <dd>API refresh in progress</dd>
+            </div>
+            <div>
+              <dt>empty</dt>
+              <dd>no feature flags returned</dd>
+            </div>
+            <div>
+              <dt>ready</dt>
+              <dd>API state loaded</dd>
+            </div>
+            <div>
+              <dt>saving</dt>
+              <dd>audit export or evidence POST in progress</dd>
+            </div>
+            <div>
+              <dt>failed</dt>
+              <dd>API error shown without PHI</dd>
+            </div>
+            <div>
+              <dt>permission-denied</dt>
+              <dd>{runtime.deniedMessage ?? 'waiting for denial evidence'}</dd>
+            </div>
+            <div>
+              <dt>read-only</dt>
+              <dd>support status cannot mutate clinical records</dd>
+            </div>
+          </dl>
+        </section>
+
+        <section className="support-panel">
+          <h2>Operational Readiness</h2>
+          <dl className="state-grid">
+            <div>
+              <dt>Status</dt>
+              <dd>{operations?.status ?? 'loading'}</dd>
+            </div>
+            <div>
+              <dt>Production launch</dt>
+              <dd>productionLaunchReady={String(operations?.productionLaunchReady ?? false)}</dd>
+            </div>
+            <div>
+              <dt>Vendor sinks</dt>
+              <dd>{operations?.vendorSinksConfigured ? 'configured' : 'not configured'}</dd>
+            </div>
+            <div>
+              <dt>Missing</dt>
+              <dd>{operations?.missing.join(', ') ?? 'loading'}</dd>
+            </div>
+          </dl>
+          <p>Support operations can record audit-safe evidence, but cannot access transcripts, final notes, billing detail, coaching outputs, or PHI-bearing payloads.</p>
+        </section>
       </section>
 
       <section className="support-grid" aria-label="Observability and deployment">
         <section className="support-panel">
           <h2>Observability Sinks</h2>
           <div className="analytics-list">
-            {observabilitySinks.map((sink) => (
-              <div key={sink.label}>
-                <span>{sink.label}</span>
-                <strong>{sink.state}</strong>
-                <small>{sink.mode}</small>
+            {(status?.observability.sinks ?? []).map((sink) => (
+              <div key={sink.sinkId}>
+                <span>{formatSinkLabel(sink.sinkId)}</span>
+                <strong>{formatState(sink.status)}</strong>
+                <small>
+                  {sink.kind}; {sink.adapter}; {sink.delivery}; request-correlated={String(sink.requestCorrelated)}
+                </small>
               </div>
             ))}
           </div>
@@ -179,11 +399,14 @@ export default function SupportStatusPage() {
         <section className="support-panel">
           <h2>Deployment Matrix</h2>
           <div className="analytics-list">
-            {deploymentEnvironments.map((environment) => (
-              <div key={environment.label}>
-                <span>{environment.label}</span>
-                <strong>{environment.state}</strong>
-                <small>{environment.mode}</small>
+            {(status?.deployment ?? []).map((environment) => (
+              <div key={environment.environment}>
+                <span>{formatTitle(environment.environment)}</span>
+                <strong>{formatState(environment.readiness)}</strong>
+                <small>
+                  secrets={environment.secretsRequired.length}; integrations={environment.externalIntegrations.join(', ') || 'none'}; productionDataAllowed=
+                  {String(environment.productionDataAllowed)}
+                </small>
               </div>
             ))}
           </div>
@@ -194,11 +417,11 @@ export default function SupportStatusPage() {
         <section className="support-panel">
           <h2>Runbook Coverage</h2>
           <div className="analytics-list">
-            {runbooks.map((runbook) => (
-              <div key={runbook.label}>
-                <span>{runbook.label}</span>
-                <strong>{runbook.state}</strong>
-                <small>{runbook.mode}</small>
+            {(status?.runbooks ?? []).map((runbook) => (
+              <div key={runbook.runbookId}>
+                <span>{runbook.title}</span>
+                <strong>{runbook.productionApprovalRequired ? 'approval required' : 'ready'}</strong>
+                <small>{runbook.covers.map(formatTitle).join(', ')}</small>
               </div>
             ))}
           </div>
@@ -224,18 +447,78 @@ export default function SupportStatusPage() {
         </section>
       </section>
 
+      <section className="support-grid" aria-label="Secure storage and restore states">
+        <section className="support-panel">
+          <h2>Secure Downloads</h2>
+          <dl className="state-grid">
+            <div>
+              <dt>Audit export status</dt>
+              <dd>{auditExport?.status ?? 'empty API state'}</dd>
+            </div>
+            <div>
+              <dt>Delivery</dt>
+              <dd>{auditExport?.deliveryMode ?? 'inline_synthetic'}; server-mediated</dd>
+            </div>
+            <div>
+              <dt>Signed download</dt>
+              <dd>{String(auditExport?.signedDownloadAvailable ?? false)}</dd>
+            </div>
+            <div>
+              <dt>Storage key</dt>
+              <dd>{auditExport?.storageKey ?? 'not configured'}</dd>
+            </div>
+          </dl>
+          <p>Download tokens remain short lived, permission checked, tenant checked, and never public.</p>
+        </section>
+
+        <section className="support-panel">
+          <h2>Retention and Restore</h2>
+          <dl className="state-grid">
+            <div>
+              <dt>Status</dt>
+              <dd>{backup?.status ?? 'loading'}</dd>
+            </div>
+            <div>
+              <dt>Soft delete</dt>
+              <dd>{backup?.objectStorageSoftDeleteRequired ? 'required' : 'loading'}</dd>
+            </div>
+            <div>
+              <dt>Versioning</dt>
+              <dd>{backup?.objectStorageVersioningRequired ? 'required' : 'loading'}</dd>
+            </div>
+            <div>
+              <dt>Recovery window</dt>
+              <dd>recovery window required</dd>
+            </div>
+            <div>
+              <dt>Missing</dt>
+              <dd>{backup?.missing.join(', ') ?? 'loading'}</dd>
+            </div>
+          </dl>
+        </section>
+      </section>
+
       <section className="support-grid" aria-label="Operational evidence states">
         <section className="support-panel">
           <h2>Operational Evidence</h2>
-          <div className="analytics-list">
-            {operationalEvidence.map((item) => (
-              <div key={item.label}>
-                <span>{item.label}</span>
-                <strong>{item.state}</strong>
-                <small>{item.mode}</small>
-              </div>
-            ))}
-          </div>
+          <dl className="state-grid">
+            <div>
+              <dt>Readiness check</dt>
+              <dd>{operations?.status ?? 'loading'}; productionLaunchReady=false</dd>
+            </div>
+            <div>
+              <dt>Incident runbook viewed</dt>
+              <dd>{operationalEvidence?.status ?? 'not yet recorded'}</dd>
+            </div>
+            <div>
+              <dt>Evidence PHI safe</dt>
+              <dd>{String(operationalEvidence?.phiSafe ?? true)}</dd>
+            </div>
+            <div>
+              <dt>Launch claim</dt>
+              <dd>launchReadinessClaimed={String(operationalEvidence?.launchReadinessClaimed ?? false)}</dd>
+            </div>
+          </dl>
         </section>
 
         <section className="support-panel">
@@ -250,19 +533,19 @@ export default function SupportStatusPage() {
               <dd>privacy lead only</dd>
             </div>
             <div>
-              <dt>Production launch</dt>
-              <dd>false</dd>
+              <dt>Clinician denial</dt>
+              <dd>{runtime.deniedMessage ?? 'loading'}</dd>
             </div>
           </dl>
-          <p>Support operations can record audit-safe evidence, but cannot access transcripts, final notes, billing detail, coaching outputs, or PHI-bearing payloads.</p>
         </section>
       </section>
 
       <section className="support-grid" aria-label="Launch operations readiness">
         <section className="support-panel">
           <h2>Launch Ops Drills</h2>
+          <p>Documented review-state material; the active route state above is API-backed.</p>
           <div className="analytics-list">
-            {launchOpsDrills.map((item) => (
+            {documentedLaunchOpsDrills.map((item) => (
               <div key={item.label}>
                 <span>{item.label}</span>
                 <strong>{item.state}</strong>
@@ -275,7 +558,7 @@ export default function SupportStatusPage() {
         <section className="support-panel">
           <h2>Performance Baseline</h2>
           <div className="analytics-list">
-            {performanceBaselines.map((item) => (
+            {documentedPerformanceBaselines.map((item) => (
               <div key={item.label}>
                 <span>{item.label}</span>
                 <strong>{item.state}</strong>
@@ -290,7 +573,7 @@ export default function SupportStatusPage() {
         <section className="support-panel">
           <h2>Pilot Launch Gate</h2>
           <div className="analytics-list">
-            {pilotLaunchChecklist.map((item) => (
+            {documentedPilotLaunchChecklist.map((item) => (
               <div key={item.label}>
                 <span>{item.label}</span>
                 <strong>{item.state}</strong>
@@ -303,7 +586,7 @@ export default function SupportStatusPage() {
         <section className="support-panel">
           <h2>Go/No-Go Approvals</h2>
           <div className="analytics-list">
-            {pilotApprovals.map((item) => (
+            {documentedPilotApprovals.map((item) => (
               <div key={item.label}>
                 <span>{item.label}</span>
                 <strong>{item.state}</strong>
@@ -318,7 +601,7 @@ export default function SupportStatusPage() {
         <section className="support-panel">
           <h2>Pilot Smoke Evidence</h2>
           <div className="analytics-list">
-            {pilotGoNoGo.map((item) => (
+            {documentedPilotGoNoGo.map((item) => (
               <div key={item.label}>
                 <span>{item.label}</span>
                 <strong>{item.state}</strong>
@@ -352,7 +635,7 @@ export default function SupportStatusPage() {
         <section className="support-panel">
           <h2>Claim/Payer Decision Gate</h2>
           <div className="analytics-list">
-            {claimDecisionItems.map((item) => (
+            {documentedClaimDecisionItems.map((item) => (
               <div key={item.label}>
                 <span>{item.label}</span>
                 <strong>{item.state}</strong>
@@ -365,7 +648,7 @@ export default function SupportStatusPage() {
         <section className="support-panel">
           <h2>Future Claim Approval Criteria</h2>
           <div className="analytics-list">
-            {claimApprovalCriteria.map((item) => (
+            {documentedClaimApprovalCriteria.map((item) => (
               <div key={item.label}>
                 <span>{item.label}</span>
                 <strong>{item.state}</strong>
@@ -377,43 +660,15 @@ export default function SupportStatusPage() {
         </section>
       </section>
 
-      <section className="support-grid" aria-label="Secure storage and restore states">
-        <section className="support-panel">
-          <h2>Secure Downloads</h2>
-          <div className="analytics-list">
-            {storageDownloadStates.map((state) => (
-              <div key={state.label}>
-                <span>{state.label}</span>
-                <strong>{state.state}</strong>
-                <small>{state.mode}</small>
-              </div>
-            ))}
-          </div>
-        </section>
-
-        <section className="support-panel">
-          <h2>Retention and Restore</h2>
-          <div className="analytics-list">
-            {restoreStates.map((state) => (
-              <div key={state.label}>
-                <span>{state.label}</span>
-                <strong>{state.state}</strong>
-                <small>{state.mode}</small>
-              </div>
-            ))}
-          </div>
-        </section>
-      </section>
-
       <section className="support-grid" aria-label="Feature flags and retention">
         <section className="support-panel">
           <h2>Feature Flags</h2>
           <div className="analytics-list">
-            {featureFlags.map((flag) => (
+            {(status?.featureFlags ?? []).map((flag) => (
               <div key={flag.key}>
-                <span>{flag.key}</span>
-                <strong>{flag.state}</strong>
-                <small>{flag.detail}</small>
+                <span>{formatTitle(flag.governs)}</span>
+                <strong>{flag.enabled ? 'enabled' : 'disabled'}</strong>
+                <small>{flag.disabledReason ?? `default=${String(flag.defaultValue)}`}</small>
               </div>
             ))}
           </div>
@@ -422,12 +677,13 @@ export default function SupportStatusPage() {
         <section className="support-panel">
           <h2>Retention Jobs</h2>
           <div className="analytics-list">
-            {retentionPolicies.map((policy) => (
-              <div key={policy.label}>
-                <span>{policy.label}</span>
-                <strong>{policy.rule}</strong>
+            {(status?.retention ?? []).map((policy) => (
+              <div key={policy.policyId}>
+                <span>{formatTitle(policy.recordClass)}</span>
+                <strong>{policy.retentionRule}</strong>
                 <small>
-                  {policy.job}; purge eligible: {policy.eligible}
+                  {policy.enforcedByJob}; purge eligible: {policy.purgeEligibleCount}; destructivePurgeEnabled=
+                  {String(policy.destructivePurgeEnabled)}
                 </small>
               </div>
             ))}
@@ -441,7 +697,11 @@ export default function SupportStatusPage() {
           <dl className="state-grid">
             <div>
               <dt>Format</dt>
-              <dd>jsonl</dd>
+              <dd>{auditExport?.format ?? status?.auditExport.format ?? 'jsonl'}</dd>
+            </div>
+            <div>
+              <dt>Status</dt>
+              <dd>{auditExport?.status ?? 'not requested'}</dd>
             </div>
             <div>
               <dt>PHI</dt>
@@ -449,7 +709,11 @@ export default function SupportStatusPage() {
             </div>
             <div>
               <dt>Delivery</dt>
-              <dd>server-mediated</dd>
+              <dd>{auditExport?.deliveryMode ?? 'inline_synthetic'}; server-mediated</dd>
+            </div>
+            <div>
+              <dt>Records</dt>
+              <dd>{auditExport?.recordCount ?? 'not requested'}</dd>
             </div>
           </dl>
           <p>Compliance users can request a redacted synthetic bundle; downloadable delivery remains short-lived, permission checked, and never public.</p>
@@ -458,11 +722,11 @@ export default function SupportStatusPage() {
         <section className="support-panel">
           <h2>Failure States</h2>
           <div className="analytics-list">
-            {failureStates.map((item) => (
+            {(status?.failureStates ?? []).map((item) => (
               <div key={item.component}>
-                <span>{item.component}</span>
-                <strong>{item.state}</strong>
-                <small>{item.mode}</small>
+                <span>{formatTitle(item.component)}</span>
+                <strong>{item.status}</strong>
+                <small>{item.operatorMessage} {item.safeDegradedMode}</small>
               </div>
             ))}
           </div>
@@ -470,4 +734,21 @@ export default function SupportStatusPage() {
       </section>
     </main>
   );
+}
+
+function formatState(value: string) {
+  return value.replace(/_/g, ' ');
+}
+
+function formatTitle(value: string) {
+  return value
+    .split('_')
+    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+    .join(' ');
+}
+
+function formatSinkLabel(sinkId: string) {
+  if (sinkId.includes('siem')) return 'Production SIEM';
+  if (sinkId.includes('apm')) return 'Production APM';
+  return formatTitle(sinkId);
 }

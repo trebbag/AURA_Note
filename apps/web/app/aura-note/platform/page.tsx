@@ -1,7 +1,9 @@
 'use client';
 
 import Link from 'next/link';
-import { useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import type { PlatformAdminViewDto, PlatformActionResponseDto } from '@aura-note/contracts';
+import { createAuraNoteApiClient } from '../../../lib/aura-note-api-client';
 
 const states = [
   'empty',
@@ -17,40 +19,153 @@ const states = [
   'demo fixture'
 ];
 
-const highRiskFlags = [
-  ['Live transcription', 'AURA_ENABLE_LIVE_TRANSCRIPTION'],
-  ['External AI', 'AURA_ENABLE_EXTERNAL_AI'],
-  ['EHR writeback', 'AURA_ENABLE_EHR_WRITEBACK'],
-  ['Production storage', 'AURA_ENABLE_PRODUCTION_STORAGE'],
-  ['Retention deletion', 'AURA_ENABLE_RETENTION_DELETION'],
-  ['Patient estimates', 'AURA_ENABLE_PATIENT_FACING_ESTIMATES'],
-  ['Claim submission', 'AURA_ENABLE_CLAIM_SUBMISSION']
-];
-
 export default function ProductionPlatformPage() {
-  const [userState, setUserState] = useState('active admin session');
-  const [sessionState, setSessionState] = useState('local synthetic session allowed');
-  const [configState, setConfigState] = useState('local config valid; production config unvalidated');
-  const [flagState, setFlagState] = useState('all high-risk flags disabled');
+  const adminClient = useMemo(() => createAuraNoteApiClient({ role: 'admin' }), []);
+  const clinicianClient = useMemo(() => createAuraNoteApiClient({ role: 'clinician' }), []);
+  const [platform, setPlatform] = useState<PlatformAdminViewDto | null>(null);
+  const [lastAction, setLastAction] = useState<PlatformActionResponseDto | null>(null);
+  const [routeState, setRouteState] = useState('loading');
+  const [message, setMessage] = useState('Loading platform controls through API.');
 
-  const summary = useMemo(
-    () => [
-      ['Identity', sessionState],
-      ['User status', userState],
-      ['Config', configState],
-      ['Flags', flagState]
-    ],
-    [configState, flagState, sessionState, userState]
-  );
+  const refreshPlatform = useCallback(async () => {
+    setRouteState('loading');
+    try {
+      const response = await adminClient.getPlatformAdmin();
+      setPlatform(response.data);
+      setRouteState('ready');
+      setMessage('Production-shaped controls loaded from typed API state.');
+    } catch (error) {
+      setRouteState('failed');
+      setMessage(error instanceof Error ? error.message : 'Platform API load failed.');
+    }
+  }, [adminClient]);
+
+  useEffect(() => {
+    void refreshPlatform();
+  }, [refreshPlatform]);
+
+  async function runAction(label: string, action: () => Promise<{ data: PlatformActionResponseDto }>) {
+    setRouteState('saving');
+    try {
+      const response = await action();
+      setLastAction(response.data);
+      if (response.data.platform) setPlatform(response.data.platform);
+      setMessage(label);
+      setRouteState('ready');
+    } catch (error) {
+      setRouteState('failed');
+      setMessage(error instanceof Error ? error.message : label);
+    }
+  }
+
+  function disableUser() {
+    const user = platform?.users.find((candidate) => candidate.status === 'active');
+    if (!user) return;
+    void runAction('Disabled user blocked through API identity controls.', () =>
+      adminClient.updateWorkforceUser(user.userId, {
+        status: 'disabled',
+        reason: 'WO-064 platform route disabled-user evidence'
+      })
+    );
+  }
+
+  function expireSession() {
+    const user = platform?.users.find((candidate) => candidate.status === 'active') ?? platform?.users[0];
+    if (!user) return;
+    void runAction('Expired session evaluated through API.', () =>
+      adminClient.evaluateSession({
+        userId: user.userId,
+        tenantId: user.tenantId,
+        siteId: user.siteIds[0] ?? 'site-synthetic-primary',
+        sessionId: 'session-expired-platform-route',
+        identityProviderMode: 'local_synthetic',
+        purposeOfUse: 'operations',
+        expiresAt: '2026-05-27T00:00:00.000Z'
+      })
+    );
+  }
+
+  function missingPurpose() {
+    const user = platform?.users.find((candidate) => candidate.status === 'active') ?? platform?.users[0];
+    if (!user) return;
+    void runAction('Missing purpose-of-use evaluated through API.', () =>
+      adminClient.evaluateSession({
+        userId: user.userId,
+        tenantId: user.tenantId,
+        siteId: user.siteIds[0] ?? 'site-synthetic-primary',
+        sessionId: 'session-missing-purpose-platform-route',
+        identityProviderMode: 'local_synthetic',
+        expiresAt: '2026-05-28T00:00:00.000Z'
+      })
+    );
+  }
+
+  function validateProductionConfig() {
+    if (!platform) return;
+    void runAction('Production config validation failed closed through API.', () =>
+      adminClient.validateProductionConfig({
+        environment: 'production',
+        secretSources: platform.secretSources,
+        highRiskFlags: platform.featureFlags
+      })
+    );
+  }
+
+  function attemptEnableWithoutApproval() {
+    const flag = platform?.featureFlags.find((candidate) => candidate.key === 'AURA_ENABLE_CLAIM_SUBMISSION') ?? platform?.featureFlags[0];
+    if (!flag) return;
+    void runAction('High-risk flag enablement without approval denied by API.', () =>
+      adminClient.updateFeatureFlag(flag.key, {
+        enabled: true,
+        reason: 'WO-064 route attempts unsafe enablement without approval'
+      })
+    );
+  }
+
+  function recordApproval() {
+    const flag = platform?.featureFlags.find((candidate) => candidate.key === 'AURA_ENABLE_PRODUCTION_STORAGE') ?? platform?.featureFlags[0];
+    if (!flag) return;
+    void runAction('Feature-flag approval metadata recorded through API without live execution.', () =>
+      adminClient.updateFeatureFlag(flag.key, {
+        enabled: true,
+        approvalId: 'approval-wo-064-metadata-only',
+        reason: 'WO-064 metadata-only approval evidence'
+      })
+    );
+  }
+
+  async function verifyPermissionDeniedState() {
+    setRouteState('loading');
+    try {
+      await clinicianClient.updateFeatureFlag('AURA_ENABLE_EXTERNAL_AI', {
+        enabled: true,
+        approvalId: 'approval-should-deny',
+        reason: 'Clinician cannot manage high-risk platform flags'
+      });
+      setRouteState('failed');
+      setMessage('Unexpected clinician feature-flag update succeeded.');
+    } catch (error) {
+      setRouteState('permission-denied');
+      setMessage(error instanceof Error ? error.message : 'Clinician feature-flag update denied by API.');
+    }
+  }
+
+  const summary = [
+    ['Identity', platform?.identityAdapters.map((adapter) => `${adapter.kind}:${adapter.status}`).join(', ') ?? 'not loaded'],
+    ['Users', platform?.users.map((user) => `${user.role}:${user.status}`).join(', ') ?? 'not loaded'],
+    ['Config', lastAction?.configValidation ? `valid=${String(lastAction.configValidation.valid)}` : 'not validated'],
+    ['Flags', platform?.featureFlags.map((flag) => `${flag.key}:${flag.runtimeEffect}`).join(', ') ?? 'not loaded']
+  ];
 
   return (
     <main className="operations-shell">
       <header className="page-header">
         <div>
-          <p className="eyebrow">P8 / WO-041</p>
+          <p className="eyebrow">CR-2 / WO-064</p>
           <h1>Production Platform Controls</h1>
         </div>
         <nav className="header-nav" aria-label="AURA Note sections">
+          <Link href="/aura-note">Runtime Home</Link>
           <Link href="/aura-note/schedule">Schedule</Link>
           <Link href="/aura-note/operations">Operations</Link>
           <Link href="/aura-note/support/status">Support</Link>
@@ -61,13 +176,13 @@ export default function ProductionPlatformPage() {
       <section className="status-band" aria-label="Production platform readiness">
         <div>
           <h2>Production-Shaped Controls</h2>
-          <p>
-            Identity, secrets, configuration, and feature-flag governance are synthetic and fail closed. No live IdP,
-            ClinicOS delegation, external AI, production storage, writeback, retention deletion, or claim submission is
-            enabled.
-          </p>
+          <p>{message}</p>
         </div>
         <dl>
+          <div>
+            <dt>Route State</dt>
+            <dd>{routeState}</dd>
+          </div>
           <div>
             <dt>Mode</dt>
             <dd>standalone plus ClinicOS adapter boundary</dd>
@@ -88,62 +203,67 @@ export default function ProductionPlatformPage() {
           <h2>Identity And Sessions</h2>
           <p>OIDC, SAML, and ClinicOS delegation are adapter states only until configured.</p>
           <div className="state-grid">
-            <span>local_dev: ready_local</span>
-            <span>oidc: disabled_until_configured</span>
-            <span>saml: disabled_until_configured</span>
+            {platform?.identityAdapters.map((adapter) => (
+              <span key={adapter.adapterId}>
+                {adapter.kind}: {adapter.status}
+              </span>
+            ))}
             <span>clinicos_delegate: fail closed</span>
           </div>
           <div className="action-row">
-            <button type="button" onClick={() => setUserState('disabled user blocked')}>
+            <button type="button" onClick={disableUser}>
               Disable User
             </button>
-            <button type="button" onClick={() => setSessionState('session expired')}>
+            <button type="button" onClick={expireSession}>
               Expire Session
             </button>
-            <button type="button" onClick={() => setSessionState('purpose-of-use is required')}>
+            <button type="button" onClick={missingPurpose}>
               Missing Purpose
             </button>
           </div>
-          <strong>{userState}</strong>
-          <span>{sessionState}</span>
+          <strong>{lastAction?.user ? `${lastAction.user.userId}:${lastAction.user.status}` : 'active admin session'}</strong>
+          {lastAction?.user?.disabledUserBlocked ? <span>disabled user blocked</span> : null}
+          <span>{lastAction?.sessionDecision?.denialReason ?? 'local synthetic session allowed'}</span>
         </article>
 
         <article className="appointment-form" aria-label="Config and secrets">
           <h2>Config And Secrets</h2>
           <p>Secret-source checks validate metadata only and never expose token, client-secret, or key values.</p>
           <div className="state-grid">
-            <span>OIDC_CLIENT_SECRET: not_configured</span>
-            <span>AZURE_STORAGE_CREDENTIAL_SOURCE: metadata only</span>
-            <span>LIVE_TRANSCRIPTION_PROVIDER_SECRET: missing</span>
+            {platform?.secretSources.map((source) => (
+              <span key={source.secretName}>
+                {source.secretName}: {source.source}
+              </span>
+            ))}
             <span>secretValuesReturned=false</span>
           </div>
           <div className="action-row">
-            <button type="button" onClick={() => setConfigState('fail-closed missing OIDC_CLIENT_SECRET')}>
+            <button type="button" onClick={validateProductionConfig}>
               Validate Production Config
             </button>
           </div>
-          <strong>{configState}</strong>
+          <strong>{lastAction?.configValidation ? `fail-closed errors=${lastAction.configValidation.errors.length}` : 'local config valid; production config unvalidated'}</strong>
         </article>
 
         <article className="appointment-form" aria-label="Feature flag governance">
           <h2>Feature Flag Governance</h2>
           <p>High-risk flags default disabled and require approval evidence before metadata-only enablement.</p>
           <div className="state-grid">
-            {highRiskFlags.map(([label, key]) => (
-              <span key={key}>
-                {label}: disabled
+            {platform?.featureFlags.map((flag) => (
+              <span key={flag.key}>
+                {formatFeatureFlagLabel(flag.key)}: {flag.runtimeEffect}
               </span>
             ))}
           </div>
           <div className="action-row">
-            <button type="button" onClick={() => setFlagState('approval required')}>
+            <button type="button" onClick={attemptEnableWithoutApproval}>
               Attempt Enable Without Approval
             </button>
-            <button type="button" onClick={() => setFlagState('metadata_only_no_live_execution')}>
+            <button type="button" onClick={recordApproval}>
               Record Approval
             </button>
           </div>
-          <strong>{flagState}</strong>
+          <strong>{lastAction?.featureFlag ? `${lastAction.featureFlag.key}:${lastAction.featureFlag.runtimeEffect}` : 'all high-risk flags disabled'}</strong>
         </article>
 
         <article className="appointment-form" aria-label="Permission states">
@@ -156,6 +276,9 @@ export default function ProductionPlatformPage() {
               </span>
             ))}
           </section>
+          <button type="button" className="secondary-action" onClick={() => void verifyPermissionDeniedState()}>
+            Verify Permission Denied
+          </button>
         </article>
       </section>
 
@@ -178,4 +301,12 @@ export default function ProductionPlatformPage() {
       </section>
     </main>
   );
+}
+
+function formatFeatureFlagLabel(key: string) {
+  return key
+    .replace('AURA_ENABLE_', '')
+    .toLowerCase()
+    .replaceAll('_', ' ')
+    .replace(/^\w/, (match) => match.toUpperCase());
 }

@@ -89,6 +89,28 @@ AURA Note must enforce role permissions and relationship-to-patient constraints.
 
 `WO-063` moves the synthetic-header trust decision into an explicit identity runtime boundary. Non-health API requests require `AURA_NOTE_AUTH_MODE`. `local_demo` labels and normalizes local synthetic headers for development/browser evidence; `local_synthetic` requires explicit role, user, session, and purpose headers. Preview/production OIDC, production SAML, and ClinicOS delegated modes reject synthetic role/tenant/site/user/session/purpose headers and fail closed until a later approved work order configures a live adapter. Disabled users, expired sessions, wrong tenant/site, wrong purpose, delegated providers, missing identity context, and invalid identity context are denied before controller execution. Support users remain metadata-only and cannot request audit exports; billing staff transcript access remains allowed only when billing-review context is triggered. ClinicOS-integrated mode still cannot bypass AURA Note tenant/site, purpose-of-use, RBAC/ABAC, transcript, billing, final-note, coaching, AI governance, writeback, storage, or claim boundaries.
 
+## WO-067 ModeResolver adapter-boundary access
+
+`WO-067` makes mode resolution explicit before ClinicOS adapter status, mapping, or publication metadata is returned. ClinicOS cannot bypass AURA Note permissions: `clinicos_adapter:view` is still required for status metadata, `clinicos_mapping:write` is still required for mapping and publication metadata, and cross-tenant or cross-site contexts are denied before DTO data is exposed.
+
+The runtime `modeAdapterBoundaries` evidence records all adapter seams as `permissionBoundary='aura_note_authoritative'` with `liveDelegationEnabled=false`. Support users remain metadata-only; ordinary clinicians cannot write mappings; authorized admins and service accounts may write metadata only inside tenant/site scope. Degraded or unavailable ClinicOS mode fails closed for writes and does not weaken transcript, final-note, billing, coaching, AI governance, writeback, storage/download, human-review, or claim-boundary checks.
+
+## WO-068 transcription runtime access
+
+`WO-068` keeps transcription runtime access behind AURA Note permissions in both standalone and ClinicOS-integrated modes. Treating clinicians linked to the visit can record microphone permission metadata, append metadata-only chunks, request deterministic mock transcription, request the disabled live-provider fail-closed check, view transcripts, and record corrections. Billing staff transcript access remains limited to triggered billing-review context. Support users remain metadata-only and cannot view transcripts, record corrections, invoke transcription jobs, or access raw audio. ClinicOS cannot bypass AURA Note transcript, recording, retention, correction, billing-review, purpose-of-use, or tenant/site checks.
+
+## WO-069 EHR sandbox runtime access
+
+`WO-069` keeps EHR runtime access behind AURA Note permissions in both standalone and ClinicOS-integrated modes. Treating clinicians, admins, clinic managers, compliance/privacy leads, support users, service accounts, and authorized admins may view EHR operational metadata only when their role already has EHR adapter visibility. Support users remain metadata-only and cannot view raw EHR payloads, external job identifiers where restricted, transcripts, final notes, billing details, coaching outputs, or credentials.
+
+Only treating clinicians linked to the visit and authorized admins may approve, deny, or prepare writeback-facing metadata. Retry, attempt, acknowledgement, dead-letter, and reconciliation metadata remains limited to authorized admin, admin, clinic manager, compliance/privacy lead, and service-account contexts. ClinicOS-integrated mode cannot bypass AURA Note tenant/site scope, purpose-of-use, RBAC/ABAC, human approval, writeback, reconciliation, audit, or no-live-delivery boundaries.
+
+## WO-070 AI runtime governance access
+
+`WO-070` keeps AI runtime governance access behind AURA Note permissions in both standalone and ClinicOS-integrated modes. `ai_governance:view` is required to view `/ai-gateway/runtime-boundary`, run deterministic evaluations, and validate output metadata; compliance/privacy leads and authorized admins remain the intended governance roles. Support users remain metadata-only and cannot run evaluations, validate outputs, access raw prompts, transcripts, final notes, billing details, coaching outputs, raw AI payloads, model data, or PHI-bearing context.
+
+Treating clinicians linked to the visit may invoke permitted draft/candidate AI support through `ai_gateway:invoke`, but raw-PHI context is rejected or explicitly scrubbed before the mock-only boundary and all output remains human-review-required. Billing staff do not gain broad AI governance access through this tranche. ClinicOS-integrated mode cannot bypass AURA Note AI Gateway policy, purpose-of-use, source-freshness, PHI scrubbing, tenant/site scope, role checks, output validation, human-review gates, or no-live-model posture.
+
 ## WO-049 launch operations access
 
 `WO-049` documents `launch_operations:view` and future `launch_operations:record` posture for operational rehearsal evidence. Authorized admin, compliance/privacy lead, clinic manager, support, and service-account contexts may view metadata-only launch operations evidence. Recording production launch approval remains out of scope. Support users remain metadata-only and cannot access transcripts, final notes, billing details, coaching outputs, raw prompts, raw EHR/ClinicOS payloads, audit export payloads, production credentials, or PHI-bearing logs. ClinicOS-integrated mode cannot bypass AURA Note launch operations permissions.
@@ -100,3 +122,9 @@ AURA Note must enforce role permissions and relationship-to-patient constraints.
 ## WO-051 claim/payer decision gate access
 
 `WO-051` documents `claim_strategy:view` and future `claim_strategy:record` posture for claim/payer strategy evidence. Authorized admin, billing lead, compliance/privacy lead, security/founder context, and approved service-account contexts may view or record metadata-only decision evidence. Clinicians may review clinical documentation support but cannot submit claims autonomously through AURA Note. Support users remain metadata-only and cannot access claim payloads, payer details, transcripts, final notes, billing evidence beyond operational status, production credentials, or patient financial conclusions. ClinicOS-integrated mode and M21 Charge Integrity cannot bypass AURA Note permissions, human approval, audit, or the default `submittedClaim=false` posture.
+
+## WO-071 through WO-075 CR-4 commercial readiness access
+
+`WO-071` through `WO-075` expose `/support/commercial-readiness` as metadata-only CR-4 review evidence. Support users and compliance/privacy leads may view the commercial readiness package because it contains no PHI-bearing content, raw logs, credentials, transcripts, final-note text, billing detail, coaching output, raw AI/EHR/ClinicOS payloads, or patient financial conclusions. Ordinary clinicians remain denied from support/commercial review metadata.
+
+The CR-4 packet does not grant any new access to PHI, audit export payloads, production secrets, live vendor controls, claim submission, charge finalization, medical-necessity determination, or production launch approval. ClinicOS-integrated mode cannot bypass AURA Note support metadata-only limits, tenant/site scope, RBAC/ABAC, or no-launch posture.

@@ -169,6 +169,40 @@ In standalone mode, `AURA_NOTE_AUTH_MODE=local_demo` labels and normalizes synth
 
 In ClinicOS-integrated mode, `AURA_NOTE_AUTH_MODE=clinicos_delegate` is represented as a disabled adapter posture. It fails closed until a later approved ClinicOS identity contract, credential source, event/audit policy, and tenant/user mapping are implemented. ClinicOS cannot pass synthetic headers to bypass AURA Note RBAC/ABAC, purpose-of-use, tenant/site, transcript, final-note, billing, coaching, AI, writeback, storage, or claim boundaries.
 
+## WO-067 ModeResolver runtime boundary
+
+`WO-067` promotes the required application-level `ModeResolver` into API runtime code. `resolveAuraRuntimeModeFromHeaders` now converts ClinicOS mode headers into a typed mode context, shared API mode, ClinicOS module boundaries, and ten explicit adapter seams: schedule source, patient context, VisitGraph, tasks, audit, AI governance, Charge Integrity, EHR, export, and identity.
+
+Standalone mode remains the default and authoritative. Missing or invalid ClinicOS mode headers resolve to standalone; AURA Note schedule, patient, task, audit, export, identity, transcript, final-note, billing, coaching, AI, writeback, storage, and claim-boundary permissions still apply before DTO data is returned or state changes.
+
+ClinicOS-integrated mode is still mock/degraded metadata only. The ClinicOS status and action responses now expose `modeAdapterBoundaries` with `permissionBoundary='aura_note_authoritative'`, `liveDelegationEnabled=false`, `rawPayloadStorageEnabled=false`, and `humanReviewRequired=true`. Degraded or unavailable ClinicOS mode marks adapter writes fail-closed. `pnpm mode:adapter-readiness` verifies the resolver, service tests, e2e evidence, docs, status, and no-live/no-launch posture.
+
+`WO-067` does not enable live ClinicOS credentials, live event bus delivery, raw ClinicOS payload storage, delegated identity, live EHR/writeback routing, live AI, live transcription, production PHI, charge finalization, medical-necessity determination, claim submission, or production launch behavior.
+
+## WO-068 transcription runtime boundary
+
+In standalone mode, transcription now runs through a server-side provider adapter boundary. The deterministic mock provider processes metadata-only recording chunks, returns confidence/source/speaker-label placeholder metadata, records retry/dead-letter posture, preserves raw-audio one-week retention metadata, and keeps transcript retention indefinite. The disabled live provider path fails closed with metadata only and `liveProviderCallsEnabled=false`.
+
+In ClinicOS-integrated mode, ClinicOS may supply visit context metadata through adapter boundaries, but ClinicOS cannot bypass AURA Note recording, transcript, correction, retention, role, or human-review permissions. Missing or degraded ClinicOS delegation does not block standalone transcription workflow and does not enable live provider calls.
+
+`WO-068` does not enable live transcription credentials, raw PHI audio transport, live vendor calls, production audio storage, production PHI, charge finalization, medical-necessity determination, claim submission, or production launch behavior.
+
+## WO-069 EHR sandbox runtime boundary
+
+In standalone mode, EHR remains optional and safely disabled. AURA Note can surface athenahealth-first sandbox metadata, synthetic patient lookup, synthetic appointment import evidence, synthetic encounter context, and writeback lifecycle metadata without requiring live EHR credentials or blocking the documentation/finalization/export workflow.
+
+In ClinicOS-integrated mode, future M25 Integration Hub routing remains adapter-bound. ClinicOS may provide mapping or context metadata in later work, but it cannot bypass AURA Note writeback approval, role checks, tenant/site scope, purpose-of-use, audit, reconciliation, no-raw-payload, or no-live-delivery boundaries.
+
+`WO-069` does not enable production EHR credentials, raw EHR payload storage, live EHR API calls, live writeback delivery, autonomous finalization, charge finalization, medical-necessity determination, claim submission, or production launch behavior.
+
+## WO-070 AI Gateway runtime governance boundary
+
+In standalone mode, AURA Note owns AI Gateway policy, prompt/model metadata, deterministic evaluation evidence, PHI rejection/redaction, source-freshness checks, output validation, human-review gates, and runtime-boundary state. Disabled live model state does not block non-AI documentation, finalization, export, or draft claim preview workflows.
+
+In ClinicOS-integrated mode, future M23 Copilot Runtime and M24 AI Governance delegation remains adapter-bound. ClinicOS may provide context metadata only through approved adapter seams, and it cannot bypass AURA Note purpose-of-use checks, source-freshness checks, PHI scrubber, tenant/site scope, role checks, output validation, human-review gates, audit/event evidence, or disabled live-model posture.
+
+`WO-070` does not enable live external AI, production model credentials, private/BAA model approval, production prompt stores, raw PHI model payloads, autonomous diagnosis, final code or charge behavior, medical-necessity determination, order placement, claim submission, patient-facing financial conclusions, or production launch behavior.
+
 ## WO-049 launch operations readiness mode behavior
 
 In standalone mode, `WO-049` launch operations readiness proves AURA Note can rehearse build, smoke, rollback, disabled-vendor, performance, incident, access-review, and support-escalation controls without ClinicOS.
@@ -184,3 +218,11 @@ Standalone beta pilot setup remains possible without ClinicOS. Tenant onboarding
 In standalone mode, AURA Note keeps claim activity at draft claim preview and human billing review only. Live clearinghouse submission, payer API calls, denial automation, payment posting, charge finalization, medical-necessity determination, and patient financial conclusions remain disabled.
 
 In ClinicOS-integrated mode, any future ClinicOS/M21 Charge Integrity or clearinghouse handoff must remain adapter-scoped and cannot bypass AURA Note permissions, human approval, audit, tenant/site scope, or `submittedClaim=false` default behavior. `WO-051` does not implement live ClinicOS charge submission, payer connectivity, claim submission, denial automation, or payment workflows.
+
+## WO-071 through WO-075 CR-4 commercial readiness mode behavior
+
+In standalone mode, CR-4 packages the commercial readiness review evidence needed to inspect AURA Note as a standalone-first product: security/privacy/compliance, observability/support, billing/revenue integrity, beta-pilot readiness, and final decision-gate posture.
+
+In ClinicOS-integrated mode, the CR-4 packet preserves the adapter-bound rule. ClinicOS cannot bypass AURA Note permissions, support metadata-only limits, tenant/site scope, AI/PHI policy, billing boundaries, human-review gates, audit evidence, or no-launch posture. ClinicOS integration remains disabled/degraded unless a later founder-approved work order authorizes live behavior.
+
+`WO-071` through `WO-075` do not enable production launch, live ClinicOS event-bus delivery, delegated identity bypass, live PHI, live vendors, claim submission, charge finalization, medical-necessity determination, patient-facing financial conclusions, or autonomous clinical/coding/billing behavior.

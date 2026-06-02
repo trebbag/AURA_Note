@@ -41,14 +41,22 @@ export type CoreEventType =
   | 'visit.stopped.v1'
   | 'recording.started.v1'
   | 'microphone.permission_recorded.v1'
+  | 'recording.chunk_authorized.v1'
+  | 'recording.chunk_denied.v1'
   | 'recording.chunk_received.v1'
   | 'recording.exception_approved.v1'
   | 'recording.stopped.v1'
   | 'raw_audio.retention_scheduled.v1'
   | 'transcription.provider_status_checked.v1'
+  | 'transcription.provider_disabled.v1'
+  | 'transcription.provider_unavailable.v1'
+  | 'transcription.job_requested.v1'
+  | 'transcription.job_denied.v1'
   | 'transcription.job_queued.v1'
   | 'transcription.job_processed.v1'
   | 'transcription.job_failed.v1'
+  | 'transcription.segment_received.v1'
+  | 'transcription.correction_recorded.v1'
   | 'transcript.segment_appended.v1'
   | 'transcript.segment_corrected.v1'
   | 'suggestions.evaluated.v1'
@@ -102,12 +110,27 @@ export type CoreEventType =
   | 'degraded_mode.acknowledged.v1'
   | 'access_review.evidence_recorded.v1'
   | 'operational.readiness_checked.v1'
+  | 'security.privacy_review_checked.v1'
+  | 'threat_model.reviewed.v1'
+  | 'support.incident_taxonomy_checked.v1'
+  | 'billing.revenue_integrity_checked.v1'
+  | 'beta.pilot_package_checked.v1'
+  | 'commercial.readiness_decision_checked.v1'
   | 'ehr_writeback.queued.v1'
   | 'ehr_writeback.failed.v1'
   | 'ehr.adapter_status_checked.v1'
+  | 'ehr.config_reviewed.v1'
+  | 'ehr.credential_disabled.v1'
   | 'ehr.patient_matched.v1'
+  | 'ehr.patient_lookup_performed.v1'
+  | 'ehr.appointment_imported.v1'
+  | 'ehr.encounter_context_loaded.v1'
   | 'ehr.chart_context_loaded.v1'
+  | 'ehr.writeback_payload_prepared.v1'
   | 'ehr.writeback_approval_recorded.v1'
+  | 'ehr.writeback_denied.v1'
+  | 'ehr.writeback_attempt_recorded.v1'
+  | 'ehr.writeback_acknowledged.v1'
   | 'ehr.writeback_retry_scheduled.v1'
   | 'ehr.writeback_dead_lettered.v1'
   | 'ehr.writeback_reconciliation_checked.v1'
@@ -120,14 +143,22 @@ export type CoreEventType =
   | 'clinicos.permission_denied.v1'
   | 'clinicos.unavailable.v1'
   | 'ai.request_prepared.v1'
+  | 'ai.runtime_boundary_checked.v1'
+  | 'ai.prompt_model_reviewed.v1'
+  | 'ai.context_package_created.v1'
   | 'ai.context_scrubbed.v1'
   | 'ai.phi_rejected.v1'
+  | 'ai.request_denied.v1'
+  | 'ai.output_validated.v1'
   | 'ai.response_recorded.v1'
   | 'ai.output_rejected.v1'
+  | 'ai.human_review_required.v1'
   | 'ai.prompt_config_changed.v1'
   | 'ai.model_config_changed.v1'
   | 'ai.evaluation_run_completed.v1'
   | 'ai.evaluation_run_failed.v1'
+  | 'ai.regression_blocked.v1'
+  | 'ai.incident_metadata_recorded.v1'
   | 'coaching.signal_created.v1'
   | 'coaching.report_generated.v1'
   | 'coaching.dashboard_viewed.v1'
@@ -454,6 +485,33 @@ export type MicrophonePermissionStateDto = 'prompt_required' | 'granted' | 'deni
 export type RecordingTransportModeDto = 'metadata_only_synthetic';
 export type TranscriptionProviderModeDto = 'mock_only' | 'external_disabled';
 export type TranscriptionJobStatusDto = 'queued' | 'processed' | 'failed';
+export type TranscriptionRuntimeStateDto =
+  | 'loading'
+  | 'empty'
+  | 'ready'
+  | 'saving'
+  | 'failed'
+  | 'permission_denied'
+  | 'read_only'
+  | 'demo_fixture'
+  | 'microphone_permission_denied'
+  | 'device_unavailable'
+  | 'upload_interrupted'
+  | 'provider_unavailable'
+  | 'low_confidence'
+  | 'diarization_degraded'
+  | 'correction_history'
+  | 'recording_exception_approved';
+export type TranscriptionProviderBoundaryDto = 'server_side_adapter';
+export type TranscriptionCredentialStateDto = 'not_configured';
+export type TranscriptionDeadLetterStateDto = 'dead_lettered_metadata_only';
+export type TranscriptionDiarizationStateDto = 'placeholder_degraded';
+
+export interface TranscriptionRetryPolicyDto {
+  maxAttempts: 3;
+  retryableStates: Array<'upload_interrupted' | 'provider_unavailable'>;
+  deadLetterState: TranscriptionDeadLetterStateDto;
+}
 
 export interface RecordingPermissionDto {
   appointmentId: string;
@@ -508,6 +566,14 @@ export interface TranscriptionProviderStatusDto {
   speakerLabelMode: 'placeholder';
   confidenceMetadataAvailable: true;
   disabledReason?: string;
+  providerBoundary?: TranscriptionProviderBoundaryDto;
+  credentialState?: TranscriptionCredentialStateDto;
+  runtimeStates?: TranscriptionRuntimeStateDto[];
+  retryPolicy?: TranscriptionRetryPolicyDto;
+  rawAudioRetentionPolicy?: 'one_week';
+  transcriptRetentionPolicy?: 'indefinite';
+  rawAudioPayloadStorageEnabled?: false;
+  diarizationState?: TranscriptionDiarizationStateDto;
 }
 
 export interface TranscriptionJobDto {
@@ -1255,6 +1321,63 @@ export interface EhrWritebackCapabilityMatrixDto {
   unsupportedReasons: string[];
 }
 
+export type EhrRuntimeStateDto =
+  | 'disabled'
+  | 'configured'
+  | 'degraded'
+  | 'failed'
+  | 'approval_required'
+  | 'denied'
+  | 'pending'
+  | 'delivered'
+  | 'dead_lettered'
+  | 'reconciliation_needed'
+  | 'permission_denied'
+  | 'read_only'
+  | 'loading'
+  | 'empty'
+  | 'ready'
+  | 'demo_fixture';
+
+export interface EhrRuntimeBoundaryDto {
+  adapterBoundary: 'vendor_neutral_ehr_adapter';
+  primaryVendor: 'athenahealth';
+  vendorNeutralInterface: true;
+  tenantId: string;
+  siteId: string;
+  mode: EhrAdapterModeDto;
+  credentialState: 'disabled' | 'metadata_reference_present' | 'missing';
+  credentialReference: string;
+  liveApiCallsEnabled: false;
+  liveWritebackEnabled: false;
+  rawPayloadStorageEnabled: false;
+  sandboxFixtureOnly: true;
+  patientLookupSupported: true;
+  appointmentImportSupported: true;
+  encounterContextSupported: true;
+  chartContextSlicesSupported: EhrChartContextSliceTypeDto[];
+  writebackTargetsSupported: EhrWritebackTarget[];
+  runtimeStates: EhrRuntimeStateDto[];
+  retryPolicy: {
+    maxAttempts: number;
+    retryDelaySeconds: number;
+    deadLetterAfterAttempts: number;
+    reconciliationRequiredAfterAcknowledgement: true;
+  };
+  approvalPolicy: {
+    humanApprovalRequired: true;
+    supportMetadataOnly: true;
+    clinicOsCannotBypassAuraPermissions: true;
+  };
+  warnings: string[];
+}
+
+export interface EhrRuntimeBoundaryResponseDto {
+  boundary: EhrRuntimeBoundaryDto;
+  auditEvent: AuditEventDto;
+  domainEvents: Array<AuraNoteEvent<Record<string, unknown>>>;
+}
+
 export interface EhrPatientSearchResultDto {
   safePatientId: string;
   externalPatientRef: string;
@@ -1262,6 +1385,52 @@ export interface EhrPatientSearchResultDto {
   displayLabel: string;
   matchConfidence: number;
   source: 'mock' | 'athenahealth_sandbox';
+}
+
+export interface EhrPatientLookupResponseDto {
+  results: EhrPatientSearchResultDto[];
+  runtimeBoundary: EhrRuntimeBoundaryDto;
+  auditEvent: AuditEventDto;
+  domainEvents: Array<AuraNoteEvent<Record<string, unknown>>>;
+}
+
+export interface EhrAppointmentImportDto {
+  externalAppointmentId: string;
+  safePatientId: string;
+  externalPatientRef: string;
+  clinicianId: string;
+  startsAt: string;
+  durationMinutes: number;
+  visitType: string;
+  sourceSystem: EhrVendorDto;
+  importMode: 'sandbox_metadata_only';
+  localAppointmentCreated: false;
+}
+
+export interface EhrAppointmentImportResponseDto {
+  appointments: EhrAppointmentImportDto[];
+  runtimeBoundary: EhrRuntimeBoundaryDto;
+  auditEvent: AuditEventDto;
+  domainEvents: Array<AuraNoteEvent<Record<string, unknown>>>;
+}
+
+export interface EhrEncounterContextDto {
+  externalEncounterId: string;
+  externalAppointmentId: string;
+  safePatientId: string;
+  externalPatientRef: string;
+  visitType: string;
+  sourceSystem: EhrVendorDto;
+  status: 'open' | 'locked' | 'closed' | 'unknown';
+  contextMode: 'sandbox_metadata_only';
+  rawPayloadStored: false;
+}
+
+export interface EhrEncounterContextResponseDto {
+  encounter: EhrEncounterContextDto;
+  runtimeBoundary: EhrRuntimeBoundaryDto;
+  auditEvent: AuditEventDto;
+  domainEvents: Array<AuraNoteEvent<Record<string, unknown>>>;
 }
 
 export interface EhrChartContextSliceDto {
@@ -1394,14 +1563,26 @@ export interface EhrChartContextResponseDto {
 export type EhrWritebackLifecycleStatusDto =
   | 'disabled'
   | 'pending_approval'
+  | 'denied'
   | 'approved'
+  | 'prepared'
+  | 'attempted'
+  | 'acknowledged'
   | 'queued'
   | 'retrying'
   | 'failed'
   | 'dead_lettered'
   | 'reconciled';
 
-export type EhrWritebackQueueActionDto = 'approve' | 'retry' | 'dead_letter' | 'reconcile';
+export type EhrWritebackQueueActionDto =
+  | 'approve'
+  | 'deny'
+  | 'prepare_payload'
+  | 'record_attempt'
+  | 'acknowledge'
+  | 'retry'
+  | 'dead_letter'
+  | 'reconcile';
 
 export interface EhrWritebackQueueItemDto {
   writebackJobId: string;
@@ -1424,6 +1605,7 @@ export interface EhrWritebackQueueItemDto {
   approvedAt?: string;
   approvedBy?: string;
   approvalId?: string;
+  acknowledgementId?: string;
   lastAttemptAt?: string;
   nextRetryAt?: string;
   failedAt?: string;
@@ -1454,6 +1636,7 @@ export interface EhrWritebackQueueActionRequestDto {
   action: EhrWritebackQueueActionDto;
   approvalId?: string;
   reason?: string;
+  acknowledgementId?: string;
   reconciliationId?: string;
 }
 
@@ -1469,6 +1652,18 @@ export type ClinicOsAvailabilityDto = 'available' | 'disabled' | 'unavailable' |
 export type ClinicOsSourceOfTruthDto = 'aura_note' | 'clinicos' | 'ehr' | 'hybrid';
 export type ClinicOsMappingStatusDto = 'active' | 'pending' | 'stale' | 'degraded' | 'unavailable' | 'failed';
 export type ClinicOsPublishedEventStatusDto = 'queued' | 'sent_mock' | 'skipped_disabled' | 'failed_unavailable' | 'degraded';
+export type AuraModeAdapterSeamDto =
+  | 'scheduleSource'
+  | 'patientContext'
+  | 'visitGraph'
+  | 'tasks'
+  | 'audit'
+  | 'aiGovernance'
+  | 'chargeIntegrity'
+  | 'ehr'
+  | 'export'
+  | 'identity';
+export type AuraModeAdapterStatusDto = 'standalone_authoritative' | 'mock_available' | 'mock_degraded' | 'unavailable' | 'disabled';
 
 export interface ClinicOsModeContextDto {
   enabled: boolean;
@@ -1528,9 +1723,24 @@ export interface ClinicOsModuleBoundaryDto {
   permissionBoundary: 'aura_note_authoritative';
 }
 
+export interface AuraModeAdapterBoundaryDto {
+  seam: AuraModeAdapterSeamDto;
+  displayName: string;
+  sourceOfTruth: ClinicOsSourceOfTruthDto;
+  adapterStatus: AuraModeAdapterStatusDto;
+  permissionBoundary: 'aura_note_authoritative';
+  liveDelegationEnabled: false;
+  rawPayloadStorageEnabled: false;
+  humanReviewRequired: true;
+  writesFailClosed: boolean;
+  notes: string;
+  clinicOsModuleId?: ClinicOsModuleIdDto;
+}
+
 export interface ClinicOsIntegrationStatusDto {
   modeContext: ClinicOsModeContextDto;
   moduleBoundaries: ClinicOsModuleBoundaryDto[];
+  modeAdapterBoundaries: AuraModeAdapterBoundaryDto[];
   mappings: ClinicOsMappingRecordDto[];
   publishedEvents: ClinicOsPublishedEventDto[];
   permissionsStillEnforcedByAuraNote: true;
@@ -1548,6 +1758,7 @@ export interface ClinicOsMapVisitRequestDto {
 
 export interface ClinicOsMapVisitResponseDto {
   modeContext: ClinicOsModeContextDto;
+  modeAdapterBoundaries?: AuraModeAdapterBoundaryDto[];
   visitGraphId?: string;
   m17ContextId?: string;
   mappings: ClinicOsMappingRecordDto[];
@@ -1568,6 +1779,7 @@ export interface ClinicOsMappingUpsertRequestDto {
 
 export interface ClinicOsMappingUpsertResponseDto {
   modeContext: ClinicOsModeContextDto;
+  modeAdapterBoundaries?: AuraModeAdapterBoundaryDto[];
   mapping: ClinicOsMappingRecordDto;
   auditEvent: AuditEventDto;
   domainEvents: Array<AuraNoteEvent<Record<string, unknown>>>;
@@ -1581,6 +1793,7 @@ export interface ClinicOsEventPublishRequestDto {
 
 export interface ClinicOsEventPublishResponseDto {
   modeContext: ClinicOsModeContextDto;
+  modeAdapterBoundaries?: AuraModeAdapterBoundaryDto[];
   publishedEvent: ClinicOsPublishedEventDto;
   auditEvent: AuditEventDto;
   domainEvents: Array<AuraNoteEvent<Record<string, unknown>>>;
@@ -1594,6 +1807,36 @@ export type AiPhiHandlingDto = 'reject' | 'redact';
 export type AiHumanReviewStatusDto = 'required' | 'approved_by_human' | 'rejected_by_human';
 export type AiValidationStatusDto = 'accepted' | 'rejected';
 export type AiRiskLabelDto = 'low' | 'moderate' | 'high' | 'unsafe';
+export type AiSchemaValidationStatusDto = 'valid' | 'invalid';
+export type AiSourceFreshnessStatusDto = 'current' | 'stale' | 'unknown';
+export type AiBlockedBehaviorDto =
+  | 'unsupported_diagnosis_finalization'
+  | 'code_finalization'
+  | 'charge_finalization'
+  | 'claim_submission'
+  | 'medical_necessity_determination'
+  | 'order_placement'
+  | 'patient_financial_conclusion'
+  | 'unsafe_coaching'
+  | 'unsupported_payer_language'
+  | 'source_stale';
+export type AiRuntimeStateDto =
+  | 'disabled'
+  | 'configured'
+  | 'degraded'
+  | 'failed'
+  | 'source_stale'
+  | 'scrubbed'
+  | 'phi_rejected'
+  | 'output_validation_failed'
+  | 'unsafe_output_rejected'
+  | 'human_review_required'
+  | 'permission_denied'
+  | 'read_only'
+  | 'loading'
+  | 'empty'
+  | 'ready'
+  | 'demo_fixture';
 
 export interface AiEvidenceNodeDto {
   evidenceId: string;
@@ -1650,9 +1893,13 @@ export interface AiModelConfigurationDto {
 export interface AiOutputValidationResultDto {
   validationStatus: AiValidationStatusDto;
   riskLabel: AiRiskLabelDto;
+  schemaValidationStatus: AiSchemaValidationStatusDto;
+  sourceFreshnessStatus: AiSourceFreshnessStatusDto;
+  confidence: number;
   unsafeReasons: string[];
   prohibitedActionDetected: boolean;
   rawPhiDetected: boolean;
+  blockedBehavior?: AiBlockedBehaviorDto;
   humanReviewRequired: true;
 }
 
@@ -1664,6 +1911,9 @@ export interface AiEvaluationCaseDto {
   expectedPromptId: string;
   sourceEvidenceIds: string[];
   expectedValidationStatus: AiValidationStatusDto;
+  expectedRiskLabel: AiRiskLabelDto;
+  expectedSourceFreshnessStatus: AiSourceFreshnessStatusDto;
+  blockedBehavior?: AiBlockedBehaviorDto;
 }
 
 export interface AiEvaluationResultDto {
@@ -1677,11 +1927,15 @@ export interface AiEvaluationResultDto {
   policyMode: AiGatewayPolicyModeDto;
   validationStatus: AiValidationStatusDto;
   riskLabel: AiRiskLabelDto;
+  schemaValidationStatus: AiSchemaValidationStatusDto;
+  sourceFreshnessStatus: AiSourceFreshnessStatusDto;
+  confidence: number;
   humanReviewRequired: true;
   sourceEvidenceIds: string[];
   unsafeReasons: string[];
   prohibitedActionDetected: boolean;
   rawPhiDetected: boolean;
+  blockedBehavior?: AiBlockedBehaviorDto;
   liveModelCalled: false;
   passed: boolean;
   traceId: string;
@@ -1696,6 +1950,9 @@ export interface AiEvaluationRunResponseDto {
   results: AiEvaluationResultDto[];
   allPassed: boolean;
   liveModelCalled: false;
+  regressionBlockedCount?: number;
+  prohibitedBehaviorCoverage?: AiBlockedBehaviorDto[];
+  sourceFreshnessStatuses?: AiSourceFreshnessStatusDto[];
   auditEvent: AuditEventDto;
   domainEvents: Array<AuraNoteEvent<Record<string, unknown>>>;
 }
@@ -1790,12 +2047,42 @@ export interface AiGatewayStatusDto {
   liveModelCredentialPresent?: false;
   rawPhiToExternalAiAllowed?: false;
   humanReviewRequiredForAllOutputs?: true;
+  runtimeBoundary?: AiRuntimeBoundaryDto;
 }
 
 export interface AiGatewayInvocationResponseDto {
   request: AiGatewayRequestDto;
   response: AiGatewayResponseDto;
   contextPackage: AiContextPackageDto;
+  auditEvent: AuditEventDto;
+  domainEvents: Array<AuraNoteEvent<Record<string, unknown>>>;
+}
+
+export interface AiRuntimeBoundaryDto {
+  providerBoundary: 'server_side_ai_gateway';
+  gatewayMode: AiGatewayPolicyModeDto;
+  liveModelCallsEnabled: false;
+  liveModelCredentialPresent: false;
+  rawPhiToExternalAiAllowed: false;
+  productionPromptStoreEnabled: false;
+  privateBaaPathwayApproved: false;
+  driftMonitoringEnabled: false;
+  driftMonitoringStatus: 'placeholder_disabled';
+  supportedRuntimeStates: AiRuntimeStateDto[];
+  promptRegistryCount: number;
+  modelConfigurationCount: number;
+  evaluationCaseCount: number;
+  prohibitedBehaviorCoverage: AiBlockedBehaviorDto[];
+  sourceFreshnessStatuses: AiSourceFreshnessStatusDto[];
+  humanReviewGate: 'required_before_use';
+  schemaValidationRequired: true;
+  sourceEvidenceRequired: true;
+  syntheticOnly: true;
+  reviewedAt: string;
+}
+
+export interface AiRuntimeBoundaryResponseDto {
+  runtimeBoundary: AiRuntimeBoundaryDto;
   auditEvent: AuditEventDto;
   domainEvents: Array<AuraNoteEvent<Record<string, unknown>>>;
 }
@@ -2072,6 +2359,75 @@ export interface OperationalReadinessDto {
 
 export interface OperationalReadinessResponseDto {
   readiness: OperationalReadinessDto;
+  auditEvent: AuditEventDto;
+  domainEvents: Array<AuraNoteEvent<Record<string, unknown>>>;
+}
+
+export type CommercialReadinessSectionIdDto =
+  | 'security_privacy_compliance'
+  | 'observability_support_incident_operations'
+  | 'billing_revenue_integrity'
+  | 'beta_pilot_package'
+  | 'commercial_readiness_decision_gate';
+
+export type CommercialReadinessWorkOrderDto = 'WO-071' | 'WO-072' | 'WO-073' | 'WO-074' | 'WO-075';
+
+export type CommercialReadinessItemStatusDto =
+  | 'ready_synthetic'
+  | 'blocked_until_approval'
+  | 'disabled_by_default'
+  | 'review_required';
+
+export interface CommercialReadinessChecklistItemDto {
+  itemId: string;
+  label: string;
+  status: CommercialReadinessItemStatusDto;
+  evidence: string;
+  ownerRole: 'founder' | 'clinical' | 'compliance_privacy' | 'security' | 'billing' | 'support' | 'engineering';
+  productionLaunchBlocker: boolean;
+}
+
+export interface CommercialReadinessSectionDto {
+  sectionId: CommercialReadinessSectionIdDto;
+  workOrder: CommercialReadinessWorkOrderDto;
+  title: string;
+  status: 'ready_synthetic' | 'review_ready';
+  states: Array<'empty' | 'loading' | 'ready' | 'saving' | 'blocked' | 'failed' | 'permission-denied' | 'read-only' | 'demo fixture'>;
+  checklist: CommercialReadinessChecklistItemDto[];
+  missingApprovals: string[];
+  productionLaunchReady: false;
+  liveVendorEnabled: false;
+  phiSafe: true;
+}
+
+export interface CommercialReadinessDecisionGateDto {
+  checkpoint: 'CR-4';
+  status: 'review_ready_synthetic';
+  completedWorkOrders: CommercialReadinessWorkOrderDto[];
+  figmaReady: boolean;
+  betaPilotPackageReady: boolean;
+  commercialReviewReady: boolean;
+  productionLaunchReady: false;
+  noActiveSpecGaps: boolean;
+  liveVendorDecisionRequired: boolean;
+  finalReviewRoles: Array<'founder' | 'clinical' | 'compliance_privacy' | 'security'>;
+}
+
+export interface CommercialReadinessDto {
+  checkpoint: 'CR-4';
+  status: 'review_ready_synthetic';
+  generatedAt: string;
+  traceId: string;
+  sections: CommercialReadinessSectionDto[];
+  decisionGate: CommercialReadinessDecisionGateDto;
+  disabledCapabilities: string[];
+  requiredApprovals: string[];
+  nextStep: string;
+  productionLaunchReady: false;
+}
+
+export interface CommercialReadinessResponseDto {
+  readiness: CommercialReadinessDto;
   auditEvent: AuditEventDto;
   domainEvents: Array<AuraNoteEvent<Record<string, unknown>>>;
 }

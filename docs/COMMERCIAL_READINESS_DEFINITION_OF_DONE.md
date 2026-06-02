@@ -4,6 +4,8 @@
 
 AURA Note may be described as commercial-readiness-review-ready only after `WO-075` is complete, all required gates pass, and `CHECKPOINT_REPORT.md` records CR-4 evidence. It still must not be called production-launch-ready unless a later founder-approved launch work order explicitly changes the launch posture.
 
+Implementation status as of `WO-075`: CR-4 evidence is packaged for review through `docs/COMMERCIAL_READINESS_REVIEW_PACKET.md`, `/support/commercial-readiness`, and the `pnpm commercial:readiness` gate. Production launch remains false.
+
 ## Required evidence by area
 
 | Area | Required evidence before CR-4 |

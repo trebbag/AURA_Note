@@ -302,6 +302,44 @@ No live model credential, production prompt store, raw external model prompt, ra
 
 Existing production-intended scaffold routes are inventoried in `docs/FRONTEND_RUNTIME_INTEGRATION.md` as API-backed runtime or documented mocks. Later P10 work must either convert those documented mocks to typed API runtime behavior or explicitly defer/disable them before launch-candidate review. No production PHI storage, live vendor execution, autonomous clinical/coding/billing behavior, medical-necessity determination, charge finalization, claim submission, or production launch approval is introduced.
 
+## WO-064 primary UI runtime backend status
+
+`WO-064` expands the typed web API client and converts primary production-intended routes to API-backed runtime behavior through typed API clients. The affected frontend actions call existing tenant-scoped backend operations for schedule/patient shells, workspace state, visit controls, recording metadata, transcript correction, suggestions/selections, compliance/history gaps, finalization, exports, operations worklists, platform controls, EHR/ClinicOS adapter states, AI governance, coaching, and support status. Browser-visible failed and permission-denied states now use PHI-safe API error envelopes where available.
+
+The API runtime CORS boundary now accepts the ClinicOS mode headers required by the typed browser client: `x-aura-clinicos-mode`, `x-aura-clinicos-unavailable`, and `x-aura-clinicos-degraded`. This remains local synthetic adapter evidence only; no live ClinicOS event bus, delegated identity, raw payload storage, or production launch behavior is enabled.
+
+## WO-067 ModeResolver and adapter runtime backend status
+
+`WO-067` adds `apps/api/src/runtime/mode-resolver.ts` as the shared API ModeResolver. Runtime ClinicOS headers are normalized into a typed `AuraRuntimeModeResolution` containing the API mode, ClinicOS mode context, module boundaries, and adapter-boundary evidence for schedule source, patient context, VisitGraph, tasks, audit, AI governance, Charge Integrity, EHR, export, and identity.
+
+`ClinicOsService` now consumes that resolver instead of parsing host-mode headers locally. ClinicOS status, mapping, and publication responses return `modeAdapterBoundaries` so clients can see that AURA Note remains authoritative, live delegation is disabled, raw payload storage is disabled, and human review is required. Degraded or unavailable ClinicOS mode marks writes fail-closed and emits metadata-only domain event payloads with `modeAdapterBoundaryCount`.
+
+Standalone remains the default runtime posture and AURA Note remains authoritative in every mode. `WO-067` is not live ClinicOS integration: no production credentials, event bus, delegated identity, raw ClinicOS payload, production PHI, autonomous clinical/coding/billing behavior, charge finalization, medical-necessity determination, claim submission, or production launch behavior is enabled.
+
+## WO-068 transcription runtime boundary backend status
+
+`WO-068` adds a server-side transcription provider adapter boundary without enabling live provider execution. `DeterministicMockTranscriptionProvider` processes metadata-only chunks into deterministic synthetic transcript segments and exposes provider status metadata for browser/device/permission/interruption/retry/no-audio/provider-unavailable/low-confidence/diarization-degraded/correction-history states. `DisabledLiveTranscriptionProvider` returns a failed job with `liveProviderCalled=false`, `configured=false`, and a fail-closed reason until vendor, BAA, credential, consent, and PHI-transport approvals exist.
+
+The documentation workspace API now includes a disabled-live-provider job endpoint for testable fail-closed evidence. Provider status records `providerBoundary='server_side_adapter'`, `rawAudioPayloadStorageEnabled=false`, a one-week raw-audio retention policy, indefinite transcript retention, and retry/dead-letter metadata. Transcript correction remains permission checked and PHI-rejected; support users remain denied transcript/correction access.
+
+No live transcription credential, raw PHI audio payload, live vendor request, production audio storage, live AI call, autonomous clinical/coding/billing behavior, charge finalization, medical-necessity determination, claim submission, or production launch behavior is enabled.
+
+## WO-069 EHR sandbox runtime boundary backend status
+
+`WO-069` extends the EHR integration runtime through the existing vendor-neutral adapter boundary. `EhrAdapter.getRuntimeBoundary()` now exposes athenahealth-first sandbox metadata, credential-disabled posture, supported runtime states, retry/dead-letter policy, `liveApiCallsEnabled=false`, `liveWritebackEnabled=false`, and `rawPayloadStorageEnabled=false`.
+
+The EHR API now exposes sandbox-safe runtime evidence through `/integrations/ehr/runtime-boundary`, `/integrations/ehr/patients/search`, `/integrations/ehr/appointments/import`, and `/integrations/ehr/encounters/{externalEncounterId}`. These routes return synthetic patient, appointment, and encounter metadata only. The writeback queue action path now records explicit denial, payload-preparation metadata, delivery-attempt metadata, and acknowledgement metadata while preserving human approval and reconciliation gates.
+
+All state-changing EHR actions remain tenant/site scoped through the local identity boundary, permission checked, purpose-of-use checked, audit/domain-event emitting, and payload-safe. No live EHR credential, raw EHR payload storage, live API call, live writeback delivery, autonomous note submission, charge finalization, medical-necessity determination, claim submission, or production launch behavior is enabled.
+
+## WO-070 AI governance runtime boundary backend status
+
+`WO-070` extends the AI Gateway runtime boundary while keeping live external AI disabled. The API now exposes `/ai-gateway/runtime-boundary` with server-side AI Gateway metadata, disabled live model calls, disabled raw-PHI-to-external-AI posture, disabled production prompt store, private/BAA approval placeholder, drift placeholder, supported runtime states, prompt/model/evaluation counts, source-freshness coverage, prohibited-behavior coverage, schema-validation requirement, source-evidence requirement, and human-review gate evidence.
+
+Evaluation runs now cover prohibited diagnosis/code/charge/claim/medical-necessity/order/patient-financial/coaching/payer-language behaviors and stale-source output. Output validation returns schema-validation status, source-freshness status, confidence, risk label, and blocked-behavior metadata. Raw-PHI rejection emits `ai.request_denied.v1`; accepted redaction and mock invocation paths emit context-package and human-review-required evidence. Governance actions remain tenant/site scoped through the local identity boundary, permission checked by `ai_governance:view` or `ai_gateway:invoke`, purpose-of-use checked, audit/domain-event emitting, and metadata-only.
+
+No live model credential, production prompt store, private/BAA model approval, raw prompt/model-response persistence, raw PHI transfer to external AI, autonomous clinical/coding/billing behavior, charge finalization, medical-necessity determination, order placement, claim submission, patient-facing financial conclusion, or production launch behavior is enabled.
+
 ## WO-049 launch operations readiness
 
 `WO-049` adds synthetic/local backend operational readiness evidence. `pnpm launch:ops-readiness` combines the deterministic performance baseline, browser support-status drill assertions, and a static verifier for environment promotion, smoke checks, rollback rehearsal, incident response, access review, and support escalation evidence.
@@ -317,3 +355,9 @@ No new production runtime service is enabled. Existing support/platform boundari
 `WO-051` adds no live payer backend behavior. It records the P11 claim/payer decision package through docs, support-status UI evidence, and `pnpm claim-decision:readiness`. Current backend posture remains draft claim preview and billing review only with `submittedClaim=false`. No clearinghouse API, payer API, denial automation, payment posting, charge finalization, medical-necessity determination, or patient-facing financial conclusion is implemented.
 
 Any future claim submission backend must be a separate approved work order with tenant/site scoping, RBAC/ABAC, human billing approval, clinician/final-note prerequisites where applicable, durable audit/event records, idempotency, claim status reconciliation, void/reversal controls, PHI-safe logging, credential-source governance, and test-payer evidence before live execution.
+
+## WO-071 through WO-075 CR-4 commercial readiness backend status
+
+`WO-071` through `WO-075` add the `/support/commercial-readiness` backend review boundary. The endpoint is permission checked through existing support/audit access controls, emits audit-safe CR-4 review events, and returns review metadata only for security/privacy/compliance, observability/support, billing/revenue integrity, beta-pilot, and final decision-gate evidence.
+
+The backend posture remains no-launch: `productionLaunchReady=false`, `liveVendorEnabled=false`, `claimSubmissionEnabled=false`, no certification claim, no live credentials, no live PHI, no raw support payloads, no live telemetry sink, no live AI/EHR/ClinicOS/transcription/storage execution, no charge finalization, no medical-necessity determination, and no autonomous clinical/coding/billing behavior.

@@ -1,28 +1,27 @@
-const ownSignals = [
-  {
-    category: 'Documentation completeness',
-    score: 86,
-    title: 'Problem-specific assessment linked to plan',
-    detail: 'Assessment and plan stay paired by problem in the synthetic signed note.'
-  },
-  {
-    category: 'E/M justification',
-    score: 74,
-    title: 'E/M support needs concise risk detail',
-    detail: 'Selected E/M support would be stronger with one MDM risk sentence.'
-  }
-];
+import { createAuraNoteApiClient } from '../../../lib/aura-note-api-client';
 
-const aggregateRows = [
-  { metric: 'Documentation completeness', average: 84 },
-  { metric: 'Patient voice fidelity', average: 90 },
-  { metric: 'Communication clarity', average: 86 },
-  { metric: 'Clinical reasoning', average: 82 },
-  { metric: 'History-taking depth', average: 80 },
-  { metric: 'E/M justification', average: 76 }
-];
+export const dynamic = 'force-dynamic';
 
-export default function CoachingPage() {
+export default async function CoachingPage() {
+  const clinicianClient = createAuraNoteApiClient({ role: 'clinician' });
+  const adminClient = createAuraNoteApiClient({ role: 'admin' });
+  const billingClient = createAuraNoteApiClient({ role: 'billing_staff' });
+
+  const [ownReportResult, dashboardResult, billingDeniedResult] = await Promise.allSettled([
+    clinicianClient.getOwnCoaching(),
+    adminClient.getCoachingDashboard('aggregate_only'),
+    billingClient.getOwnCoaching()
+  ]);
+
+  const ownReport = ownReportResult.status === 'fulfilled' ? ownReportResult.value.data : null;
+  const dashboard = dashboardResult.status === 'fulfilled' ? dashboardResult.value.data : null;
+  const billingDenied =
+    billingDeniedResult.status === 'rejected'
+      ? billingDeniedResult.reason instanceof Error
+        ? billingDeniedResult.reason.message
+        : 'billing coaching access denied'
+      : 'unexpectedly allowed';
+
   return (
     <main className="coaching-shell">
       <header className="page-header">
@@ -31,6 +30,7 @@ export default function CoachingPage() {
           <h1>Coaching and Analytics</h1>
         </div>
         <nav className="header-nav" aria-label="AURA Note sections">
+          <a href="/aura-note">Runtime Home</a>
           <a href="/aura-note/schedule">Schedule</a>
           <a href="/aura-note/drafts">Draft Notes</a>
           <a href="/aura-note/finalized">Finalized Notes</a>
@@ -38,15 +38,15 @@ export default function CoachingPage() {
       </header>
 
       <section className="status-band">
-        <p>Coaching is clinician-owned, admin-governed, and excluded from patient-facing outputs.</p>
+        <p>Coaching is loaded from API-backed clinician/admin views and remains excluded from patient-facing outputs.</p>
         <dl>
           <div>
             <dt>Mode</dt>
-            <dd>synthetic</dd>
+            <dd>typed_api_client</dd>
           </div>
           <div>
             <dt>Default</dt>
-            <dd>aggregate-only</dd>
+            <dd>{dashboard?.privacyLabel ?? 'aggregate-only'}</dd>
           </div>
           <div>
             <dt>Patient View</dt>
@@ -64,16 +64,16 @@ export default function CoachingPage() {
           <dl className="state-grid">
             <div>
               <dt>Overall</dt>
-              <dd>80</dd>
+              <dd>{ownReport?.overallScore ?? 'empty'}</dd>
             </div>
             <div>
               <dt>Privacy</dt>
-              <dd>own only</dd>
+              <dd>{ownReport?.privacyLabel ?? 'own only'}</dd>
             </div>
           </dl>
           <div className="coaching-signal-list">
-            {ownSignals.map((signal) => (
-              <section key={signal.title} className="coaching-signal">
+            {(ownReport?.signals ?? []).map((signal) => (
+              <section key={signal.coachingSignalId} className="coaching-signal">
                 <div>
                   <strong>{signal.title}</strong>
                   <span>{signal.category}</span>
@@ -82,6 +82,7 @@ export default function CoachingPage() {
                 <p>{signal.detail}</p>
               </section>
             ))}
+            {!ownReport?.signals.length ? <p className="empty-state">No own coaching report returned by the API.</p> : null}
           </div>
         </article>
 
@@ -93,18 +94,18 @@ export default function CoachingPage() {
           <dl className="state-grid">
             <div>
               <dt>Providers</dt>
-              <dd>2</dd>
+              <dd>{dashboard?.providerCount ?? 0}</dd>
             </div>
             <div>
               <dt>Visibility</dt>
-              <dd>aggregate-only</dd>
+              <dd>{dashboard?.visibilityMode ?? 'aggregate-only'}</dd>
             </div>
           </dl>
           <div className="analytics-list">
-            {aggregateRows.map((row) => (
-              <div key={row.metric}>
-                <span>{row.metric}</span>
-                <strong>{row.average}</strong>
+            {Object.entries(dashboard?.categoryAverages ?? {}).map(([category, averageScore]) => (
+              <div key={category}>
+                <span>{category}</span>
+                <strong>{averageScore}</strong>
               </div>
             ))}
           </div>
@@ -117,6 +118,7 @@ export default function CoachingPage() {
           <div>
             <span>Billing staff</span>
             <strong>coaching denied</strong>
+            <small>{billingDenied}</small>
           </div>
           <div>
             <span>Patients</span>

@@ -686,3 +686,37 @@ These records remain synthetic/local API metadata mapped to audit/domain-event e
 `WO-063` adds no production identity store, token persistence, SAML assertion persistence, OIDC claims persistence, ClinicOS delegated identity payload persistence, or PHI-bearing identity record. It adds `IdentityRuntimeBoundaryDecisionDto` and OpenAPI schema metadata for audit-safe boundary decisions: allowed state, `AURA_NOTE_AUTH_MODE`, identity source, failure reason, `liveCredentialPresent=false`, `delegatedIdentityConfigured=false`, `rawTokenReturned=false`, and synthetic-header acceptance state.
 
 Identity accepted/denied evidence remains local structured runtime log metadata. Durable tenant-owned identity-boundary event persistence remains deferred until a later audit/runtime work order promotes request-boundary decisions into persisted audit/event records.
+
+## WO-067 ModeResolver adapter-boundary data status
+
+`WO-067` adds no new production tables and no raw ClinicOS payload persistence. It extends the ClinicOS DTO/OpenAPI model with `AuraModeAdapterBoundaryDto` and `modeAdapterBoundaries` evidence for schedule source, patient context, VisitGraph, tasks, audit, AI governance, Charge Integrity, EHR, export, and identity seams.
+
+The metadata records source-of-truth posture, adapter status, optional ClinicOS module ID, `permissionBoundary='aura_note_authoritative'`, `liveDelegationEnabled=false`, `rawPayloadStorageEnabled=false`, `humanReviewRequired=true`, and fail-closed write state for degraded/unavailable ClinicOS mode. Existing `ModeMapping`, `IntegrationConnection`, domain-event, and audit-event shapes remain the durability path where prior work orders already require persisted adapter metadata. Broader live ClinicOS event-bus payloads, delegated identity payloads, production synchronization records, and raw module payload storage remain deferred.
+
+## WO-068 transcription runtime boundary data status
+
+`WO-068` adds no production audio payload store and no live provider payload persistence. It extends transcription DTO/OpenAPI metadata with `providerBoundary='server_side_adapter'`, `credentialState='not_configured'`, runtime state coverage, retry/dead-letter policy, `rawAudioRetentionPolicy='one_week'`, `transcriptRetentionPolicy='indefinite'`, `rawAudioPayloadStorageEnabled=false`, and `diarizationState='placeholder_degraded'`.
+
+Current runtime evidence remains metadata-only over the existing visit-session, recording-chunk, transcript, transcript-segment, correction-history, raw-audio retention, audit, and domain-event records. Retry/dead-letter state is represented as audit-safe job metadata until a later durable queue work order promotes it into a production queue. No real audio, live provider payload, production transcript sample, credential, private key, production URL, charge-finalization record, medical-necessity record, or submitted claim is persisted.
+
+## WO-069 EHR sandbox runtime boundary data status
+
+`WO-069` adds no production EHR payload store and no live vendor-payload persistence. It extends EHR DTO/OpenAPI metadata with `EhrRuntimeBoundaryDto`, `EhrPatientLookupResponseDto`, `EhrAppointmentImportResponseDto`, and `EhrEncounterContextResponseDto`.
+
+Runtime boundary records include vendor-neutral adapter posture, primary vendor metadata, credential state, supported runtime states, chart-context slice support, writeback target support, retry/dead-letter policy, `liveApiCallsEnabled=false`, `liveWritebackEnabled=false`, and `rawPayloadStorageEnabled=false`. Writeback queue metadata now represents denied, prepared, attempted, and acknowledged states without storing payload contents.
+
+Current runtime evidence remains audit-safe metadata over existing EHR status, chart-context, writeback queue, audit, and domain-event shapes. Synthetic patient lookup, appointment import, and encounter context responses use fixture identifiers only and do not persist production EHR identifiers or raw vendor responses. No credential, private key, production URL, raw EHR payload, charge-finalization record, medical-necessity record, or submitted claim is persisted.
+
+## WO-070 AI runtime governance boundary data status
+
+`WO-070` adds no production prompt store, no raw model-response store, and no live AI payload persistence. It extends AI DTO/OpenAPI metadata with `AiRuntimeBoundaryDto`, `AiRuntimeBoundaryResponseDto`, expanded `AiEvaluationCaseDto`, expanded `AiEvaluationResultDto`, and expanded `AiOutputValidationResultDto`.
+
+Runtime boundary records include provider boundary, gateway mode, disabled live-model and raw-PHI-to-external-AI flags, disabled production prompt store, private/BAA approval placeholder, drift placeholder, supported runtime states, prompt/model/evaluation counts, prohibited-behavior coverage, source-freshness statuses, schema-validation requirement, source-evidence requirement, human-review gate, and `syntheticOnly=true`.
+
+Evaluation and validation records now include schema-validation status, source-freshness status, confidence, blocked behavior, risk label, unsafe reasons, raw-PHI detection, prohibited-action detection, source evidence IDs, prompt/model versions, trace IDs, and `liveModelCalled=false`. Current runtime evidence remains audit-safe metadata over existing AI Gateway DTOs, audit events, and domain events. No raw prompt, note text, transcript text, EHR/ClinicOS payload, model response, production PHI sample, credential, private key, production URL, charge-finalization record, medical-necessity record, order, patient financial conclusion, or submitted claim is persisted.
+
+## WO-071 through WO-075 CR-4 commercial readiness data status
+
+`WO-071` through `WO-075` add no PHI-bearing persistence and no production launch tables. Commercial readiness evidence is represented as audit-safe metadata in `CommercialReadinessDto`, support audit events, docs, checkpoint evidence, and readiness scripts.
+
+The new metadata records CR-4 section IDs, work-order IDs, checklist status, evidence paths, missing approvals, disabled capabilities, final review roles, `productionLaunchReady=false`, `liveVendorEnabled=false`, and `phiSafe=true`. No raw support logs, transcripts, final notes, billing detail, coaching output, credentials, vendor payloads, production PHI, charge-finalization record, medical-necessity record, claim submission, denial automation, payment posting, or patient financial conclusion is persisted by CR-4.

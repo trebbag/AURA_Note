@@ -47,19 +47,26 @@ jobs:
       - run: pnpm standalone:patient-schedule-readiness
       - run: pnpm standalone:operations-readiness
       - run: pnpm audio:transcription-readiness
+      - run: pnpm transcription:runtime-boundary-readiness
       - run: pnpm transcription:live-review-readiness
       - run: pnpm identity:production-readiness
       - run: pnpm identity:live-review-readiness
       - run: pnpm config:production-readiness
       - run: pnpm observability:production-readiness
       - run: pnpm ehr:integration-readiness
+      - run: pnpm ehr:sandbox-runtime-readiness
       - run: pnpm ehr:live-review-readiness
       - run: pnpm clinicos:integration-readiness
       - run: pnpm clinicos:live-review-readiness
+      - run: pnpm mode:adapter-readiness
       - run: pnpm ai:governance-readiness
+      - run: pnpm ai:runtime-governance-readiness
       - run: pnpm ai:live-review-readiness
       - run: pnpm security:review-readiness
       - run: pnpm frontend:runtime-integration-readiness
+      - run: pnpm frontend:primary-runtime-readiness
+      - run: pnpm figma:handoff-readiness
+      - run: pnpm standalone:workflow-readiness
       - run: pnpm launch:readiness
       - run: pnpm storage:azure-adapter-readiness
       - run: pnpm storage:secure-download-readiness
@@ -67,6 +74,12 @@ jobs:
       - run: pnpm retention:production-readiness
       - run: pnpm storage:live-review-readiness
       - run: pnpm claim-decision:readiness
+      - run: pnpm security:commercial-readiness
+      - run: pnpm ops:commercial-readiness
+      - run: pnpm billing:revenue-integrity-readiness
+      - run: pnpm beta:pilot-package-readiness
+      - run: pnpm commercial:readiness
+      - run: pnpm post-cr4:launch-governance
       - run: pnpm commercial:readiness-plan
       - run: pnpm post-p11:readiness
       - run: pnpm production:readiness

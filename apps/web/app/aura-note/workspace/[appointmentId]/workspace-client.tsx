@@ -1,238 +1,240 @@
 'use client';
 
-import { useMemo, useState } from 'react';
-
-type TimerState = 'not_started' | 'running' | 'paused' | 'stopped';
-type RecordingState = 'not_started' | 'recording' | 'paused' | 'stopped' | 'exception_approved';
-type MicrophoneState = 'prompt_required' | 'granted' | 'denied' | 'unsupported';
-type SuggestionStatus = 'candidate' | 'accepted' | 'removed';
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import type {
+  ComplianceReviewDto,
+  DocumentationWorkspaceDto,
+  HistoryGapQuestionDto,
+  SuggestionDto,
+  TranscriptViewDto,
+  TranscriptionProviderStatusDto,
+  VisitSelectionDto
+} from '@aura-note/contracts';
+import { createAuraNoteApiClient } from '../../../../lib/aura-note-api-client';
 
 interface WorkspaceClientProps {
   appointmentId: string;
 }
 
-interface TranscriptSegment {
-  sequence: number;
-  speakerRole: 'clinician' | 'patient';
-  text: string;
-  confidence?: number;
-  sourceChunkId?: string;
-  speakerLabel?: string;
-  corrected?: boolean;
-}
+type RouteState = 'loading' | 'empty' | 'ready' | 'saving' | 'blocked' | 'failed' | 'permission-denied' | 'read-only' | 'demo fixture';
 
-interface Suggestion {
-  suggestionId: string;
-  category: string;
-  label: string;
-  confidence: number;
-  status: SuggestionStatus;
-  lowConfidenceOverrideRequired: boolean;
-}
-
-const initialSuggestions: Suggestion[] = [
-  {
-    suggestionId: 'suggestion-demo-cpt-99214',
-    category: 'cpt',
-    label: 'CPT 99214 candidate',
-    confidence: 0.82,
-    status: 'candidate',
-    lowConfidenceOverrideRequired: false
-  },
-  {
-    suggestionId: 'suggestion-demo-icd10-e119',
-    category: 'icd10',
-    label: 'ICD-10 E11.9 candidate',
-    confidence: 0.74,
-    status: 'candidate',
-    lowConfidenceOverrideRequired: true
-  },
-  {
-    suggestionId: 'suggestion-demo-quality-bp',
-    category: 'quality_measure',
-    label: 'Quality measure follow-up candidate',
-    confidence: 0.88,
-    status: 'candidate',
-    lowConfidenceOverrideRequired: false
-  }
-];
+const routeStates: RouteState[] = ['loading', 'empty', 'ready', 'saving', 'failed', 'permission-denied', 'read-only', 'blocked', 'demo fixture'];
 
 export function WorkspaceClient({ appointmentId }: WorkspaceClientProps) {
-  const [timerState, setTimerState] = useState<TimerState>('not_started');
-  const [recordingState, setRecordingState] = useState<RecordingState>('not_started');
-  const [seconds, setSeconds] = useState(0);
-  const [exceptionReason, setExceptionReason] = useState('');
-  const [microphoneState, setMicrophoneState] = useState<MicrophoneState>('prompt_required');
-  const [recordingChunks, setRecordingChunks] = useState<string[]>([]);
-  const [transcriptionStatus, setTranscriptionStatus] = useState('mock provider ready / live provider disabled');
-  const [correctionHistory, setCorrectionHistory] = useState<string[]>([]);
-  const [transcriptSegments, setTranscriptSegments] = useState<TranscriptSegment[]>([]);
-  const [suggestions, setSuggestions] = useState<Suggestion[]>(initialSuggestions);
-  const [visitSelections, setVisitSelections] = useState<Suggestion[]>([]);
+  const client = useMemo(() => createAuraNoteApiClient({ role: 'clinician' }), []);
+  const supportClient = useMemo(() => createAuraNoteApiClient({ role: 'support', userId: 'user-support-workspace-denial' }), []);
+  const [workspace, setWorkspace] = useState<DocumentationWorkspaceDto | null>(null);
+  const [suggestions, setSuggestions] = useState<SuggestionDto[]>([]);
+  const [visitSelections, setVisitSelections] = useState<VisitSelectionDto[]>([]);
+  const [compliance, setCompliance] = useState<ComplianceReviewDto | null>(null);
+  const [historyGaps, setHistoryGaps] = useState<HistoryGapQuestionDto[]>([]);
+  const [transcript, setTranscript] = useState<TranscriptViewDto | null>(null);
+  const [providerStatus, setProviderStatus] = useState<TranscriptionProviderStatusDto | null>(null);
+  const [recordingChunks, setRecordingChunks] = useState(0);
+  const [microphonePermissionState, setMicrophonePermissionState] = useState('prompt_required');
+  const [routeState, setRouteState] = useState<RouteState>('loading');
   const [overrideReason, setOverrideReason] = useState('');
-  const [historyGapBlocked, setHistoryGapBlocked] = useState(false);
-  const [reviewMessage, setReviewMessage] = useState('Suggestions are deterministic mock candidates and require human review.');
+  const [message, setMessage] = useState('Loading workspace from AURA Note API responses.');
 
-  const editorUnlocked = timerState === 'running' || recordingState === 'exception_approved';
-  const finalizeDisabled = !editorUnlocked || historyGapBlocked;
-  const statusText = useMemo(() => {
-    if (editorUnlocked) return 'Editor unlocked by timer or approved recording exception.';
-    if (timerState === 'paused') return 'Editor locked while the visit timer is paused.';
-    if (timerState === 'stopped') return 'Editor locked after stop until a later finalization workflow allows review.';
-    return 'Editor locked until Start Visit runs the timer or a recording exception is approved.';
-  }, [editorUnlocked, timerState]);
+  const noteId = workspace?.note.noteId;
+  const editorUnlocked = Boolean(workspace && !workspace.editorLocked);
+  const finalizeDisabled = Boolean(!workspace || workspace.editorLocked || compliance?.finalizeDisabled);
+  const timerState = workspace?.visitSession?.timerState ?? 'not_started';
+  const recordingState = workspace?.visitSession?.recordingState ?? 'not_started';
+  const seconds = workspace?.visitSession?.elapsedSeconds ?? 0;
+
+  const refreshWorkspace = useCallback(async () => {
+    setRouteState('loading');
+    try {
+      const workspaceResponse = await client.getDocumentationWorkspace(appointmentId);
+      const nextWorkspace = workspaceResponse.data;
+      setWorkspace(nextWorkspace);
+
+      if (nextWorkspace.note.noteId) {
+        const [
+          suggestionsResponse,
+          selectionsResponse,
+          complianceResponse,
+          gapsResponse,
+          transcriptResponse,
+          providerResponse
+        ] = await Promise.all([
+          client.listSuggestions(nextWorkspace.note.noteId),
+          client.listVisitSelections(nextWorkspace.note.noteId),
+          client.evaluateCompliance(nextWorkspace.note.noteId),
+          client.listHistoryGaps(nextWorkspace.note.noteId),
+          client.getTranscript(appointmentId),
+          client.getTranscriptionProviderStatus(appointmentId)
+        ]);
+        setSuggestions(suggestionsResponse.data.suggestions);
+        setVisitSelections(selectionsResponse.data.selections);
+        setCompliance(complianceResponse.data);
+        setHistoryGaps(gapsResponse.data.questions);
+        setTranscript(transcriptResponse.data);
+        setProviderStatus(providerResponse.data);
+      }
+
+      setRouteState(nextWorkspace.finalizedReadOnly ? 'read-only' : nextWorkspace.editorLocked ? 'blocked' : 'ready');
+      setMessage('Workspace panels loaded from typed API-backed state.');
+    } catch (error) {
+      setRouteState('failed');
+      setMessage(error instanceof Error ? error.message : 'Workspace API load failed.');
+    }
+  }, [appointmentId, client]);
+
+  useEffect(() => {
+    void refreshWorkspace();
+  }, [refreshWorkspace]);
+
+  async function runAction(label: string, action: () => Promise<unknown>) {
+    setRouteState('saving');
+    try {
+      await action();
+      await refreshWorkspace();
+      setMessage(label);
+    } catch (error) {
+      setRouteState('failed');
+      setMessage(error instanceof Error ? error.message : label);
+    }
+  }
 
   function startVisit() {
-    setTimerState('running');
-    setRecordingState('recording');
-    setSeconds(1);
+    void runAction('Visit started through API; timer and editor gate refreshed.', () => client.startVisit(appointmentId));
   }
 
   function pauseVisit() {
-    setTimerState('paused');
-    setRecordingState((current) => (current === 'recording' ? 'paused' : current));
+    void runAction('Visit paused through API; editor lock refreshed.', () => client.pauseVisit(appointmentId));
   }
 
   function resumeVisit() {
-    setTimerState('running');
-    setRecordingState((current) => (current === 'paused' ? 'recording' : current));
-    setSeconds((current) => current + 1);
+    void runAction('Visit resumed through API; editor unlock refreshed.', () => client.resumeVisit(appointmentId));
   }
 
   function stopVisit() {
-    setTimerState('stopped');
-    setRecordingState((current) => (current === 'exception_approved' ? current : 'stopped'));
+    void runAction('Visit stopped through API; documentation state refreshed.', () => client.stopVisit(appointmentId));
   }
 
   function approveException() {
-    setExceptionReason('Synthetic clinician-approved no-audio exception');
-    setTimerState((current) => (current === 'not_started' ? 'running' : current));
-    setRecordingState('exception_approved');
-  }
-
-  async function requestMicrophonePermission() {
-    if (!('mediaDevices' in navigator) || !navigator.mediaDevices?.getUserMedia) {
-      setMicrophoneState('unsupported');
-      return;
-    }
-    try {
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      stream.getTracks().forEach((track) => track.stop());
-      setMicrophoneState('granted');
-    } catch {
-      setMicrophoneState('denied');
-    }
+    void runAction('Recording exception approved through API without implying normal recording.', () =>
+      client.approveRecordingException(appointmentId, { exceptionReason: 'Synthetic clinician-approved no-audio exception' })
+    );
   }
 
   function demoPermissionDenied() {
-    setMicrophoneState('denied');
+    void (async () => {
+      setRouteState('saving');
+      try {
+        const response = await client.recordMicrophonePermission(appointmentId, {
+          permissionState: 'denied',
+          userGestureConfirmed: true,
+          browserSupported: true
+        });
+        setMicrophonePermissionState(response.data.permission.permissionState);
+        setMessage('Microphone denial recorded through API.');
+        await refreshWorkspace();
+      } catch (error) {
+        setRouteState('failed');
+        setMessage(error instanceof Error ? error.message : 'Microphone permission denial failed.');
+      }
+    })();
   }
 
   function appendMetadataChunk() {
-    if (recordingState !== 'recording') return;
-    setRecordingChunks((current) => [...current, `metadata-only chunk ${current.length + 1}`]);
+    const sequence = recordingChunks + 1;
+    void runAction('Metadata-only recording chunk appended through API.', async () => {
+      await client.appendRecordingChunk(
+        appointmentId,
+        {
+          sequence,
+          durationMs: 15_000,
+          contentLengthBytes: 0,
+          checksum: `metadata-only-workspace-${sequence}`
+        },
+        `workspace-chunk-${appointmentId}-${sequence}`
+      );
+      setRecordingChunks(sequence);
+    });
   }
 
   function processMockTranscription() {
-    if (recordingChunks.length === 0) {
-      setTranscriptionStatus('mock transcription blocked until metadata-only chunk exists');
-      return;
-    }
-    setTranscriptSegments((current) => [
-      ...current,
-      ...recordingChunks.slice(current.length).map((chunk, index) => ({
-        sequence: current.length + index + 1,
-        speakerRole: index % 2 === 0 ? 'clinician' as const : 'patient' as const,
-        text: `Synthetic mock transcript from ${chunk}`,
-        confidence: 0.91,
-        sourceChunkId: chunk,
-        speakerLabel: `Speaker ${index + 1} placeholder`
-      }))
-    ]);
-    setTranscriptionStatus('processed by deterministic mock provider / live provider disabled');
+    void runAction('Deterministic mock transcription job processed through API.', () => client.processMockTranscriptionJob(appointmentId));
+  }
+
+  function requestDisabledLiveProvider() {
+    void runAction('Disabled live transcription provider failed closed through API metadata.', () =>
+      client.requestDisabledLiveTranscriptionJob(appointmentId)
+    );
   }
 
   function correctFirstTranscriptSegment() {
-    setTranscriptSegments((current) =>
-      current.map((segment, index) =>
-        index === 0
-          ? { ...segment, text: 'Synthetic corrected transcript segment', corrected: true }
-          : segment
-      )
+    const firstSegment = transcript?.segments[0];
+    if (!firstSegment) return;
+    void runAction('Transcript correction recorded through API.', () =>
+      client.correctTranscriptSegment(appointmentId, firstSegment.transcriptSegmentId, {
+        correctedText: 'Synthetic corrected transcript segment',
+        correctionReason: 'WO-064 browser route API-backed correction evidence'
+      })
     );
-    setCorrectionHistory((current) => [...current, 'Synthetic clinician correction recorded']);
   }
 
   function appendTranscript() {
-    setTranscriptSegments((current) => [
-      ...current,
-      {
-        sequence: current.length + 1,
-        speakerRole: current.length % 2 === 0 ? 'clinician' : 'patient',
-        text: `Synthetic mock transcript segment ${current.length + 1}`,
-        confidence: 0.9,
-        speakerLabel: `Speaker ${current.length + 1} placeholder`
-      }
-    ]);
+    void runAction('Manual mock transcript segment appended through API.', () =>
+      client.appendTranscriptSegment(appointmentId, {
+        speakerRole: (transcript?.segments.length ?? 0) % 2 === 0 ? 'clinician' : 'patient',
+        text: `Synthetic mock transcript segment ${(transcript?.segments.length ?? 0) + 1}`
+      })
+    );
   }
 
-  function acceptSuggestion(suggestionId: string) {
-    const suggestion = suggestions.find((candidate) => candidate.suggestionId === suggestionId);
-    if (!suggestion) return;
+  function evaluateSuggestions() {
+    if (!noteId) return;
+    void runAction('Deterministic suggestions evaluated through API.', () => client.evaluateSuggestions(noteId));
+  }
+
+  function acceptSuggestion(suggestion: SuggestionDto) {
+    if (!noteId) return;
     if (suggestion.lowConfidenceOverrideRequired && !overrideReason.trim()) {
-      setReviewMessage('Low-confidence diagnosis candidates below 75 percent require override metadata first.');
+      setMessage('Low-confidence diagnosis candidates below 75 percent require override metadata first.');
+      setRouteState('blocked');
       return;
     }
-
-    setSuggestions((current) =>
-      current.map((candidate) => (candidate.suggestionId === suggestionId ? { ...candidate, status: 'accepted' } : candidate))
+    void runAction(`${suggestion.label} moved into Visit Selections through API.`, () =>
+      client.acceptSuggestion(noteId, suggestion.suggestionId, {
+        ...(overrideReason.trim() ? { overrideReason } : {})
+      })
     );
-    setVisitSelections((current) => [...current, { ...suggestion, status: 'accepted' }]);
-    setReviewMessage(`${suggestion.label} moved into Visit Selections for human review.`);
   }
 
-  function removeSuggestion(suggestionId: string) {
-    setSuggestions((current) =>
-      current.map((candidate) => (candidate.suggestionId === suggestionId ? { ...candidate, status: 'removed' } : candidate))
-    );
-    setReviewMessage('Suggestion removed from the candidate list.');
+  function removeSuggestion(suggestion: SuggestionDto) {
+    if (!noteId) return;
+    void runAction('Suggestion removed through API.', () => client.removeSuggestion(noteId, suggestion.suggestionId));
   }
 
   function createHistoryGapTask() {
-    setHistoryGapBlocked(true);
-    setReviewMessage('History Gap question sent to MA follow-up as a signing blocker.');
+    if (!noteId || historyGaps.length === 0) return;
+    const question = historyGaps[0];
+    if (!question) return;
+    void runAction('History Gap question sent to MA follow-up as a signing blocker through API.', () =>
+      client.createHistoryGapTask(noteId, question.historyGapQuestionId, { blocksSigning: true, ownerRole: 'ma' })
+    );
   }
 
-  const panels = [
-    { label: 'Visit Context', state: 'ready', detail: 'Synthetic standalone visit context and disabled integration state.' },
-    { label: 'Visit Controls', state: timerState === 'not_started' ? 'blocked' : 'ready', detail: `Timer: ${timerState}` },
-    { label: 'Note Editor', state: editorUnlocked ? 'ready' : 'blocked', detail: statusText },
-    {
-      label: 'Visit Selections',
-      state: visitSelections.length > 0 ? 'ready' : 'empty',
-      detail: `${visitSelections.length} selected item${visitSelections.length === 1 ? '' : 's'} awaiting human review.`
-    },
-    {
-      label: 'Suggestions',
-      state: suggestions.some((suggestion) => suggestion.status === 'candidate') ? 'ready' : 'empty',
-      detail: `${suggestions.filter((suggestion) => suggestion.status === 'candidate').length} deterministic candidates.`
-    },
-    {
-      label: 'Transcript',
-      state: transcriptSegments.length > 0 ? 'ready' : 'empty',
-      detail: `${transcriptSegments.length} mock segment${transcriptSegments.length === 1 ? '' : 's'} retained indefinitely; ${correctionHistory.length} correction${correctionHistory.length === 1 ? '' : 's'}.`
-    },
-    {
-      label: 'Compliance & Quality Review',
-      state: historyGapBlocked ? 'blocked' : 'warning',
-      detail: historyGapBlocked ? 'Open MA follow-up blocker disables finalize.' : 'No hard block until a blocker task exists.'
-    },
-    {
-      label: 'History Gap Review',
-      state: historyGapBlocked ? 'blocked' : 'ready',
-      detail: historyGapBlocked ? 'MA blocker task is open.' : 'One deterministic question can be routed to MA follow-up.'
+  async function verifyPermissionDeniedState() {
+    setRouteState('loading');
+    try {
+      await supportClient.getDocumentationWorkspace(appointmentId);
+      setRouteState('failed');
+      setMessage('Unexpected support workspace access succeeded.');
+    } catch (error) {
+      setRouteState('permission-denied');
+      setMessage(error instanceof Error ? error.message : 'Support workspace access denied by API.');
     }
-  ];
+  }
+
+  const panelRows = useMemo(() => workspace?.panels ?? [], [workspace]);
+  const transcriptSegments = transcript?.segments ?? workspace?.transcript?.segments ?? [];
+  const correctionCount = transcript?.corrections?.length ?? 0;
+  const providerRuntimeStates = providerStatus?.runtimeStates ?? [];
 
   return (
     <main className="workspace-shell">
@@ -242,18 +244,27 @@ export function WorkspaceClient({ appointmentId }: WorkspaceClientProps) {
           <h1>Workspace Shell</h1>
         </div>
         <nav className="header-nav" aria-label="AURA Note sections">
+          <a href="/aura-note">Runtime Home</a>
           <a href="/aura-note/schedule">Schedule</a>
           <a href="/aura-note/drafts">Draft Notes</a>
           <a href="/aura-note/finalized">Finalized Notes</a>
         </nav>
       </header>
 
-      <section className="workspace-topline">
+      <section className="workspace-topline" aria-live="polite">
         <div>
           <h2>{appointmentId}</h2>
-          <p>safe-patient-demo-001 / Chronic follow-up / clinician-demo-001</p>
+          <p>
+            {workspace?.appointment.safePatientId ?? 'loading'} / {workspace?.appointment.visitType ?? 'loading'} /{' '}
+            {workspace?.appointment.clinicianId ?? 'loading'}
+          </p>
+          <p>{message}</p>
         </div>
         <dl>
+          <div>
+            <dt>Route State</dt>
+            <dd>{routeState}</dd>
+          </div>
           <div>
             <dt>Timer</dt>
             <dd>{timerState}</dd>
@@ -285,12 +296,12 @@ export function WorkspaceClient({ appointmentId }: WorkspaceClientProps) {
         <button type="button" disabled={finalizeDisabled}>
           Finalize Note
         </button>
+        <button type="button" className="secondary-action" onClick={() => void verifyPermissionDeniedState()}>
+          Verify Permission Denied
+        </button>
       </section>
 
       <section className="controls-bar secondary-controls" aria-label="Recording and transcript controls">
-        <button type="button" onClick={requestMicrophonePermission}>
-          Request Microphone
-        </button>
         <button type="button" onClick={demoPermissionDenied}>
           Demo Permission Denied
         </button>
@@ -300,8 +311,11 @@ export function WorkspaceClient({ appointmentId }: WorkspaceClientProps) {
         <button type="button" disabled={recordingState !== 'recording'} onClick={appendMetadataChunk}>
           Append Metadata Chunk
         </button>
-        <button type="button" disabled={recordingChunks.length === 0} onClick={processMockTranscription}>
+        <button type="button" disabled={recordingChunks === 0} onClick={processMockTranscription}>
           Process Mock Transcription
+        </button>
+        <button type="button" disabled={timerState === 'not_started'} onClick={requestDisabledLiveProvider}>
+          Verify Live Provider Disabled
         </button>
         <button type="button" disabled={transcriptSegments.length === 0} onClick={correctFirstTranscriptSegment}>
           Correct Transcript
@@ -309,49 +323,61 @@ export function WorkspaceClient({ appointmentId }: WorkspaceClientProps) {
         <button type="button" disabled={!editorUnlocked} onClick={appendTranscript}>
           Append Mock Transcript
         </button>
-        <span>{exceptionReason || 'No recording exception active'}</span>
       </section>
 
       <section className="status-band" aria-label="Audio capture and transcription status">
         <div>
           <h2>Audio Capture Candidate</h2>
           <p>
-            Browser microphone access requires explicit user action. This WO-040 route stores metadata-only chunks, keeps raw PHI audio
-            payload storage disabled, and uses deterministic mock transcription only.
+            Browser microphone and transcription controls write metadata through API endpoints. Live provider calls and raw
+            PHI audio storage remain disabled.
           </p>
         </div>
         <dl>
-          <div>
-            <dt>Microphone</dt>
-            <dd>{microphoneState}</dd>
-          </div>
           <div>
             <dt>Transport</dt>
             <dd>metadata_only_synthetic</dd>
           </div>
           <div>
             <dt>Chunks</dt>
-            <dd>{recordingChunks.length}</dd>
+            <dd>{recordingChunks}</dd>
+          </div>
+          <div>
+            <dt>Microphone permission</dt>
+            <dd>{microphonePermissionState}</dd>
           </div>
           <div>
             <dt>Provider</dt>
-            <dd>{transcriptionStatus}</dd>
+            <dd>{providerStatus?.mode ?? 'mock_only'}</dd>
+          </div>
+          <div>
+            <dt>Provider boundary</dt>
+            <dd>{providerStatus?.providerBoundary ?? 'server_side_adapter'}</dd>
+          </div>
+          <div>
+            <dt>Retry policy</dt>
+            <dd>{providerStatus?.retryPolicy ? `${providerStatus.retryPolicy.maxAttempts} attempts / ${providerStatus.retryPolicy.deadLetterState}` : '3 attempts / dead_lettered_metadata_only'}</dd>
           </div>
           <div>
             <dt>Raw audio retention</dt>
-            <dd>one week / raw payload disabled</dd>
+            <dd>{workspace?.rawAudioRetention ? `${workspace.rawAudioRetention.retentionClass} until ${workspace.rawAudioRetention.purgeAfter}` : 'one_week'}</dd>
           </div>
           <div>
             <dt>Transcript retention</dt>
-            <dd>indefinite</dd>
+            <dd>{transcript?.retentionPolicy ?? 'indefinite'}</dd>
           </div>
         </dl>
+        <section className="state-grid" aria-label="Transcription runtime states">
+          {providerRuntimeStates.map((state) => (
+            <span key={state}>{state}</span>
+          ))}
+        </section>
       </section>
 
       <section className="review-board" aria-label="Suggestions and review panels" aria-live="polite">
         <article>
           <h2>Suggestions</h2>
-          <p>{reviewMessage}</p>
+          <p>Suggestions are deterministic API candidates and require human review.</p>
           <label>
             Override Reason
             <input
@@ -360,7 +386,11 @@ export function WorkspaceClient({ appointmentId }: WorkspaceClientProps) {
               placeholder="Required for diagnosis suggestions under 75 percent"
             />
           </label>
+          <button type="button" onClick={evaluateSuggestions}>
+            Evaluate Suggestions
+          </button>
           <div className="suggestion-list">
+            {suggestions.length === 0 ? <p>No suggestions returned yet.</p> : null}
             {suggestions.map((suggestion) => (
               <div key={suggestion.suggestionId} className="suggestion-row">
                 <div>
@@ -369,10 +399,10 @@ export function WorkspaceClient({ appointmentId }: WorkspaceClientProps) {
                     {suggestion.category} / {Math.round(suggestion.confidence * 100)}% / {suggestion.status}
                   </span>
                 </div>
-                <button type="button" disabled={suggestion.status !== 'candidate'} onClick={() => acceptSuggestion(suggestion.suggestionId)}>
+                <button type="button" disabled={suggestion.status !== 'candidate'} onClick={() => acceptSuggestion(suggestion)}>
                   Accept
                 </button>
-                <button type="button" disabled={suggestion.status !== 'candidate'} onClick={() => removeSuggestion(suggestion.suggestionId)}>
+                <button type="button" disabled={suggestion.status !== 'candidate'} onClick={() => removeSuggestion(suggestion)}>
                   Remove
                 </button>
               </div>
@@ -385,7 +415,7 @@ export function WorkspaceClient({ appointmentId }: WorkspaceClientProps) {
           <div className="selection-list">
             {visitSelections.length === 0 ? <p>No selected items yet.</p> : null}
             {visitSelections.map((selection) => (
-              <span key={selection.suggestionId}>
+              <span key={selection.visitSelectionId}>
                 {selection.category}: {selection.label}
               </span>
             ))}
@@ -396,7 +426,7 @@ export function WorkspaceClient({ appointmentId }: WorkspaceClientProps) {
           <h2>Transcript Segments</h2>
           {transcriptSegments.length === 0 ? <p>No transcript segments yet.</p> : null}
           {transcriptSegments.map((segment) => (
-            <div key={`${segment.sequence}-${segment.text}`} className="suggestion-row">
+            <div key={segment.transcriptSegmentId} className="suggestion-row">
               <div>
                 <strong>{segment.speakerLabel ?? segment.speakerRole}</strong>
                 <span>
@@ -407,12 +437,13 @@ export function WorkspaceClient({ appointmentId }: WorkspaceClientProps) {
               <p>{segment.text}</p>
             </div>
           ))}
+          <small>{correctionCount} correction{correctionCount === 1 ? '' : 's'} recorded.</small>
         </article>
 
         <article>
           <h2>History Gap Review</h2>
-          <p>Confirm whether the synthetic follow-up history supports the selected diagnosis candidate.</p>
-          <button type="button" disabled={historyGapBlocked} onClick={createHistoryGapTask}>
+          <p>{historyGaps[0]?.question ?? 'No history gap questions returned yet.'}</p>
+          <button type="button" disabled={historyGaps.length === 0 || compliance?.finalizeDisabled} onClick={createHistoryGapTask}>
             Send to MA as Blocker
           </button>
         </article>
@@ -429,24 +460,48 @@ export function WorkspaceClient({ appointmentId }: WorkspaceClientProps) {
             rows={14}
             value={
               editorUnlocked
-                ? 'Synthetic editor scaffold is available. Clinical note drafting depth is intentionally deferred.'
-                : statusText
+                ? 'Synthetic editor scaffold is available from API-backed visit state. Clinical note drafting depth remains human-reviewed.'
+                : workspace?.editorLockedReason ?? 'Editor locked until Start Visit runs the timer or a recording exception is approved.'
             }
             readOnly
           />
         </article>
 
         <aside className="workspace-panels" aria-label="Workspace panels">
-          {panels.map((panel) => (
-            <article key={panel.label} className={`panel-row state-${panel.state}`}>
+          {panelRows.map((panel) => (
+            <article key={panel.panelId} className={`panel-row state-${panel.state}`}>
               <div>
                 <strong>{panel.label}</strong>
                 <span>{panel.state}</span>
               </div>
-              <p>{panel.detail}</p>
+              <p>{panel.blockedReason ?? `${panel.itemCount} API-backed item${panel.itemCount === 1 ? '' : 's'}.`}</p>
+            </article>
+          ))}
+          {(compliance?.issues ?? []).map((issue) => (
+            <article key={issue.complianceIssueId} className={`panel-row state-${issue.blocksFinalize ? 'blocked' : 'ready'}`}>
+              <div>
+                <strong>{issue.title}</strong>
+                <span>{issue.severity}</span>
+              </div>
+              <p>{issue.detail}</p>
             </article>
           ))}
         </aside>
+      </section>
+
+      <section className="status-band" aria-label="Workspace route state coverage">
+        <div>
+          <h2>API-Backed Route States</h2>
+          <p>Workspace route state is loaded from API DTOs; local state is limited to transient controls and form text.</p>
+        </div>
+        <dl>
+          {routeStates.map((state) => (
+            <div key={state}>
+              <dt>{state}</dt>
+              <dd>{state === routeState ? 'active' : 'covered'}</dd>
+            </div>
+          ))}
+        </dl>
       </section>
     </main>
   );

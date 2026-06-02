@@ -190,6 +190,21 @@ export function createSyntheticClinicOsStatus(
         permissionBoundary: 'aura_note_authoritative'
       }
     ],
+    modeAdapterBoundaries: [
+      {
+        seam: 'visitGraph',
+        displayName: 'VisitGraph context',
+        sourceOfTruth: 'clinicos',
+        adapterStatus: 'mock_available',
+        permissionBoundary: 'aura_note_authoritative',
+        liveDelegationEnabled: false,
+        rawPayloadStorageEnabled: false,
+        humanReviewRequired: true,
+        writesFailClosed: false,
+        notes: 'Synthetic ClinicOS mock mode is metadata-only.',
+        clinicOsModuleId: 'M03'
+      }
+    ],
     permissionsStillEnforcedByAuraNote: true,
     rawPayloadsStored: false,
     liveClinicOsSyncEnabled: false,

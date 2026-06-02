@@ -348,3 +348,60 @@ The runtime boundary records local redacted structured log evidence only. It doe
 - Identity accepted/denied decisions are recorded in local redacted structured runtime logs as `identity.accepted` and `identity.denied`.
 
 The identity boundary does not emit durable tenant-owned identity events yet. Durable `identity.runtime_accepted.v1` or `identity.runtime_denied.v1` event persistence is deferred until a later observability/audit runtime work order promotes request-boundary logs into durable audit/event storage. No raw tokens, secrets, SAML assertions, OIDC claims payloads, production IdP responses, ClinicOS delegated identity payloads, or PHI are logged or returned.
+
+## WO-067 ModeResolver and adapter-boundary event evidence
+
+`WO-067` extends the existing ClinicOS status, mapping, and publication contracts with `AuraModeAdapterBoundary` / `modeAdapterBoundaries` response metadata. The boundary metadata covers schedule source, patient context, VisitGraph, tasks, audit, AI governance, Charge Integrity, EHR, export, and identity seams and records `permissionBoundary='aura_note_authoritative'`, `liveDelegationEnabled=false`, `rawPayloadStorageEnabled=false`, and `humanReviewRequired=true`.
+
+The existing event family remains the source of runtime evidence: `clinicos.mode_resolved.v1`, `clinicos.mapping_recorded.v1`, `clinicos.mapping_stale_detected.v1`, `clinicos.event_published.v1`, `clinicos.event_publication_failed.v1`, `clinicos.permission_denied.v1`, and `clinicos.unavailable.v1`. `WO-067` payloads add audit-safe fields such as `modeAdapterBoundaryCount`, `liveDelegationEnabled=false`, and `rawPayloadStorageEnabled=false`. They must not include raw ClinicOS payloads, event-bus messages, transcripts, final-note text, billing details, coaching output, identity tokens, credentials, production URLs, charge finalization, medical-necessity determinations, or claim submission evidence.
+
+## WO-068 transcription runtime boundary contracts
+
+`WO-068` extends the transcription API/event surface while keeping live provider calls disabled:
+
+- `GET /documentation-workspace/appointments/{appointmentId}/transcription/provider-status` returns server-side adapter status, retry/dead-letter metadata, raw-audio one-week retention posture, indefinite transcript retention posture, and documented runtime states.
+- `POST /documentation-workspace/appointments/{appointmentId}/transcription/jobs/mock` processes deterministic mock transcription from metadata-only chunks.
+- `POST /documentation-workspace/appointments/{appointmentId}/transcription/jobs/disabled-live-provider` records a fail-closed live-provider request with `liveProviderCalled=false`.
+
+New event stubs are `recording.chunk_authorized.v1`, `recording.chunk_denied.v1`, `transcription.job_requested.v1`, `transcription.job_denied.v1`, `transcription.provider_disabled.v1`, `transcription.provider_unavailable.v1`, `transcription.segment_received.v1`, and `transcription.correction_recorded.v1`. Existing runtime events remain `microphone.permission_recorded.v1`, `recording.chunk_received.v1`, `raw_audio.retention_scheduled.v1`, `transcription.provider_status_checked.v1`, `transcription.job_queued.v1`, `transcription.job_processed.v1`, `transcription.job_failed.v1`, `transcript.segment_appended.v1`, and `transcript.segment_corrected.v1`.
+
+Payloads are audit-safe metadata only. They must not include raw audio, transcript text except through existing transcript DTO access policy, credentials, live provider payloads, production URLs, autonomous diagnosis/coding/billing evidence, charge finalization, medical-necessity determinations, or claim submission evidence.
+
+## WO-069 EHR sandbox runtime boundary contracts
+
+`WO-069` extends the EHR runtime API/event surface while keeping live EHR calls and live writeback disabled:
+
+- `GET /integrations/ehr/runtime-boundary` returns vendor-neutral adapter metadata, athenahealth-first sandbox posture, credential-disabled evidence, runtime states, supported writeback targets, retry/dead-letter policy, and no-live/no-raw-payload flags.
+- `GET /integrations/ehr/patients/search` returns synthetic sandbox patient lookup metadata and does not expose raw vendor payloads or production identifiers.
+- `GET /integrations/ehr/appointments/import` returns synthetic appointment-import metadata with `localAppointmentCreated=false` until a later work order authorizes durable import behavior.
+- `GET /integrations/ehr/encounters/{externalEncounterId}` returns synthetic encounter/chart-context slice metadata only.
+- `POST /integrations/ehr/writeback-queue/{writebackJobId}/actions` now supports `deny`, `prepare_payload`, `record_attempt`, and `acknowledge` in addition to the existing approval/retry/dead-letter/reconciliation actions.
+
+New event types are `ehr.config_reviewed.v1`, `ehr.credential_disabled.v1`, `ehr.patient_lookup_performed.v1`, `ehr.appointment_imported.v1`, `ehr.encounter_context_loaded.v1`, `ehr.writeback_payload_prepared.v1`, `ehr.writeback_denied.v1`, `ehr.writeback_attempt_recorded.v1`, and `ehr.writeback_acknowledged.v1`.
+
+Payloads are audit-safe metadata only. They must not include raw EHR payloads, production patient identifiers, final-note text, transcript text, billing details, credentials, production URLs, autonomous finalization evidence, charge finalization, medical-necessity determinations, or claim submission evidence.
+
+## WO-070 AI runtime governance boundary contracts
+
+`WO-070` extends the AI Gateway runtime API/event surface while keeping live external AI disabled:
+
+- `GET /ai-gateway/runtime-boundary` returns provider boundary metadata, mock-only gateway mode, disabled live-model and raw-PHI-to-external-AI flags, prompt/model/evaluation counts, prohibited-behavior coverage, source-freshness states, drift placeholder, schema-validation requirement, source-evidence requirement, and human-review gate evidence.
+- `POST /ai-gateway/evaluations/run` now returns regression-block count, prohibited-behavior coverage, source-freshness statuses, schema-validation status, confidence, and blocked-behavior metadata for deterministic synthetic evaluation cases.
+- `POST /ai-gateway/outputs/validate` now returns schema-validation status, source-freshness status, confidence, and blocked-behavior metadata in addition to accepted/rejected status and unsafe reasons.
+- `POST /ai-gateway/mock-invocations` records explicit `ai.request_denied.v1` metadata when raw PHI is rejected and continues to record scrubbed context and human-review-required evidence when explicit redaction is used.
+
+New or expanded AI event types are `ai.runtime_boundary_checked.v1`, `ai.prompt_model_reviewed.v1`, `ai.context_package_created.v1`, `ai.request_denied.v1`, `ai.output_validated.v1`, `ai.human_review_required.v1`, `ai.regression_blocked.v1`, and `ai.incident_metadata_recorded.v1`, alongside the existing request-prepared, context-scrubbed, PHI-rejected, response-recorded, output-rejected, prompt/model config, and evaluation-run events.
+
+Payloads are audit-safe metadata only. They must not include raw prompts, raw model responses, note text, transcript text, raw EHR/ClinicOS payloads, credentials, production URLs, final diagnosis/code/charge behavior, medical-necessity determinations, orders, claim submissions, or patient-facing financial conclusions.
+
+## WO-071 through WO-075 CR-4 commercial readiness contracts
+
+`WO-071` through `WO-075` add the CR-4 commercial readiness review API surface while keeping production launch disabled:
+
+- `GET /support/commercial-readiness` returns `CommercialReadinessResponse`, including security/privacy/compliance, observability/support/incident operations, billing/revenue integrity, beta-pilot package, and commercial decision-gate sections.
+- Each section records `productionLaunchReady=false`, `liveVendorEnabled=false`, `phiSafe=true`, required states, missing approvals, and evidence references.
+- The final decision gate records completed work orders `WO-071` through `WO-075`, Figma readiness, beta-package readiness, commercial-review readiness, required final review roles, and live-vendor decision requirements.
+
+New event types are `security.privacy_review_checked.v1`, `threat_model.reviewed.v1`, `support.incident_taxonomy_checked.v1`, `billing.revenue_integrity_checked.v1`, `beta.pilot_package_checked.v1`, and `commercial.readiness_decision_checked.v1`.
+
+Payloads are audit-safe metadata only. They must not include PHI-bearing support content, raw logs, credentials, vendor payloads, final clinical/coding/billing determinations, claim submissions, certification claims, or production launch approval.

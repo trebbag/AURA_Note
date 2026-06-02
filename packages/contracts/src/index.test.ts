@@ -7,6 +7,7 @@ import {
   type AiContextPackageDto,
   type AiEvaluationRunResponseDto,
   type AiGatewayInvocationResponseDto,
+  type AiRuntimeBoundaryResponseDto,
   type AiGatewayStatusDto,
   type AiOutputValidationResponseDto,
   type AuditExportResponseDto,
@@ -17,14 +18,19 @@ import {
   type ClinicOsMapVisitResponseDto,
   type CoachingDashboardDto,
   type CoachingReportDto,
+  type CommercialReadinessResponseDto,
   type ComplianceReviewDto,
   type GovernedFeatureFlagDto,
   type RecordingChunkResponseDto,
   type RecordingPermissionResponseDto,
   type DocumentationWorkspaceDto,
   type DraftNoteSummaryDto,
+  type EhrAppointmentImportResponseDto,
   type EhrChartContextPackageDto,
+  type EhrEncounterContextResponseDto,
   type EhrIntegrationStatusDto,
+  type EhrPatientLookupResponseDto,
+  type EhrRuntimeBoundaryResponseDto,
   type EhrWritebackQueueActionResponseDto,
   type EhrWritebackQueueResponseDto,
   type ExportActionResponseDto,
@@ -671,6 +677,87 @@ describe('support hardening contracts', () => {
     assert.equal(evidence.evidence.launchReadinessClaimed, false);
   });
 
+  it('represents CR-4 commercial readiness review evidence without launch approval', () => {
+    const response: CommercialReadinessResponseDto = {
+      readiness: {
+        checkpoint: 'CR-4',
+        status: 'review_ready_synthetic',
+        generatedAt: '2026-06-01T18:00:00.000Z',
+        traceId: 'trace-commercial-001',
+        productionLaunchReady: false,
+        sections: [
+          {
+            sectionId: 'security_privacy_compliance',
+            workOrder: 'WO-071',
+            title: 'Security, Privacy, Compliance, And Threat Model',
+            status: 'review_ready',
+            states: ['empty', 'loading', 'ready', 'saving', 'blocked', 'failed', 'permission-denied', 'read-only', 'demo fixture'],
+            checklist: [
+              {
+                itemId: 'threat-model',
+                label: 'Threat model package',
+                status: 'ready_synthetic',
+                evidence: 'docs/SECURITY_PRIVACY_COMPLIANCE_THREAT_MODEL.md',
+                ownerRole: 'security',
+                productionLaunchBlocker: true
+              }
+            ],
+            missingApprovals: ['formal security approval'],
+            productionLaunchReady: false,
+            liveVendorEnabled: false,
+            phiSafe: true
+          }
+        ],
+        decisionGate: {
+          checkpoint: 'CR-4',
+          status: 'review_ready_synthetic',
+          completedWorkOrders: ['WO-071', 'WO-072', 'WO-073', 'WO-074', 'WO-075'],
+          figmaReady: true,
+          betaPilotPackageReady: true,
+          commercialReviewReady: true,
+          productionLaunchReady: false,
+          noActiveSpecGaps: true,
+          liveVendorDecisionRequired: true,
+          finalReviewRoles: ['founder', 'clinical', 'compliance_privacy', 'security']
+        },
+        disabledCapabilities: ['claim_submission', 'live_external_ai'],
+        requiredApprovals: ['founder approval', 'clinical approval', 'compliance/privacy approval', 'security approval'],
+        nextStep: 'Founder review of CR-4 decision packet'
+      },
+      auditEvent: {
+        auditEventId: 'audit-commercial-001',
+        tenantId: 'tenant-001',
+        action: 'commercial.readiness_check',
+        entityType: 'CommercialReadiness',
+        entityId: 'CR-4',
+        traceId: 'trace-commercial-001',
+        createdAt: '2026-06-01T18:00:00.000Z'
+      },
+      domainEvents: [
+        createEventEnvelope({
+          eventId: 'evt-commercial-001',
+          eventType: 'commercial.readiness_decision_checked.v1',
+          tenantId: 'tenant-001',
+          siteId: 'site-001',
+          producer: 'aura-note-api',
+          traceId: 'trace-commercial-001',
+          idempotencyKey: 'idem-commercial-001',
+          sensitivity: 'restricted',
+          retentionClass: 'audit',
+          payload: {
+            productionLaunchReady: false
+          }
+        })
+      ]
+    };
+
+    assert.equal(response.readiness.checkpoint, 'CR-4');
+    assert.equal(response.readiness.productionLaunchReady, false);
+    assert.equal(response.readiness.sections[0]?.productionLaunchReady, false);
+    assert.equal(response.readiness.decisionGate.completedWorkOrders.includes('WO-075'), true);
+    assert.equal(response.readiness.decisionGate.liveVendorDecisionRequired, true);
+  });
+
   it('represents redacted metadata-only audit export requests', () => {
     const response: AuditExportResponseDto = {
       auditExport: {
@@ -784,9 +871,33 @@ describe('AI gateway contracts', () => {
           syntheticOnly: true,
           expectedPromptId: 'aura-note-suggestions-v1',
           sourceEvidenceIds: ['evidence-001'],
-          expectedValidationStatus: 'accepted'
+          expectedValidationStatus: 'accepted',
+          expectedRiskLabel: 'moderate',
+          expectedSourceFreshnessStatus: 'current'
         }
       ],
+      runtimeBoundary: {
+        providerBoundary: 'server_side_ai_gateway',
+        gatewayMode: 'mock_only',
+        liveModelCallsEnabled: false,
+        liveModelCredentialPresent: false,
+        rawPhiToExternalAiAllowed: false,
+        productionPromptStoreEnabled: false,
+        privateBaaPathwayApproved: false,
+        driftMonitoringEnabled: false,
+        driftMonitoringStatus: 'placeholder_disabled',
+        supportedRuntimeStates: ['disabled', 'configured', 'degraded', 'failed', 'source_stale', 'scrubbed', 'phi_rejected', 'output_validation_failed', 'unsafe_output_rejected', 'human_review_required', 'permission_denied', 'read_only', 'loading', 'empty', 'ready', 'demo_fixture'],
+        promptRegistryCount: 1,
+        modelConfigurationCount: 1,
+        evaluationCaseCount: 15,
+        prohibitedBehaviorCoverage: ['claim_submission', 'medical_necessity_determination', 'source_stale'],
+        sourceFreshnessStatuses: ['current', 'stale'],
+        humanReviewGate: 'required_before_use',
+        schemaValidationRequired: true,
+        sourceEvidenceRequired: true,
+        syntheticOnly: true,
+        reviewedAt: '2026-06-01T16:00:00.000Z'
+      },
       liveModelCredentialPresent: false,
       rawPhiToExternalAiAllowed: false,
       humanReviewRequiredForAllOutputs: true
@@ -796,6 +907,60 @@ describe('AI gateway contracts', () => {
     assert.equal(status.promptRegistry[0]?.humanReviewRequired, true);
     assert.equal(status.modelConfigurations?.[0]?.liveInvocationEnabled, false);
     assert.equal(status.rawPhiToExternalAiAllowed, false);
+    assert.equal(status.runtimeBoundary?.providerBoundary, 'server_side_ai_gateway');
+  });
+
+  it('represents the W070 AI runtime boundary response', () => {
+    const boundary: AiRuntimeBoundaryResponseDto = {
+      runtimeBoundary: {
+        providerBoundary: 'server_side_ai_gateway',
+        gatewayMode: 'mock_only',
+        liveModelCallsEnabled: false,
+        liveModelCredentialPresent: false,
+        rawPhiToExternalAiAllowed: false,
+        productionPromptStoreEnabled: false,
+        privateBaaPathwayApproved: false,
+        driftMonitoringEnabled: false,
+        driftMonitoringStatus: 'placeholder_disabled',
+        supportedRuntimeStates: ['disabled', 'configured', 'degraded', 'failed', 'source_stale', 'scrubbed', 'phi_rejected', 'output_validation_failed', 'unsafe_output_rejected', 'human_review_required', 'permission_denied', 'read_only', 'loading', 'empty', 'ready', 'demo_fixture'],
+        promptRegistryCount: 5,
+        modelConfigurationCount: 3,
+        evaluationCaseCount: 15,
+        prohibitedBehaviorCoverage: ['unsupported_diagnosis_finalization', 'code_finalization', 'charge_finalization', 'claim_submission', 'medical_necessity_determination', 'order_placement', 'patient_financial_conclusion', 'unsafe_coaching', 'unsupported_payer_language', 'source_stale'],
+        sourceFreshnessStatuses: ['current', 'stale'],
+        humanReviewGate: 'required_before_use',
+        schemaValidationRequired: true,
+        sourceEvidenceRequired: true,
+        syntheticOnly: true,
+        reviewedAt: '2026-06-01T16:00:00.000Z'
+      },
+      auditEvent: {
+        auditEventId: 'audit-ai-runtime-001',
+        tenantId: 'tenant-001',
+        action: 'ai.runtime_boundary_checked',
+        entityType: 'AiGatewayRuntimeBoundary',
+        entityId: 'ai-runtime-boundary-v1',
+        traceId: 'trace-ai-runtime-001',
+        createdAt: '2026-06-01T16:00:00.000Z'
+      },
+      domainEvents: [
+        createEventEnvelope({
+          eventId: 'evt-ai-runtime-001',
+          eventType: 'ai.runtime_boundary_checked.v1',
+          tenantId: 'tenant-001',
+          siteId: 'site-001',
+          producer: 'aura-note-api',
+          traceId: 'trace-ai-runtime-001',
+          idempotencyKey: 'idem-ai-runtime-001',
+          sensitivity: 'restricted',
+          retentionClass: 'audit',
+          payload: { liveModelCallsEnabled: false }
+        })
+      ]
+    };
+
+    assert.equal(boundary.runtimeBoundary.liveModelCallsEnabled, false);
+    assert.equal(boundary.domainEvents[0]?.eventType, 'ai.runtime_boundary_checked.v1');
   });
 
   it('represents an invocation with deidentified context and governance events', () => {
@@ -896,6 +1061,9 @@ describe('AI gateway contracts', () => {
           policyMode: 'mock_only',
           validationStatus: 'accepted',
           riskLabel: 'moderate',
+          schemaValidationStatus: 'valid',
+          sourceFreshnessStatus: 'current',
+          confidence: 0.86,
           humanReviewRequired: true,
           sourceEvidenceIds: ['evidence-001'],
           unsafeReasons: [],
@@ -909,6 +1077,9 @@ describe('AI gateway contracts', () => {
       ],
       allPassed: true,
       liveModelCalled: false,
+      regressionBlockedCount: 0,
+      prohibitedBehaviorCoverage: [],
+      sourceFreshnessStatuses: ['current'],
       auditEvent: {
         auditEventId: 'audit-ai-eval-001',
         tenantId: 'tenant-001',
@@ -937,9 +1108,13 @@ describe('AI gateway contracts', () => {
       validation: {
         validationStatus: 'rejected',
         riskLabel: 'unsafe',
+        schemaValidationStatus: 'invalid',
+        sourceFreshnessStatus: 'current',
+        confidence: 0.41,
         unsafeReasons: ['prohibited autonomous action requested'],
         prohibitedActionDetected: true,
         rawPhiDetected: false,
+        blockedBehavior: 'claim_submission',
         humanReviewRequired: true
       },
       auditEvent: {
@@ -976,6 +1151,123 @@ describe('AI gateway contracts', () => {
 });
 
 describe('EHR adapter contracts', () => {
+  it('represents W069 runtime boundary, patient lookup, appointment import, and encounter context metadata', () => {
+    const boundary: EhrRuntimeBoundaryResponseDto = {
+      boundary: {
+        adapterBoundary: 'vendor_neutral_ehr_adapter',
+        primaryVendor: 'athenahealth',
+        vendorNeutralInterface: true,
+        tenantId: 'tenant-001',
+        siteId: 'site-001',
+        mode: 'sandbox',
+        credentialState: 'disabled',
+        credentialReference: 'credential-ref-disabled-synthetic',
+        liveApiCallsEnabled: false,
+        liveWritebackEnabled: false,
+        rawPayloadStorageEnabled: false,
+        sandboxFixtureOnly: true,
+        patientLookupSupported: true,
+        appointmentImportSupported: true,
+        encounterContextSupported: true,
+        chartContextSlicesSupported: ['demographics', 'encounter', 'appointment', 'problems'],
+        writebackTargetsSupported: ['final_note', 'patient_summary'],
+        runtimeStates: ['disabled', 'configured', 'degraded', 'failed', 'approval_required', 'denied', 'pending', 'delivered', 'dead_lettered', 'reconciliation_needed', 'permission_denied', 'read_only', 'loading', 'empty', 'ready', 'demo_fixture'],
+        retryPolicy: {
+          maxAttempts: 3,
+          retryDelaySeconds: 900,
+          deadLetterAfterAttempts: 3,
+          reconciliationRequiredAfterAcknowledgement: true
+        },
+        approvalPolicy: {
+          humanApprovalRequired: true,
+          supportMetadataOnly: true,
+          clinicOsCannotBypassAuraPermissions: true
+        },
+        warnings: ['Sandbox fixtures only; no live EHR calls are made.']
+      },
+      auditEvent: {
+        auditEventId: 'audit-ehr-runtime-001',
+        tenantId: 'tenant-001',
+        action: 'ehr.runtime_boundary_reviewed',
+        entityType: 'EhrRuntimeBoundary',
+        entityId: 'athenahealth',
+        traceId: 'trace-ehr-runtime-001',
+        createdAt: '2026-06-01T16:20:00.000Z'
+      },
+      domainEvents: [
+        createEventEnvelope({
+          eventId: 'evt-ehr-config-001',
+          eventType: 'ehr.config_reviewed.v1',
+          tenantId: 'tenant-001',
+          siteId: 'site-001',
+          producer: 'aura-note-api',
+          traceId: 'trace-ehr-runtime-001',
+          idempotencyKey: 'idem-ehr-runtime-001',
+          sensitivity: 'restricted',
+          retentionClass: 'audit',
+          payload: { vendor: 'athenahealth', liveApiCallsEnabled: false, rawPayloadStorageEnabled: false }
+        })
+      ]
+    };
+    const patientLookup: EhrPatientLookupResponseDto = {
+      results: [
+        {
+          safePatientId: 'safe-patient-synthetic-001',
+          externalPatientRef: 'athena-patient-ref-synthetic-001',
+          sourceSystem: 'athenahealth',
+          displayLabel: 'Synthetic patient record',
+          matchConfidence: 0.96,
+          source: 'athenahealth_sandbox'
+        }
+      ],
+      runtimeBoundary: boundary.boundary,
+      auditEvent: boundary.auditEvent,
+      domainEvents: boundary.domainEvents
+    };
+    const appointmentImport: EhrAppointmentImportResponseDto = {
+      appointments: [
+        {
+          externalAppointmentId: 'athena-appointment-synthetic-001',
+          safePatientId: 'safe-patient-synthetic-001',
+          externalPatientRef: 'athena-patient-ref-synthetic-001',
+          clinicianId: 'clinician-synthetic-001',
+          startsAt: '2026-05-26T14:00:00.000Z',
+          durationMinutes: 30,
+          visitType: 'Chronic follow-up',
+          sourceSystem: 'athenahealth',
+          importMode: 'sandbox_metadata_only',
+          localAppointmentCreated: false
+        }
+      ],
+      runtimeBoundary: boundary.boundary,
+      auditEvent: boundary.auditEvent,
+      domainEvents: boundary.domainEvents
+    };
+    const encounterContext: EhrEncounterContextResponseDto = {
+      encounter: {
+        externalEncounterId: 'athena-encounter-synthetic-001',
+        externalAppointmentId: 'athenahealth-appointment-synthetic-001',
+        safePatientId: 'safe-patient-synthetic-001',
+        externalPatientRef: 'athenahealth-patient-ref-synthetic-001',
+        visitType: 'Chronic follow-up',
+        sourceSystem: 'athenahealth',
+        status: 'open',
+        contextMode: 'sandbox_metadata_only',
+        rawPayloadStored: false
+      },
+      runtimeBoundary: boundary.boundary,
+      auditEvent: boundary.auditEvent,
+      domainEvents: boundary.domainEvents
+    };
+
+    assert.equal(boundary.boundary.adapterBoundary, 'vendor_neutral_ehr_adapter');
+    assert.equal(boundary.boundary.liveApiCallsEnabled, false);
+    assert.equal(patientLookup.results[0]?.source, 'athenahealth_sandbox');
+    assert.equal(appointmentImport.appointments[0]?.localAppointmentCreated, false);
+    assert.equal(encounterContext.encounter.rawPayloadStored, false);
+    assert.equal(boundary.domainEvents[0]?.eventType, 'ehr.config_reviewed.v1');
+  });
+
   it('represents disabled-safe standalone EHR status', () => {
     const status: EhrIntegrationStatusDto = {
       status: {
@@ -1074,7 +1366,7 @@ describe('EHR adapter contracts', () => {
         sandboxMode: 'sandbox',
         liveProductionWritebackEnabled: false,
         payloadsExcluded: true,
-        states: ['disabled', 'pending_approval', 'approved', 'queued', 'retrying', 'failed', 'dead_lettered', 'reconciled'],
+        states: ['disabled', 'pending_approval', 'denied', 'approved', 'prepared', 'attempted', 'acknowledged', 'queued', 'retrying', 'failed', 'dead_lettered', 'reconciled'],
         warnings: ['Writeback queue contains audit-safe metadata only.']
       },
       auditEvent: {
@@ -1151,6 +1443,21 @@ describe('ClinicOS adapter contracts', () => {
           permissionBoundary: 'aura_note_authoritative'
         }
       ],
+      modeAdapterBoundaries: [
+        {
+          seam: 'identity',
+          displayName: 'Identity context',
+          sourceOfTruth: 'aura_note',
+          adapterStatus: 'standalone_authoritative',
+          permissionBoundary: 'aura_note_authoritative',
+          liveDelegationEnabled: false,
+          rawPayloadStorageEnabled: false,
+          humanReviewRequired: true,
+          writesFailClosed: true,
+          notes: 'Standalone AURA Note remains authoritative.',
+          clinicOsModuleId: 'M17'
+        }
+      ],
       mappings: [],
       publishedEvents: [],
       permissionsStillEnforcedByAuraNote: true,
@@ -1172,6 +1479,7 @@ describe('ClinicOS adapter contracts', () => {
     assert.equal(status.modeContext.hostMode, 'standalone');
     assert.equal(status.permissionsStillEnforcedByAuraNote, true);
     assert.equal(status.rawPayloadsStored, false);
+    assert.equal(status.modeAdapterBoundaries[0]?.liveDelegationEnabled, false);
   });
 
   it('represents VisitGraph and M17 mapping records for mock ClinicOS mode', () => {
@@ -1876,7 +2184,19 @@ describe('audio capture and transcription contracts', () => {
         baaRequiredBeforeLiveUse: true,
         supportsDiarization: false,
         speakerLabelMode: 'placeholder',
-        confidenceMetadataAvailable: true
+        confidenceMetadataAvailable: true,
+        providerBoundary: 'server_side_adapter',
+        credentialState: 'not_configured',
+        runtimeStates: ['ready', 'provider_unavailable', 'diarization_degraded', 'correction_history'],
+        retryPolicy: {
+          maxAttempts: 3,
+          retryableStates: ['upload_interrupted', 'provider_unavailable'],
+          deadLetterState: 'dead_lettered_metadata_only'
+        },
+        rawAudioRetentionPolicy: 'one_week',
+        transcriptRetentionPolicy: 'indefinite',
+        rawAudioPayloadStorageEnabled: false,
+        diarizationState: 'placeholder_degraded'
       },
       segments: [
         {

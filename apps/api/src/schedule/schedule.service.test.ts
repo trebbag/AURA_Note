@@ -319,6 +319,10 @@ describe('ScheduleService', () => {
 
     const job = service.processMockTranscriptionJob(appointment.appointmentId, clinician);
     assert.equal(job.data.transcriptionJob.liveProviderCalled, false);
+    assert.equal(job.data.providerStatus.providerBoundary, 'server_side_adapter');
+    assert.equal(job.data.providerStatus.rawAudioPayloadStorageEnabled, false);
+    assert.equal(job.data.providerStatus.runtimeStates?.includes('provider_unavailable'), true);
+    assert.equal(job.data.providerStatus.retryPolicy?.deadLetterState, 'dead_lettered_metadata_only');
     assert.equal(job.data.transcript.segments[0]?.sourceChunkId, chunk.data.recordingChunk.chunkId);
     assert.equal(job.data.transcript.segments[0]?.confidence, 0.91);
 
@@ -333,6 +337,27 @@ describe('ScheduleService', () => {
     );
     assert.equal(corrected.data.correction.auditSafe, true);
     assert.equal(corrected.data.transcript.corrections?.length, 1);
+  });
+
+  it('fails closed for disabled live transcription provider requests without calling a vendor', () => {
+    const service = new ScheduleService();
+    const appointment = service
+      .createAppointment(createRequest, service.createRequestContext({ 'x-aura-role': 'ma' }))
+      .data.appointment;
+    const clinician = service.createRequestContext({ 'x-aura-role': 'clinician' });
+
+    service.startVisit(appointment.appointmentId, clinician);
+    const result = service.requestDisabledLiveTranscriptionJob(appointment.appointmentId, clinician);
+
+    assert.equal(result.data.providerStatus.mode, 'external_disabled');
+    assert.equal(result.data.providerStatus.configured, false);
+    assert.equal(result.data.transcriptionJob.status, 'failed');
+    assert.equal(result.data.transcriptionJob.liveProviderCalled, false);
+    assert.equal(result.data.transcript.retentionPolicy, 'indefinite');
+    assert.equal(
+      result.data.domainEvents.some((event) => event.eventType === 'transcription.provider_disabled.v1'),
+      true
+    );
   });
 
   it('blocks recording chunks on approved exception visits and PHI-like transcript corrections', () => {

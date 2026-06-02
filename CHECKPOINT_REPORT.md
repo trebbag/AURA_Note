@@ -1014,3 +1014,216 @@ Deferred decisions remain tracked in `SPEC_GAPS.md`, including production IdP se
 ## Next recommended batch
 
 Stop at the CR-1 checkpoint until review rules allow the next batch. The next implementation target is `WO-064` — Primary UI Runtime API Conversion, which opens CR-2 Product UX Runtime Candidate work.
+
+---
+
+# CR-2 Product UX Runtime Candidate
+
+## Completed work orders
+
+- `WO-064` — Primary UI runtime API conversion.
+- `WO-065` — Figma-ready basic UI scaffold and screen inventory.
+- `WO-066` — Standalone workflow completion.
+
+## Acceptance evidence
+
+- `WO-064` converted primary production-intended AURA Note routes to typed API-backed runtime state and added `pnpm frontend:primary-runtime-readiness`.
+- `WO-065` added the Figma-ready screen, component, state, workflow, role/permission, data/API, content copy, and checklist inventory docs plus `/aura-note/figma-handoff` and `pnpm figma:handoff-readiness`.
+- `WO-066` added standalone workflow completion evidence proving runtime home, schedule, finalized artifacts, export metadata, operations/billing review, and ClinicOS adapter-boundary states can be tested without ClinicOS dependency.
+- `repo_status.json` now records `current_checkpoint: CR-3`, `next_work_order: WO-067`, `WO-064: done`, `WO-065: done`, `WO-066: done`, and `WO-067: todo`.
+- No live vendors, production PHI, production credentials, autonomous clinical/coding/billing behavior, charge finalization, medical-necessity determination, claim submission, or production launch behavior were introduced.
+
+## Tests and gates
+
+- `pnpm figma:handoff-readiness`
+- `pnpm frontend:runtime-integration-readiness`
+- `pnpm frontend:primary-runtime-readiness`
+- `pnpm standalone:workflow-readiness`
+- `pnpm install --frozen-lockfile`
+- `pnpm db:client:generate`
+- `pnpm lint`
+- `pnpm lint:phi`
+- `pnpm typecheck`
+- `pnpm test`
+- `pnpm test:e2e`
+- `pnpm test:browser`
+- `pnpm build`
+- `pnpm production:readiness`
+- `node scripts/status.js`
+- `git diff --check`
+
+## Open risks
+
+- CR-2 remains synthetic/local product UX runtime evidence. Final Figma visual fidelity, live identity, live ClinicOS, live EHR, live transcription, live external AI, live Azure PHI storage, production PHI database use, production launch approval, and live vendor contracts remain out of scope.
+- ClinicOS mode remains mock/degraded/disabled evidence only until `WO-067` and later CR-3 tranches harden runtime adapter boundaries.
+
+## Active SPEC_GAPs
+
+None active as of the post-`WO-066` standalone workflow completion / CR-2 review.
+
+## Deferred production decisions
+
+Deferred decisions remain tracked in `SPEC_GAPS.md`, including production launch approval, production identity/account lifecycle, production PHI persistence, production Azure storage/deletion/restore, live transcription, external AI private/BAA pathway, production EHR writeback, ClinicOS live integration, revenue estimate policy, claim/payer strategy, and commercial readiness approval.
+
+## Next recommended batch
+
+Proceed to `WO-067` — ModeResolver And Adapter Runtime Wiring. The next checkpoint is CR-3 after `WO-067` through `WO-070`.
+
+---
+
+# CR-3 Integration And Governance Runtime Candidate
+
+## Completed work orders
+
+- `WO-067` — ModeResolver and adapter runtime wiring.
+- `WO-068` — Transcription runtime boundary and provider-ready interface.
+- `WO-069` — Athenahealth sandbox and vendor-neutral EHR runtime boundary.
+- `WO-070` — AI governance runtime boundary and evaluation harness expansion.
+
+## Acceptance evidence
+
+- `WO-067` added a shared API ModeResolver and explicit adapter-boundary evidence for standalone and ClinicOS-integrated contexts. ClinicOS remains unable to bypass AURA Note permissions.
+- `WO-068` added server-side transcription provider adapters, deterministic mock transcription, disabled live-provider fail-closed evidence, one-week raw-audio retention metadata, indefinite transcript-retention metadata, and runtime-state browser/API coverage.
+- `WO-069` added vendor-neutral EHR runtime boundary metadata, athenahealth-first sandbox posture, disabled credential evidence, sandbox patient lookup, appointment import, encounter context, and human-gated writeback lifecycle metadata.
+- `WO-070` added server-side AI Gateway runtime boundary metadata, expanded deterministic prohibited-behavior evaluation cases, source-freshness/schema/confidence/blocked-behavior validation metadata, PHI rejection/redaction evidence, human-review-required events, regression-blocked events, and `/aura-note/ai-governance` browser evidence.
+- `repo_status.json` records `current_checkpoint: CR-3`, `next_work_order: null`, `WO-067: done`, `WO-068: done`, `WO-069: done`, and `WO-070: done`. `WO-071` through `WO-075` remain planned for CR-4 and are not active until checkpoint review promotes the next batch.
+- No live vendors, production PHI, production credentials, autonomous clinical/coding/billing behavior, charge finalization, medical-necessity determination, order placement, claim submission, raw PHI transfer to external AI, or production launch behavior were introduced.
+
+## Tests and gates
+
+- `pnpm mode:adapter-readiness`
+- `pnpm transcription:runtime-boundary-readiness`
+- `pnpm ehr:sandbox-runtime-readiness`
+- `pnpm ai:runtime-governance-readiness`
+- `pnpm ai:governance-readiness`
+- `pnpm clinicos:integration-readiness`
+- `pnpm ehr:integration-readiness`
+- `pnpm audio:transcription-readiness`
+- `pnpm frontend:runtime-integration-readiness`
+- `pnpm frontend:primary-runtime-readiness`
+- `pnpm standalone:workflow-readiness`
+- `pnpm install --frozen-lockfile`
+- `pnpm db:client:generate`
+- `pnpm lint`
+- `pnpm lint:phi`
+- `pnpm typecheck`
+- `pnpm test`
+- `pnpm test:e2e`
+- `pnpm test:browser`
+- `pnpm build`
+- `pnpm production:readiness`
+- `pnpm acceptance:readiness`
+- `node scripts/status.js`
+- `git diff --check`
+
+## Open risks
+
+- CR-3 remains synthetic/local integration and governance runtime evidence. Live ClinicOS contracts, live event-bus delivery, production EHR credentialing, live EHR calls, live writeback delivery, live transcription provider calls, raw PHI audio transport, live external AI, private/BAA model approval, production prompt stores, drift-monitoring ownership, production PHI storage, live vendor monitoring, and production launch approval remain out of scope.
+- Runtime AI, transcription, EHR, and ClinicOS paths are production-shaped but safely disabled, mock-backed, or sandbox-metadata-only until later security/privacy/founder-approved work orders provide credentials, vendor contracts, and live-use controls.
+- CR-4 work orders `WO-071` through `WO-075` remain planned and must be promoted deliberately before implementation continues.
+
+## Active SPEC_GAPs
+
+None active as of the post-`WO-070` AI governance runtime boundary / CR-3 review.
+
+## Deferred production decisions
+
+Deferred decisions remain tracked in `SPEC_GAPS.md`, including production launch approval, live ClinicOS contracts, production EHR credentialing, live transcription provider selection, external AI private/BAA pathway, production prompt store, model evaluation thresholds, drift response ownership, production PHI persistence, production Azure storage/deletion/restore, revenue estimate policy, claim/payer strategy, and commercial readiness approval.
+
+## Next recommended batch
+
+CR-4 has now been completed. The next batch must be a later founder-approved post-CR-4 or launch-decision work order; no active next work order exists in `repo_status.json`.
+
+---
+
+# CR-4 Commercial Readiness Review Candidate
+
+## Completed work orders
+
+- `WO-071` — Security, privacy, compliance, and threat-model runtime hardening.
+- `WO-072` — Observability, SRE, support, and incident operations.
+- `WO-073` — Billing, revenue integrity, claim-decision, and compliance boundary completion.
+- `WO-074` — Beta pilot commercial readiness package.
+- `WO-075` — Commercial readiness decision gate.
+
+## Acceptance evidence
+
+- `WO-071` added `docs/SECURITY_PRIVACY_COMPLIANCE_THREAT_MODEL.md`, CR-4 security/privacy commercial readiness API metadata, support metadata-only denial evidence, audit-safe `security.privacy_review_checked.v1` and `threat_model.reviewed.v1` events, and no-certification/no-launch posture.
+- `WO-072` added `docs/COMMERCIAL_OBSERVABILITY_SUPPORT_OPERATIONS.md`, incident severity taxonomy, commercial support/operations metadata, disabled SIEM/APM/on-call posture, audit-safe `support.incident_taxonomy_checked.v1`, and the `pnpm ops:commercial-readiness` gate.
+- `WO-073` added `docs/BILLING_REVENUE_INTEGRITY_BOUNDARY.md`, billing/revenue integrity commercial readiness evidence, candidate-only and `submittedClaim=false` posture, patient-summary exclusion posture, triggered transcript access boundaries, and audit-safe `billing.revenue_integrity_checked.v1`.
+- `WO-074` added `docs/BETA_PILOT_READINESS_PACKAGE.md`, beta onboarding/training/support/rollback/disabled-feature evidence, synthetic pilot smoke validation, and audit-safe `beta.pilot_package_checked.v1`.
+- `WO-075` added `docs/COMMERCIAL_READINESS_REVIEW_PACKET.md`, `/support/commercial-readiness`, final readiness matrix, disabled-capability inventory, required final review roles, audit-safe `commercial.readiness_decision_checked.v1`, and `pnpm commercial:readiness`.
+- `repo_status.json` records `current_checkpoint: CR-4`, `next_work_order: null`, and `WO-071` through `WO-075: done`.
+- No live PHI, production credentials, live vendors, certification claim, claim submission, autonomous clinical/coding/billing behavior, charge finalization, medical-necessity determination, order placement, patient-facing financial conclusion, or production launch behavior was introduced.
+
+## Tests and gates
+
+- `pnpm security:commercial-readiness`
+- `pnpm ops:commercial-readiness`
+- `pnpm billing:revenue-integrity-readiness`
+- `pnpm beta:pilot-package-readiness`
+- `pnpm commercial:readiness`
+- Default local gate passed: `pnpm install --frozen-lockfile`; `pnpm db:client:generate`; `pnpm lint`; `pnpm lint:phi`; `pnpm typecheck`; `pnpm test`; `pnpm test:e2e`; `pnpm test:browser`; `pnpm build`.
+- Broader readiness gates passed, including persistence/runtime, identity, config, observability, EHR, ClinicOS, AI, security, frontend runtime integration, launch, storage, retention, claim decision, commercial plan, post-P11, production, and acceptance readiness.
+- Final status and hygiene checks passed: `node scripts/status.js`; `git diff --check`.
+
+## Open risks
+
+- CR-4 is review-ready synthetic evidence only. Production launch still requires a later founder-approved work order, real launch approvals, live vendor credentialing, BAA/contract review where required, production identity/storage/database/telemetry setup, backup/restore drills, support ownership, incident response, access review, and deployment approval.
+- Beta pilot package readiness does not equal real beta tenant onboarding or live PHI use.
+- Commercial readiness review does not equal HIPAA certification, SOC 2 certification, legal approval, or production launch approval.
+
+## Active SPEC_GAPs
+
+None active as of the post-`WO-075` commercial readiness decision gate / CR-4 review.
+
+## Deferred production decisions
+
+Deferred decisions remain tracked in `SPEC_GAPS.md`, including production launch approval, live identity/account lifecycle, production PHI persistence, production Azure storage/deletion/restore, live transcription, external AI private/BAA pathway, production EHR writeback, ClinicOS live integration, revenue estimate policy, claim/payer strategy, support/on-call ownership, legal/compliance/privacy/security approval, and live vendor credentials.
+
+## Next recommended batch
+
+Stop at the CR-4 checkpoint. The next work must be a later founder-approved post-CR-4 or production-launch decision work order. `repo_status.json` intentionally has `next_work_order: null`.
+
+---
+
+# WO-076 Post-CR4 Launch Governance Intake
+
+## Completed work order
+
+- `WO-076` — Post-CR4 launch governance, branch/CI, and duplicate artifact intake.
+
+## Acceptance evidence
+
+- `docs/POST_CR4_LAUNCH_GOVERNANCE_INTAKE.md` records the post-CR4 launch-governance posture, GitHub branch/PR follow-up state, duplicate artifact inventory, cleanup decision rules, and launch decision intake.
+- `work_orders/WO-076_post_cr4_launch_governance_branch_ci_duplicate_artifact_intake.md` defines the bounded governance work order with no production behavior changes.
+- `.gitignore` now ignores nested generated build output via `**/.next/` and `**/dist/`, preventing generated app/package output from polluting source-control status.
+- `pnpm post-cr4:launch-governance` verifies the work-order file, status, run-log/checkpoint evidence, duplicate artifact review posture, CI hook, and no-launch/no-live behavior markers.
+- `repo_status.json` records `current_checkpoint: CR-4`, `next_work_order: null`, and `WO-076: done`.
+
+## Tests and gates
+
+- `pnpm post-cr4:launch-governance`
+- `pnpm commercial:readiness-plan`
+- `pnpm production:readiness`
+- `pnpm acceptance:readiness`
+- `node scripts/status.js`
+- `git diff --check`
+
+## Open risks
+
+- `WO-076` does not approve production launch, live PHI, live vendors, production credentials, claim submission, charge finalization, medical-necessity determination, certification claims, or autonomous clinical/coding/billing behavior.
+- Non-identical duplicate source/doc/script files remain review-required artifacts; they were not deleted.
+- GitHub Actions still requires branch push/PR execution and remote check inspection.
+
+## Active SPEC_GAPs
+
+None active as of the post-`WO-076` post-CR4 launch governance intake review.
+
+## Deferred production decisions
+
+Deferred decisions remain tracked in `SPEC_GAPS.md`, including duplicate artifact deletion approval, production launch approval, live identity/account lifecycle, production PHI persistence, production Azure storage/deletion/restore, live transcription, external AI private/BAA pathway, production EHR writeback, ClinicOS live integration, revenue estimate policy, claim/payer strategy, support/on-call ownership, legal/compliance/privacy/security approval, and live vendor credentials.
+
+## Next recommended batch
+
+Push the branch, open or update a draft PR into `main`, inspect GitHub Actions, and create a later founder-approved work order for either duplicate artifact cleanup, launch-governance execution, beta pilot execution, production credentialing, or another explicit post-CR4 production decision sequence.

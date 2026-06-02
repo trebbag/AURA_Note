@@ -121,6 +121,11 @@ import {
 } from '@aura-note/security';
 import { InMemoryObjectStorageAdapter, buildStorageKey, type ObjectStorageAdapter } from '@aura-note/storage';
 import {
+  DeterministicMockTranscriptionProvider,
+  DisabledLiveTranscriptionProvider,
+  type ServerSideTranscriptionProviderAdapter
+} from '../transcription/transcription-provider';
+import {
   createDemoScheduleStateRepository,
   type ScheduleStateRepository,
   type StoredAppointment
@@ -144,7 +149,9 @@ export class ScheduleService {
 
   constructor(
     private readonly repository: ScheduleStateRepository = createDemoScheduleStateRepository(),
-    private readonly storage: ObjectStorageAdapter = new InMemoryObjectStorageAdapter()
+    private readonly storage: ObjectStorageAdapter = new InMemoryObjectStorageAdapter(),
+    private readonly transcriptionProvider: ServerSideTranscriptionProviderAdapter = new DeterministicMockTranscriptionProvider(),
+    private readonly disabledLiveTranscriptionProvider: ServerSideTranscriptionProviderAdapter = new DisabledLiveTranscriptionProvider()
   ) {}
 
   listAppointments(context: RequestContext): ApiEnvelope<ScheduleViewDto> {
@@ -1077,43 +1084,30 @@ export class ScheduleService {
       throw new BadRequestException('mock transcription requires at least one accepted metadata-only chunk');
     }
 
-    const providerStatus = this.createTranscriptionProviderStatus();
     const queuedAt = new Date().toISOString();
-    const job: TranscriptionJobDto = {
-      transcriptionJobId: this.nextId('transcription-job'),
-      appointmentId,
-      noteId: stored.note.noteId,
-      providerId: providerStatus.providerId,
-      providerMode: providerStatus.mode,
-      status: 'processed',
-      queuedAt,
-      processedAt: queuedAt,
-      sourceChunkIds: chunks.map((chunk) => chunk.chunkId),
-      segmentCount: chunks.length,
-      liveProviderCalled: false
-    };
     const transcript = stored.transcript ?? {
       noteId: stored.note.noteId,
       transcriptId: this.nextId('transcript'),
       retentionPolicy: 'indefinite' as const,
       segments: []
     };
-    const existingChunkIds = new Set(transcript.segments.map((segment) => segment.sourceChunkId).filter(Boolean));
-    const newSegments: TranscriptSegmentDto[] = chunks
-      .filter((chunk) => !existingChunkIds.has(chunk.chunkId))
-      .map((chunk, index) => ({
-        transcriptSegmentId: this.nextId('transcript-segment'),
-        noteId: stored.note.noteId,
-        sequence: transcript.segments.length + index + 1,
-        speakerRole: index % 2 === 0 ? 'clinician' : 'patient',
-        text: `Synthetic mock transcript from metadata chunk ${chunk.sequence}`,
-        source: 'mock_transcription',
-        sourceChunkId: chunk.chunkId,
-        confidence: 0.91,
-        speakerLabel: `Speaker ${index + 1} placeholder`,
-        providerName: 'deterministic_mock',
-        createdAt: queuedAt
-      }));
+    const existingChunkIds = new Set(
+      transcript.segments
+        .map((segment) => segment.sourceChunkId)
+        .filter((sourceChunkId): sourceChunkId is string => Boolean(sourceChunkId))
+    );
+    const providerResult = this.transcriptionProvider.requestTranscription({
+      appointmentId,
+      noteId: stored.note.noteId,
+      chunks,
+      existingSegmentCount: transcript.segments.length,
+      existingSourceChunkIds: existingChunkIds,
+      nowIso: queuedAt,
+      nextId: (prefix) => this.nextId(prefix)
+    });
+    const providerStatus = providerResult.providerStatus;
+    const job = providerResult.transcriptionJob;
+    const newSegments = providerResult.transcriptSegments;
     stored.transcriptionJobs = [...(stored.transcriptionJobs ?? []), job];
     stored.transcriptionProviderStatus = providerStatus;
     stored.transcript = {
@@ -1145,6 +1139,70 @@ export class ScheduleService {
             transcriptionJobId: job.transcriptionJobId,
             segmentCount: newSegments.length,
             transcriptRetentionPolicy: 'indefinite'
+          })
+        ]
+      },
+      this.createMeta(context)
+    );
+  }
+
+  requestDisabledLiveTranscriptionJob(
+    appointmentId: string,
+    context: RequestContext
+  ): ApiEnvelope<TranscriptionJobResponseDto> {
+    const stored = this.getStartedAppointmentForControl(appointmentId, context);
+    if (!canPerform('transcription:process', this.createLinkedVisitContext(context.access))) {
+      throw new ForbiddenException('role cannot process transcription jobs');
+    }
+
+    const transcript = stored.transcript ?? {
+      noteId: stored.note.noteId,
+      transcriptId: this.nextId('transcript'),
+      retentionPolicy: 'indefinite' as const,
+      segments: []
+    };
+    const queuedAt = new Date().toISOString();
+    const chunks = stored.recordingChunks ?? [];
+    const providerResult = this.disabledLiveTranscriptionProvider.requestTranscription({
+      appointmentId,
+      noteId: stored.note.noteId,
+      chunks,
+      existingSegmentCount: transcript.segments.length,
+      existingSourceChunkIds: new Set(
+        transcript.segments
+          .map((segment) => segment.sourceChunkId)
+          .filter((sourceChunkId): sourceChunkId is string => Boolean(sourceChunkId))
+      ),
+      nowIso: queuedAt,
+      nextId: (prefix) => this.nextId(prefix)
+    });
+
+    stored.transcriptionJobs = [...(stored.transcriptionJobs ?? []), providerResult.transcriptionJob];
+    stored.transcriptionProviderStatus = providerResult.providerStatus;
+    stored.transcript = {
+      ...transcript,
+      providerStatus: providerResult.providerStatus,
+      corrections: stored.transcriptCorrections ?? transcript.corrections ?? []
+    };
+    this.persistStoredAppointment(stored);
+
+    return createApiEnvelope(
+      {
+        transcriptionJob: providerResult.transcriptionJob,
+        providerStatus: providerResult.providerStatus,
+        transcript: stored.transcript,
+        auditEvent: this.createAuditEvent('transcription.live_provider_denied', 'TranscriptionJob', providerResult.transcriptionJob.transcriptionJobId, context),
+        domainEvents: [
+          this.createDomainEventForAppointment(stored, context, 'transcription.job_denied.v1', {
+            transcriptionJobId: providerResult.transcriptionJob.transcriptionJobId,
+            providerMode: providerResult.providerStatus.mode,
+            liveProviderCalled: false,
+            failedReason: providerResult.transcriptionJob.failedReason
+          }),
+          this.createDomainEventForAppointment(stored, context, 'transcription.provider_disabled.v1', {
+            providerId: providerResult.providerStatus.providerId,
+            credentialState: providerResult.providerStatus.credentialState ?? 'not_configured',
+            liveProviderCallsEnabled: false
           })
         ]
       },
@@ -2934,17 +2992,7 @@ export class ScheduleService {
   }
 
   private createTranscriptionProviderStatus(): TranscriptionProviderStatusDto {
-    return {
-      providerId: 'deterministic-mock-transcription',
-      mode: 'mock_only',
-      configured: true,
-      liveProviderCallsEnabled: false,
-      baaRequiredBeforeLiveUse: true,
-      supportsDiarization: false,
-      speakerLabelMode: 'placeholder',
-      confidenceMetadataAvailable: true,
-      disabledReason: 'Live transcription providers require later governance, BAA/private pathway, and production PHI storage approval.'
-    };
+    return this.transcriptionProvider.getStatus();
   }
 
   private toDocumentationWorkspace(entry: StoredAppointment, context: RequestContext): DocumentationWorkspaceDto {

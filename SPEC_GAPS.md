@@ -4,9 +4,9 @@ This file tracks missing, conflicting, unsafe, or deliberately deferred product 
 
 ## Active gaps
 
-No active gaps as of post-`WO-063` identity runtime boundary review on 2026-05-29.
+No active gaps as of post-`WO-076` post-CR4 launch governance intake review on 2026-06-02.
 
-The repo remains not production-ready. The items below are deferred production decisions rather than active blockers for the current post-`WO-063` synthetic/local identity runtime boundary scope.
+This supersedes the prior marker: No active gaps as of post-`WO-075` commercial readiness decision gate review. The repo remains not production-ready. The items below are deferred production decisions rather than active blockers for the current post-`WO-076` launch governance intake package.
 
 ## Deferred production decisions
 
@@ -14,10 +14,17 @@ These items must stay visible and must be resolved before the related production
 
 ### Deferred Decision — Commercial readiness implementation and launch approval
 
-- **Related future work:** `WO-061` through `WO-075`; any later founder-approved production launch work order
+- **Related future work:** any later founder-approved production launch work order
 - **Status:** deferred
 - **Decision needed before production launch:** founder/clinical/compliance/security/legal approval, beta scope, production environment, credential source, operational owner, incident response, access review, backup/restore, vendor contracts, PHI governance, live integrations, support ownership, launch go/no-go, and rollback authority.
-- **Safe current posture:** `WO-060` reopened implementation rails, `WO-061` added synthetic/local runtime persistence evidence, `WO-062` hardened the API request boundary with validation, request correlation, PHI-safe error envelopes, redacted logs, security headers, body-size guardrails, and local throttle scaffolding, and `WO-063` added the explicit `AURA_NOTE_AUTH_MODE` identity runtime boundary with local demo/strict synthetic modes and production/preview/delegated fail-closed behavior. Production launch remains false and no live vendor, credential, PHI, claim, autonomous clinical/coding/billing, or production deployment behavior is enabled.
+- **Safe current posture:** `WO-060` reopened implementation rails, `WO-061` through `WO-070` added runtime persistence, API, identity, frontend, standalone, integration, transcription, EHR, ClinicOS, and AI governance evidence, and `WO-071` through `WO-075` packaged CR-4 security/privacy/compliance, observability/support, billing/revenue integrity, beta-pilot, and commercial-readiness decision evidence. Production launch remains false and no live vendor, credential, PHI, claim, autonomous clinical/coding/billing, or production deployment behavior is enabled.
+
+### Deferred Decision — Duplicate artifact deletion approval
+
+- **Related future work:** a later cleanup work order or explicit founder-approved deletion pass
+- **Status:** deferred
+- **Decision needed before deletion:** whether non-byte-identical copied files ending in ` 2` or ` 3` contain useful work that should be merged into tracked sources, archived as evidence, or deleted. Byte-identical files may be removed by a later cleanup pass after confirming they were generated duplicates, but this work order records inventory only.
+- **Safe current posture:** `WO-076` inventories duplicate artifacts and ignores nested generated build outputs, but it does not delete non-identical source, docs, scripts, Prisma, or test files without explicit review.
 
 ### Deferred Decision — Production SIEM/APM vendor and operational monitoring posture
 
@@ -52,28 +59,28 @@ These items must stay visible and must be resolved before the related production
 - **Related future work:** `WO-056`; future approved transcription implementation work order before live use
 - **Status:** deferred
 - **Decision needed before live use:** transcription vendor, BAA/privacy review, audio transport constraints, diarization support, confidence metadata, correction retention, and failure-handling policy.
-- **Safe current posture:** browser permission UX, metadata-only recording chunks, deterministic mock transcription, and correction history only. `WO-056` captures the live-readiness intake and future acceptance criteria. No live transcription credential, PHI-bearing audio transport, live provider call, production raw-audio storage, PHI-bearing support transcript access, or launch behavior is enabled.
+- **Safe current posture:** browser permission UX, metadata-only recording chunks, deterministic mock transcription, correction history, server-side provider adapter metadata, retry/dead-letter posture, disabled live-provider fail-closed evidence, one-week raw-audio retention metadata, and indefinite transcript retention only. `WO-056` captures the live-readiness intake and future acceptance criteria, and `WO-068` keeps runtime provider behavior mock-only or disabled. No live transcription credential, PHI-bearing audio transport, live provider call, production raw-audio storage, PHI-bearing support transcript access, or launch behavior is enabled.
 
 ### Deferred Decision — External AI provider and PHI governance
 
 - **Related future work:** `WO-057`; future approved AI implementation work order before live use
 - **Status:** deferred
 - **Decision needed before live use:** private/BAA model path, de-identification policy, source-freshness rules, model/prompt approval, evaluation thresholds, monitoring, drift response, live credential source, and incident response.
-- **Safe current posture:** `WO-046` adds prompt/model metadata, deterministic local evaluation cases, source-linked output validation, unsafe output rejection, human-review-required evidence, and stronger PHI redaction/rejection. `WO-057` captures the live-readiness intake and future acceptance criteria. External AI remains disabled by default; no live AI credential, production prompt store, raw PHI transfer to external AI, live model call, support AI PHI content access, autonomous finalization, medical-necessity determination, charge finalization, claim submission, or launch behavior is enabled.
+- **Safe current posture:** `WO-046` adds prompt/model metadata, deterministic local evaluation cases, source-linked output validation, unsafe output rejection, human-review-required evidence, and stronger PHI redaction/rejection. `WO-057` captures the live-readiness intake and future acceptance criteria. `WO-070` expands the server-side runtime boundary with disabled live model calls, disabled production prompt store, private/BAA placeholder, drift placeholder, source-stale blocking, schema-validation metadata, confidence metadata, prohibited-behavior coverage, and `ai.regression_blocked.v1` evidence. External AI remains disabled by default; no live AI credential, production prompt store, raw PHI transfer to external AI, live model call, support AI PHI content access, autonomous finalization, medical-necessity determination, charge finalization, claim submission, or launch behavior is enabled.
 
 ### Deferred Decision — Production EHR credentialing and live writeback delivery
 
 - **Related future work:** `WO-058`; future approved EHR implementation work order before live use
 - **Status:** deferred
 - **Decision needed before live use:** production athenahealth credentialing, sandbox credential source if live sandbox calls are required, approved writeback target scope, vendor error taxonomy, reconciliation ownership, retry/dead-letter policy, rollback/support process, and launch approval.
-- **Safe current posture:** `WO-044` adds a vendor-neutral, athenahealth-first sandbox-ready adapter path plus metadata-only writeback queue lifecycle evidence. Human approval, idempotency replay, retry, dead-letter, reconciliation, role denial, PHI rejection, and audit/domain events are tested; `WO-058` captures the live-readiness intake and future acceptance criteria. No production EHR credential, raw EHR payload storage, live writeback delivery, writeback without human approval, runtime EHR behavior, autonomous finalization, claim submission, or production launch behavior is enabled.
+- **Safe current posture:** `WO-044` adds a vendor-neutral, athenahealth-first sandbox-ready adapter path plus metadata-only writeback queue lifecycle evidence. Human approval, idempotency replay, retry, dead-letter, reconciliation, role denial, PHI rejection, and audit/domain events are tested; `WO-058` captures the live-readiness intake and future acceptance criteria; `WO-069` adds API/browser-testable runtime boundary metadata, credential-disabled evidence, sandbox patient lookup, appointment import, encounter context, payload-preparation, attempt, acknowledgement, denial, and no-raw-payload evidence. No production EHR credential, raw EHR payload storage, live writeback delivery, writeback without human approval, live runtime EHR calls, autonomous finalization, claim submission, or production launch behavior is enabled.
 
 ### Deferred Decision — ClinicOS live integration contracts and event-bus delivery
 
 - **Related future work:** `WO-059`; future approved ClinicOS implementation work order before live use
 - **Status:** deferred
 - **Decision needed before live use:** live ClinicOS module contracts, tenant/user mapping, delegated identity posture, VisitGraph/WorkOS/Charge Integrity/Copilot/Governance/Integration/Data Cloud event schemas, event-bus delivery semantics, replay/reconciliation ownership, and operational ownership.
-- **Safe current posture:** `WO-045` adds metadata-only module boundaries, mapping review, stale/degraded mapping states, failed/degraded publication metadata, service-account/cross-tenant denial, and AURA Note permission-boundary evidence. `WO-059` captures the live-readiness intake and future acceptance criteria. Standalone remains authoritative; ClinicOS mock/integration scaffolds cannot bypass AURA Note permissions and no live ClinicOS credential, live event-bus delivery, delegated identity bypass, raw ClinicOS payload storage, live synchronization, runtime ClinicOS behavior, or launch behavior is enabled.
+- **Safe current posture:** `WO-045` adds metadata-only module boundaries, mapping review, stale/degraded mapping states, failed/degraded publication metadata, service-account/cross-tenant denial, and AURA Note permission-boundary evidence. `WO-067` adds an API ModeResolver and explicit `modeAdapterBoundaries` for schedule source, patient context, VisitGraph, tasks, audit, AI governance, Charge Integrity, EHR, export, and identity seams with `liveDelegationEnabled=false` and `rawPayloadStorageEnabled=false`. `WO-059` captures the live-readiness intake and future acceptance criteria. Standalone remains authoritative; ClinicOS mock/integration scaffolds cannot bypass AURA Note permissions and no live ClinicOS credential, live event-bus delivery, delegated identity bypass, raw ClinicOS payload storage, live synchronization, live runtime ClinicOS behavior, or launch behavior is enabled.
 
 ### Deferred Decision — Revenue estimates and patient-facing financial content
 

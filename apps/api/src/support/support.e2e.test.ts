@@ -44,6 +44,27 @@ describe('Support hardening API e2e', () => {
       assert.equal(readiness.body.data.readiness.checkpoint, 'P8');
       assert.equal(readiness.body.data.readiness.productionLaunchReady, false);
 
+      const commercial = await request(app.getHttpServer())
+        .get('/api/v1/support/commercial-readiness')
+        .set('x-aura-role', 'support')
+        .set('x-request-id', 'req-commercial-e2e-001')
+        .set('x-trace-id', 'trace-commercial-e2e-001')
+        .expect(200);
+      assert.equal(commercial.body.data.readiness.checkpoint, 'CR-4');
+      assert.equal(commercial.body.data.readiness.productionLaunchReady, false);
+      assert.deepEqual(commercial.body.data.readiness.decisionGate.completedWorkOrders, [
+        'WO-071',
+        'WO-072',
+        'WO-073',
+        'WO-074',
+        'WO-075'
+      ]);
+      assert.equal(
+        commercial.body.data.domainEvents.some((event: { eventType: string }) => event.eventType === 'commercial.readiness_decision_checked.v1'),
+        true
+      );
+      await request(app.getHttpServer()).get('/api/v1/support/commercial-readiness').set('x-aura-role', 'clinician').expect(403);
+
       const evidence = await request(app.getHttpServer())
         .post('/api/v1/support/operations/evidence')
         .set('x-aura-role', 'support')

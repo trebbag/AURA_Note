@@ -216,6 +216,36 @@ describe('SupportService', () => {
     );
   });
 
+  it('reports CR-4 commercial readiness without production launch approval', () => {
+    const service = new SupportService();
+    const response = service.getCommercialReadiness(supportHeaders);
+
+    assert.equal(response.data.readiness.checkpoint, 'CR-4');
+    assert.equal(response.data.readiness.productionLaunchReady, false);
+    assert.deepEqual(response.data.readiness.decisionGate.completedWorkOrders, ['WO-071', 'WO-072', 'WO-073', 'WO-074', 'WO-075']);
+    assert.equal(response.data.readiness.decisionGate.commercialReviewReady, true);
+    assert.equal(response.data.readiness.decisionGate.productionLaunchReady, false);
+    assert.equal(response.data.readiness.sections.length, 5);
+    assert.equal(response.data.readiness.sections.every((section) => section.productionLaunchReady === false), true);
+    assert.equal(response.data.readiness.sections.every((section) => section.liveVendorEnabled === false), true);
+    assert.equal(response.data.readiness.sections.every((section) => section.phiSafe), true);
+    assert.equal(response.data.readiness.disabledCapabilities.includes('claim_submission'), true);
+    assert.equal(response.data.readiness.disabledCapabilities.includes('live_external_ai'), true);
+    assert.equal(
+      response.data.domainEvents.map((event) => event.eventType).includes('commercial.readiness_decision_checked.v1'),
+      true
+    );
+    assert.equal(
+      response.data.domainEvents.map((event) => event.eventType).includes('billing.revenue_integrity_checked.v1'),
+      true
+    );
+
+    assert.throws(
+      () => service.getCommercialReadiness({ 'x-aura-role': 'clinician' }),
+      (error) => error instanceof ForbiddenException
+    );
+  });
+
   it('denies audit export to support users and rejects PHI-including requests', () => {
     const service = new SupportService();
 

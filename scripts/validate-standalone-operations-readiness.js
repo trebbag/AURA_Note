@@ -97,7 +97,10 @@ check(
   'browser.tests',
   'Browser tests cover operations route actions and states',
   browserSpec.includes('standalone operations route exposes worklists') &&
-    browserSpec.includes('allowed for billing_staff triggered review') &&
+    browserSpec.includes('Billing review queue') &&
+    browserSpec.includes('Trigger Review') &&
+    browserSpec.includes('submittedClaim=false') &&
+    browserSpec.includes('denied') &&
     browserSpec.includes('Autonomous finalization: false'),
   'apps/web/e2e/aura-note-routes.spec.ts'
 );

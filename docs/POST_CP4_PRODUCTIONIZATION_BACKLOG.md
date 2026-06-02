@@ -6,7 +6,7 @@ CP-4 closes the defined AURA Note v1 synthetic, local-first work-order package. 
 
 Before any tranche below becomes implementation work, promote it into a numbered `work_orders/WO-###` file and update `repo_status.json` deliberately.
 
-The sequential post-`WO-032` production build plan is maintained in `docs/PRODUCTION_BUILD_PLAN.md`. That plan defines `WO-033` through `WO-075`, checkpoint gates, per-work-order completion criteria, and overall launch-readiness criteria. `WO-033` is the re-rail/control work order; `WO-034` adds durable local visit capture runtime evidence; `WO-035` adds durable local review-panel runtime evidence; `WO-036` adds durable local finalization/output/writeback runtime evidence; `WO-037` closes P7 durable runtime metadata and broad RLS evidence; `WO-038` adds standalone patient, chart context, and schedule completion; `WO-039` closes P7.5 with standalone worklists, billing review, settings/admin/integrations, templates/dot phrases, estimate configuration, and rules catalog; `WO-040` closes P8.5 with browser audio capture and mock transcription candidate evidence; `WO-041` adds production-shaped identity/config governance; `WO-042` adds secure storage, retention deletion approval/recovery, and backup/restore readiness; `WO-043` closes P8 with production observability/support operations evidence; `WO-044` adds synthetic EHR sandbox integration and metadata-only writeback queue hardening; `WO-045` adds synthetic ClinicOS integration hardening with module boundaries, stale/degraded mapping review, failed/degraded publication metadata, and permission-boundary evidence; `WO-046` adds synthetic AI Gateway governance hardening with prompt/model metadata, deterministic evaluation runs, output validation, unsafe-output rejection, and no-live-model/no-raw-PHI evidence; `WO-047` closes P9 review; `WO-048` through `WO-050` close P10 as launch-candidate decision-package evidence; `WO-051` closes P11 as a claim/payer decision gate; `WO-052` through `WO-060` reopen commercial-readiness rails and live-review intake without enabling live behavior; `WO-061` adds the first CR-1 runtime persistence switchover evidence through explicit repository/storage ports and a composed local Prisma core workflow repository; `WO-062` adds shared API runtime boundary evidence through validation, PHI-safe errors, request correlation, security headers, request limits, redacted logs, and CI/readiness checks; `WO-063` adds identity runtime boundary evidence through explicit `AURA_NOTE_AUTH_MODE`, local demo/strict synthetic modes, and production/preview/delegated fail-closed auth posture; `WO-064` through `WO-075` remain the active commercial-readiness sequence. P10 includes a Frontend Runtime Integration Gate requiring typed API clients, persisted backend state, documented mocks where live dependencies are disabled, and Playwright evidence for at least one seeded backend-backed appointment-to-finalization/export workflow before launch-candidate readiness can be claimed.
+The sequential post-`WO-032` production build plan is maintained in `docs/PRODUCTION_BUILD_PLAN.md`. That plan defines `WO-033` through `WO-075`, checkpoint gates, per-work-order completion criteria, and overall launch-readiness criteria. `WO-033` is the re-rail/control work order; `WO-034` adds durable local visit capture runtime evidence; `WO-035` adds durable local review-panel runtime evidence; `WO-036` adds durable local finalization/output/writeback runtime evidence; `WO-037` closes P7 durable runtime metadata and broad RLS evidence; `WO-038` adds standalone patient, chart context, and schedule completion; `WO-039` closes P7.5 with standalone worklists, billing review, settings/admin/integrations, templates/dot phrases, estimate configuration, and rules catalog; `WO-040` closes P8.5 with browser audio capture and mock transcription candidate evidence; `WO-041` adds production-shaped identity/config governance; `WO-042` adds secure storage, retention deletion approval/recovery, and backup/restore readiness; `WO-043` closes P8 with production observability/support operations evidence; `WO-044` adds synthetic EHR sandbox integration and metadata-only writeback queue hardening; `WO-045` adds synthetic ClinicOS integration hardening with module boundaries, stale/degraded mapping review, failed/degraded publication metadata, and permission-boundary evidence; `WO-046` adds synthetic AI Gateway governance hardening with prompt/model metadata, deterministic evaluation runs, output validation, unsafe-output rejection, and no-live-model/no-raw-PHI evidence; `WO-047` closes P9 review; `WO-048` through `WO-050` close P10 as launch-candidate decision-package evidence; `WO-051` closes P11 as a claim/payer decision gate; `WO-052` through `WO-060` reopen commercial-readiness rails and live-review intake without enabling live behavior; `WO-061` adds the first CR-1 runtime persistence switchover evidence through explicit repository/storage ports and a composed local Prisma core workflow repository; `WO-062` adds shared API runtime boundary evidence through validation, PHI-safe errors, request correlation, security headers, request limits, redacted logs, and CI/readiness checks; `WO-063` adds identity runtime boundary evidence through explicit `AURA_NOTE_AUTH_MODE`, local demo/strict synthetic modes, and production/preview/delegated fail-closed auth posture; `WO-064` adds CR-2 primary UI runtime API-backed route evidence and `pnpm frontend:primary-runtime-readiness`; `WO-065` through `WO-075` remain the active commercial-readiness sequence. P10 and CR-2 include a Frontend Runtime Integration Gate requiring typed API clients, persisted backend state, documented mocks where live dependencies are disabled, and Playwright evidence for at least one seeded backend-backed appointment-to-finalization/export workflow before launch-candidate readiness can be claimed.
 
 ## Safety boundary
 
@@ -578,3 +578,36 @@ Do not implement these tranches directly from this backlog. Promote one tranche 
 **Known risks:**
 
 - Real tenant scope, named support/on-call owners, pilot dates, production approvals, production credentials, production PHI posture, live vendors, charge finalization, medical-necessity determination, and claim submission remain deferred.
+
+## Commercial Readiness Runtime Note — CR-3 Completion
+
+**Promotion status:** `WO-067` through `WO-070` are complete as synthetic/local CR-3 integration and governance runtime evidence.
+
+**Objective:** Preserve the post-CP4 backlog distinction between production-shaped runtime boundaries and production launch approval. CR-3 completed ModeResolver/ClinicOS adapter-boundary evidence, transcription provider boundary evidence, EHR sandbox runtime boundary evidence, and AI runtime governance boundary evidence.
+
+**Acceptance evidence:**
+
+- `pnpm mode:adapter-readiness`, `pnpm transcription:runtime-boundary-readiness`, `pnpm ehr:sandbox-runtime-readiness`, and `pnpm ai:runtime-governance-readiness` pass before CR-3 can be considered complete.
+- `CHECKPOINT_REPORT.md` records CR-3 as complete with `next_work_order: null` until checkpoint review promotes CR-4.
+- Live ClinicOS, EHR, transcription, AI, storage, payer, and production launch behavior remain disabled.
+
+**Known risks:**
+
+- CR-4 has now been completed as review-ready synthetic evidence. Future production launch still needs a later founder-approved work order with named live-vendor, PHI, security, compliance/privacy, clinical, operational, and launch-approval evidence.
+
+## Commercial Readiness Runtime Note - CR-4 Completion
+
+**Promotion status:** `WO-071` through `WO-075` are complete as synthetic/local CR-4 commercial readiness review evidence.
+
+**Objective:** Package security/privacy/compliance, observability/SRE/support, billing/revenue integrity, beta-pilot, and commercial decision-gate evidence without approving production launch.
+
+**Acceptance evidence:**
+
+- `pnpm security:commercial-readiness`, `pnpm ops:commercial-readiness`, `pnpm billing:revenue-integrity-readiness`, `pnpm beta:pilot-package-readiness`, and `pnpm commercial:readiness` are the CR-4 gates.
+- `/support/commercial-readiness` exposes the CR-4 review package through a permission-checked API boundary.
+- `/aura-note/support/status` renders CR-4 commercial readiness, work-order evidence, required final reviews, and `productionLaunchReady=false`.
+- `docs/COMMERCIAL_READINESS_REVIEW_PACKET.md` records Figma readiness, beta-pilot package readiness, commercial-review readiness, disabled capability inventory, and no-launch posture.
+
+**Known risks:**
+
+- Production launch, real tenant onboarding, live PHI, production credentials, live OIDC/SAML, live ClinicOS delegation, live ClinicOS event bus, live EHR/writeback, live transcription, live external AI, live Azure PHI storage, claim submission, charge finalization, medical-necessity determination, patient-facing financial conclusions, certification claims, and autonomous clinical/coding/billing behavior remain deferred.

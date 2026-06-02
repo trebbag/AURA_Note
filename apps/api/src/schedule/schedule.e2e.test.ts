@@ -272,6 +272,9 @@ describe('schedule appointment lifecycle API', () => {
       .expect(200);
 
     assert.equal(provider.body.data.providerStatus.liveProviderCallsEnabled, false);
+    assert.equal(provider.body.data.providerStatus.providerBoundary, 'server_side_adapter');
+    assert.equal(provider.body.data.providerStatus.runtimeStates.includes('provider_unavailable'), true);
+    assert.equal(provider.body.data.providerStatus.retryPolicy.deadLetterState, 'dead_lettered_metadata_only');
 
     const mockJob = await request(app.getHttpServer())
       .post(`/api/v1/documentation-workspace/appointments/${created.body.data.appointment.appointmentId}/transcription/jobs/mock`)
@@ -280,6 +283,15 @@ describe('schedule appointment lifecycle API', () => {
 
     assert.equal(mockJob.body.data.transcriptionJob.liveProviderCalled, false);
     assert.equal(mockJob.body.data.transcript.segments[0].confidence, 0.91);
+
+    const disabledLiveProvider = await request(app.getHttpServer())
+      .post(`/api/v1/documentation-workspace/appointments/${created.body.data.appointment.appointmentId}/transcription/jobs/disabled-live-provider`)
+      .set('x-aura-role', 'clinician')
+      .expect(201);
+
+    assert.equal(disabledLiveProvider.body.data.providerStatus.mode, 'external_disabled');
+    assert.equal(disabledLiveProvider.body.data.transcriptionJob.status, 'failed');
+    assert.equal(disabledLiveProvider.body.data.transcriptionJob.liveProviderCalled, false);
 
     const correction = await request(app.getHttpServer())
       .post(
