@@ -1030,3 +1030,15 @@ Codex must append a dated entry after each work order or meaningful implementati
 - **Accepted risks:** None beyond the existing `WO-077` planned-only production decision posture.
 - **Open SPEC_GAPs:** None active as of post-`WO-077` duplicate artifact cleanup and next-sequence rails review. Deferred production decisions remain in `SPEC_GAPS.md`.
 - **Next step:** Commit and push the CI repair, then confirm PR #68 GitHub Actions passes.
+
+## 2026-06-02T19:15:49Z — Post-CR4 founder production-decision input capture
+
+- **Work order:** No new work order promoted. `WO-077` remains the latest completed work order; `WO-078` through `WO-089` remain planned and input-gated.
+- **Summary:** Captured the founder/operator's partial production-decision inputs after `WO-077`. The founder/operator is now recorded as the launch owner and approval authority unless a later written decision delegates an approval lane. The local Flow project is recorded as the reference pattern for Azure/Microsoft Entra identity, the `clinicos1` tenant, Microsoft redirect login, Entra-linked provisioning, Azure PostgreSQL, RLS/encryption, Key Vault, and Azure Blob recovery-posture planning.
+- **Files changed:** `CHECKPOINT_REPORT.md`, `SPEC_GAPS.md`, `docs/POST_CR4_LAUNCH_GOVERNANCE_INTAKE.md`, `docs/POST_CR4_NEXT_WORK_ORDER_SEQUENCE.md`, `docs/POST_CR4_PRODUCTION_DECISION_INPUTS.md`, `docs/PRODUCTION_AZURE_STORAGE_DELETION_RESTORE_REVIEW.md`, `docs/PRODUCTION_BUILD_PLAN.md`, `docs/PRODUCTION_IDENTITY_ACCOUNT_LIFECYCLE_REVIEW.md`, `docs/PRODUCTION_PHI_PERSISTENCE_DATABASE_OPERATIONS_REVIEW.md`, `repo_status.json`, and `RUN_LOG.md`.
+- **Tests run:** `pnpm post-cr4:next-work-orders`; `pnpm post-cr4:launch-governance`; `pnpm commercial:readiness-plan`; `pnpm production:readiness`; `pnpm acceptance:readiness`; `node scripts/status.js`; `git diff --check`.
+- **Tests not run:** Full unit/e2e/browser/build gate was not rerun because this was a documentation/status-only input-capture change and the relevant readiness guards passed.
+- **Accepted risks:** The Flow reference reduces ambiguity but does not provide AURA Note-specific launch scope, production resource names, secret-store delivery, PHI database approval, Azure storage/deletion/restore approval, vendor approvals, or operational approval details.
+- **Open SPEC_GAPs:** None active as of post-`WO-077` duplicate artifact cleanup and next-sequence rails review. Deferred production decisions remain in `SPEC_GAPS.md`, now with the partial Flow/founder inputs noted.
+- **Safety boundary:** No production launch, live PHI, production credentials, live OIDC/SAML, live ClinicOS delegation, live EHR/writeback, live transcription, live external AI, live Azure PHI storage, claim submission, charge finalization, medical-necessity determination, order placement, patient-facing financial conclusion, certification claim, or autonomous clinical/coding/billing behavior is authorized or introduced.
+- **Next step:** Keep `WO-078` through `WO-089` planned until the remaining AURA Note-specific inputs in `docs/POST_CR4_PRODUCTION_DECISION_INPUTS.md` are supplied and a planned work order is deliberately promoted.

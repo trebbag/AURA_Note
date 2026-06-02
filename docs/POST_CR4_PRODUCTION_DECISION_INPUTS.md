@@ -4,6 +4,17 @@ This file lists exactly what Codex needs from the founder/operator and reviewers
 
 Do not place secrets, passwords, tokens, private keys, real patient data, production PHI, or `.env` contents in this repository. Credentials must be provided through an approved secret store or local secure runtime configuration after the relevant work order is promoted.
 
+## Founder-Provided Partial Inputs Captured 2026-06-02
+
+These inputs came directly from the founder/operator and reduce ambiguity for the next production-decision work orders. They do not approve production launch, live PHI, live vendors, production credentials, live EHR writeback, live transcription, live AI, live Azure PHI storage, claim submission, charge finalization, medical-necessity determination, or autonomous clinical/coding/billing behavior.
+
+- Launch owner and approval authority: the founder/operator is the launch owner and approver for founder, clinical, compliance/privacy, security, legal/risk, and commercial go/no-go decisions unless a later written decision delegates one of those authorities.
+- Reference project for identity, account lifecycle, Azure, and database posture: `/Users/gregorygabbert/Documents/GitHub/Flow`.
+- Flow identity/account pattern to evaluate for AURA Note: Microsoft Entra-first authentication, Microsoft account redirect login, the `clinicos1` Entra tenant, backend JWT validation, Entra-linked user provisioning, tenant-member accounts only, no guest/B2B users, disabled/deleted directory identity rejection, and application-owned role/scope enforcement after identity resolution.
+- Flow Azure/database pattern to evaluate for AURA Note: Azure Static Web Apps plus Azure App Service deployment posture, Azure Database for PostgreSQL Flexible Server, separate migration/runtime database roles where configured, app-layer scope checks, RLS evidence, PHI-at-rest encryption posture, and documented backup/restore objectives.
+- Flow storage/recovery pattern to evaluate for AURA Note: Azure Key Vault for secrets, Azure Blob soft-delete/versioning as the documented object-storage recovery posture, and private Blob run-from-package deployment packaging. This is not yet an AURA Note PHI artifact-storage approval.
+- Exact tenant IDs, app registration IDs, client IDs, database connection strings, storage account names, secret values, and `.env` values must not be copied into this repo as production configuration. AURA Note still needs approved non-secret configuration names and secret-store delivery before live work is promoted.
+
 ## 1. Production Launch Governance
 
 Required inputs:
@@ -26,6 +37,14 @@ Required inputs:
 - launch communications owner;
 - explicit written approval to change `productionLaunchApproved` from false if that is intended.
 
+Captured partial input:
+
+- The founder/operator is the named launch decision owner and approval authority for launch, clinical, compliance/privacy, security, legal/risk, and commercial go/no-go decisions unless delegated later.
+
+Still needed before `WO-078` can be promoted:
+
+- launch scope, tenant/site scope, enabled roles, disabled-feature inventory, go/no-go criteria, rollback procedure owner, support hours/escalation path, incident commander and backup, access review cadence, backup/restore drill acceptance criteria, launch communications owner, and explicit written approval if the launch flags are intended to change later.
+
 ## 2. Production Identity Provider And Account Lifecycle
 
 Required inputs:
@@ -45,6 +64,15 @@ Required inputs:
 - test users or sandbox tenant identity metadata;
 - approved non-secret configuration names;
 - credential delivery method through secret storage.
+
+Captured partial input:
+
+- Candidate identity provider and account pattern should reference the Flow project in `/Users/gregorygabbert/Documents/GitHub/Flow`.
+- Flow uses Azure/Microsoft Entra with the `clinicos1` tenant, Microsoft redirect login, SPA/API app-registration separation, backend JWT validation, Entra-linked user records, tenant-member-only access, guest/B2B denial, disabled/deleted account denial, and DB-managed role/scope authorization after identity resolution.
+
+Still needed before `WO-079` can be promoted:
+
+- AURA Note-specific OIDC/SAML/ClinicOS delegated identity mode; exact non-secret Entra authority/audience/scope/config variable names; approved app registration names; Microsoft Graph access posture; MFA/session/inactivity policy; disabled-user and account-recovery policy; joiner/mover/leaver process; access-review cadence; break-glass policy; identity audit retention; sandbox test users; and secret-store delivery method.
 
 ## 3. Production PHI Persistence And Database Operations
 
@@ -66,6 +94,14 @@ Required inputs:
 - staging database policy;
 - approved production connection-string secret name, not the secret value.
 
+Captured partial input:
+
+- Candidate database posture should reference Flow's Azure Database for PostgreSQL Flexible Server pattern, local-to-PostgreSQL staging support, separate migration/runtime database URL posture, RLS evidence, append-only event protection, PHI-at-rest encryption posture, and documented backup/restore objectives.
+
+Still needed before `WO-080` can be promoted:
+
+- AURA Note-specific database vendor/host approval, Azure region/residency, tenant/site isolation policy, RLS coverage approval for all AURA Note tenant-owned tables, migration/admin/runtime role names, migration approval and rollback process, backup schedule, RTO/RPO, encryption and key ownership, PHI retention by data class, support database access policy, monitoring requirements, staging database policy, and approved production connection-string secret name.
+
 ## 4. Production Azure Storage, Deletion, And Restore
 
 Required inputs:
@@ -86,6 +122,15 @@ Required inputs:
 - evidence-retention policy;
 - storage monitoring and alerting requirements;
 - approved secret names for credentials or managed identity, not secret values.
+
+Captured partial input:
+
+- Candidate Azure posture should reference Flow's Azure resource/runbook pattern, Azure Key Vault secret posture, Azure Blob soft-delete/versioning recovery posture, and private Blob deployment-package usage.
+- Flow's private Blob run-from-package deployment packaging is not the same as AURA Note PHI-bearing export/audio/audit artifact storage.
+
+Still needed before `WO-081` can be promoted:
+
+- AURA Note-specific Azure tenant/subscription/resource group; storage account and container names by artifact class; region/residency; private networking; encryption/key management; soft-delete/versioning/legal-hold configuration; signed-download expiration policy; artifact retention classes; raw-audio deletion approval role and approval-record source; recovery window; backup/restore drill criteria; evidence-retention policy; monitoring/alerting; and approved managed identity or credential secret names.
 
 ## 5. Live Transcription Provider And PHI-Bearing Audio Transport
 

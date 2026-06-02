@@ -13,6 +13,19 @@ This is a planning/control artifact only. It does not provision Azure resources,
 - Raw-audio deletion remains approval-gated and recovery-window-aware in local evidence only.
 - Transcript retention remains indefinite unless a future tenant policy is approved and implemented.
 
+## Founder-Provided Partial Input Captured 2026-06-02
+
+Use the local Flow project at `/Users/gregorygabbert/Documents/GitHub/Flow` as the reference implementation pattern for Azure storage and recovery planning.
+
+Flow evidence to evaluate for AURA Note:
+
+- Azure Key Vault as the secret source for sensitive runtime values.
+- Azure Blob soft-delete and versioning as the documented object-storage recovery posture.
+- Azure Blob private deployment-package usage for App Service run-from-package delivery.
+- Disaster-recovery objectives that include PostgreSQL point-in-time recovery, Key Vault soft-delete/purge protection, and Blob recovery expectations.
+
+This partial input does not approve AURA Note PHI-bearing export, raw-audio, transcript, audit-export, or evidence object storage. The Flow private deployment-package Blob pattern is deployment infrastructure evidence, not AURA Note PHI artifact-storage approval.
+
 ## Required Production Decisions
 
 ### Azure account and container topology

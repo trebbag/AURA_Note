@@ -1124,6 +1124,7 @@ This gate does not authorize live EHR writeback, live AI, live transcription, pr
 - **Objective:** Assemble the launch governance dossier and approval evidence required before any launch-ready marker can change.
 - **Why this exists:** CR-4 review readiness is not production launch approval.
 - **Prerequisites:** `WO-077`; exact launch owner/reviewer inputs from `docs/POST_CR4_PRODUCTION_DECISION_INPUTS.md`.
+- **Founder-provided partial input captured 2026-06-02:** the founder/operator is the launch owner and approval authority unless a later written decision delegates an approval lane.
 - **In scope:** launch scope, approver roster, go/no-go criteria, rollback authority, support ownership, disabled-feature acceptance, approval records.
 - **Out of scope:** enabling live PHI, live vendors, credentials, deployment, or production launch.
 - **UX requirements:** launch/readiness status surfaces must show approval, blocked, failed, permission-denied, and read-only states.
@@ -1145,6 +1146,7 @@ This gate does not authorize live EHR writeback, live AI, live transcription, pr
 - **Objective:** Promote identity from synthetic fail-closed scaffolding to approved production identity integration.
 - **Why this exists:** live use requires real identity, lifecycle, MFA/session, and access-review controls.
 - **Prerequisites:** `WO-078` inputs or explicit identity-only activation approval; IdP and credential secret names selected.
+- **Founder-provided partial input captured 2026-06-02:** evaluate the local Flow project's Azure/Microsoft Entra, `clinicos1` tenant, Microsoft redirect login, JWT validation, Entra-linked provisioning, tenant-member-only, guest/B2B denial, disabled/deleted identity denial, and app-owned role/scope pattern for AURA Note adoption.
 - **In scope:** OIDC/SAML/ClinicOS delegation adapter activation, disabled-user handling, session expiry, account lifecycle, access review.
 - **Out of scope:** committing secrets, bypassing AURA Note permissions, live PHI access before approval.
 - **UX requirements:** login disabled/configured/failed, expired session, disabled user, permission-denied, and read-only states.
@@ -1166,6 +1168,7 @@ This gate does not authorize live EHR writeback, live AI, live transcription, pr
 - **Objective:** Prepare production PHI database operations without weakening tenant isolation.
 - **Why this exists:** local PostgreSQL evidence does not equal approved production PHI persistence.
 - **Prerequisites:** database host, roles, RLS review, migration/backup/restore approval, PHI retention policy.
+- **Founder-provided partial input captured 2026-06-02:** evaluate the local Flow project's Azure PostgreSQL Flexible Server, migration/runtime role posture, RLS evidence, PHI encryption, append-only event protection, and backup/restore objectives for AURA Note adoption.
 - **In scope:** production database config validation, RLS coverage confirmation, migration approval workflow, backup/restore evidence contracts.
 - **Out of scope:** committing connection strings, live PHI writes before approval, support database access without policy.
 - **UX requirements:** admin/status surfaces show database configured, degraded, blocked, failed, permission-denied, and read-only states.
@@ -1187,6 +1190,7 @@ This gate does not authorize live EHR writeback, live AI, live transcription, pr
 - **Objective:** Activate production storage delivery and deletion controls only after Azure/storage governance inputs are approved.
 - **Why this exists:** storage adapters exist, but live Azure PHI storage and destructive deletion remain disabled.
 - **Prerequisites:** Azure account/container, managed identity or credential secret names, soft-delete/versioning, deletion approval policy.
+- **Founder-provided partial input captured 2026-06-02:** evaluate the local Flow project's Key Vault, Azure Blob soft-delete/versioning, private Blob deployment-package usage, and recovery posture while separately deciding AURA Note PHI artifact-storage controls.
 - **In scope:** non-public object storage, server-mediated downloads, retention deletion approval/recovery, restore-readiness metadata.
 - **Out of scope:** public URLs, destructive production deletion without approval, committing credentials, PHI-bearing audit exports before approval.
 - **UX requirements:** download configured/expired/denied, deletion approval-required/recovery-window/read-only, failed restore-readiness states.

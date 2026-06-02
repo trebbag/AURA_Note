@@ -1272,3 +1272,19 @@ Deferred decisions remain tracked in `SPEC_GAPS.md` and are mapped to planned `W
 ## Next recommended batch
 
 Do not promote a planned work order until the required inputs in `docs/POST_CR4_PRODUCTION_DECISION_INPUTS.md` are available. Recommended next candidate is `WO-078` if the founder is ready to assemble launch governance approvals; otherwise choose the planned work order matching the first available production decision package.
+
+---
+
+# Post-WO-077 Founder Production-Decision Input Capture
+
+## Captured inputs
+
+- The founder/operator is the launch owner and approval authority unless a later written decision delegates an approval lane.
+- Identity and account lifecycle planning should reference the local Flow project at `/Users/gregorygabbert/Documents/GitHub/Flow`.
+- The Flow reference pattern includes Azure/Microsoft Entra, the `clinicos1` tenant, Microsoft redirect login, backend JWT validation, Entra-linked provisioning, tenant-member account restriction, guest/B2B denial, disabled/deleted identity denial, and application-owned role/scope enforcement.
+- Production PHI database planning should evaluate Flow's Azure PostgreSQL Flexible Server, RLS/encryption, migration/runtime role, append-only evidence, and backup/restore posture.
+- Production Azure storage planning should evaluate Flow's Key Vault, Blob soft-delete/versioning, and recovery posture, while separately deciding AURA Note PHI artifact-storage controls.
+
+## Remaining boundary
+
+This input capture does not promote `WO-078` through `WO-081`, approve production launch, enable live PHI, configure production credentials, approve live vendors, approve PHI-bearing Azure object storage, or change any production launch flag. The remaining required inputs are listed in `docs/POST_CR4_PRODUCTION_DECISION_INPUTS.md`.

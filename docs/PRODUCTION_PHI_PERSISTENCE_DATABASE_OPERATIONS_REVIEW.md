@@ -12,6 +12,21 @@ This document is the `WO-054` planning/control intake for production PHI persist
 - Broad runtime behavior remains governed by existing synthetic/local adapters unless a completed work order explicitly changes it.
 - Production backup/restore execution and support database access remain blocked.
 
+## Founder-Provided Partial Input Captured 2026-06-02
+
+Use the local Flow project at `/Users/gregorygabbert/Documents/GitHub/Flow` as the reference implementation pattern for Azure database and PHI-at-rest planning.
+
+Flow evidence to evaluate for AURA Note:
+
+- Azure Database for PostgreSQL Flexible Server as the production/pilot-shaped database host.
+- Separate migration/admin and runtime connection posture where configured.
+- PostgreSQL RLS evidence using application session scope.
+- Append-only event-table protection through grants and policy evidence.
+- PHI-at-rest protection posture using Azure Key Vault-sourced column encryption plus database encryption-at-rest.
+- Backup/restore objectives and disaster-recovery drill posture.
+
+This partial input does not approve AURA Note production PHI persistence, production connection-string secret names, AURA Note table-by-table RLS coverage, migration approval workflow, backup schedule, RTO/RPO, support database access, or live migration execution.
+
 ## Required Decisions Before Live Implementation
 
 - Production database host and region.
