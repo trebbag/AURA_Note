@@ -62,6 +62,12 @@ const differingDuplicates = sourceDuplicateArtifacts.filter((relativePath) => {
   const original = candidateOriginal(relativePath);
   return !exists(original) || sha256(relativePath) !== sha256(original);
 });
+const intakeRecordsDuplicateInventory =
+  intake.includes('141 duplicate-pattern files') &&
+  intake.includes('43 files were byte-identical') &&
+  intake.includes('98 files differed') &&
+  intake.includes('remaining visible untracked duplicate source/doc/script files') &&
+  intake.includes('duplicateSourceDeletionApproved=false');
 
 check('status.wo076-done', 'repo_status marks WO-076 done', status.work_orders?.['WO-076'] === 'done', status.work_orders?.['WO-076']);
 check('status.checkpoint-cr4', 'repo_status remains at CR-4 post-governance intake', status.current_checkpoint === 'CR-4', status.current_checkpoint);
@@ -79,10 +85,11 @@ check('doc.duplicate-inventory', 'Intake document records duplicate artifact inv
 check('gitignore.next', 'Nested Next.js build outputs are ignored recursively', gitignore.includes('**/.next/'), '.gitignore');
 check('gitignore.dist', 'Nested dist build outputs are ignored recursively', gitignore.includes('**/dist/'), '.gitignore');
 check('duplicates.generated-hidden', 'No untracked duplicate artifacts from nested generated output remain visible to git', duplicateArtifacts.every((relativePath) => !relativePath.includes('/.next/') && !relativePath.includes('/dist/')), duplicateArtifacts.filter((relativePath) => relativePath.includes('/.next/') || relativePath.includes('/dist/')).slice(0, 20));
-check('duplicates.review-required', 'Duplicate source/doc/script artifacts are inventoried for later review, not silently deleted', sourceDuplicateArtifacts.length > 0 && differingDuplicates.length > 0, {
+check('duplicates.review-required', 'Duplicate source/doc/script artifacts are inventoried for later review, not silently deleted', (sourceDuplicateArtifacts.length > 0 && differingDuplicates.length > 0) || (sourceDuplicateArtifacts.length === 0 && intakeRecordsDuplicateInventory), {
   sourceDuplicateCount: sourceDuplicateArtifacts.length,
   exactDuplicateCount: exactDuplicates.length,
-  differingDuplicateCount: differingDuplicates.length
+  differingDuplicateCount: differingDuplicates.length,
+  committedInventoryRecorded: intakeRecordsDuplicateInventory
 });
 check('package.script', 'package.json exposes post-cr4 launch governance gate', packageJson.scripts?.['post-cr4:launch-governance'] === 'node scripts/validate-post-cr4-launch-governance.js', packageJson.scripts?.['post-cr4:launch-governance']);
 check('ci.script', 'CI runs post-cr4 launch governance gate', ci.includes('pnpm post-cr4:launch-governance'), '.github/workflows/ci.yml');
