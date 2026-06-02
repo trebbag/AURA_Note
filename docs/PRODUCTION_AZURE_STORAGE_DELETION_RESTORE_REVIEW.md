@@ -2,9 +2,9 @@
 
 ## Purpose
 
-This document captures the production decisions required before AURA Note can use Azure Blob Storage for PHI-bearing export delivery, raw-audio storage, destructive deletion, or restore execution.
+This document captures the production decisions and no-PHI infrastructure evidence required before AURA Note can use Azure Blob Storage for PHI-bearing export delivery, raw-audio storage, destructive deletion, or restore execution.
 
-This is a planning/control artifact only. It does not provision Azure resources, introduce credentials, enable public URLs, deliver PHI-bearing objects, run destructive deletion against production storage, execute restore drills, or approve production launch.
+This is not a production activation artifact. It now records that no-PHI Azure infrastructure has been provisioned, but it does not introduce production runtime credentials, enable public URLs, deliver PHI-bearing objects, run destructive deletion against production storage, execute restore drills, or approve production launch.
 
 ## Current Safe Posture
 
@@ -37,7 +37,7 @@ Azure CLI verification succeeded for the founder-provided resource group:
 - Resource group location: `eastus`
 - Provisioning state: `Succeeded`
 
-This confirms the non-secret Azure tenant/subscription/resource-group baseline for future AURA Note storage planning. It does not create or approve a storage account, containers, managed identity, credentials, private networking, PHI object delivery, destructive deletion, restore execution, or production launch.
+This confirmed the non-secret Azure tenant/subscription/resource-group baseline used for the later no-PHI storage provisioning evidence. It did not by itself approve PHI object delivery, destructive deletion, restore execution, or production launch.
 
 ## AURA Note Storage Decisions Captured 2026-06-02
 
@@ -45,20 +45,38 @@ The founder/operator confirmed that `eastus` is acceptable and authorized Codex 
 
 `docs/PRODUCTION_AZURE_STORAGE_DECISION_RECORD.md` now records:
 
-- candidate storage account `auranoteeastus91d0`, which Azure reported as available during `az storage account check-name` on 2026-06-02;
+- storage account `auranoteeastus91d0`, which Azure reported as available during `az storage account check-name` before creation on 2026-06-02;
 - one `StorageV2` account in `eastus`, `Standard ZRS`, `Hot` tier, TLS 1.2 or later, secure transfer required, public blob access disabled, shared key access disabled, and managed-identity access;
-- candidate managed identity `aura-note-storage-mi` and candidate Key Vault reference `aura-note-kv-91d0`;
+- managed identity `aura-note-storage-mi` and Key Vault reference `aura-note-kv-91d0`;
 - containers for final note PDFs, patient summary PDFs, structured exports, redacted audit export bundles, raw audio, transcripts, storage evidence, and restore-drill evidence;
 - tenant/site object-key prefixing, private endpoint requirement, server-mediated download tokens, TTLs, role/tenant/site/purpose checks, patient-summary internal-detail exclusions, and redacted audit export posture;
 - raw-audio 7-day purge eligibility, transcript indefinite retention, 14-day Blob and container soft delete, versioning, legal-hold deletion blocking, evidence retention, restore-readiness cadence, and monitoring/alerting requirements.
 
-This removes ambiguity for future `WO-081` implementation. It does not provision Azure resources, enable PHI-bearing production object storage, enable public URLs, enable destructive production deletion, execute restore drills, or approve launch.
+This removed ambiguity for future `WO-081` implementation and was followed by no-PHI Azure infrastructure provisioning evidence in `docs/PRODUCTION_AZURE_STORAGE_PROVISIONING_EVIDENCE.md`. It still does not enable PHI-bearing production object storage, public URLs, destructive production deletion, restore drills, or launch.
+
+## AURA Note No-PHI Azure Provisioning Evidence Captured 2026-06-02
+
+After the founder/operator confirmed `eastus` and delegated the remaining non-secret choices, Codex provisioned the safe no-PHI Azure foundation:
+
+- storage account `auranoteeastus91d0`;
+- private artifact containers listed in the decision record;
+- managed identity `aura-note-storage-mi`;
+- storage-account-scoped `Storage Blob Data Contributor` role assignment for the managed identity;
+- Key Vault boundary `aura-note-kv-91d0`;
+- VNet `aura-note-vnet-eastus`;
+- private endpoint subnet `aura-note-private-endpoints`;
+- private DNS zone and VNet link for `privatelink.blob.core.windows.net`;
+- Blob private endpoint `aura-note-storage-blob-pe` with approved connection and private DNS record.
+
+Azure CLI verification showed public network access disabled, firewall deny-by-default, shared key access disabled, Blob public access disabled, HTTPS-only traffic, TLS 1.2 minimum, 14-day Blob soft delete, 14-day container soft delete, and Blob versioning enabled.
+
+The provisioning evidence is infrastructure-only. AURA Note still needs approved runtime config/secret-store references, runtime private-network integration, synthetic no-PHI object-level tests, legal-hold/deletion/restore-readiness execution evidence, and explicit production flags before PHI storage or deletion behavior can be enabled.
 
 ## Required Production Decisions
 
 ### Azure account and container topology
 
-- Selected for future activation evidence: candidate storage account `auranoteeastus91d0`, `eastus`, `StorageV2`, `Standard ZRS`, `Hot`, shared-account with strict tenant/site prefixes, and artifact-class containers listed in `docs/PRODUCTION_AZURE_STORAGE_DECISION_RECORD.md`.
+- Selected and provisioned for no-PHI activation evidence: storage account `auranoteeastus91d0`, `eastus`, `StorageV2`, `Standard ZRS`, `Hot`, shared-account with strict tenant/site prefixes, and artifact-class containers listed in `docs/PRODUCTION_AZURE_STORAGE_DECISION_RECORD.md`.
 - Production object keys must use tenant/site prefixes and activation should add date partitioning without weakening the current tenant-scoped key invariant.
 - Private endpoint, private DNS, deny-by-default firewall, and no public Blob access remain required before PHI-bearing storage is enabled.
 
@@ -66,7 +84,7 @@ This removes ambiguity for future `WO-081` implementation. It does not provision
 
 - Selected credential source: managed identity.
 - Prohibit committed credentials, `.env` secrets, shared access keys in source control, and browser-side storage credentials.
-- Candidate managed identity: `aura-note-storage-mi`; candidate Key Vault reference: `aura-note-kv-91d0`.
+- Managed identity: `aura-note-storage-mi`; Key Vault reference: `aura-note-kv-91d0`.
 - Future activation must define least-privilege roles for upload, server-mediated download, deletion, restore-readiness verification, support review, and audit export delivery.
 
 ### Encryption and key management
@@ -156,11 +174,10 @@ ClinicOS-integrated mode may map storage delivery and evidence to ClinicOS or In
 
 ## Deferred Until Future Work Order
 
-- Production Azure resource provisioning.
-- Production storage credentials, managed identity binding, or secret-manager integration.
+- Production runtime credential delivery, managed identity config-store binding, or secret-manager integration.
 - PHI-bearing object upload/download delivery.
-- Live Azure SDK execution against production resources.
-- Public-network/private-network policy verification against a real account.
+- Live Azure SDK execution against production resources from the AURA Note runtime.
+- Object-level upload/download/delete/readiness verification through the private runtime path.
 - Destructive production deletion.
 - Production restore execution.
 - PHI-bearing audit export delivery.
@@ -168,4 +185,4 @@ ClinicOS-integrated mode may map storage delivery and evidence to ClinicOS or In
 
 ## Future Activation Evidence Now Narrowed By Decision Record
 
-`WO-081` no longer needs to invent the storage account/container names, `eastus` region decision, basic redundancy tier, credential source, download TTLs, raw-audio retention window, transcript retention posture, Blob soft-delete/versioning window, or restore-readiness cadence. It still must provision and verify the resources, managed identity, private endpoint, private DNS, firewall, RBAC assignments, live Azure configuration, and synthetic no-PHI readiness evidence before any production storage flag can be changed.
+`WO-081` no longer needs to invent the storage account/container names, `eastus` region decision, basic redundancy tier, credential source, download TTLs, raw-audio retention window, transcript retention posture, Blob soft-delete/versioning window, restore-readiness cadence, or initial no-PHI Azure infrastructure. It still must bind approved runtime configuration, connect the app through the private network, verify live Azure object behavior with synthetic no-PHI objects, prove deletion/legal-hold/restore-readiness controls, wire monitoring, and keep production PHI/deletion/restore/launch flags disabled until the activation gate passes.

@@ -725,7 +725,7 @@ No implementation work order is active. The next safest planning/control candida
 
 - `WO-055` added `docs/PRODUCTION_AZURE_STORAGE_DELETION_RESTORE_REVIEW.md` with required future Azure storage decisions, acceptance criteria, event/audit inventory, standalone behavior, and ClinicOS storage-boundary requirements.
 - `WO-055` added `work_orders/WO-055_production_azure_storage_deletion_restore_review_intake.md` so the intake is reviewable and bounded.
-- `pnpm storage:live-review-readiness` verifies that the tranche remains planning/control only and does not enable live Azure credentials, PHI-bearing object delivery, public URLs, destructive production deletion, production restore execution, PHI-bearing audit exports, runtime storage behavior, or launch behavior.
+- `pnpm storage:live-review-readiness` now verifies both the original `WO-055` planning/control boundary and the later post-CR4 no-PHI Azure infrastructure evidence, while confirming that production runtime credentials, PHI-bearing object delivery, public URLs, destructive production deletion, production restore execution, PHI-bearing audit exports, runtime storage behavior, and launch behavior remain disabled.
 - `repo_status.json` records `WO-055: done` while preserving the P11 checkpoint and no active next work order.
 
 ## Tests and gates
@@ -1308,3 +1308,26 @@ This decision capture does not promote `WO-081`, provision Azure resources, crea
 
 - `az storage account check-name --name auranoteeastus91d0` returned `nameAvailable: true` on 2026-06-02.
 - `pnpm storage:live-review-readiness` now verifies that the decision record exists and contains the required non-secret decisions while prohibited live/launch markers remain absent.
+
+---
+
+# Post-WO-077 Azure Storage No-PHI Provisioning Evidence
+
+## Captured evidence
+
+- The founder/operator confirmed `eastus` is acceptable and authorized Codex to make the remaining non-secret Azure storage, deletion, and restore choices.
+- Azure no-PHI infrastructure was provisioned in tenant `b9b1d566-d7ed-44a4-b3cc-cf8786d6a6ed`, subscription `Subscription Malady`, resource group `AURA_resource_group`, region `eastus`.
+- `docs/PRODUCTION_AZURE_STORAGE_PROVISIONING_EVIDENCE.md` records storage account `auranoteeastus91d0`, private artifact containers, managed identity `aura-note-storage-mi`, storage-account-scoped `Storage Blob Data Contributor` RBAC, Key Vault boundary `aura-note-kv-91d0`, VNet `aura-note-vnet-eastus`, private endpoint subnet `aura-note-private-endpoints`, private DNS zone/link for `privatelink.blob.core.windows.net`, Blob private endpoint `aura-note-storage-blob-pe`, and private DNS record `auranoteeastus91d0.privatelink.blob.core.windows.net`.
+- Azure CLI verification showed public network access disabled, firewall deny-by-default, shared-key access disabled, Blob public access disabled, HTTPS-only traffic, TLS 1.2 minimum, 14-day Blob soft delete, 14-day container soft delete, Blob versioning enabled, and Key Vault RBAC/soft-delete/purge-protection/public-network-disabled posture.
+
+## Remaining boundary
+
+This no-PHI infrastructure evidence does not promote `WO-081`, approve production launch, commit secrets, enable production runtime credentials, enable PHI-bearing object delivery, expose public object URLs, execute destructive deletion, execute production restore, enable PHI-bearing audit exports, submit claims, finalize charges, determine medical necessity, or authorize autonomous clinical/coding/billing behavior.
+
+## Remaining WO-081 evidence
+
+- Approved config/secret-store references and deployment environment names outside source control.
+- App/API/worker runtime integration through the private network using the managed identity.
+- Synthetic no-PHI object-level tests for upload, server-mediated download token, wrong-tenant denial, expired-token denial, deletion block, legal hold, and restore readiness.
+- Monitoring/alert wiring for storage posture drift, Key Vault drift, private endpoint/DNS failure, deletion failure, restore-readiness failure, wrong-tenant access attempts, and high egress.
+- Explicit founder/operator approval before PHI-bearing object delivery, destructive deletion, PHI restore execution, or launch flags change.

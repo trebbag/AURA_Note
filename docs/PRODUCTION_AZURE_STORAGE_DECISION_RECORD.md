@@ -2,15 +2,15 @@
 
 ## Purpose
 
-This record captures the non-secret AURA Note Azure Blob Storage choices that can be made from the founder-approved `eastus` posture and the verified AURA Note Azure resource baseline.
+This record captures the non-secret AURA Note Azure Blob Storage choices that can be made from the founder-approved `eastus` posture and the verified AURA Note Azure resource baseline. It now also points to no-PHI Azure provisioning evidence created after the founder/operator authorized Codex to make the remaining non-secret storage, deletion, and restore choices.
 
-This is not a live production storage activation. No Azure storage account, container, managed identity, private endpoint, credential, PHI object, public URL, destructive deletion, or restore execution is provisioned or enabled by this record.
+This is not a live production storage activation. Azure infrastructure has been provisioned only for no-PHI readiness evidence. No production runtime credential, PHI object, public URL, destructive deletion, PHI restore execution, or production launch behavior is enabled by this record.
 
 ## Decision Authority And Date
 
 - Decision date: 2026-06-02
 - Decision authority: founder/operator approval to use `eastus` and let Codex make the remaining non-secret storage, deletion, and restore choices.
-- Evidence type: planning/control and future activation defaults.
+- Evidence type: planning/control, no-PHI Azure infrastructure, and future activation defaults.
 
 ## Verified Azure Baseline
 
@@ -21,9 +21,26 @@ This is not a live production storage activation. No Azure storage account, cont
 - Region/residency: `eastus`
 - Provisioning state verified for resource group: `Succeeded`
 
+## No-PHI Provisioning Evidence
+
+`docs/PRODUCTION_AZURE_STORAGE_PROVISIONING_EVIDENCE.md` records the no-PHI Azure infrastructure provisioned on 2026-06-02:
+
+- storage account `auranoteeastus91d0`;
+- private containers for final note PDFs, patient summary PDFs, structured exports, redacted audit export bundles, raw audio, transcripts, storage evidence, and restore-drill evidence;
+- user-assigned managed identity `aura-note-storage-mi`;
+- storage-account-scoped `Storage Blob Data Contributor` assignment for the managed identity;
+- Key Vault boundary `aura-note-kv-91d0`;
+- VNet `aura-note-vnet-eastus`;
+- private endpoint subnet `aura-note-private-endpoints`;
+- private DNS zone `privatelink.blob.core.windows.net`;
+- Blob private endpoint `aura-note-storage-blob-pe`;
+- private DNS record for `auranoteeastus91d0.privatelink.blob.core.windows.net` pointing to private IP `10.81.1.4`.
+
+This evidence confirms infrastructure existence and security posture only. It does not authorize PHI storage, runtime credential delivery, object-level production tests, destructive deletion, restore execution, or launch.
+
 ## Storage Account Decision
 
-- Candidate storage account name: `auranoteeastus91d0`
+- Provisioned storage account name: `auranoteeastus91d0`
 - Azure name availability evidence: `az storage account check-name --name auranoteeastus91d0` returned `nameAvailable: true` on 2026-06-02.
 - Account kind: `StorageV2`
 - Performance tier: `Standard`
@@ -35,10 +52,10 @@ This is not a live production storage activation. No Azure storage account, cont
 - Shared key access disabled: required
 - Browser-side storage credentials: prohibited
 - Production credential source: `managed_identity`
-- User-assigned managed identity candidate name: `aura-note-storage-mi`
-- Key Vault candidate name for non-runtime secret/config references: `aura-note-kv-91d0`
+- User-assigned managed identity name: `aura-note-storage-mi`
+- Key Vault name for non-runtime secret/config references: `aura-note-kv-91d0`
 
-If the candidate storage account name is no longer available when provisioning occurs, use the same naming policy with a short deterministic suffix derived from the subscription or approved deployment environment, and record a fresh `az storage account check-name` result before creation.
+The provisioned storage account name must not be changed without updating this decision record, the provisioning evidence, approved config references, and runtime readiness tests.
 
 ## Container Topology
 
@@ -186,12 +203,12 @@ Future activation must emit or persist audit-safe evidence for:
 
 The remaining work is implementation and evidence, not product-policy invention:
 
-- create the storage account and containers if WO-081 is promoted;
-- create or bind the managed identity;
-- configure private endpoint, private DNS, firewall, public-access denial, shared-key denial, TLS, soft delete, container soft delete, versioning, and legal-hold support;
-- assign least-privilege Blob roles to the app identity;
+- bind approved runtime secret/config-store references without committing secret values;
+- connect the production-intended app runtime through the private network and managed identity;
+- verify object-level upload, server-mediated download-token, wrong-tenant denial, expired-token denial, deletion-block, legal-hold, and restore-readiness behavior using synthetic no-PHI objects;
+- prove public-access denial, shared-key denial, TLS, soft delete, container soft delete, versioning, private endpoint, private DNS, firewall, and least-privilege RBAC remain intact after runtime integration;
 - record actual managed identity client ID and resource IDs in approved secret/config stores, not source control;
-- update activation tests to verify the live Azure configuration with synthetic, non-PHI objects only;
+- update activation tests to verify the live Azure configuration with synthetic, non-PHI objects only from the approved runtime path;
 - keep live PHI object delivery, destructive production deletion, PHI restore execution, and production launch disabled until the WO-081 activation gate passes.
 
-No live Azure resource was provisioned by this decision record.
+No PHI-bearing Azure storage behavior is enabled by this decision record.
