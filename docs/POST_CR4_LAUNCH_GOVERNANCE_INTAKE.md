@@ -22,6 +22,7 @@ The founder/operator supplied these partial production-decision inputs after `WO
 - Identity and account lifecycle planning should use the local Flow project at `/Users/gregorygabbert/Documents/GitHub/Flow` as the reference implementation pattern.
 - The Flow pattern includes Azure/Microsoft Entra, the `clinicos1` Entra tenant, Microsoft redirect login, SPA/API app-registration separation, backend JWT validation, Entra-linked user provisioning, tenant-member account restriction, guest/B2B denial, disabled/deleted directory identity denial, and app-owned role/scope enforcement.
 - The Flow pattern also provides Azure PostgreSQL, RLS/encryption, backup/restore, Key Vault, and Azure Blob recovery-posture evidence that can inform AURA Note production database and storage planning.
+- Azure CLI verified the AURA Note Azure resource baseline: tenant `b9b1d566-d7ed-44a4-b3cc-cf8786d6a6ed`, subscription `Subscription Malady` (`91d0e7fe-e9c6-40a0-af0f-98a9dc07b218`), resource group `AURA_resource_group`, location `eastus`, provisioning state `Succeeded`.
 
 These inputs are partial. They do not provide AURA Note-specific non-secret resource names, secret-store delivery paths, production launch scope, production credential approval, live PHI approval, live vendor approval, or storage/deletion/restore approval.
 
@@ -89,8 +90,8 @@ Partial decisions now recorded:
 
 - launch owner and approval authority are identified as the founder/operator;
 - identity/account lifecycle should reference the Flow project's Azure/Microsoft Entra and `clinicos1` tenant pattern;
-- production PHI database planning should evaluate the Flow Azure PostgreSQL, RLS, PHI encryption, and backup/restore pattern for AURA Note-specific adoption;
-- production Azure storage planning should evaluate the Flow Azure Key Vault, Blob soft-delete/versioning, and recovery posture, while separately deciding AURA Note PHI artifact-storage containers, retention, deletion, restore, and monitoring.
+- production PHI database planning should evaluate the Flow Azure PostgreSQL, RLS, PHI encryption, and backup/restore pattern for AURA Note-specific adoption, using the verified `AURA_resource_group` baseline unless a later decision selects a different resource group or region;
+- production Azure storage planning should evaluate the Flow Azure Key Vault, Blob soft-delete/versioning, and recovery posture, while separately deciding AURA Note PHI artifact-storage accounts, containers, retention, deletion, restore, and monitoring.
 
 ## Verification
 

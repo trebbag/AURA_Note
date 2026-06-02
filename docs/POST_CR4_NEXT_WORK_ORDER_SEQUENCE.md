@@ -12,8 +12,8 @@ The founder/operator supplied these partial inputs on 2026-06-02:
 
 - `WO-078`: the founder/operator is the launch owner and approval authority unless a later written decision delegates an approval lane.
 - `WO-079`: identity and account lifecycle planning should reference the local Flow project's Azure/Microsoft Entra, `clinicos1` tenant, Microsoft redirect login, JWT validation, Entra-linked provisioning, tenant-member-only, guest/B2B denial, disabled/deleted identity denial, and app-owned role/scope pattern.
-- `WO-080`: production PHI database planning should evaluate Flow's Azure PostgreSQL Flexible Server, migration/runtime role posture, RLS evidence, PHI encryption, append-only event protection, and backup/restore objectives.
-- `WO-081`: production Azure storage planning should evaluate Flow's Key Vault, Blob soft-delete/versioning, and recovery posture, while deciding separate AURA Note PHI artifact-storage, deletion, restore, and monitoring controls.
+- `WO-080`: production PHI database planning should evaluate Flow's Azure PostgreSQL Flexible Server, migration/runtime role posture, RLS evidence, PHI encryption, append-only event protection, and backup/restore objectives; Azure CLI verified the AURA Note tenant/subscription/resource group baseline as tenant `b9b1d566-d7ed-44a4-b3cc-cf8786d6a6ed`, subscription `Subscription Malady` (`91d0e7fe-e9c6-40a0-af0f-98a9dc07b218`), resource group `AURA_resource_group`, location `eastus`, provisioning state `Succeeded`.
+- `WO-081`: production Azure storage planning should evaluate Flow's Key Vault, Blob soft-delete/versioning, and recovery posture, while deciding separate AURA Note PHI artifact-storage, deletion, restore, and monitoring controls; the same verified Azure baseline is available for storage planning.
 
 These are partial inputs only. `WO-078` through `WO-081` remain `planned` until the remaining AURA Note-specific configuration, approval, credential-delivery, scope, and operational details are documented.
 

@@ -1169,6 +1169,7 @@ This gate does not authorize live EHR writeback, live AI, live transcription, pr
 - **Why this exists:** local PostgreSQL evidence does not equal approved production PHI persistence.
 - **Prerequisites:** database host, roles, RLS review, migration/backup/restore approval, PHI retention policy.
 - **Founder-provided partial input captured 2026-06-02:** evaluate the local Flow project's Azure PostgreSQL Flexible Server, migration/runtime role posture, RLS evidence, PHI encryption, append-only event protection, and backup/restore objectives for AURA Note adoption.
+- **Verified Azure baseline captured 2026-06-02:** tenant `b9b1d566-d7ed-44a4-b3cc-cf8786d6a6ed`, subscription `Subscription Malady` (`91d0e7fe-e9c6-40a0-af0f-98a9dc07b218`), resource group `AURA_resource_group`, location `eastus`, provisioning state `Succeeded`.
 - **In scope:** production database config validation, RLS coverage confirmation, migration approval workflow, backup/restore evidence contracts.
 - **Out of scope:** committing connection strings, live PHI writes before approval, support database access without policy.
 - **UX requirements:** admin/status surfaces show database configured, degraded, blocked, failed, permission-denied, and read-only states.
@@ -1191,6 +1192,7 @@ This gate does not authorize live EHR writeback, live AI, live transcription, pr
 - **Why this exists:** storage adapters exist, but live Azure PHI storage and destructive deletion remain disabled.
 - **Prerequisites:** Azure account/container, managed identity or credential secret names, soft-delete/versioning, deletion approval policy.
 - **Founder-provided partial input captured 2026-06-02:** evaluate the local Flow project's Key Vault, Azure Blob soft-delete/versioning, private Blob deployment-package usage, and recovery posture while separately deciding AURA Note PHI artifact-storage controls.
+- **Verified Azure baseline captured 2026-06-02:** tenant `b9b1d566-d7ed-44a4-b3cc-cf8786d6a6ed`, subscription `Subscription Malady` (`91d0e7fe-e9c6-40a0-af0f-98a9dc07b218`), resource group `AURA_resource_group`, location `eastus`, provisioning state `Succeeded`.
 - **In scope:** non-public object storage, server-mediated downloads, retention deletion approval/recovery, restore-readiness metadata.
 - **Out of scope:** public URLs, destructive production deletion without approval, committing credentials, PHI-bearing audit exports before approval.
 - **UX requirements:** download configured/expired/denied, deletion approval-required/recovery-window/read-only, failed restore-readiness states.

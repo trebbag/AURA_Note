@@ -1284,7 +1284,8 @@ Do not promote a planned work order until the required inputs in `docs/POST_CR4_
 - The Flow reference pattern includes Azure/Microsoft Entra, the `clinicos1` tenant, Microsoft redirect login, backend JWT validation, Entra-linked provisioning, tenant-member account restriction, guest/B2B denial, disabled/deleted identity denial, and application-owned role/scope enforcement.
 - Production PHI database planning should evaluate Flow's Azure PostgreSQL Flexible Server, RLS/encryption, migration/runtime role, append-only evidence, and backup/restore posture.
 - Production Azure storage planning should evaluate Flow's Key Vault, Blob soft-delete/versioning, and recovery posture, while separately deciding AURA Note PHI artifact-storage controls.
+- Azure CLI verified the AURA Note resource baseline: tenant `b9b1d566-d7ed-44a4-b3cc-cf8786d6a6ed`, subscription `Subscription Malady` (`91d0e7fe-e9c6-40a0-af0f-98a9dc07b218`), resource group `AURA_resource_group`, location `eastus`, provisioning state `Succeeded`.
 
 ## Remaining boundary
 
-This input capture does not promote `WO-078` through `WO-081`, approve production launch, enable live PHI, configure production credentials, approve live vendors, approve PHI-bearing Azure object storage, or change any production launch flag. The remaining required inputs are listed in `docs/POST_CR4_PRODUCTION_DECISION_INPUTS.md`.
+This input capture does not promote `WO-078` through `WO-081`, approve production launch, enable live PHI, configure production credentials, approve live vendors, create/approve a storage account or containers, approve PHI-bearing Azure object storage, or change any production launch flag. The remaining required inputs are listed in `docs/POST_CR4_PRODUCTION_DECISION_INPUTS.md`.

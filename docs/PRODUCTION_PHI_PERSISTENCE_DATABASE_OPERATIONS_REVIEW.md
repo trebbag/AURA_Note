@@ -27,6 +27,19 @@ Flow evidence to evaluate for AURA Note:
 
 This partial input does not approve AURA Note production PHI persistence, production connection-string secret names, AURA Note table-by-table RLS coverage, migration approval workflow, backup schedule, RTO/RPO, support database access, or live migration execution.
 
+## AURA Note Azure Resource Baseline Verified 2026-06-02
+
+Azure CLI verification succeeded for the founder-provided resource group:
+
+- Tenant ID: `b9b1d566-d7ed-44a4-b3cc-cf8786d6a6ed`
+- Subscription: `Subscription Malady`
+- Subscription ID: `91d0e7fe-e9c6-40a0-af0f-98a9dc07b218`
+- Resource group: `AURA_resource_group`
+- Resource group location: `eastus`
+- Provisioning state: `Succeeded`
+
+This confirms the non-secret Azure tenant/subscription/resource-group baseline for future AURA Note database planning. It does not select or approve a production database host, connection-string secret, migration execution, PHI persistence, backup/restore operation, support database access, or production launch.
+
 ## Required Decisions Before Live Implementation
 
 - Production database host and region.

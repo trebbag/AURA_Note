@@ -13,6 +13,7 @@ These inputs came directly from the founder/operator and reduce ambiguity for th
 - Flow identity/account pattern to evaluate for AURA Note: Microsoft Entra-first authentication, Microsoft account redirect login, the `clinicos1` Entra tenant, backend JWT validation, Entra-linked user provisioning, tenant-member accounts only, no guest/B2B users, disabled/deleted directory identity rejection, and application-owned role/scope enforcement after identity resolution.
 - Flow Azure/database pattern to evaluate for AURA Note: Azure Static Web Apps plus Azure App Service deployment posture, Azure Database for PostgreSQL Flexible Server, separate migration/runtime database roles where configured, app-layer scope checks, RLS evidence, PHI-at-rest encryption posture, and documented backup/restore objectives.
 - Flow storage/recovery pattern to evaluate for AURA Note: Azure Key Vault for secrets, Azure Blob soft-delete/versioning as the documented object-storage recovery posture, and private Blob run-from-package deployment packaging. This is not yet an AURA Note PHI artifact-storage approval.
+- AURA Note Azure resource baseline: Azure CLI verified tenant `b9b1d566-d7ed-44a4-b3cc-cf8786d6a6ed`, subscription `Subscription Malady` (`91d0e7fe-e9c6-40a0-af0f-98a9dc07b218`), resource group `AURA_resource_group`, location `eastus`, and provisioning state `Succeeded`.
 - Exact tenant IDs, app registration IDs, client IDs, database connection strings, storage account names, secret values, and `.env` values must not be copied into this repo as production configuration. AURA Note still needs approved non-secret configuration names and secret-store delivery before live work is promoted.
 
 ## 1. Production Launch Governance
@@ -97,10 +98,11 @@ Required inputs:
 Captured partial input:
 
 - Candidate database posture should reference Flow's Azure Database for PostgreSQL Flexible Server pattern, local-to-PostgreSQL staging support, separate migration/runtime database URL posture, RLS evidence, append-only event protection, PHI-at-rest encryption posture, and documented backup/restore objectives.
+- The Azure tenant/subscription/resource group baseline for future AURA Note infrastructure is now verified: tenant `b9b1d566-d7ed-44a4-b3cc-cf8786d6a6ed`, subscription `Subscription Malady` (`91d0e7fe-e9c6-40a0-af0f-98a9dc07b218`), resource group `AURA_resource_group`, location `eastus`, provisioning state `Succeeded`.
 
 Still needed before `WO-080` can be promoted:
 
-- AURA Note-specific database vendor/host approval, Azure region/residency, tenant/site isolation policy, RLS coverage approval for all AURA Note tenant-owned tables, migration/admin/runtime role names, migration approval and rollback process, backup schedule, RTO/RPO, encryption and key ownership, PHI retention by data class, support database access policy, monitoring requirements, staging database policy, and approved production connection-string secret name.
+- AURA Note-specific database vendor/host approval, confirmation that `eastus` is acceptable for database residency or a different database region if required, tenant/site isolation policy, RLS coverage approval for all AURA Note tenant-owned tables, migration/admin/runtime role names, migration approval and rollback process, backup schedule, RTO/RPO, encryption and key ownership, PHI retention by data class, support database access policy, monitoring requirements, staging database policy, and approved production connection-string secret name.
 
 ## 4. Production Azure Storage, Deletion, And Restore
 
@@ -127,10 +129,11 @@ Captured partial input:
 
 - Candidate Azure posture should reference Flow's Azure resource/runbook pattern, Azure Key Vault secret posture, Azure Blob soft-delete/versioning recovery posture, and private Blob deployment-package usage.
 - Flow's private Blob run-from-package deployment packaging is not the same as AURA Note PHI-bearing export/audio/audit artifact storage.
+- Azure CLI verified the AURA Note resource baseline: tenant `b9b1d566-d7ed-44a4-b3cc-cf8786d6a6ed`, subscription `Subscription Malady` (`91d0e7fe-e9c6-40a0-af0f-98a9dc07b218`), resource group `AURA_resource_group`, location `eastus`, provisioning state `Succeeded`.
 
 Still needed before `WO-081` can be promoted:
 
-- AURA Note-specific Azure tenant/subscription/resource group; storage account and container names by artifact class; region/residency; private networking; encryption/key management; soft-delete/versioning/legal-hold configuration; signed-download expiration policy; artifact retention classes; raw-audio deletion approval role and approval-record source; recovery window; backup/restore drill criteria; evidence-retention policy; monitoring/alerting; and approved managed identity or credential secret names.
+- AURA Note-specific storage account and container names by artifact class; confirmation that `eastus` is acceptable for storage residency or a different storage region if required; private networking; encryption/key management; soft-delete/versioning/legal-hold configuration; signed-download expiration policy; artifact retention classes; raw-audio deletion approval role and approval-record source; recovery window; backup/restore drill criteria; evidence-retention policy; monitoring/alerting; and approved managed identity or credential secret names.
 
 ## 5. Live Transcription Provider And PHI-Bearing Audio Transport
 

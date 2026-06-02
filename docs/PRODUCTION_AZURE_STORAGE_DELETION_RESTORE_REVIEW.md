@@ -26,11 +26,24 @@ Flow evidence to evaluate for AURA Note:
 
 This partial input does not approve AURA Note PHI-bearing export, raw-audio, transcript, audit-export, or evidence object storage. The Flow private deployment-package Blob pattern is deployment infrastructure evidence, not AURA Note PHI artifact-storage approval.
 
+## AURA Note Azure Resource Baseline Verified 2026-06-02
+
+Azure CLI verification succeeded for the founder-provided resource group:
+
+- Tenant ID: `b9b1d566-d7ed-44a4-b3cc-cf8786d6a6ed`
+- Subscription: `Subscription Malady`
+- Subscription ID: `91d0e7fe-e9c6-40a0-af0f-98a9dc07b218`
+- Resource group: `AURA_resource_group`
+- Resource group location: `eastus`
+- Provisioning state: `Succeeded`
+
+This confirms the non-secret Azure tenant/subscription/resource-group baseline for future AURA Note storage planning. It does not create or approve a storage account, containers, managed identity, credentials, private networking, PHI object delivery, destructive deletion, restore execution, or production launch.
+
 ## Required Production Decisions
 
 ### Azure account and container topology
 
-- Select the production Azure subscription, storage account, region, redundancy tier, and container topology.
+- Select the production storage account, storage region if different from `eastus`, redundancy tier, and container topology inside the verified AURA Note Azure baseline.
 - Define tenant/site object-key partitioning and whether tenants share a storage account with strict prefixes or use isolated accounts/containers.
 - Define private-networking, firewall, and managed private endpoint requirements before PHI-bearing storage is enabled.
 
