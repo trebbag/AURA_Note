@@ -9,17 +9,32 @@
 - **livePhiEnabled=false**
 - **liveVendorEnabled=false**
 - **claimSubmissionEnabled=false**
-- **duplicateSourceDeletionApproved=false**
+- **duplicateSourceDeletionApproved=true for reviewed accidental local duplicate-pattern artifacts only**
+- **duplicateSourceDeletionCompleted=true**
 
-This document does not approve production launch, real beta execution, live PHI, live vendors, production credentials, claim submission, charge finalization, medical-necessity determination, autonomous clinical/coding/billing behavior, or deletion of non-identical copied source files.
+This document does not approve production launch, real beta execution, live PHI, live vendors, production credentials, claim submission, charge finalization, medical-necessity determination, or autonomous clinical/coding/billing behavior. `WO-077` approved and completed deletion only for reviewed accidental local duplicate-pattern artifacts; it did not authorize deletion of tracked source, production evidence, credentials, PHI, or runtime behavior.
+
+## Founder-Provided Governance Inputs Captured 2026-06-02
+
+The founder/operator supplied these partial production-decision inputs after `WO-077`:
+
+- The founder/operator is the launch owner and the approver for founder, clinical, compliance/privacy, security, legal/risk, and commercial go/no-go decisions unless a later written decision delegates one of those approval lanes.
+- Identity and account lifecycle planning should use the local Flow project at `/Users/gregorygabbert/Documents/GitHub/Flow` as the reference implementation pattern.
+- The Flow pattern includes Azure/Microsoft Entra, the `clinicos1` Entra tenant, Microsoft redirect login, SPA/API app-registration separation, backend JWT validation, Entra-linked user provisioning, tenant-member account restriction, guest/B2B denial, disabled/deleted directory identity denial, and app-owned role/scope enforcement.
+- The Flow pattern also provides Azure PostgreSQL, RLS/encryption, backup/restore, Key Vault, and Azure Blob recovery-posture evidence that can inform AURA Note production database and storage planning.
+- Azure CLI verified the AURA Note Azure resource baseline: tenant `b9b1d566-d7ed-44a4-b3cc-cf8786d6a6ed`, subscription `Subscription Malady` (`91d0e7fe-e9c6-40a0-af0f-98a9dc07b218`), resource group `AURA_resource_group`, location `eastus`, provisioning state `Succeeded`.
+
+These inputs are partial. They do not provide AURA Note-specific non-secret resource names, secret-store delivery paths, production launch scope, production credential approval, live PHI approval, live vendor approval, or storage/deletion/restore approval.
 
 ## GitHub PR State
 
 - Local branch at intake: `codex/wo-066-standalone-workflow-completion`.
 - Local pre-intake commit: `09688fb feat: add cr4 commercial readiness gates`.
 - Branch-specific PR lookup before this work order returned no open PR for this branch.
-- Required follow-up after this commit: push the branch, open or update a draft PR into `main`, and inspect GitHub Actions.
-- CI result is not recorded inside this document until the branch is pushed and GitHub Actions runs.
+- PR #67 was marked ready and merged to `main`.
+- mergedAt: 2026-06-02T18:26:23Z.
+- Merge commit: `015b03102abd4da8a3b0b95a393fa9380351a27b`.
+- Follow-up after merge: `WO-077` created the cleanup and next-work-order rails branch.
 
 ## Duplicate Artifact Inventory
 
@@ -35,11 +50,17 @@ The worktree had untracked copied artifacts with names ending in ` 2` or ` 3`. A
 - `**/.next/`
 - `**/dist/`
 
-The remaining visible untracked duplicate source/doc/script files are treated as review-required artifacts. They should be handled by a later explicit cleanup work order that decides merge, archive, or delete file-by-file.
+`WO-077` completed the follow-up cleanup. After the recursive ignore-rule cleanup, 103 visible duplicate-pattern files were reviewed:
+
+- 40 files were byte-identical to a tracked original.
+- 62 files were stale historical copies already represented in tracked Git history.
+- 1 file had unique differences: `scripts/verify-local-postgres-migration 2.js`.
+
+The unique duplicate was rejected rather than merged because it weakened the committed readiness script by replacing `pg_isready` with container state checks and removing the Prisma empty-migration allowance. All 103 reviewed duplicate-pattern files were removed. `docs/DUPLICATE_ARTIFACT_ADJUDICATION.md` records the cleanup evidence.
 
 ## Cleanup Decision Rules
 
-- Byte-identical duplicates may be deleted in a later cleanup pass only after confirming they are not needed as evidence.
+- Byte-identical duplicates may be deleted after confirming they are not needed as evidence.
 - Non-identical duplicates must be reviewed before deletion.
 - Generated build artifacts should remain ignored, not committed.
 - No `.env`, credential, private key, production URL, real PHI, or patient data should be committed.
@@ -65,11 +86,19 @@ The following decisions remain outside `WO-076` and must be handled by later fou
 - deployment approval;
 - claim/payer strategy.
 
+Partial decisions now recorded:
+
+- launch owner and approval authority are identified as the founder/operator;
+- identity/account lifecycle should reference the Flow project's Azure/Microsoft Entra and `clinicos1` tenant pattern;
+- production PHI database planning should evaluate the Flow Azure PostgreSQL, RLS, PHI encryption, and backup/restore pattern for AURA Note-specific adoption, using the verified `AURA_resource_group` baseline unless a later decision selects a different resource group or region;
+- production Azure storage planning should evaluate the Flow Azure Key Vault, Blob soft-delete/versioning, and recovery posture, while separately deciding AURA Note PHI artifact-storage accounts, containers, retention, deletion, restore, and monitoring.
+
 ## Verification
 
 Required local gates for this governance intake:
 
 - `pnpm post-cr4:launch-governance`
+- `pnpm post-cr4:next-work-orders`
 - `pnpm production:readiness`
 - `pnpm acceptance:readiness`
 - `node scripts/status.js`

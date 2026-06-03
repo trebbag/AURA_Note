@@ -12,6 +12,21 @@ This document is the `WO-053` planning/control intake for production identity an
 - AURA Note permissions remain authoritative in standalone and ClinicOS-integrated modes.
 - Support access remains metadata-only and role-limited.
 
+## Founder-Provided Partial Input Captured 2026-06-02
+
+Use the local Flow project at `/Users/gregorygabbert/Documents/GitHub/Flow` as the reference implementation pattern for identity and account lifecycle planning.
+
+Flow evidence to evaluate for AURA Note:
+
+- Azure/Microsoft Entra-first authentication with the `clinicos1` tenant.
+- Microsoft redirect login with separate frontend SPA and backend API app-registration shape.
+- Backend JWT validation through Entra issuer, audience, and JWKS configuration.
+- Entra-linked user provisioning with application-owned role and scope enforcement after identity resolution.
+- Tenant-member-only accounts, no guest/B2B access, disabled/deleted directory identity denial, and unprovisioned account denial.
+- Microsoft Graph-backed directory sync posture through managed identity or approved Graph capability.
+
+This partial input does not select exact AURA Note app-registration names, non-secret config variable values, credential delivery, MFA/session policy, break-glass policy, access-review cadence, or ClinicOS delegated identity behavior.
+
 ## Required Decisions Before Live Implementation
 
 - Production identity provider: OIDC, SAML, ClinicOS delegation, or a staged combination.

@@ -66,6 +66,7 @@
     "beta:pilot-package-readiness": "node scripts/simulate-pilot-launch-smoke.js && pnpm --filter @aura-note/web test:e2e && node scripts/validate-beta-pilot-package-readiness.js",
     "commercial:readiness": "pnpm security:commercial-readiness && pnpm ops:commercial-readiness && pnpm billing:revenue-integrity-readiness && pnpm beta:pilot-package-readiness && node scripts/validate-commercial-readiness.js",
     "post-cr4:launch-governance": "node scripts/validate-post-cr4-launch-governance.js",
+    "post-cr4:next-work-orders": "node scripts/validate-post-cr4-next-work-orders.js",
     "post-p11:readiness": "node scripts/validate-post-p11-continuation-readiness.js",
     "commercial:readiness-plan": "node scripts/validate-commercial-readiness-plan.js",
     "storage:azure-adapter-readiness": "pnpm --filter @aura-note/storage test && pnpm --filter @aura-note/storage typecheck && node scripts/validate-azure-storage-adapter-readiness.js",

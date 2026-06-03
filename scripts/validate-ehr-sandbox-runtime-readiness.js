@@ -115,7 +115,7 @@ const checks = [
   {
     id: 'spec-gaps.wo069',
     path: 'SPEC_GAPS.md',
-    snippets: ['No active gaps as of post-`WO-075` commercial readiness decision gate review']
+    snippets: ['No active gaps as of post-`WO-077` duplicate artifact cleanup and next-sequence rails review']
   },
   {
     id: 'work-order.next',

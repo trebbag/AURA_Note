@@ -85,6 +85,19 @@ Codex must complete work orders sequentially unless a checkpoint or blocker stop
 - `WO-074` — Beta pilot commercial readiness package.
 - `WO-075` — Commercial readiness decision gate.
 - `WO-076` — Post-CR4 launch governance, branch/CI, and duplicate artifact intake.
+- `WO-077` — Duplicate artifact cleanup and post-CR4 next-work-order rails.
+- `WO-078` — Production launch governance inputs and approval dossier.
+- `WO-079` — Production identity provider and account lifecycle activation.
+- `WO-080` — Production PHI persistence and database operations activation.
+- `WO-081` — Production Azure storage, backup/restore, and retention deletion activation.
+- `WO-082` — Live transcription provider and audio transport activation.
+- `WO-083` — External AI private/BAA pathway activation.
+- `WO-084` — Production EHR writeback credentialing and sandbox-to-live activation.
+- `WO-085` — ClinicOS live integration contract and event-bus activation.
+- `WO-086` — Production observability, SIEM/APM, and support operations activation.
+- `WO-087` — Revenue estimate and patient-facing financial policy activation.
+- `WO-088` — Claim, clearinghouse, payer, denial, and payment strategy decision gate.
+- `WO-089` — Beta pilot execution and production launch go/no-go.
 
 ## Work order rules
 
@@ -162,6 +175,8 @@ Post-CP4 productionization candidates are documented in `docs/POST_CP4_PRODUCTIO
 
 `WO-055` is complete as a post-P11 planning/control intake tranche for production Azure storage, deletion, and restore review. It promotes the third candidate future tranche family into a fully specified decision package and readiness verifier without enabling live Azure credentials, PHI-bearing object delivery, public URLs, destructive production deletion, production restore execution, PHI-bearing audit exports, runtime storage behavior, or launch behavior.
 
+Post-CR4 update: after the founder/operator approved `eastus` and delegated the remaining non-secret Azure storage choices, `docs/PRODUCTION_AZURE_STORAGE_PROVISIONING_EVIDENCE.md` records no-PHI Azure infrastructure for storage account `auranoteeastus91d0`, private containers, managed identity, storage-scoped Blob RBAC, Key Vault boundary, VNet, private DNS, and Blob private endpoint. This does not mark `WO-081` done and does not enable PHI storage, runtime credentials, destructive deletion, restore execution, or launch.
+
 `WO-056` is complete as a post-P11 planning/control intake tranche for live transcription provider review. It promotes the fourth candidate future tranche family into a fully specified decision package and readiness verifier without enabling live transcription credentials, PHI-bearing audio transport, live provider calls, production raw-audio storage, PHI-bearing support transcript access, runtime transcription behavior, or launch behavior.
 
 `WO-057` is complete as a post-P11 planning/control intake tranche for external AI private/BAA pathway review. It promotes the fifth candidate future tranche family into a fully specified decision package and readiness verifier without enabling live AI credentials, raw-PHI-to-external-AI paths, live model calls, production prompt stores, support AI PHI content access, autonomous finalization, runtime AI behavior, or launch behavior.
@@ -213,3 +228,7 @@ Post-CP4 productionization candidates are documented in `docs/POST_CP4_PRODUCTIO
 `WO-071` through `WO-075` form the CR-4 commercial readiness review candidate. They are complete as review-ready synthetic evidence and harden security/privacy/compliance, observability/support, billing/revenue integrity, beta-pilot packaging, and the final commercial-readiness decision packet without granting production launch approval. CR-4 is complete.
 
 `WO-076` is complete as a post-CR4 governance intake after the founder asked Codex to continue with the recommended work order. It keeps `next_work_order: null` after completion until a later founder-approved production-launch, beta execution, live credentialing, duplicate deletion, or post-CR4 implementation sequence is created.
+
+`WO-077` is complete as a post-CR4 cleanup and rails tranche. PR #67 was merged to `main`, visible duplicate-pattern local artifacts were reviewed and removed, the single unique duplicate difference was documented and rejected as a weaker migration-readiness variant, and `WO-078` through `WO-089` were added as planned future production decision/activation work orders.
+
+`WO-078` through `WO-089` are planned only. They are discoverable so Codex can see the remaining sequence, but they must not be promoted to `todo` until the required founder/clinical/compliance/security/legal/vendor/operations inputs are supplied and the relevant work-order file is created. `next_work_order` intentionally remains `null` while all remaining post-CR4 work is planned and input-gated.

@@ -176,6 +176,10 @@ Required after `WO-071` through `WO-075`.
 
 Definition: security, privacy, observability, support, beta pilot, deployment, billing/revenue integrity, and commercial readiness evidence are complete enough for founder/clinical/compliance/security review. This is not production launch approval.
 
+### Post-CR4 planned production decision sequence
+
+`WO-077` completed duplicate artifact cleanup and next-sequence rails after CR-4. `WO-078` through `WO-089` are planned production decision/activation work orders only. They must not be treated as active implementation targets until the required decision inputs are supplied and the relevant work order is deliberately promoted to `todo`. While all remaining post-CR4 work orders are `planned`, `next_work_order` may remain `null`.
+
 At each checkpoint, Codex must produce a concise checkpoint report in `CHECKPOINT_REPORT.md`, including completed work orders, acceptance evidence, open risks, unresolved SPEC_GAPs, and next recommended batch.
 
 ## 7. Global definition of done

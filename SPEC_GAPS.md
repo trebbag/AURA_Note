@@ -4,27 +4,23 @@ This file tracks missing, conflicting, unsafe, or deliberately deferred product 
 
 ## Active gaps
 
-No active gaps as of post-`WO-076` post-CR4 launch governance intake review on 2026-06-02.
+No active gaps as of post-`WO-077` duplicate artifact cleanup and next-sequence rails review on 2026-06-02.
 
-This supersedes the prior marker: No active gaps as of post-`WO-075` commercial readiness decision gate review. The repo remains not production-ready. The items below are deferred production decisions rather than active blockers for the current post-`WO-076` launch governance intake package.
+This supersedes the prior marker: No active gaps as of post-`WO-076` post-CR4 launch governance intake review. The repo remains not production-ready. The items below are deferred production decisions rather than active blockers for the current post-`WO-077` cleanup and planned-sequence package.
+
+Founder-provided partial inputs captured on 2026-06-02 identify the founder/operator as the launch owner and approval authority, and identify `/Users/gregorygabbert/Documents/GitHub/Flow` as the reference project for Azure/Microsoft Entra identity, `clinicos1` tenant account lifecycle, Azure PostgreSQL, RLS/encryption, Key Vault, and Azure Blob recovery-posture planning. Azure CLI also verified the AURA Note resource baseline: tenant `b9b1d566-d7ed-44a4-b3cc-cf8786d6a6ed`, subscription `Subscription Malady` (`91d0e7fe-e9c6-40a0-af0f-98a9dc07b218`), resource group `AURA_resource_group`, location `eastus`, provisioning state `Succeeded`. The founder/operator later confirmed `eastus` for production Azure storage planning and authorized Codex to make the remaining non-secret storage/deletion/restore choices; `docs/PRODUCTION_AZURE_STORAGE_DECISION_RECORD.md` now captures those defaults. These inputs reduce ambiguity but do not resolve the AURA Note-specific production configuration, credential-delivery, PHI persistence, vendor, launch-scope, or live-enablement decisions below.
 
 ## Deferred production decisions
 
-These items must stay visible and must be resolved before the related production work can be declared complete. They are not blockers for the completed `WO-062` synthetic/local API runtime boundary tranche because the active work explicitly excludes legal certification claims, production deployment, production launch approval, live WAF/CDN configuration, live SIEM/APM vendors, production observability credentials, PHI-bearing logs, live Azure credentials, PHI-bearing object payloads, public object URLs, live destructive deletion, production restore execution, PHI-bearing audit exports, live IdP credentials, live OIDC/SAML, live ClinicOS delegation, live ClinicOS event-bus sync, delegated identity bypass, raw ClinicOS payload storage, live EHR/ClinicOS synchronization, production database credentials, production PHI database storage, live migrations, production backup/restore execution, support database access, production EHR credentials, raw EHR payload storage, live EHR writeback delivery, writeback without human approval, live transcription credentials, live transcription provider calls, PHI-bearing audio transport, production raw-audio storage, PHI-bearing support transcript access, live external AI credentials, raw PHI transfer to external AI, live model calls, production prompt stores, support AI PHI content access, autonomous billing, charge finalization, medical-necessity determination, claim submission, denial automation, payment posting, patient-facing financial conclusions, and production launch behavior.
+These items must stay visible and must be resolved before the related production work can be declared complete. They are not blockers for the completed synthetic/local and post-CR4 cleanup scope because the active work explicitly excludes legal certification claims, production deployment, production launch approval, live WAF/CDN configuration, live SIEM/APM vendors, production observability credentials, PHI-bearing logs, live Azure credentials, PHI-bearing object payloads, public object URLs, live destructive production deletion, production restore execution, PHI-bearing audit exports, live IdP credentials, live OIDC/SAML, live ClinicOS delegation, live ClinicOS event-bus sync, delegated identity bypass, raw ClinicOS payload storage, live EHR/ClinicOS synchronization, production database credentials, production PHI database storage, live migrations, production backup/restore execution, support database access, production EHR credentials, raw EHR payload storage, live EHR writeback delivery, writeback without human approval, live transcription credentials, live transcription provider calls, PHI-bearing audio transport, production raw-audio storage, PHI-bearing support transcript access, live external AI credentials, raw PHI transfer to external AI, live model calls, production prompt stores, support AI PHI content access, autonomous billing, charge finalization, medical-necessity determination, claim submission, denial automation, payment posting, patient-facing financial conclusions, and production launch behavior.
 
 ### Deferred Decision — Commercial readiness implementation and launch approval
 
 - **Related future work:** any later founder-approved production launch work order
 - **Status:** deferred
-- **Decision needed before production launch:** founder/clinical/compliance/security/legal approval, beta scope, production environment, credential source, operational owner, incident response, access review, backup/restore, vendor contracts, PHI governance, live integrations, support ownership, launch go/no-go, and rollback authority.
+- **Partial input captured 2026-06-02:** the founder/operator is the launch owner and approval authority unless a later written decision delegates an approval lane.
+- **Decision needed before production launch:** launch scope, tenant/site scope, enabled roles, disabled-feature inventory, production environment, credential source, operational owner, incident response, access review, backup/restore, vendor contracts, PHI governance, live integrations, support ownership, launch go/no-go, rollback authority, and explicit approval to change launch posture.
 - **Safe current posture:** `WO-060` reopened implementation rails, `WO-061` through `WO-070` added runtime persistence, API, identity, frontend, standalone, integration, transcription, EHR, ClinicOS, and AI governance evidence, and `WO-071` through `WO-075` packaged CR-4 security/privacy/compliance, observability/support, billing/revenue integrity, beta-pilot, and commercial-readiness decision evidence. Production launch remains false and no live vendor, credential, PHI, claim, autonomous clinical/coding/billing, or production deployment behavior is enabled.
-
-### Deferred Decision — Duplicate artifact deletion approval
-
-- **Related future work:** a later cleanup work order or explicit founder-approved deletion pass
-- **Status:** deferred
-- **Decision needed before deletion:** whether non-byte-identical copied files ending in ` 2` or ` 3` contain useful work that should be merged into tracked sources, archived as evidence, or deleted. Byte-identical files may be removed by a later cleanup pass after confirming they were generated duplicates, but this work order records inventory only.
-- **Safe current posture:** `WO-076` inventories duplicate artifacts and ignores nested generated build outputs, but it does not delete non-identical source, docs, scripts, Prisma, or test files without explicit review.
 
 ### Deferred Decision — Production SIEM/APM vendor and operational monitoring posture
 
@@ -37,22 +33,29 @@ These items must stay visible and must be resolved before the related production
 
 - **Related future work:** `WO-053`; future approved identity implementation work order before live use
 - **Status:** deferred
-- **Decision needed before live use:** production IdP selection, OIDC/SAML/ClinicOS delegation posture, MFA expectations, account recovery, tenant/user/site administration ownership, disabled-user handling, and access-review cadence.
+- **Partial input captured 2026-06-02:** use Flow as the reference pattern for Azure/Microsoft Entra, the `clinicos1` tenant, Microsoft redirect login, JWT validation, Entra-linked provisioning, tenant-member-only access, guest/B2B denial, disabled/deleted account denial, and app-owned role/scope authorization.
+- **Decision needed before live use:** AURA Note-specific OIDC/SAML/ClinicOS delegation posture, exact non-secret configuration names, approved app registration names, Microsoft Graph access posture, MFA expectations, session/inactivity policy, account recovery, tenant/user/site administration ownership, disabled-user handling, joiner/mover/leaver process, break-glass policy, access-review cadence, audit retention, and secret-store delivery.
 - **Safe current posture:** `WO-041` adds fail-closed local synthetic identity and adapter boundaries only; `WO-053` captures the live-readiness intake and future acceptance criteria. Delegated modes remain denied until configured by a later approved implementation work order and no raw tokens or secret values are returned.
 
 ### Deferred Decision — Production PHI persistence and database operations
 
 - **Related future work:** `WO-034` through `WO-037`; `WO-054`; future approved database implementation work order before live use
 - **Status:** deferred
-- **Decision needed before live use:** production database roles, RLS coverage review, backup/restore operations, migration approval/rollback process, PHI storage policy, and tenant data isolation review.
+- **Partial input captured 2026-06-02:** use Flow as the reference pattern for Azure Database for PostgreSQL Flexible Server, local-to-PostgreSQL staging support, separate migration/runtime role posture, RLS evidence, append-only event protection, PHI-at-rest encryption, and documented recovery objectives.
+- **Partial Azure baseline captured 2026-06-02:** tenant `b9b1d566-d7ed-44a4-b3cc-cf8786d6a6ed`, subscription `Subscription Malady` (`91d0e7fe-e9c6-40a0-af0f-98a9dc07b218`), resource group `AURA_resource_group`, location `eastus`, provisioning state `Succeeded`.
+- **Decision needed before live use:** AURA Note-specific database host, confirmation that `eastus` is acceptable for database residency or a different database region if required, database roles, RLS coverage review for every tenant-owned table, backup/restore operations, migration approval/rollback process, PHI storage policy, tenant data isolation review, support database access, monitoring requirements, staging policy, and approved secret names.
 - **Safe current posture:** local synthetic PostgreSQL evidence only; `WO-054` captures the live-readiness intake and future acceptance criteria. No production database host, production credential, live migration, production PHI storage, backup/restore execution, support database access, or launch behavior is enabled.
 
 ### Deferred Decision — Production Azure Blob storage and destructive deletion
 
 - **Related future work:** `WO-055`; future approved storage implementation work order before live use
 - **Status:** deferred
-- **Decision needed before live use:** Azure account/container policy, credential source, customer-managed keys, private networking, legal hold, soft-delete/versioning configuration, backup/restore drill cadence, deletion approval authority, recovery window, and evidence retention.
-- **Safe current posture:** `WO-042` adds production-shaped adapter boundary, deterministic fake storage tests, server-mediated token validation, recovery-window-gated deletion evidence, and restore-readiness metadata only. `WO-055` captures the live-readiness intake and future acceptance criteria. No live Azure credential, PHI-bearing production object delivery, public URL, destructive production deletion, PHI-bearing audit export, production restore execution, or launch behavior is enabled.
+- **Partial input captured 2026-06-02:** use Flow as the reference pattern for Azure Key Vault, Azure Blob soft-delete/versioning recovery posture, and private Blob deployment-package usage; the deployment-package Blob posture is not AURA Note PHI-bearing artifact storage approval.
+- **Partial Azure baseline captured 2026-06-02:** tenant `b9b1d566-d7ed-44a4-b3cc-cf8786d6a6ed`, subscription `Subscription Malady` (`91d0e7fe-e9c6-40a0-af0f-98a9dc07b218`), resource group `AURA_resource_group`, location `eastus`, provisioning state `Succeeded`.
+- **Non-secret decisions captured 2026-06-02:** `eastus` accepted; storage account `auranoteeastus91d0`; `StorageV2`; `Standard ZRS`; managed identity; managed identity `aura-note-storage-mi`; Key Vault reference `aura-note-kv-91d0`; artifact containers; private endpoint requirement; server-mediated download TTLs; raw-audio 7-day purge eligibility; transcript indefinite retention; 14-day Blob/container soft delete; Blob versioning; legal-hold deletion blocking; quarterly synthetic restore-readiness; 7-year evidence/audit export retention default; and monitoring/alerting requirements are recorded in `docs/PRODUCTION_AZURE_STORAGE_DECISION_RECORD.md`.
+- **No-PHI infrastructure evidence captured 2026-06-02:** `docs/PRODUCTION_AZURE_STORAGE_PROVISIONING_EVIDENCE.md` records the provisioned storage account, private containers, managed identity, storage-account-scoped Blob role assignment, Key Vault boundary, VNet, private endpoint subnet, private DNS zone/link, Blob private endpoint, public-network-disabled/firewall-deny posture, shared-key denial, public Blob denial, TLS, 14-day Blob/container soft delete, and Blob versioning.
+- **Decision or evidence still needed before live use:** approved config/secret-store references, app runtime private-network integration, synthetic no-PHI object-level live-readiness tests, legal-hold/deletion/restore-readiness execution evidence, monitoring/alert wiring, and explicit production flag approval before PHI-bearing object delivery, destructive production deletion, PHI restore execution, or production launch.
+- **Safe current posture:** `WO-042` adds production-shaped adapter boundary, deterministic fake storage tests, server-mediated token validation, recovery-window-gated deletion evidence, and restore-readiness metadata only. `WO-055` captures the live-readiness intake and future acceptance criteria. No production runtime credential, PHI-bearing production object delivery, public URL, destructive production deletion, PHI-bearing audit export, production restore execution, or launch behavior is enabled.
 
 ### Deferred Decision — Live transcription provider and PHI-bearing audio transport
 
@@ -95,6 +98,16 @@ These items must stay visible and must be resolved before the related production
 - **Status:** deferred
 - **Decision needed before implementation:** whether live claim submission belongs in v1 or later, clearinghouse/payer strategy, billing compliance requirements, human approval model, audit model, denial/payment scope, patient-facing financial language, and rollback/void/reversal procedures.
 - **Safe current posture:** `WO-051` captured the P11 decision gate. Draft claim preview remains internal and human-reviewed with `submittedClaim = false`; no clearinghouse API, payer API, autonomous charge finalization, medical-necessity determination, claim submission, denial automation, payment posting, or patient-facing financial conclusion is enabled.
+
+## Resolved decisions
+
+### Resolved Decision — Duplicate artifact deletion approval
+
+- **Resolved in work order:** `WO-077`
+- **Status:** resolved for the reviewed accidental local duplicate-pattern artifacts only.
+- **Decision:** the founder asked Codex to do duplicate artifact adjudication. Codex compared 103 visible duplicate-pattern files, removed 40 byte-identical copies, removed 62 stale historical copies, reviewed the one unique duplicate difference, and rejected that unique script variant because it weakened the committed PostgreSQL/Prisma migration-readiness behavior.
+- **Evidence:** `docs/DUPLICATE_ARTIFACT_ADJUDICATION.md`
+- **Boundary:** this does not authorize deletion of tracked source, production records, evidence artifacts, PHI, secrets, credentials, or future non-reviewed files.
 
 ## Gap entry format
 

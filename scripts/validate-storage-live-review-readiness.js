@@ -18,6 +18,8 @@ const workflow = readText('.github/workflows/ci.yml');
 const plan = readText('docs/PRODUCTION_BUILD_PLAN.md');
 const continuation = readText('docs/POST_P11_CONTINUATION_PLAN.md');
 const storageReview = readText('docs/PRODUCTION_AZURE_STORAGE_DELETION_RESTORE_REVIEW.md');
+const storageDecisionRecord = readText('docs/PRODUCTION_AZURE_STORAGE_DECISION_RECORD.md');
+const storageProvisioningEvidence = readText('docs/PRODUCTION_AZURE_STORAGE_PROVISIONING_EVIDENCE.md');
 const workOrderIndex = readText('work_orders/README.md');
 const specGaps = readText('SPEC_GAPS.md');
 const runLog = readText('RUN_LOG.md');
@@ -36,6 +38,8 @@ check('work-order.index', 'Work-order index records WO-055 completion', workOrde
 check('plan.wo055', 'Production build plan includes WO-055', plan.includes('## WO-055 ') && plan.includes('Production Azure Storage'), 'docs/PRODUCTION_BUILD_PLAN.md');
 check('continuation.promoted', 'Continuation plan records Azure storage/deletion/restore as promoted to WO-055', continuation.includes('Promoted as `WO-055`') && continuation.includes('Production Azure storage'), 'docs/POST_P11_CONTINUATION_PLAN.md');
 check('storage-review.exists', 'Production Azure storage/deletion/restore review document exists', exists('docs/PRODUCTION_AZURE_STORAGE_DELETION_RESTORE_REVIEW.md'), 'docs/PRODUCTION_AZURE_STORAGE_DELETION_RESTORE_REVIEW.md');
+check('storage-decision-record.exists', 'Production Azure storage decision record exists', exists('docs/PRODUCTION_AZURE_STORAGE_DECISION_RECORD.md'), 'docs/PRODUCTION_AZURE_STORAGE_DECISION_RECORD.md');
+check('storage-provisioning-evidence.exists', 'No-PHI Azure storage provisioning evidence document exists', exists('docs/PRODUCTION_AZURE_STORAGE_PROVISIONING_EVIDENCE.md'), 'docs/PRODUCTION_AZURE_STORAGE_PROVISIONING_EVIDENCE.md');
 
 [
   'Azure account and container topology',
@@ -72,6 +76,85 @@ check('storage-review.exists', 'Production Azure storage/deletion/restore review
   check(`storage-review.event.${eventName}`, `Storage review includes future event ${eventName}`, storageReview.includes(eventName), eventName);
 });
 
+[
+  'auranoteeastus91d0',
+  'AURA_resource_group',
+  'eastus',
+  'Standard ZRS',
+  'managed_identity',
+  'aura-note-storage-mi',
+  'aura-note-kv-91d0',
+  'aura-final-note-pdfs',
+  'aura-patient-summary-pdfs',
+  'aura-structured-exports',
+  'aura-audit-export-bundles',
+  'aura-raw-audio',
+  'aura-transcripts',
+  'aura-storage-evidence',
+  'aura-restore-drill-evidence',
+  'Public blob access disabled',
+  'Shared key access disabled',
+  'Private endpoint required',
+  'server-mediated',
+  'Final note PDF | 10 minutes',
+  'Redacted audit export bundle | 15 minutes',
+  'Raw audio: purge-eligible after 7 days',
+  'Transcript objects: indefinite retention',
+  'Blob soft delete: 14 days',
+  'Container soft delete: 14 days',
+  'Blob versioning: enabled',
+  'Quarterly synthetic restore-readiness drill',
+  'No PHI-bearing Azure storage behavior is enabled'
+].forEach((snippet) => {
+  check(
+    `storage-decision-record.${snippet.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`,
+    `Storage decision record includes ${snippet}`,
+    storageDecisionRecord.includes(snippet),
+    snippet
+  );
+});
+
+[
+  'no-PHI Azure infrastructure',
+  'auranoteeastus91d0',
+  'aura-final-note-pdfs',
+  'aura-patient-summary-pdfs',
+  'aura-structured-exports',
+  'aura-audit-export-bundles',
+  'aura-raw-audio',
+  'aura-transcripts',
+  'aura-storage-evidence',
+  'aura-restore-drill-evidence',
+  'aura-note-storage-mi',
+  'Storage Blob Data Contributor',
+  'aura-note-kv-91d0',
+  'aura-note-vnet-eastus',
+  'aura-note-private-endpoints',
+  'privatelink.blob.core.windows.net',
+  'aura-note-storage-blob-pe',
+  '10.81.1.4',
+  'public network access: `Disabled`',
+  'network default action: `Deny`',
+  'shared key access: disabled',
+  'Blob public access: disabled',
+  'Blob soft delete: enabled for 14 days',
+  'container soft delete: enabled for 14 days',
+  'Blob versioning: enabled',
+  'Not Yet Activated',
+  'PHI-bearing object upload/download delivery',
+  'production runtime credential delivery',
+  'destructive production deletion',
+  'production restore execution',
+  'production launch approval'
+].forEach((snippet) => {
+  check(
+    `storage-provisioning-evidence.${snippet.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`,
+    `Storage provisioning evidence includes ${snippet}`,
+    storageProvisioningEvidence.includes(snippet),
+    snippet
+  );
+});
+
 check(
   'spec-gaps.current',
   'SPEC_GAPS reflects post-WO-055 or later post-P11 planning/control with no active gaps',
@@ -90,7 +173,7 @@ check(
     specGaps.includes('No active gaps as of post-`WO-076` post-CR4 launch governance intake review'),
   'SPEC_GAPS.md'
 );
-check('spec-gaps.deferred-storage', 'SPEC_GAPS preserves production Azure storage/deletion/restore as deferred before live use', specGaps.includes('Production Azure Blob storage and destructive deletion') && specGaps.includes('future approved storage implementation work order'), 'SPEC_GAPS.md');
+check('spec-gaps.deferred-storage', 'SPEC_GAPS preserves production Azure storage/deletion/restore as deferred before live use', specGaps.includes('Production Azure Blob storage and destructive deletion') && specGaps.includes('app runtime private-network integration'), 'SPEC_GAPS.md');
 check('runlog.wo055', 'RUN_LOG records WO-055 evidence', runLog.includes('WO-055 production Azure storage, deletion, and restore review intake'), 'RUN_LOG.md');
 check('package.script', 'package.json exposes storage live review readiness script', packageJson.scripts?.['storage:live-review-readiness'] === 'node scripts/validate-storage-live-review-readiness.js', packageJson.scripts?.['storage:live-review-readiness']);
 check('ci.script', 'CI runs storage live review readiness before post-P11 readiness', workflow.includes('pnpm storage:live-review-readiness') && workflow.indexOf('pnpm storage:live-review-readiness') < workflow.indexOf('pnpm post-p11:readiness'), '.github/workflows/ci.yml');
@@ -106,16 +189,17 @@ check('ci.script', 'CI runs storage live review readiness before post-P11 readin
   'azureProductionLaunchApproved=true',
   'productionStorageLaunchApproved=true'
 ].forEach((needle) => {
-  check(`prohibited.${needle}`, `WO-055 files do not enable ${needle}`, ![plan, continuation, storageReview, runLog].some((contents) => contents.includes(needle)), needle);
+  check(`prohibited.${needle}`, `WO-055 files do not enable ${needle}`, ![plan, continuation, storageReview, storageDecisionRecord, storageProvisioningEvidence, runLog].some((contents) => contents.includes(needle)), needle);
 });
 
 const failed = checks.filter((item) => !item.passed);
 const result = {
-  status: failed.length === 0 ? 'ready_storage_live_review_planning_only' : 'blocked',
+  status: failed.length === 0 ? 'ready_storage_live_review_no_phi_infrastructure_provisioned' : 'blocked',
   checkedAt: new Date().toISOString(),
   workOrder: 'WO-055',
   nextWorkOrder: status.next_work_order,
   liveAzureCredentials: false,
+  noPhiAzureInfrastructureProvisioned: true,
   phiObjectDeliveryEnabled: false,
   publicObjectUrlEnabled: false,
   destructiveProductionDeletionEnabled: false,

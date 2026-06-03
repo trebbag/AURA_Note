@@ -1096,6 +1096,289 @@ This gate does not authorize live EHR writeback, live AI, live transcription, pr
 
 **Implementation status as of `WO-076`:** complete as a post-CR4 governance intake. The repo now includes `docs/POST_CR4_LAUNCH_GOVERNANCE_INTAKE.md`, `pnpm post-cr4:launch-governance`, recursive nested build-output ignore rules, and status evidence for duplicate artifact triage and branch/PR follow-up. Production launch ready remains false.
 
+## WO-077 — Duplicate Artifact Cleanup And Post-CR4 Next-Work-Order Rails
+
+- **Objective:** Review and remove accidental duplicate-pattern local artifacts and establish the next planned post-CR4 sequence.
+- **Why this exists:** `WO-076` inventoried duplicate artifacts and stopped short of deletion until the founder explicitly approved cleanup and new rails.
+- **Prerequisites:** `WO-076` complete; PR #67 merged; no active SPEC_GAP for cleanup/planning scope.
+- **In scope:** duplicate comparison, deletion of reviewed accidental copies, unique-difference disposition, `WO-078` through `WO-089` planned sequence, exact decision-input checklist, readiness gate.
+- **Out of scope:** runtime product changes, live credentials, live PHI, launch approval, claim submission, autonomous clinical/coding/billing behavior.
+- **UX requirements:** no product UX change; commercial readiness routes remain unchanged.
+- **Backend/API requirements:** no API behavior change; scripts/docs/status only.
+- **Data model/persistence requirements:** no schema or migration change.
+- **Event/audit requirements:** governance evidence in run log, checkpoint report, and docs only.
+- **RBAC/ABAC requirements:** no permission expansion.
+- **Standalone-mode behavior:** unchanged; standalone remains default.
+- **ClinicOS-integrated behavior:** unchanged; live ClinicOS remains disabled.
+- **AI/PHI/security requirements:** no secrets, credentials, PHI, live AI, vendor calls, claim submission, or autonomous behavior.
+- **Testing requirements:** duplicate-pattern files absent; status/plan/readiness checks pass; launch/live/autonomy false posture preserved.
+- **Required scripts/gates:** `pnpm post-cr4:next-work-orders`; `pnpm post-cr4:launch-governance`; `pnpm production:readiness`; `pnpm acceptance:readiness`.
+- **Definition of Done:** duplicate artifacts are removed with evidence, next work orders are planned, and no production behavior is enabled.
+- **Stop conditions:** unique duplicate contains unsafe/unclassified product behavior or cleanup would require runtime changes.
+- **Risks and deferred decisions:** all live production activation decisions remain planned and input-gated.
+
+**Implementation status as of `WO-077`:** complete as cleanup and rails evidence. Duplicate-pattern local artifacts were removed after review, `docs/DUPLICATE_ARTIFACT_ADJUDICATION.md` records disposition, and `WO-078` through `WO-089` remain planned.
+
+## WO-078 — Production Launch Governance Inputs And Approval Dossier
+
+- **Objective:** Assemble the launch governance dossier and approval evidence required before any launch-ready marker can change.
+- **Why this exists:** CR-4 review readiness is not production launch approval.
+- **Prerequisites:** `WO-077`; exact launch owner/reviewer inputs from `docs/POST_CR4_PRODUCTION_DECISION_INPUTS.md`.
+- **Founder-provided partial input captured 2026-06-02:** the founder/operator is the launch owner and approval authority unless a later written decision delegates an approval lane.
+- **In scope:** launch scope, approver roster, go/no-go criteria, rollback authority, support ownership, disabled-feature acceptance, approval records.
+- **Out of scope:** enabling live PHI, live vendors, credentials, deployment, or production launch.
+- **UX requirements:** launch/readiness status surfaces must show approval, blocked, failed, permission-denied, and read-only states.
+- **Backend/API requirements:** status endpoints may expose metadata-only launch dossier state with RBAC and no PHI.
+- **Data model/persistence requirements:** approval and evidence metadata only unless a promoted work order adds durable records.
+- **Event/audit requirements:** launch dossier reviewed, approval missing, approval recorded, rollback owner recorded.
+- **RBAC/ABAC requirements:** only founder/clinical/compliance/security/admin roles may update approval metadata.
+- **Standalone-mode behavior:** standalone launch scope is explicit.
+- **ClinicOS-integrated behavior:** ClinicOS launch scope is explicit and cannot bypass AURA Note controls.
+- **AI/PHI/security requirements:** no launch/live/autonomy flags may flip without explicit approval evidence.
+- **Testing requirements:** approval-missing denial, role denial, metadata visibility, no-launch-marker checks.
+- **Required scripts/gates:** future `pnpm launch:governance-dossier-readiness`; full local gate.
+- **Definition of Done:** launch dossier is reviewable and still does not approve launch unless all required approval fields are present.
+- **Stop conditions:** founder asks to enable launch without required clinical/compliance/security/legal evidence.
+- **Risks and deferred decisions:** actual go-live remains separately approved.
+
+## WO-079 — Production Identity Provider And Account Lifecycle Activation
+
+- **Objective:** Promote identity from synthetic fail-closed scaffolding to approved production identity integration.
+- **Why this exists:** live use requires real identity, lifecycle, MFA/session, and access-review controls.
+- **Prerequisites:** `WO-078` inputs or explicit identity-only activation approval; IdP and credential secret names selected.
+- **Founder-provided partial input captured 2026-06-02:** evaluate the local Flow project's Azure/Microsoft Entra, `clinicos1` tenant, Microsoft redirect login, JWT validation, Entra-linked provisioning, tenant-member-only, guest/B2B denial, disabled/deleted identity denial, and app-owned role/scope pattern for AURA Note adoption.
+- **In scope:** OIDC/SAML/ClinicOS delegation adapter activation, disabled-user handling, session expiry, account lifecycle, access review.
+- **Out of scope:** committing secrets, bypassing AURA Note permissions, live PHI access before approval.
+- **UX requirements:** login disabled/configured/failed, expired session, disabled user, permission-denied, and read-only states.
+- **Backend/API requirements:** production auth mode fails closed without configured provider; tokens validated server-side; synthetic headers rejected.
+- **Data model/persistence requirements:** identity mapping, user/site/role lifecycle, access-review metadata, audit records.
+- **Event/audit requirements:** login, logout, session expired, user disabled, access review, delegated identity denied.
+- **RBAC/ABAC requirements:** tenant/site/user/role administration and purpose-of-use enforced.
+- **Standalone-mode behavior:** standalone identity works without ClinicOS.
+- **ClinicOS-integrated behavior:** delegated identity maps through adapter boundary without permission bypass.
+- **AI/PHI/security requirements:** no PHI access until authenticated and purpose checked.
+- **Testing requirements:** role denial, disabled-user denial, expired session, wrong tenant/site, synthetic-header rejection.
+- **Required scripts/gates:** future `pnpm identity:activation-readiness`; full local gate.
+- **Definition of Done:** production-shaped identity activation is tested and fails closed when config is missing.
+- **Stop conditions:** IdP contract, MFA/session policy, or credential delivery is missing.
+- **Risks and deferred decisions:** IdP vendor, account recovery, break-glass, and access-review operations.
+
+## WO-080 — Production PHI Persistence And Database Operations Activation
+
+- **Objective:** Prepare production PHI database operations without weakening tenant isolation.
+- **Why this exists:** local PostgreSQL evidence does not equal approved production PHI persistence.
+- **Prerequisites:** database host, roles, RLS review, migration/backup/restore approval, PHI retention policy.
+- **Founder-provided partial input captured 2026-06-02:** evaluate the local Flow project's Azure PostgreSQL Flexible Server, migration/runtime role posture, RLS evidence, PHI encryption, append-only event protection, and backup/restore objectives for AURA Note adoption.
+- **Verified Azure baseline captured 2026-06-02:** tenant `b9b1d566-d7ed-44a4-b3cc-cf8786d6a6ed`, subscription `Subscription Malady` (`91d0e7fe-e9c6-40a0-af0f-98a9dc07b218`), resource group `AURA_resource_group`, location `eastus`, provisioning state `Succeeded`.
+- **In scope:** production database config validation, RLS coverage confirmation, migration approval workflow, backup/restore evidence contracts.
+- **Out of scope:** committing connection strings, live PHI writes before approval, support database access without policy.
+- **UX requirements:** admin/status surfaces show database configured, degraded, blocked, failed, permission-denied, and read-only states.
+- **Backend/API requirements:** all state-changing operations remain tenant/site scoped, permission checked, audited, and fail closed on config ambiguity.
+- **Data model/persistence requirements:** production-owned table review, backup metadata, migration records, restore-readiness evidence.
+- **Event/audit requirements:** migration approved/applied/rolled back, backup checked, restore drill checked, RLS evidence recorded.
+- **RBAC/ABAC requirements:** tenant isolation at API, repository, and database/RLS layers.
+- **Standalone-mode behavior:** standalone owns persisted workflow state.
+- **ClinicOS-integrated behavior:** mappings persist locally without raw ClinicOS payload overreach.
+- **AI/PHI/security requirements:** PHI storage requires approved database, encryption, retention, and access policy.
+- **Testing requirements:** production config validation, RLS coverage, backup/restore metadata, role denial, cross-tenant denial.
+- **Required scripts/gates:** future `pnpm persistence:production-activation-readiness`; full local gate.
+- **Definition of Done:** production PHI persistence is approved, configured, and evidenced without bypassing local safety controls.
+- **Stop conditions:** database credential, RLS policy, backup/restore, or PHI retention policy is missing.
+- **Risks and deferred decisions:** production database operations and support access.
+
+## WO-081 — Production Azure Storage, Backup/Restore, And Retention Deletion Activation
+
+- **Objective:** Activate production storage delivery and deletion controls only after Azure/storage governance inputs are approved.
+- **Why this exists:** storage adapters exist, but live Azure PHI storage and destructive deletion remain disabled.
+- **Prerequisites:** approved runtime config/secret-store references, app private-network integration, deletion approval policy, monitoring/alert owners, and explicit PHI/deletion/restore/launch approvals.
+- **Founder-provided partial input captured 2026-06-02:** evaluate the local Flow project's Key Vault, Azure Blob soft-delete/versioning, private Blob deployment-package usage, and recovery posture while separately deciding AURA Note PHI artifact-storage controls.
+- **Verified Azure baseline captured 2026-06-02:** tenant `b9b1d566-d7ed-44a4-b3cc-cf8786d6a6ed`, subscription `Subscription Malady` (`91d0e7fe-e9c6-40a0-af0f-98a9dc07b218`), resource group `AURA_resource_group`, location `eastus`, provisioning state `Succeeded`.
+- **Non-secret Azure storage decisions captured 2026-06-02:** founder/operator confirmed `eastus` and delegated remaining non-secret storage/deletion/restore choices. `docs/PRODUCTION_AZURE_STORAGE_DECISION_RECORD.md` selects account `auranoteeastus91d0`, `StorageV2`, `Standard ZRS`, managed identity, identity/key-vault names, artifact containers, private endpoint requirement, server-mediated download TTLs, raw-audio 7-day purge eligibility, transcript indefinite retention, 14-day Blob/container soft delete, versioning, legal-hold deletion blocking, evidence retention, restore-readiness cadence, and monitoring requirements.
+- **No-PHI Azure infrastructure evidence captured 2026-06-02:** `docs/PRODUCTION_AZURE_STORAGE_PROVISIONING_EVIDENCE.md` records the provisioned storage account, private containers, managed identity, storage-account-scoped Blob role assignment, Key Vault boundary, VNet, private endpoint subnet, private DNS zone/link, Blob private endpoint, firewall/public-network-disabled posture, shared-key denial, Blob public-access denial, TLS, 14-day soft-delete settings, and Blob versioning. This is not PHI storage activation or launch approval.
+- **In scope:** non-public object storage, server-mediated downloads, retention deletion approval/recovery, restore-readiness metadata.
+- **Out of scope:** public URLs, destructive production deletion without approval, committing credentials, PHI-bearing audit exports before approval.
+- **UX requirements:** download configured/expired/denied, deletion approval-required/recovery-window/read-only, failed restore-readiness states.
+- **Backend/API requirements:** signed-download tokens are permission checked, short lived, tenant scoped, and never public URLs.
+- **Data model/persistence requirements:** storage keys, checksums, eTags, retention class, deletion evidence, restore evidence.
+- **Event/audit requirements:** object stored, download token issued/denied/expired, deletion approved/executed/recovered, restore checked.
+- **RBAC/ABAC requirements:** only authorized roles download final notes/patient summaries/audit exports; support metadata only.
+- **Standalone-mode behavior:** standalone exports use approved storage.
+- **ClinicOS-integrated behavior:** ClinicOS export handoff remains adapter-bound and permission checked.
+- **AI/PHI/security requirements:** PHI objects require encryption, private access, retention, and deletion evidence.
+- **Testing requirements:** token expiry/wrong-tenant denial, object delete approval, recovery window, transcript non-deletion.
+- **Required scripts/gates:** future `pnpm storage:production-activation-readiness`; full local gate.
+- **Definition of Done:** live storage can be enabled only with approved secure download and deletion controls.
+- **Stop conditions:** Azure policy, key management, soft-delete, backup/restore, or deletion approval is missing.
+- **Risks and deferred decisions:** legal hold, customer-managed keys, and restore drill cadence.
+
+## WO-082 — Live Transcription Provider And Audio Transport Activation
+
+- **Objective:** Enable live transcription only through an approved provider boundary and PHI-safe audio transport policy.
+- **Why this exists:** mock transcription is production-shaped, but live audio provider use needs BAA/privacy and consent decisions.
+- **Prerequisites:** provider, BAA/privacy approval, audio transport policy, consent/notice language, credential secret names.
+- **In scope:** provider adapter activation, chunk upload policy, retries/dead-letter, diarization/confidence metadata, correction history.
+- **Out of scope:** unapproved provider calls, raw PHI audio outside governed path, production storage without retention controls.
+- **UX requirements:** microphone permission, device unavailable, upload failed, provider unavailable, low confidence, correction history, read-only finalized transcript.
+- **Backend/API requirements:** server-side provider calls only; tenant/site scoped, permission checked, audited, and idempotent.
+- **Data model/persistence requirements:** recording chunks, provider job records, transcript segments, confidence/source/speaker metadata, correction history.
+- **Event/audit requirements:** recording started/stopped, chunk uploaded, provider requested/failed, segment received, correction recorded.
+- **RBAC/ABAC requirements:** transcript visibility respects clinician/billing/admin/support restrictions.
+- **Standalone-mode behavior:** standalone can use approved provider or safe mock fallback.
+- **ClinicOS-integrated behavior:** ClinicOS visit context may route through adapter without bypassing transcription permissions.
+- **AI/PHI/security requirements:** audio PHI transport requires approved vendor and no raw PHI to external AI.
+- **Testing requirements:** provider disabled, live config validation, retry/dead-letter, correction history, transcript retention, role denial.
+- **Required scripts/gates:** future `pnpm transcription:activation-readiness`; full local gate.
+- **Definition of Done:** live transcription is governed, testable, and fail-closed when credentials/config are absent.
+- **Stop conditions:** BAA, consent policy, provider credentials, or audio retention policy is missing.
+- **Risks and deferred decisions:** diarization reliability and provider outage handling.
+
+## WO-083 — External AI Private/BAA Pathway Activation
+
+- **Objective:** Activate AI only through a private/BAA governed pathway with evaluations and PHI controls.
+- **Why this exists:** AI governance scaffolding exists, but live model calls and raw-PHI policy are not approved.
+- **Prerequisites:** provider/model decision, BAA/private path approval, PHI policy, prompt/eval owners, credential secret names.
+- **In scope:** prompt/model registry, eval thresholds, schema validation, source evidence, human-review gates, drift/incident placeholders.
+- **Out of scope:** autonomous diagnosis, coding, billing, medical necessity, orders, claim submission, raw PHI to unapproved external AI.
+- **UX requirements:** disabled/configured/degraded, source stale, PHI rejected, unsafe output rejected, human-review-required, permission-denied.
+- **Backend/API requirements:** AI calls assembled server-side through gateway; outputs schema-validated and candidate-only.
+- **Data model/persistence requirements:** prompt version, model config, eval run, context metadata, scrub decision, output validation, review metadata.
+- **Event/audit requirements:** prompt approved, model configured, PHI scrubbed/rejected, output validated/rejected, human review, regression blocked.
+- **RBAC/ABAC requirements:** minimum necessary access by role and purpose-of-use.
+- **Standalone-mode behavior:** standalone uses approved gateway path or mock fallback.
+- **ClinicOS-integrated behavior:** ClinicOS Copilot/Governance adapters cannot bypass AURA Note AI policy.
+- **AI/PHI/security requirements:** no raw PHI to unapproved external AI; all outputs draft/candidate/suggestion-only.
+- **Testing requirements:** prohibited output evals, PHI rejection, source-freshness, schema validation, role denial, no-live-when-disabled.
+- **Required scripts/gates:** future `pnpm ai:activation-readiness`; full local gate.
+- **Definition of Done:** AI can run only through approved governed pathway with regression gates.
+- **Stop conditions:** provider, BAA/private path, prompt owner, eval thresholds, or PHI policy is missing.
+- **Risks and deferred decisions:** drift response and model monitoring ownership.
+
+## WO-084 — Production EHR Writeback Credentialing And Sandbox-To-Live Activation
+
+- **Objective:** Move EHR from sandbox/mock metadata toward approved live writeback without removing human approval gates.
+- **Why this exists:** live writeback requires credentials, scope, retry/dead-letter, reconciliation, and privacy review.
+- **Prerequisites:** EHR vendor/environment, credentialing, allowed writeback object types, human approver role, credential secret names.
+- **In scope:** live/sandbox credential validation, writeback payload preparation, approval, delivery attempts, acknowledgements, reconciliation.
+- **Out of scope:** writeback without human approval, raw payload over-retention, autonomous finalization, claim submission.
+- **UX requirements:** configured/disabled/degraded, approval-required, pending, delivered, failed, dead-lettered, reconciliation-needed, permission-denied.
+- **Backend/API requirements:** adapter-mediated calls, idempotency, retry/dead-letter, tenant/site scope, audit, no raw logs.
+- **Data model/persistence requirements:** credential reference metadata, writeback jobs, attempts, acknowledgements, reconciliation evidence.
+- **Event/audit requirements:** credential checked, payload prepared, approval recorded, delivery attempted, acknowledgement received, dead-lettered.
+- **RBAC/ABAC requirements:** only authorized clinicians/admins approve writeback; support sees metadata only.
+- **Standalone-mode behavior:** EHR can remain disabled while standalone export continues.
+- **ClinicOS-integrated behavior:** ClinicOS routing cannot bypass AURA Note writeback approval.
+- **AI/PHI/security requirements:** no autonomous finalization or claim behavior; PHI payloads are governed.
+- **Testing requirements:** credential disabled, sandbox/live config validation, approval denial, retry/dead-letter, reconciliation, role denial.
+- **Required scripts/gates:** future `pnpm ehr:activation-readiness`; full local gate.
+- **Definition of Done:** EHR writeback is approved, human-gated, auditable, and fail-closed.
+- **Stop conditions:** credentialing, payload policy, reconciliation owner, or legal/privacy review is missing.
+- **Risks and deferred decisions:** vendor acknowledgement semantics and support escalation.
+
+## WO-085 — ClinicOS Live Integration Contract And Event-Bus Activation
+
+- **Objective:** Activate ClinicOS integration only after live contracts, identity mapping, and event delivery semantics are approved.
+- **Why this exists:** AURA Note must embed into ClinicOS without allowing ClinicOS to bypass AURA Note permissions.
+- **Prerequisites:** ClinicOS contracts for M03, M04, M17, M21, M23, M24, M25, M26; delegated identity and event-bus decisions.
+- **In scope:** live contract validation, mode mapping, event publish/subscribe, replay/reconciliation, degraded/fail-closed behavior.
+- **Out of scope:** raw payload storage without policy, delegated identity bypass, ClinicOS-driven autonomous finalization.
+- **UX requirements:** embedded/configured/degraded/unavailable, mapping review, replay-needed, reconciliation-needed, permission-denied.
+- **Backend/API requirements:** ModeResolver and adapters enforce boundaries; all calls tenant/site scoped, audited, and permission checked.
+- **Data model/persistence requirements:** mode mappings, external IDs, event cursors, reconciliation records, failure evidence.
+- **Event/audit requirements:** mapping created/failed, event published/failed/replayed, reconciliation completed, delegation denied.
+- **RBAC/ABAC requirements:** AURA Note remains the permission authority for its module behavior.
+- **Standalone-mode behavior:** standalone remains fully usable without ClinicOS.
+- **ClinicOS-integrated behavior:** ClinicOS integration is live only through approved adapters.
+- **AI/PHI/security requirements:** no raw ClinicOS payload over-retention and no permission bypass.
+- **Testing requirements:** mode mapping, cross-tenant denial, service-account denial, event replay, degradation, permission boundary.
+- **Required scripts/gates:** future `pnpm clinicos:activation-readiness`; full local gate.
+- **Definition of Done:** ClinicOS live integration is contract-backed, permission-bound, and auditable.
+- **Stop conditions:** contract, delegated identity, event-bus, replay/reconciliation, or operational owner is missing.
+- **Risks and deferred decisions:** live module contract drift and replay ownership.
+
+## WO-086 — Production Observability, SIEM/APM, And Support Operations Activation
+
+- **Objective:** Activate production observability and support operations with PHI-safe telemetry.
+- **Why this exists:** local observability scaffolding is not a live SIEM/APM/on-call posture.
+- **Prerequisites:** vendor choices, retention windows, PHI redaction approval, alert thresholds, on-call/support owners.
+- **In scope:** log/metric/trace exporters, SIEM integration, alerting, SLO/SLA targets, incident/support workflow, access-review evidence.
+- **Out of scope:** PHI-bearing logs, unapproved break-glass, launch approval without operations signoff.
+- **UX requirements:** support status configured/degraded/failed, incident states, permission-denied, read-only metadata views.
+- **Backend/API requirements:** structured redacted telemetry, trace correlation, support endpoints role scoped and metadata-only.
+- **Data model/persistence requirements:** incident records, support events, alert evidence, access-review metadata.
+- **Event/audit requirements:** incident opened/escalated/resolved, alert fired, support access denied, access review recorded.
+- **RBAC/ABAC requirements:** support access is minimum necessary and cannot reveal PHI without approved policy.
+- **Standalone-mode behavior:** standalone operation is observable and supportable.
+- **ClinicOS-integrated behavior:** ClinicOS dependencies are observable through adapter metadata without raw payload exposure.
+- **AI/PHI/security requirements:** no PHI in logs; security events redacted and correlated.
+- **Testing requirements:** exporter config validation, redaction, alert metadata, support role denial, incident runbook checks.
+- **Required scripts/gates:** future `pnpm observability:activation-readiness`; full local gate.
+- **Definition of Done:** telemetry/support posture is live-ready with PHI-safe evidence and owners.
+- **Stop conditions:** vendor, retention, on-call, alert threshold, or PHI redaction approval is missing.
+- **Risks and deferred decisions:** SLO/SLA commitments and break-glass scope.
+
+## WO-087 — Revenue Estimate And Patient-Facing Financial Policy Activation
+
+- **Objective:** Decide and implement whether any patient-facing financial estimate behavior is allowed.
+- **Why this exists:** current v1 hides patient-facing revenue/financial conclusions by default.
+- **Prerequisites:** estimate source data, caveat language, tenant enablement policy, compliance/legal approval.
+- **In scope:** estimate configuration, source-data validation, caveats, patient-summary exclusion/allowance rules, audit evidence.
+- **Out of scope:** unsupported financial conclusions, autonomous billing, medical-necessity decisions, claim submission.
+- **UX requirements:** unavailable/configured/internal-only/patient-hidden/patient-enabled, caveat, permission-denied, read-only states.
+- **Backend/API requirements:** estimate APIs are tenant configured, role checked, source-data validated, audited, and disabled by default.
+- **Data model/persistence requirements:** estimate configuration, source reference, caveat, display decision, audit evidence.
+- **Event/audit requirements:** estimate config changed, patient-facing display enabled/denied, caveat accepted, source missing.
+- **RBAC/ABAC requirements:** only authorized admins configure; patients never see internal billing/coaching/confidence details.
+- **Standalone-mode behavior:** standalone estimates require configured source data and caveats.
+- **ClinicOS-integrated behavior:** ClinicOS/M21 data may feed estimates only through approved adapter and tenant policy.
+- **AI/PHI/security requirements:** no AI-generated patient financial conclusion.
+- **Testing requirements:** disabled by default, missing source denial, patient-summary exclusion, role denial, caveat display.
+- **Required scripts/gates:** future `pnpm revenue-estimate:policy-readiness`; full local gate.
+- **Definition of Done:** financial display policy is explicit, tested, and conservative by default.
+- **Stop conditions:** legal/compliance approval, source data, caveat text, or tenant policy is missing.
+- **Risks and deferred decisions:** payer contract accuracy and patient dispute handling.
+
+## WO-088 — Claim, Clearinghouse, Payer, Denial, And Payment Strategy Decision Gate
+
+- **Objective:** Capture whether live claim/payer workflows remain out of v1 or move to a later approved implementation path.
+- **Why this exists:** draft claim preview exists, but live claim submission is prohibited by default.
+- **Prerequisites:** founder/compliance/legal/billing decision on claim strategy and human approval model.
+- **In scope:** decision record, clearinghouse/payer options, denial/payment scope, charge finalization boundary, implementation/no-implementation recommendation.
+- **Out of scope:** live claim submission, denial automation, payment posting, autonomous charge or medical-necessity decisions unless a later approved work order authorizes them.
+- **UX requirements:** claim disabled, draft-only, human-review-required, blocked, permission-denied, read-only states.
+- **Backend/API requirements:** `submittedClaim=false` remains enforced unless future approval explicitly changes it.
+- **Data model/persistence requirements:** decision metadata, approval evidence, draft claim preview records only unless later scoped.
+- **Event/audit requirements:** claim strategy reviewed, submission blocked, human review required, decision recorded.
+- **RBAC/ABAC requirements:** billing/admin roles only; clinician signoff and compliance gates preserved.
+- **Standalone-mode behavior:** standalone retains draft claim preview and billing review queue.
+- **ClinicOS-integrated behavior:** M21 handoff remains candidate-only without submission authority.
+- **AI/PHI/security requirements:** no AI medical-necessity or autonomous billing finalization.
+- **Testing requirements:** submission disabled, `submittedClaim=false`, role denial, patient-facing financial exclusion.
+- **Required scripts/gates:** future `pnpm claim-strategy:decision-readiness`; full local gate.
+- **Definition of Done:** claim/payer strategy is explicit and no unauthorized submission path exists.
+- **Stop conditions:** founder/legal/compliance/billing decision is missing.
+- **Risks and deferred decisions:** clearinghouse/payer contracts and payment workflows.
+
+## WO-089 — Beta Pilot Execution And Production Launch Go/No-Go
+
+- **Objective:** Execute the approved beta/launch decision package or stop with documented blockers.
+- **Why this exists:** beta package readiness and launch governance docs are not actual launch execution.
+- **Prerequisites:** `WO-078` through required activation work orders complete or formally waived; pilot tenants/users/support/rollback approved.
+- **In scope:** pilot execution checklist, deployment/runbook evidence, live-disabled/allowed features, support coverage, incident readiness, go/no-go record.
+- **Out of scope:** unapproved live PHI, live vendors, claim submission, autonomous clinical/coding/billing behavior, or launch without required approvals.
+- **UX requirements:** pilot status, disabled features, support route, incident state, permission-denied, failed, read-only states.
+- **Backend/API requirements:** production config validates before launch; disabled live behavior remains fail-closed.
+- **Data model/persistence requirements:** pilot tenant metadata, approval evidence, smoke results, incident/rollback evidence.
+- **Event/audit requirements:** pilot started/paused/stopped, launch approved/denied, rollback initiated, incident recorded.
+- **RBAC/ABAC requirements:** only launch approvers can change launch state; all PHI access role/purpose checked.
+- **Standalone-mode behavior:** standalone pilot operation is first-class.
+- **ClinicOS-integrated behavior:** ClinicOS pilot scope is explicit and adapter-bound.
+- **AI/PHI/security requirements:** live PHI/vendor/AI/claim behavior only if separately approved and tested.
+- **Testing requirements:** full seeded workflow, production config checks, access denial, rollback drill, support escalation, no-forbidden-live markers.
+- **Required scripts/gates:** future `pnpm beta:execution-readiness`; future `pnpm launch:go-no-go-readiness`; full local and CI gates.
+- **Definition of Done:** launch decision is recorded with evidence; productionLaunchApproved changes only if all required approvals pass.
+- **Stop conditions:** approval, credential, support, incident, rollback, security, privacy, clinical, compliance, or legal input is missing.
+- **Risks and deferred decisions:** real-world pilot incidents and operational readiness.
+
 ## Overall production-launch criteria
 
 AURA Note can be called production-launch-ready only when all of the following are true:

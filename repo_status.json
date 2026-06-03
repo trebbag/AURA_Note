@@ -80,9 +80,22 @@
     "WO-073": "done",
     "WO-074": "done",
     "WO-075": "done",
-    "WO-076": "done"
+    "WO-076": "done",
+    "WO-077": "done",
+    "WO-078": "planned",
+    "WO-079": "planned",
+    "WO-080": "planned",
+    "WO-081": "planned",
+    "WO-082": "planned",
+    "WO-083": "planned",
+    "WO-084": "planned",
+    "WO-085": "planned",
+    "WO-086": "planned",
+    "WO-087": "planned",
+    "WO-088": "planned",
+    "WO-089": "planned"
   },
-  "last_updated_by": "Codex WO-076 post-CR4 launch governance intake",
-  "last_updated_at": "2026-06-02T15:14:15Z",
-  "notes": "WO-076 completed the post-CR4 launch governance intake. The repo now has a post-CR4 launch governance decision package, duplicate artifact inventory, recursive ignore rules for nested generated build outputs, a post-cr4:launch-governance readiness gate, CI coverage for that gate, and status evidence that the current branch still requires push/PR/CI follow-up outside the committed files. This is governance and cleanup-intake evidence only, not production launch approval: no live PHI, production credential, live OIDC, live SAML, live ClinicOS delegated identity, live ClinicOS event bus, raw ClinicOS payload storage, live EHR API call, live EHR writeback delivery, live transcription vendor, raw PHI audio transport, production audio storage, live external AI, production prompt store, raw PHI transfer to external AI, live Azure PHI storage, claim submission, autonomous clinical/coding/billing behavior, medical-necessity determination, charge finalization, order placement, patient-facing financial conclusion, certification claim, duplicate-source deletion approval, or production launch behavior is authorized or introduced."
+  "last_updated_by": "Codex post-CR4 Azure storage no-PHI provisioning evidence",
+  "last_updated_at": "2026-06-02T20:10:44Z",
+  "notes": "WO-077 remains the latest completed work order. After WO-077, the founder/operator supplied partial production-decision inputs: the founder/operator is the launch owner and approval authority, and the local Flow project should be used as the reference pattern for Azure/Microsoft Entra identity, the clinicos1 tenant, Microsoft redirect login, Azure PostgreSQL, RLS/encryption, Key Vault, and Azure Blob recovery posture. Azure CLI verified the AURA Note Azure resource baseline: tenant b9b1d566-d7ed-44a4-b3cc-cf8786d6a6ed, subscription Subscription Malady (91d0e7fe-e9c6-40a0-af0f-98a9dc07b218), resource group AURA_resource_group, location eastus, provisioning state Succeeded. The founder/operator then confirmed eastus for production Azure storage planning and authorized Codex to make remaining non-secret storage/deletion/restore choices. No-PHI Azure infrastructure has now been provisioned and recorded in docs/PRODUCTION_AZURE_STORAGE_PROVISIONING_EVIDENCE.md: storage account auranoteeastus91d0, private artifact containers, managed identity aura-note-storage-mi, storage-account-scoped Blob RBAC, Key Vault boundary aura-note-kv-91d0, VNet aura-note-vnet-eastus, private endpoint subnet aura-note-private-endpoints, private DNS zone/link for privatelink.blob.core.windows.net, Blob private endpoint aura-note-storage-blob-pe, public-network-disabled/firewall-deny posture, shared-key denial, public Blob denial, TLS, 14-day Blob/container soft delete, and Blob versioning. WO-078 through WO-089 remain planned, not active, and next_work_order stays null until AURA Note-specific launch scope, approved secret/config-store delivery, app runtime private-network integration, synthetic no-PHI object-level live-readiness tests, legal-hold/deletion/restore evidence, monitoring/alert wiring, production PHI/database/storage/deletion/restore approvals, vendor approvals, and operations inputs are available and a planned work order is deliberately promoted. This is governance, cleanup, planning, non-secret decision evidence, and no-PHI infrastructure evidence only, not production launch approval: no live PHI, production runtime credential, live OIDC, live SAML, live ClinicOS delegated identity, live ClinicOS event bus, raw ClinicOS payload storage, live EHR API call, live EHR writeback delivery, live transcription vendor, raw PHI audio transport, production audio storage, live external AI, production prompt store, raw PHI transfer to external AI, PHI-bearing Azure storage, claim submission, autonomous clinical/coding/billing behavior, medical-necessity determination, charge finalization, order placement, patient-facing financial conclusion, certification claim, destructive production deletion, production restore execution, or production launch behavior is authorized or introduced."
 }

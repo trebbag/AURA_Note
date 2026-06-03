@@ -725,7 +725,7 @@ No implementation work order is active. The next safest planning/control candida
 
 - `WO-055` added `docs/PRODUCTION_AZURE_STORAGE_DELETION_RESTORE_REVIEW.md` with required future Azure storage decisions, acceptance criteria, event/audit inventory, standalone behavior, and ClinicOS storage-boundary requirements.
 - `WO-055` added `work_orders/WO-055_production_azure_storage_deletion_restore_review_intake.md` so the intake is reviewable and bounded.
-- `pnpm storage:live-review-readiness` verifies that the tranche remains planning/control only and does not enable live Azure credentials, PHI-bearing object delivery, public URLs, destructive production deletion, production restore execution, PHI-bearing audit exports, runtime storage behavior, or launch behavior.
+- `pnpm storage:live-review-readiness` now verifies both the original `WO-055` planning/control boundary and the later post-CR4 no-PHI Azure infrastructure evidence, while confirming that production runtime credentials, PHI-bearing object delivery, public URLs, destructive production deletion, production restore execution, PHI-bearing audit exports, runtime storage behavior, and launch behavior remain disabled.
 - `repo_status.json` records `WO-055: done` while preserving the P11 checkpoint and no active next work order.
 
 ## Tests and gates
@@ -1227,3 +1227,107 @@ Deferred decisions remain tracked in `SPEC_GAPS.md`, including duplicate artifac
 ## Next recommended batch
 
 Push the branch, open or update a draft PR into `main`, inspect GitHub Actions, and create a later founder-approved work order for either duplicate artifact cleanup, launch-governance execution, beta pilot execution, production credentialing, or another explicit post-CR4 production decision sequence.
+
+---
+
+# WO-077 Duplicate Artifact Cleanup And Next-Work-Order Rails
+
+## Completed work order
+
+- `WO-077` — Duplicate artifact cleanup and post-CR4 next-work-order rails.
+
+## Acceptance evidence
+
+- PR #67 was marked ready and merged to `main` with merge commit `015b03102abd4da8a3b0b95a393fa9380351a27b`.
+- `docs/DUPLICATE_ARTIFACT_ADJUDICATION.md` records the duplicate cleanup decision, counts, unique-difference review, and safety boundary.
+- 103 visible duplicate-pattern files were reviewed and removed: 40 byte-identical copies, 62 stale historical copies, and 1 unique but rejected weaker migration-readiness script variant.
+- `docs/POST_CR4_NEXT_WORK_ORDER_SEQUENCE.md` records `WO-078` through `WO-089` as planned work only.
+- `docs/POST_CR4_PRODUCTION_DECISION_INPUTS.md` records the exact founder/reviewer/vendor/operations inputs required before planned production decisions can be promoted.
+- `repo_status.json` records `WO-077: done`, `WO-078` through `WO-089: planned`, `current_checkpoint: CR-4`, and `next_work_order: null`.
+- `pnpm post-cr4:next-work-orders` verifies cleanup, status, planned sequence, docs, CI hook, and no-launch/no-live markers.
+
+## Tests and gates
+
+- `pnpm post-cr4:next-work-orders`
+- `pnpm post-cr4:launch-governance`
+- `pnpm commercial:readiness-plan`
+- `pnpm production:readiness`
+- `pnpm acceptance:readiness`
+- `node scripts/status.js`
+- `git diff --check`
+
+## Open risks
+
+- `WO-078` through `WO-089` remain planned and input-gated. None are active implementation work.
+- Production launch, live PHI, live vendors, production credentials, live EHR/writeback, live transcription, live external AI, live Azure PHI storage, live ClinicOS integration, claim submission, charge finalization, medical-necessity determination, certification claims, and autonomous clinical/coding/billing behavior remain disabled or deferred.
+
+## Active SPEC_GAPs
+
+None active as of the post-`WO-077` duplicate artifact cleanup and next-sequence rails review.
+
+## Deferred production decisions
+
+Deferred decisions remain tracked in `SPEC_GAPS.md` and are mapped to planned `WO-078` through `WO-089`. Duplicate artifact deletion approval is now resolved only for the reviewed accidental local duplicate-pattern artifacts.
+
+## Next recommended batch
+
+Do not promote a planned work order until the required inputs in `docs/POST_CR4_PRODUCTION_DECISION_INPUTS.md` are available. Recommended next candidate is `WO-078` if the founder is ready to assemble launch governance approvals; otherwise choose the planned work order matching the first available production decision package.
+
+---
+
+# Post-WO-077 Founder Production-Decision Input Capture
+
+## Captured inputs
+
+- The founder/operator is the launch owner and approval authority unless a later written decision delegates an approval lane.
+- Identity and account lifecycle planning should reference the local Flow project at `/Users/gregorygabbert/Documents/GitHub/Flow`.
+- The Flow reference pattern includes Azure/Microsoft Entra, the `clinicos1` tenant, Microsoft redirect login, backend JWT validation, Entra-linked provisioning, tenant-member account restriction, guest/B2B denial, disabled/deleted identity denial, and application-owned role/scope enforcement.
+- Production PHI database planning should evaluate Flow's Azure PostgreSQL Flexible Server, RLS/encryption, migration/runtime role, append-only evidence, and backup/restore posture.
+- Production Azure storage planning should evaluate Flow's Key Vault, Blob soft-delete/versioning, and recovery posture, while separately deciding AURA Note PHI artifact-storage controls.
+- Azure CLI verified the AURA Note resource baseline: tenant `b9b1d566-d7ed-44a4-b3cc-cf8786d6a6ed`, subscription `Subscription Malady` (`91d0e7fe-e9c6-40a0-af0f-98a9dc07b218`), resource group `AURA_resource_group`, location `eastus`, provisioning state `Succeeded`.
+
+## Remaining boundary
+
+This input capture does not promote `WO-078` through `WO-081`, approve production launch, enable live PHI, configure production credentials, approve live vendors, create/approve a storage account or containers, approve PHI-bearing Azure object storage, or change any production launch flag. The remaining required inputs are listed in `docs/POST_CR4_PRODUCTION_DECISION_INPUTS.md`.
+
+---
+
+# Post-WO-077 Azure Storage Decision Capture
+
+## Captured decisions
+
+- The founder/operator confirmed `eastus` is acceptable for production Azure storage planning and authorized Codex to make the remaining non-secret storage/deletion/restore choices.
+- `docs/PRODUCTION_AZURE_STORAGE_DECISION_RECORD.md` records candidate storage account `auranoteeastus91d0`; Azure reported the name available on 2026-06-02.
+- The decision record selects `StorageV2`, `Standard ZRS`, managed identity, candidate managed identity `aura-note-storage-mi`, candidate Key Vault reference `aura-note-kv-91d0`, artifact-class containers, tenant/site object-key partitioning, private endpoint requirement, server-mediated download TTLs, raw-audio 7-day purge eligibility, transcript indefinite retention, 14-day Blob/container soft delete, versioning, legal-hold deletion blocking, quarterly synthetic restore-readiness, evidence retention, and monitoring requirements.
+
+## Remaining boundary
+
+This decision capture does not promote `WO-081`, provision Azure resources, create containers, create or bind managed identity, configure private endpoints, configure production credentials, enable PHI-bearing object storage, enable public URLs, approve destructive production deletion, execute restore drills, or approve production launch.
+
+## Acceptance evidence
+
+- `az storage account check-name --name auranoteeastus91d0` returned `nameAvailable: true` on 2026-06-02.
+- `pnpm storage:live-review-readiness` now verifies that the decision record exists and contains the required non-secret decisions while prohibited live/launch markers remain absent.
+
+---
+
+# Post-WO-077 Azure Storage No-PHI Provisioning Evidence
+
+## Captured evidence
+
+- The founder/operator confirmed `eastus` is acceptable and authorized Codex to make the remaining non-secret Azure storage, deletion, and restore choices.
+- Azure no-PHI infrastructure was provisioned in tenant `b9b1d566-d7ed-44a4-b3cc-cf8786d6a6ed`, subscription `Subscription Malady`, resource group `AURA_resource_group`, region `eastus`.
+- `docs/PRODUCTION_AZURE_STORAGE_PROVISIONING_EVIDENCE.md` records storage account `auranoteeastus91d0`, private artifact containers, managed identity `aura-note-storage-mi`, storage-account-scoped `Storage Blob Data Contributor` RBAC, Key Vault boundary `aura-note-kv-91d0`, VNet `aura-note-vnet-eastus`, private endpoint subnet `aura-note-private-endpoints`, private DNS zone/link for `privatelink.blob.core.windows.net`, Blob private endpoint `aura-note-storage-blob-pe`, and private DNS record `auranoteeastus91d0.privatelink.blob.core.windows.net`.
+- Azure CLI verification showed public network access disabled, firewall deny-by-default, shared-key access disabled, Blob public access disabled, HTTPS-only traffic, TLS 1.2 minimum, 14-day Blob soft delete, 14-day container soft delete, Blob versioning enabled, and Key Vault RBAC/soft-delete/purge-protection/public-network-disabled posture.
+
+## Remaining boundary
+
+This no-PHI infrastructure evidence does not promote `WO-081`, approve production launch, commit secrets, enable production runtime credentials, enable PHI-bearing object delivery, expose public object URLs, execute destructive deletion, execute production restore, enable PHI-bearing audit exports, submit claims, finalize charges, determine medical necessity, or authorize autonomous clinical/coding/billing behavior.
+
+## Remaining WO-081 evidence
+
+- Approved config/secret-store references and deployment environment names outside source control.
+- App/API/worker runtime integration through the private network using the managed identity.
+- Synthetic no-PHI object-level tests for upload, server-mediated download token, wrong-tenant denial, expired-token denial, deletion block, legal hold, and restore readiness.
+- Monitoring/alert wiring for storage posture drift, Key Vault drift, private endpoint/DNS failure, deletion failure, restore-readiness failure, wrong-tenant access attempts, and high egress.
+- Explicit founder/operator approval before PHI-bearing object delivery, destructive deletion, PHI restore execution, or launch flags change.
