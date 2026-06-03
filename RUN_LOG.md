@@ -1079,3 +1079,14 @@ Codex must append a dated entry after each work order or meaningful implementati
 - **Open SPEC_GAPs:** None active. Deferred production decisions remain in `SPEC_GAPS.md`, now narrowed for Azure storage by no-PHI infrastructure evidence.
 - **Safety boundary:** No secrets, storage keys, SAS tokens, connection strings, `.env` values, PHI, public object URLs, production runtime credentials, destructive production deletion, production restore execution, PHI-bearing audit exports, production launch approval, claim submission, charge finalization, medical-necessity determination, order placement, patient-facing financial conclusion, or autonomous clinical/coding/billing behavior is introduced.
 - **Next step:** Run `pnpm storage:live-review-readiness`, broader post-CR4 planning/readiness gates, `node scripts/status.js`, and `git diff --check`, then commit and push if the gates pass.
+
+## 2026-06-03T01:01:30Z — Figma handoff pack
+
+- **Work order:** Post-CR4 design handoff support; no new product work order promoted.
+- **Summary:** Added a designer-facing Figma handoff pack under `docs/figma_handoff/` with an intake README, product/safety brief, information architecture and route map, frame blueprints, component-library request, prototype script, responsive/accessibility notes, Figma Make prompt, and CSV frame manifest. Added `scripts/validate-figma-handoff-pack.js` and wired `pnpm figma:handoff-pack-readiness` into `pnpm figma:handoff-readiness`.
+- **Files changed:** `docs/figma_handoff/*`, `docs/FIGMA_HANDOFF_PLAN.md`, `docs/FIGMA_HANDOFF_CHECKLIST.md`, `docs/TEST_PLAN.md`, `docs/FRONTEND_RUNTIME_INTEGRATION.md`, `scripts/validate-figma-handoff-pack.js`, `package.json`, and `RUN_LOG.md`.
+- **Tests run:** First `pnpm figma:handoff-pack-readiness` failed because an avoid-list included a prohibited medical-necessity phrase verbatim; the copy was rephrased into a non-literal warning. Passing checks after repair: `pnpm figma:handoff-pack-readiness`; `pnpm figma:handoff-readiness` including 30 Playwright route tests; `pnpm lint`; `pnpm lint:phi`; `node scripts/status.js`; `git diff --check`.
+- **Tests not run:** Full GitHub Actions, full unit/build gate, and final Figma visual design are not run in this local documentation handoff batch.
+- **Accepted risks:** This pack is design handoff material only. It does not create final Figma fidelity, production design approval, live PHI processing, live EHR/ClinicOS/AI/transcription/storage behavior, production credentials, claim submission, autonomous clinical/coding/billing behavior, medical-necessity determination, charge finalization, destructive production deletion, or production launch behavior.
+- **Open SPEC_GAPs:** No active SPEC_GAP is introduced by this handoff pack.
+- **Next step:** Run `pnpm figma:handoff-pack-readiness`, `pnpm figma:handoff-readiness`, `pnpm lint:phi`, `node scripts/status.js`, and `git diff --check`.
