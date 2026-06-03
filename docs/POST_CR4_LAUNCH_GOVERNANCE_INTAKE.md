@@ -26,6 +26,21 @@ The founder/operator supplied these partial production-decision inputs after `WO
 
 These inputs are partial. They do not provide AURA Note-specific non-secret resource names, secret-store delivery paths, production launch scope, production credential approval, live PHI approval, live vendor approval, or storage/deletion/restore approval.
 
+## Founder-Provided Launch Governance Inputs Captured 2026-06-03
+
+The founder/operator supplied these additional `WO-078` launch-governance inputs:
+
+- Launch scope: internal only.
+- Tenant/site scope: Azure tenant scope only. No site-specific scope is approved yet.
+- Roles enabled at launch: founder answered `No`; recorded conservatively as no expanded role set approved yet, not as a usable role matrix.
+- Rollback procedure owner: founder/operator.
+- Support hours and escalation path: none.
+- Incident commander: founder/operator. Backup incident commander is not specified.
+- Access review cadence: none.
+- Launch communications owner: founder/operator.
+
+These inputs narrow the launch-governance dossier but do not promote `WO-078`. The following remain unresolved before `WO-078` can become active: exact enabled roles or explicit no-role observer posture, disabled-feature inventory acceptance, go/no-go criteria, backup/restore drill acceptance criteria, backup incident commander or explicit no-backup risk acceptance, and explicit written approval if any launch flag is intended to change. The `None` support and access-review answers are acceptable only as documented internal-only risk posture unless replaced before beta, limited production, or general availability.
+
 ## GitHub PR State
 
 - Local branch at intake: `codex/wo-066-standalone-workflow-completion`.
@@ -89,6 +104,11 @@ The following decisions remain outside `WO-076` and must be handled by later fou
 Partial decisions now recorded:
 
 - launch owner and approval authority are identified as the founder/operator;
+- launch scope is internal only;
+- tenant/site launch scope is Azure tenant scope only, with no site-specific launch scope approved yet;
+- no expanded launch role set is approved yet because the founder answered `No` for roles enabled at launch;
+- rollback procedure owner, incident commander, and launch communications owner are identified as the founder/operator;
+- support hours/escalation path and access review cadence are recorded as none for internal-only planning only;
 - identity/account lifecycle should reference the Flow project's Azure/Microsoft Entra and `clinicos1` tenant pattern;
 - production PHI database planning should evaluate the Flow Azure PostgreSQL, RLS, PHI encryption, and backup/restore pattern for AURA Note-specific adoption, using the verified `AURA_resource_group` baseline unless a later decision selects a different resource group or region;
 - production Azure storage planning should evaluate the Flow Azure Key Vault, Blob soft-delete/versioning, and recovery posture, while separately deciding AURA Note PHI artifact-storage accounts, containers, retention, deletion, restore, and monitoring.

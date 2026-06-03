@@ -1080,6 +1080,18 @@ Codex must append a dated entry after each work order or meaningful implementati
 - **Safety boundary:** No secrets, storage keys, SAS tokens, connection strings, `.env` values, PHI, public object URLs, production runtime credentials, destructive production deletion, production restore execution, PHI-bearing audit exports, production launch approval, claim submission, charge finalization, medical-necessity determination, order placement, patient-facing financial conclusion, or autonomous clinical/coding/billing behavior is introduced.
 - **Next step:** Run `pnpm storage:live-review-readiness`, broader post-CR4 planning/readiness gates, `node scripts/status.js`, and `git diff --check`, then commit and push if the gates pass.
 
+## 2026-06-03T00:26:42Z — WO-078 launch governance partial input capture
+
+- **Work order:** No new work order promoted. `WO-077` remains the latest completed work order; `WO-078` remains planned and input-gated.
+- **Summary:** Captured additional founder/operator launch-governance inputs for `WO-078`. Launch scope is internal only; tenant/site launch scope is Azure tenant scope only; no expanded launch role set is approved; rollback procedure owner, incident commander, and launch communications owner are the founder/operator; support hours/escalation path and access review cadence are none for internal-only planning only.
+- **Files changed:** `CHECKPOINT_REPORT.md`, `RUN_LOG.md`, `SPEC_GAPS.md`, `docs/POST_CR4_LAUNCH_GOVERNANCE_INTAKE.md`, `docs/POST_CR4_NEXT_WORK_ORDER_SEQUENCE.md`, and `docs/POST_CR4_PRODUCTION_DECISION_INPUTS.md`.
+- **Tests run:** `pnpm post-cr4:next-work-orders`; `pnpm post-cr4:launch-governance`; `pnpm commercial:readiness-plan`; `pnpm production:readiness`; `pnpm acceptance:readiness`; `node scripts/status.js`; `git diff --check`.
+- **Tests not run:** Full unit/e2e/browser/build gate is not planned for this documentation-only input capture unless a readiness validator fails.
+- **Accepted risks:** The founder/operator answered `No` for roles enabled at launch, `None` for support hours/escalation, and `None` for access review cadence. Those are recorded as internal-only risk posture, not as sufficient beta or production controls.
+- **Open SPEC_GAPs:** None active. Deferred launch-governance decisions remain in `SPEC_GAPS.md` and `docs/POST_CR4_PRODUCTION_DECISION_INPUTS.md`.
+- **Safety boundary:** This does not promote `WO-078`, approve production launch, enable production credentials, enable live PHI, enable live vendors, enable claim submission, alter launch flags, or authorize autonomous clinical/coding/billing behavior.
+- **Next step:** Keep `WO-078` planned until exact enabled roles or explicit no-role observer posture, disabled-feature inventory acceptance, go/no-go criteria, backup/restore drill acceptance criteria, backup incident commander or explicit no-backup risk acceptance, and explicit written launch-flag approval are documented.
+
 ## 2026-06-03T01:01:30Z — Figma handoff pack
 
 - **Work order:** Post-CR4 design handoff support; no new product work order promoted.

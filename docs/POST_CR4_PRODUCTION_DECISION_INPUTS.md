@@ -16,6 +16,19 @@ These inputs came directly from the founder/operator and reduce ambiguity for th
 - AURA Note Azure resource baseline: Azure CLI verified tenant `b9b1d566-d7ed-44a4-b3cc-cf8786d6a6ed`, subscription `Subscription Malady` (`91d0e7fe-e9c6-40a0-af0f-98a9dc07b218`), resource group `AURA_resource_group`, location `eastus`, and provisioning state `Succeeded`.
 - Exact tenant IDs, app registration IDs, client IDs, database connection strings, storage account names, secret values, and `.env` values must not be copied into this repo as production configuration. AURA Note still needs approved non-secret configuration names and secret-store delivery before live work is promoted.
 
+## Founder-Provided Launch Governance Inputs Captured 2026-06-03
+
+These inputs came directly from the founder/operator and narrow `WO-078` launch-governance planning. They do not promote `WO-078`, approve production launch, enable live PHI, enable production credentials, enable live vendors, or change `productionLaunchApproved=false`.
+
+- Launch scope: internal only.
+- Tenant/site scope: Azure tenant scope only. No site-specific launch scope is approved yet.
+- Roles enabled at launch: founder answered `No`; this is recorded conservatively as no expanded role set approved yet. Exact internal-only roles still need explicit confirmation before `WO-078` can be promoted.
+- Rollback procedure owner: founder/operator.
+- Support hours and escalation path: none. This must remain an internal-only risk unless a support path is defined before any broader beta or production launch.
+- Incident commander: founder/operator. Backup incident commander is not yet specified.
+- Access review cadence: none. This must remain an internal-only risk unless a cadence is defined before any broader beta or production launch.
+- Launch communications owner: founder/operator.
+
 ## 1. Production Launch Governance
 
 Required inputs:
@@ -41,10 +54,19 @@ Required inputs:
 Captured partial input:
 
 - The founder/operator is the named launch decision owner and approval authority for launch, clinical, compliance/privacy, security, legal/risk, and commercial go/no-go decisions unless delegated later.
+- Launch scope is internal only.
+- Tenant/site scope is limited to the Azure tenant baseline; no site-specific launch scope is approved yet.
+- Roles enabled at launch remain unresolved because the founder answered `No`, which is not enough to define exact enabled roles. Until clarified, no expanded role set is approved.
+- Rollback procedure owner is the founder/operator.
+- Support hours and escalation path are recorded as none for internal-only planning only.
+- Incident commander is the founder/operator; backup is not yet specified.
+- Access review cadence is recorded as none for internal-only planning only.
+- Launch communications owner is the founder/operator.
 
 Still needed before `WO-078` can be promoted:
 
-- launch scope, tenant/site scope, enabled roles, disabled-feature inventory, go/no-go criteria, rollback procedure owner, support hours/escalation path, incident commander and backup, access review cadence, backup/restore drill acceptance criteria, launch communications owner, and explicit written approval if the launch flags are intended to change later.
+- explicit site scope if any site is included, exact enabled roles or explicit no-role internal observer posture, disabled-feature inventory accepted for internal-only launch, go/no-go criteria, backup incident commander or explicit no-backup risk acceptance, backup/restore drill acceptance criteria, and explicit written approval if the launch flags are intended to change later.
+- Because support hours/escalation path and access review cadence were answered as `None`, `WO-078` still needs explicit acceptance that those are acceptable only for internal-only use, or replacement support/access-review controls before any beta, limited production, or general availability scope.
 
 ## 2. Production Identity Provider And Account Lifecycle
 
