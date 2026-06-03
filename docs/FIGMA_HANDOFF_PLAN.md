@@ -8,8 +8,17 @@ Figma design should happen after the product map is complete enough to design th
 
 ## Required handoff artifacts
 
-`WO-065` must create or update:
+The handoff corpus includes:
 
+- `docs/figma_handoff/README.md`
+- `docs/figma_handoff/01_PRODUCT_AND_SAFETY_BRIEF.md`
+- `docs/figma_handoff/02_INFORMATION_ARCHITECTURE_AND_ROUTE_MAP.md`
+- `docs/figma_handoff/03_FRAME_BLUEPRINTS.md`
+- `docs/figma_handoff/04_COMPONENT_LIBRARY_REQUEST.md`
+- `docs/figma_handoff/05_WORKFLOW_PROTOTYPE_SCRIPT.md`
+- `docs/figma_handoff/06_RESPONSIVE_ACCESSIBILITY_NOTES.md`
+- `docs/figma_handoff/07_FIGMA_MAKE_PROMPT.md`
+- `docs/figma_handoff/figma_frame_manifest.csv`
 - `docs/FIGMA_SCREEN_INVENTORY.md`
 - `docs/FIGMA_COMPONENT_INVENTORY.md`
 - `docs/FIGMA_STATE_MATRIX.md`
@@ -19,6 +28,12 @@ Figma design should happen after the product map is complete enough to design th
 - `docs/FIGMA_CONTENT_COPY_GUIDE.md`
 - `docs/FIGMA_HANDOFF_CHECKLIST.md`
 - `/aura-note/figma-handoff`
+
+## Figma Handoff Pack
+
+The `docs/figma_handoff/` pack converts the verifier-oriented `WO-065` inventory into designer-facing intake materials. It includes a product and safety brief, route map, frame blueprints, component-library request, prototype script, responsive/accessibility notes, a Figma Make prompt, and a CSV frame manifest.
+
+The pack is checked by `pnpm figma:handoff-pack-readiness` and is also included in `pnpm figma:handoff-readiness`.
 
 ## Screen inventory requirements
 
