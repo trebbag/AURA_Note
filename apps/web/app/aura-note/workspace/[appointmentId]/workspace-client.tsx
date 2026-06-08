@@ -1,6 +1,31 @@
 'use client';
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
+import {
+  AlertTriangle,
+  Bold,
+  BookOpen,
+  CheckCircle,
+  ClipboardList,
+  Code,
+  Copy,
+  FileText,
+  Italic,
+  ListChecks,
+  Mic,
+  MicOff,
+  Pause,
+  Play,
+  Redo2,
+  RotateCcw,
+  Save,
+  Send,
+  Shield,
+  Sparkles,
+  Stethoscope,
+  Timer,
+  Undo2
+} from 'lucide-react';
 import type {
   ComplianceReviewDto,
   DocumentationWorkspaceDto,
@@ -230,6 +255,12 @@ export function WorkspaceClient({ appointmentId }: WorkspaceClientProps) {
     );
   }
 
+  function appendEditorMarkdown(label: string, markdown: string) {
+    if (readOnlyEditor) return;
+    setDraftMarkdown((current) => `${current.trimEnd()}\n\n${markdown}`.trimStart());
+    setMessage(`${label} staged in the draft editor. Autosave writes it through the note content API.`);
+  }
+
   function evaluateSuggestions() {
     if (!noteId) return;
     void runAction('Deterministic suggestions evaluated through API.', () => client.evaluateSuggestions(noteId));
@@ -337,14 +368,15 @@ export function WorkspaceClient({ appointmentId }: WorkspaceClientProps) {
   const topSuggestions = suggestions.slice(0, 4);
 
   return (
-    <main className="workspace-shell">
-      <header className="page-header">
+    <main className="workspace-shell aura-workspace">
+      <header className="workspace-product-header">
         <div>
-          <p className="eyebrow">AURA Note / Documentation Workspace</p>
-          <h1>Workspace Shell</h1>
+          <p className="eyebrow">AURA Note</p>
+          <h1>AURA Note Clinical Documentation Assistant</h1>
+          <p>AI-powered clinical note editor with timer-gated documentation and human review.</p>
         </div>
         <nav className="header-nav" aria-label="AURA Note sections">
-          <a href="/aura-note">Runtime Home</a>
+          <a href="/aura-note">Dashboard</a>
           <a href="/aura-note/schedule">Schedule</a>
           <a href="/aura-note/drafts">Draft Notes</a>
           <a href="/aura-note/finalized">Finalized Notes</a>
@@ -353,7 +385,12 @@ export function WorkspaceClient({ appointmentId }: WorkspaceClientProps) {
 
       <section className="workspace-topline" aria-live="polite">
         <div>
-          <h2>{appointmentId}</h2>
+          <div className="dashboard-card-title">
+            <span className="figma-icon-block neutral" aria-hidden="true">
+              <Stethoscope size={22} />
+            </span>
+            <h2>{appointmentId}</h2>
+          </div>
           <p>
             {workspace?.appointment.safePatientId ?? 'loading'} / {workspace?.appointment.visitType ?? 'loading'} /{' '}
             {workspace?.appointment.clinicianId ?? 'loading'}
@@ -382,53 +419,71 @@ export function WorkspaceClient({ appointmentId }: WorkspaceClientProps) {
 
       <section className="controls-bar" aria-label="Visit controls">
         <button type="button" disabled={timerState !== 'not_started'} onClick={startVisit}>
+          <Play size={16} aria-hidden="true" />
           Start Visit
         </button>
         <button type="button" disabled={timerState !== 'running'} onClick={pauseVisit}>
+          <Pause size={16} aria-hidden="true" />
           Pause
         </button>
         <button type="button" disabled={timerState !== 'paused'} onClick={resumeVisit}>
+          <Play size={16} aria-hidden="true" />
           Resume
         </button>
         <button type="button" disabled={timerState !== 'running' && timerState !== 'paused'} onClick={stopVisit}>
+          <Timer size={16} aria-hidden="true" />
           Stop
         </button>
         <button type="button" disabled={finalizeDisabled}>
+          <CheckCircle size={16} aria-hidden="true" />
           Finalize Note
         </button>
         <button type="button" className="secondary-action" onClick={() => void verifyPermissionDeniedState()}>
+          <Shield size={16} aria-hidden="true" />
           Verify Permission Denied
         </button>
       </section>
 
       <section className="controls-bar secondary-controls" aria-label="Recording and transcript controls">
         <button type="button" onClick={demoPermissionDenied}>
+          <MicOff size={16} aria-hidden="true" />
           Demo Permission Denied
         </button>
         <button type="button" disabled={recordingState === 'exception_approved'} onClick={approveException}>
+          <AlertTriangle size={16} aria-hidden="true" />
           Approve Exception
         </button>
         <button type="button" disabled={recordingState !== 'recording'} onClick={appendMetadataChunk}>
+          <Mic size={16} aria-hidden="true" />
           Append Metadata Chunk
         </button>
         <button type="button" disabled={recordingChunks === 0} onClick={processMockTranscription}>
+          <Sparkles size={16} aria-hidden="true" />
           Process Mock Transcription
         </button>
         <button type="button" disabled={timerState === 'not_started'} onClick={requestDisabledLiveProvider}>
+          <Shield size={16} aria-hidden="true" />
           Verify Live Provider Disabled
         </button>
         <button type="button" disabled={transcriptSegments.length === 0} onClick={correctFirstTranscriptSegment}>
+          <BookOpen size={16} aria-hidden="true" />
           Correct Transcript
         </button>
         <button type="button" disabled={!editorUnlocked} onClick={appendTranscript}>
+          <Copy size={16} aria-hidden="true" />
           Append Mock Transcript
         </button>
       </section>
 
-      <section className="figma-editor-command-deck" aria-label="Figma editor command deck">
+      <section className="editor-command-deck" aria-label="Editor command deck">
         <article>
-          <p className="eyebrow">Design 1 / Note Editor</p>
-          <h2>Patient And Encounter Command Bar</h2>
+          <p className="eyebrow">Clinical Note Editor</p>
+          <div className="dashboard-card-title">
+            <span className="figma-icon-block blue" aria-hidden="true">
+              <FileText size={20} />
+            </span>
+            <h2>Patient And Encounter</h2>
+          </div>
           <p>
             {workspace?.appointment.safePatientId ?? 'loading'} / {workspace?.appointment.visitType ?? 'loading'} / note{' '}
             {noteId ?? 'loading'}
@@ -440,9 +495,14 @@ export function WorkspaceClient({ appointmentId }: WorkspaceClientProps) {
             <span>Route: {routeState}</span>
           </div>
         </article>
-        <article aria-label="Figma audio wave and transcript controls">
+        <article aria-label="Audio wave and transcript controls">
           <p className="eyebrow">Audio / Transcript</p>
-          <h2>Mock Recording Runtime</h2>
+          <div className="dashboard-card-title">
+            <span className="figma-icon-block emerald" aria-hidden="true">
+              <Mic size={20} />
+            </span>
+            <h2>Mock Recording Runtime</h2>
+          </div>
           <div className="figma-audio-wave" aria-hidden="true">
             {Array.from({ length: 14 }, (_, index) => (
               <i key={index} style={{ height: `${12 + ((index + recordingChunks) % 6) * 6}px` }} />
@@ -517,29 +577,92 @@ export function WorkspaceClient({ appointmentId }: WorkspaceClientProps) {
         </section>
       </section>
 
-      <section className="figma-workspace-three-pane" aria-label="Figma documentation workspace visual layout">
-        <article className="figma-editor-pane" aria-label="Figma rich text editor surface">
+      <section className="figma-workspace-three-pane" aria-label="Documentation workspace">
+        <article className="figma-editor-pane" aria-label="Rich text editor surface">
           <div className="section-title-row">
             <div>
-              <p className="eyebrow">Design 1 / Rich Text Editor</p>
-              <h2>{readOnlyEditor ? 'Locked Draft Surface' : 'Editable Draft Surface'}</h2>
+              <p className="eyebrow">Rich Text Editor</p>
+              <div className="dashboard-card-title">
+                <span className="figma-icon-block neutral" aria-hidden="true">
+                  <FileText size={20} />
+                </span>
+                <h2>{readOnlyEditor ? 'Locked Draft Surface' : 'Editable Draft Surface'}</h2>
+              </div>
             </div>
             <strong>{noteContent?.format ?? 'aura_markdown_v1'}</strong>
           </div>
-          <div className="figma-editor-preview" aria-label="API-backed editor preview">
-            <p>{draftMarkdown || workspace?.editorLockedReason || 'Draft-only note content loads from the API.'}</p>
+          <textarea
+            aria-label="Documentation editor"
+            rows={16}
+            disabled={readOnlyEditor}
+            value={readOnlyEditor && !noteContent ? workspace?.editorLockedReason ?? 'Editor locked until Start Visit runs the timer or a recording exception is approved.' : draftMarkdown}
+            onChange={(event) => setDraftMarkdown(event.target.value)}
+            readOnly={readOnlyEditor}
+          />
+          <div className="figma-editor-toolbar" role="toolbar" aria-label="Editor toolbar">
+            <button
+              type="button"
+              disabled={readOnlyEditor}
+              aria-label="Bold draft text"
+              onClick={() => appendEditorMarkdown('Bold draft text', '**Draft emphasis pending clinician review.**')}
+            >
+              <Bold size={15} aria-hidden="true" />
+            </button>
+            <button
+              type="button"
+              disabled={readOnlyEditor}
+              aria-label="Italic draft text"
+              onClick={() => appendEditorMarkdown('Italic draft text', '_Draft nuance pending clinician review._')}
+            >
+              <Italic size={15} aria-hidden="true" />
+            </button>
+            <button
+              type="button"
+              disabled={readOnlyEditor}
+              aria-label="Add list item"
+              onClick={() => appendEditorMarkdown('List item', '- Draft plan item pending human review')}
+            >
+              <ListChecks size={15} aria-hidden="true" />
+            </button>
+            <button
+              type="button"
+              disabled={readOnlyEditor || noteVersions.length < 2}
+              aria-label="Undo to previous API version"
+              onClick={restoreLatestPreviousVersion}
+            >
+              <Undo2 size={15} aria-hidden="true" />
+            </button>
+            <button type="button" disabled aria-label="Redo unavailable without a future version branch">
+              <Redo2 size={15} aria-hidden="true" />
+            </button>
+            <span>Draft markdown changes persist only after Autosave.</span>
           </div>
           <div className="figma-status-row">
             <span>Revision {noteContent?.revision ?? 'loading'}</span>
             <span>{noteVersions.length} versions</span>
             <span>readOnly={String(readOnlyEditor)}</span>
           </div>
+          <div className="inline-actions editor-inline-actions">
+            <button type="button" disabled={readOnlyEditor || !noteId} onClick={autosaveNoteContent}>
+              <Save size={16} aria-hidden="true" />
+              Autosave
+            </button>
+            <button type="button" disabled={readOnlyEditor || noteVersions.length < 2} onClick={restoreLatestPreviousVersion}>
+              <RotateCcw size={16} aria-hidden="true" />
+              Restore Version
+            </button>
+          </div>
         </article>
 
-        <aside className="figma-selected-code-rail" aria-label="Figma selected-code rail">
+        <aside className="figma-selected-code-rail" aria-label="Selected codes bar">
           <div>
             <p className="eyebrow">Selected Codes</p>
-            <h2>{acceptedSelectionCount} Active</h2>
+            <div className="dashboard-card-title">
+              <span className="figma-icon-block emerald" aria-hidden="true">
+                <Code size={20} />
+              </span>
+              <h2>{acceptedSelectionCount} Active</h2>
+            </div>
           </div>
           {visitSelections.slice(0, 5).map((selection) => (
             <div key={selection.visitSelectionId} data-state={selection.disposition}>
@@ -548,15 +671,28 @@ export function WorkspaceClient({ appointmentId }: WorkspaceClientProps) {
                 {selection.category} / {selection.disposition}
               </span>
               <small>humanApproved={String(selection.humanApproved)}</small>
+              <div className="rail-actions" aria-label={`Actions for ${selection.label}`}>
+                <button type="button" disabled={selection.disposition === 'removed'} onClick={() => changeVisitSelectionCategory(selection)}>
+                  Change
+                </button>
+                <button type="button" disabled={selection.disposition === 'removed'} onClick={() => removeVisitSelection(selection)}>
+                  Remove
+                </button>
+              </div>
             </div>
           ))}
           {visitSelections.length === 0 ? <p>No selected items yet.</p> : null}
         </aside>
 
-        <aside className="figma-suggestion-rail" aria-label="Figma suggestion intelligence rail">
+        <aside className="figma-suggestion-rail" aria-label="Suggestions panel">
           <div>
             <p className="eyebrow">AI Suggestions</p>
-            <h2>Candidate Review</h2>
+            <div className="dashboard-card-title">
+              <span className="figma-icon-block blue" aria-hidden="true">
+                <Sparkles size={20} />
+              </span>
+              <h2>Candidate Review</h2>
+            </div>
             <small>Low-confidence threshold remains AURA Note &lt;75%.</small>
           </div>
           {topSuggestions.map((suggestion) => (
@@ -570,10 +706,71 @@ export function WorkspaceClient({ appointmentId }: WorkspaceClientProps) {
                 {Math.round(suggestion.confidence * 100)}% / humanReviewRequired=
                 {String(suggestion.humanReviewRequired)}
               </small>
+              <div className="rail-actions" aria-label={`Suggestion actions for ${suggestion.label}`}>
+                <button type="button" disabled={suggestion.status !== 'candidate'} onClick={() => acceptSuggestion(suggestion)}>
+                  Accept
+                </button>
+                <button type="button" disabled={suggestion.status !== 'candidate'} onClick={() => removeSuggestion(suggestion)}>
+                  Remove
+                </button>
+              </div>
             </div>
           ))}
           <span className="state-pill">override-required={lowConfidenceSuggestionCount}</span>
         </aside>
+      </section>
+
+      <section className="figma-compliance-stack" aria-label="Figma compliance drawer">
+        <article>
+          <div className="section-title-row">
+            <div>
+              <p className="eyebrow">Compliance Review</p>
+              <h2>Compliance And Quality Drawer</h2>
+              <p>Hard blocks remain backend-controlled and cannot be bypassed by the Figma-derived interface.</p>
+            </div>
+            <strong>finalizeDisabled={String(compliance?.finalizeDisabled ?? true)}</strong>
+          </div>
+          <div className="figma-status-row">
+            <span>Issues: {compliance?.issues.length ?? 0}</span>
+            <span>Blockers: {compliance?.issues.filter((issue) => issue.blocksFinalize).length ?? 0}</span>
+            <span>Route: {routeState}</span>
+          </div>
+          <div className="figma-compliance-cards">
+            {(compliance?.issues ?? []).slice(0, 4).map((issue) => (
+              <div key={issue.complianceIssueId} data-severity={issue.severity} data-blocks={String(issue.blocksFinalize)}>
+                <strong>{issue.title}</strong>
+                <span>
+                  {issue.severity} / {issue.status} / blocksFinalize={String(issue.blocksFinalize)}
+                </span>
+                <small>{issue.detail}</small>
+              </div>
+            ))}
+            {!compliance?.issues.length ? <p>No compliance issues returned by the API.</p> : null}
+          </div>
+        </article>
+
+        <article>
+          <div className="section-title-row">
+            <div>
+              <p className="eyebrow">History Gap Review</p>
+              <h2>MA Follow-Up Questions</h2>
+              <p>Questions can become blocker tasks through the existing backend action.</p>
+            </div>
+            <strong>{historyGaps.length} questions</strong>
+          </div>
+          <div className="figma-popup-list">
+            {historyGaps.slice(0, 3).map((question) => (
+              <div key={question.historyGapQuestionId}>
+                <strong>{question.question}</strong>
+                <span>
+                  {question.status} / blockerEligible={String(question.blockerEligible)}
+                </span>
+                <small>{question.supportsItem}</small>
+              </div>
+            ))}
+            {historyGaps.length === 0 ? <p>No History Gap questions returned by the API.</p> : null}
+          </div>
+        </article>
       </section>
 
       <section className="review-board" aria-label="Suggestions and review panels" aria-live="polite">
@@ -589,6 +786,7 @@ export function WorkspaceClient({ appointmentId }: WorkspaceClientProps) {
             />
           </label>
           <button type="button" onClick={evaluateSuggestions}>
+            <Sparkles size={16} aria-hidden="true" />
             Evaluate Suggestions
           </button>
           <div className="suggestion-list">
@@ -607,12 +805,15 @@ export function WorkspaceClient({ appointmentId }: WorkspaceClientProps) {
                   {suggestion.documentationRequirements?.join(', ') ?? 'documentation requirements pending'}
                 </small>
                 <button type="button" disabled={suggestion.status !== 'candidate'} onClick={() => acceptSuggestion(suggestion)}>
+                  <CheckCircle size={16} aria-hidden="true" />
                   Accept
                 </button>
                 <button type="button" disabled={suggestion.status !== 'candidate'} onClick={() => removeSuggestion(suggestion)}>
+                  <MicOff size={16} aria-hidden="true" />
                   Remove
                 </button>
                 <button type="button" disabled={suggestion.status !== 'removed'} onClick={() => restoreSuggestion(suggestion)}>
+                  <RotateCcw size={16} aria-hidden="true" />
                   Return to Suggestions
                 </button>
               </div>
@@ -634,9 +835,11 @@ export function WorkspaceClient({ appointmentId }: WorkspaceClientProps) {
                   {selection.removalReason ? <small>{selection.removalReason}</small> : null}
                 </div>
                 <button type="button" disabled={selection.disposition === 'removed'} onClick={() => changeVisitSelectionCategory(selection)}>
+                  <RotateCcw size={16} aria-hidden="true" />
                   Change Category
                 </button>
                 <button type="button" disabled={selection.disposition === 'removed'} onClick={() => removeVisitSelection(selection)}>
+                  <MicOff size={16} aria-hidden="true" />
                   Remove Selection
                 </button>
               </div>
@@ -666,33 +869,15 @@ export function WorkspaceClient({ appointmentId }: WorkspaceClientProps) {
           <h2>History Gap Review</h2>
           <p>{historyGaps[0]?.question ?? 'No history gap questions returned yet.'}</p>
           <button type="button" disabled={historyGaps.length === 0 || compliance?.finalizeDisabled} onClick={createHistoryGapTask}>
+            <Send size={16} aria-hidden="true" />
             Send to MA as Blocker
           </button>
         </article>
       </section>
 
       <section className="workspace-grid">
-        <article className="editor-pane">
-          <div>
-            <p className="eyebrow">Editor</p>
-            <h2>{editorUnlocked ? 'Unlocked' : 'Locked'}</h2>
-          </div>
-          <textarea
-            aria-label="Documentation editor"
-            rows={14}
-            disabled={readOnlyEditor}
-            value={readOnlyEditor && !noteContent ? workspace?.editorLockedReason ?? 'Editor locked until Start Visit runs the timer or a recording exception is approved.' : draftMarkdown}
-            onChange={(event) => setDraftMarkdown(event.target.value)}
-            readOnly={readOnlyEditor}
-          />
-          <div className="inline-actions">
-            <button type="button" disabled={readOnlyEditor || !noteId} onClick={autosaveNoteContent}>
-              Autosave
-            </button>
-            <button type="button" disabled={readOnlyEditor || noteVersions.length < 2} onClick={restoreLatestPreviousVersion}>
-              Restore Version
-            </button>
-          </div>
+        <article className="editor-version-panel" aria-label="Editor version details">
+          <h2>Editor Version Details</h2>
           <dl className="compact-facts">
             <div>
               <dt>Format</dt>
@@ -735,9 +920,11 @@ export function WorkspaceClient({ appointmentId }: WorkspaceClientProps) {
           ))}
           <div className="inline-actions">
             <button type="button" disabled={!compliance?.issues.length} onClick={acknowledgeFirstComplianceIssue}>
+              <ClipboardList size={16} aria-hidden="true" />
               Acknowledge Issue
             </button>
             <button type="button" disabled={!compliance?.issues.length} onClick={resolveFirstComplianceIssue}>
+              <CheckCircle size={16} aria-hidden="true" />
               Resolve Issue
             </button>
           </div>

@@ -135,7 +135,7 @@ export function FinalizedNoteClient({ noteId }: FinalizedNoteClientProps) {
           <h1>Read-Only Final Note</h1>
         </div>
         <nav className="header-nav" aria-label="AURA Note sections">
-          <a href="/aura-note">Runtime Home</a>
+          <a href="/aura-note">Dashboard</a>
           <a href="/aura-note/finalized">Finalized Notes</a>
           <a href="/aura-note/drafts">Draft Notes</a>
           <a href="/aura-note/schedule">Schedule</a>

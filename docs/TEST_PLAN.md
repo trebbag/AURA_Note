@@ -630,6 +630,17 @@ The Figma Make catch-up tranche adds `pnpm figma:backend-catch-up-readiness`:
 
 This gate is backend catch-up, shell runtime, and available Figma Make source/node visual implementation evidence only. It does not claim formal screenshot-baseline approval, production launch approval, live PHI processing, live vendor execution, direct browser AI calls, live patient portal delivery, claim submission, charge finalization, medical-necessity determination, or autonomous clinical/coding/billing behavior.
 
+### Post-CR4 Figma Make ZIP reference coverage
+
+The Figma Make ZIP reference pass adds `docs/FIGMA_MAKE_ZIP_REFERENCE_AUDIT.md` and keeps the extracted source in ignored `.figma-make-reference/` local-only reference directories. `pnpm figma:backend-catch-up-readiness` now verifies:
+
+- both local ZIP names, ignored reference extraction posture, and accepted/adapted/rejected prototype behavior are documented;
+- production-intended routes still use typed API clients and backend state rather than imported prototype local arrays;
+- schedule, drafts, finalized notes, workspace, finalization, and operations expose additional Figma-derived source-reference surfaces;
+- Playwright checks cover the new schedule command board, editor toolbar, compliance drawer, finalization step context, and operations source-reference panel.
+
+This coverage is stronger source-package implementation evidence. It still is not formal pixel-level approval because the ZIPs do not contain inspectable Figma node coordinates or screenshot baselines.
+
 ### Post-CR4 Figma Make Design 2 finalization runtime coverage
 
 The same `pnpm figma:backend-catch-up-readiness` gate now verifies Design 2 finalization runtime evidence:

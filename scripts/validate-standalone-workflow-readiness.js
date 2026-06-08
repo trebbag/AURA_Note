@@ -46,7 +46,7 @@ assertIncludes('.github/workflows/ci.yml', ['pnpm standalone:workflow-readiness'
 assertIncludes('apps/web/e2e/aura-note-routes.spec.ts', [
   'standalone workflow completion proves daily-use flow without ClinicOS dependency',
   'createFinalizedNoteForTest',
-  'AURA Note Runtime Home',
+  'AURA Note Dashboard',
   'day schedule',
   'This viewer cannot reopen the active editor.',
   'Claim submission remains disabled.',

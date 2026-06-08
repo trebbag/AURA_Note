@@ -19,8 +19,8 @@ export default async function AuraNoteRuntimeHomePage() {
           <a href="/aura-note/runtime-integration">Runtime Gate</a>
         </nav>
         <section className="hero-band" aria-labelledby="runtime-home-heading">
-          <p className="eyebrow">Figma Make Backend Catch-Up</p>
-          <h1 id="runtime-home-heading">AURA Note Runtime Home</h1>
+          <p className="eyebrow">Clinical Documentation Assistant</p>
+          <h1 id="runtime-home-heading">AURA Note Dashboard</h1>
           <p>API-backed app-shell state is unavailable in this environment.</p>
         </section>
         <section className="panel-card" aria-label="Runtime home failed state">

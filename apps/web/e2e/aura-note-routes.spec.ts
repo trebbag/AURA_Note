@@ -12,7 +12,7 @@ const routeExpectations = [
   },
   {
     path: '/aura-note',
-    heading: 'AURA Note Runtime Home',
+    heading: 'AURA Note Dashboard',
     nav: true
   },
   {
@@ -27,12 +27,12 @@ const routeExpectations = [
   },
   {
     path: '/aura-note/workspace/appt-demo-001',
-    heading: 'Workspace Shell',
+    heading: 'AURA Note Clinical Documentation Assistant',
     nav: true
   },
   {
     path: '/aura-note/finalization/note-demo-001',
-    heading: 'Finalization Steps 1-6',
+    heading: 'Finalization Wizard',
     nav: true
   },
   {
@@ -52,7 +52,7 @@ const routeExpectations = [
   },
   {
     path: '/aura-note/operations',
-    heading: 'Standalone Operations Center',
+    heading: 'Analytics Dashboard',
     nav: true
   },
   {
@@ -180,6 +180,8 @@ test.describe('AURA Note route accessibility smoke suite', () => {
 
     await expect(page.getByRole('heading', { level: 2, name: 'Patient Shell' })).toBeVisible();
     await expect(page.getByRole('heading', { level: 2, name: 'New Appointment' })).toBeVisible();
+    await expect(page.getByRole('region', { name: 'Figma schedule builder' })).toContainText('Day And Week Workflow');
+    await expect(page.getByRole('article', { name: 'Schedule filter summary' })).toContainText('Backend Filter Set');
     await expect(page.getByLabel('Backend-backed schedule filters')).toBeVisible();
     await expect(page.getByLabel('Safe Patient ID')).toHaveValue('safe-patient-new-002');
     await expect(page.getByLabel('Appointment visit type')).toHaveValue('AWV plus problem');
@@ -215,10 +217,12 @@ test.describe('AURA Note route accessibility smoke suite', () => {
     await page.getByRole('button', { name: 'Start Visit' }).click();
     await expect(editor).toContainText('Draft-only note content');
     await expect(page.getByRole('button', { name: 'Finalize Note' })).toBeEnabled();
-    await expect(page.getByRole('region', { name: 'Figma editor command deck' })).toContainText('Patient And Encounter Command Bar');
-    await expect(page.getByRole('article', { name: 'Figma rich text editor surface' })).toContainText('Design 1 / Rich Text Editor');
-    await expect(page.getByRole('complementary', { name: 'Figma selected-code rail' })).toContainText('Selected Codes');
-    await expect(page.getByRole('complementary', { name: 'Figma suggestion intelligence rail' })).toContainText('Low-confidence threshold remains AURA Note <75%.');
+    await expect(page.getByRole('region', { name: 'Editor command deck' })).toContainText('Patient And Encounter');
+    await expect(page.getByRole('article', { name: 'Rich text editor surface' })).toContainText('Rich Text Editor');
+    await expect(page.getByRole('toolbar', { name: 'Editor toolbar' })).toContainText('Draft markdown changes persist only after Autosave.');
+    await expect(page.getByRole('complementary', { name: 'Selected codes bar' })).toContainText('Selected Codes');
+    await expect(page.getByRole('complementary', { name: 'Suggestions panel' })).toContainText('Low-confidence threshold remains AURA Note <75%.');
+    await expect(page.getByRole('region', { name: 'Figma compliance drawer' })).toContainText('Compliance And Quality Drawer');
     await expect(page.getByRole('region', { name: 'Audio capture and transcription status' })).toContainText('metadata_only_synthetic');
 
     await page.getByRole('button', { name: 'Demo Permission Denied' }).click();
@@ -331,19 +335,21 @@ test.describe('AURA Note route accessibility smoke suite', () => {
     await page.goto('/aura-note/operations');
 
     await expect(page.getByRole('region', { name: 'Standalone operations readiness' })).toContainText('Standalone Daily Operations');
-    await expect(page.getByRole('region', { name: 'Figma operations runtime' })).toContainText('Operations Analytics');
-    await expect(page.getByRole('region', { name: 'Figma analytics and settings polish' })).toContainText('Analytics Command Center');
-    await expect(page.getByRole('article', { name: 'Figma analytics tabs polished by API' })).toContainText('Billing & Coding');
-    await expect(page.getByRole('article', { name: 'Figma analytics tabs polished by API' })).toContainText('Health Outcomes');
-    await expect(page.getByRole('article', { name: 'Figma analytics tabs polished by API' })).toContainText('Note Quality');
-    await expect(page.getByRole('article', { name: 'Figma analytics tabs polished by API' })).toContainText('Staff Performance');
-    await expect(page.getByRole('article', { name: 'Figma settings tabs polished by API' })).toContainText('Suggestion Governance');
-    await expect(page.getByRole('article', { name: 'Figma settings tabs polished by API' })).toContainText('Advanced Controls');
+    await expect(page.getByRole('region', { name: 'Operations runtime' })).toContainText('Operations Analytics');
+    await expect(page.getByRole('region', { name: 'Analytics and settings' })).toContainText('Analytics Command Center');
+    await expect(page.getByRole('article', { name: 'Figma operations source reference' })).toContainText('prototypeImport=false');
+    await expect(page.getByRole('article', { name: 'Figma operations source reference' })).toContainText('typedApiClient=true');
+    await expect(page.getByRole('article', { name: 'Analytics dashboard tabs' })).toContainText('Billing & Coding');
+    await expect(page.getByRole('article', { name: 'Analytics dashboard tabs' })).toContainText('Health Outcomes');
+    await expect(page.getByRole('article', { name: 'Analytics dashboard tabs' })).toContainText('Note Quality');
+    await expect(page.getByRole('article', { name: 'Analytics dashboard tabs' })).toContainText('Staff Performance');
+    await expect(page.getByRole('article', { name: 'Settings dashboard tabs' })).toContainText('Suggestion Governance');
+    await expect(page.getByRole('article', { name: 'Settings dashboard tabs' })).toContainText('Advanced Controls');
     await expect(page.getByRole('article', { name: 'Operations analytics snapshot' })).toContainText('productionAnalyticsVendorEnabled=false');
-    await expect(page.getByRole('region', { name: 'Backend-backed operations analytics series' })).toContainText('Design 1 Analytics Tabs');
-    await expect(page.getByRole('article', { name: 'Design 1 analytics tabs backed by API' })).toContainText('standalone_operations_api_composite');
-    await expect(page.getByRole('article', { name: 'Design 1 settings affordances backed by API' })).toContainText('secretValuesReturned=false');
-    await expect(page.getByRole('article', { name: 'Design 1 settings affordances backed by API' })).toContainText('patientFacingRevenueEnabled=false');
+    await expect(page.getByRole('region', { name: 'Backend-backed operations analytics series' })).toContainText('Analytics Series');
+    await expect(page.getByRole('article', { name: 'Analytics series backed by API' })).toContainText('standalone_operations_api_composite');
+    await expect(page.getByRole('article', { name: 'Settings affordances backed by API' })).toContainText('secretValuesReturned=false');
+    await expect(page.getByRole('article', { name: 'Settings affordances backed by API' })).toContainText('patientFacingRevenueEnabled=false');
     await expect(page.getByRole('article', { name: 'Operations activity feed' })).toContainText('Operations runtime composed');
     await expect(page.getByRole('article', { name: 'Settings runtime summary' })).toContainText('Secret values returned');
     await expect(page.getByRole('article', { name: 'Settings runtime summary' })).toContainText('false');
@@ -524,9 +530,9 @@ test.describe('AURA Note route accessibility smoke suite', () => {
     const seeded = await createFinalizedNoteForTest('standalone-complete');
 
     await page.goto('/aura-note');
-    await expect(page.getByRole('heading', { level: 1, name: 'AURA Note Runtime Home' })).toBeVisible();
-    await expect(page.getByRole('region', { name: 'Figma node visual fidelity pass' })).toContainText('Design 1 visual node parity');
-    await expect(page.getByRole('region', { name: 'Design 1 visual command dashboard' })).toContainText('typed_api_client_composite');
+    await expect(page.getByRole('heading', { level: 1, name: 'AURA Note Dashboard' })).toBeVisible();
+    await expect(page.getByRole('region', { name: 'Dashboard quick actions' })).toContainText('Schedule');
+    await expect(page.getByRole('region', { name: 'Clinical command dashboard' })).toContainText('Production launch approved: false');
     await expect(page.getByRole('article', { name: 'Operations' })).toContainText('typed_api_client');
 
     await page.goto('/aura-note/schedule');
@@ -562,11 +568,13 @@ test.describe('AURA Note route accessibility smoke suite', () => {
     expect(finalized.data.exportArtifacts.length).toBeGreaterThanOrEqual(1);
 
     await page.goto(`/aura-note/finalization/${seeded.noteId}`);
-    await expect(page.getByRole('region', { name: 'Figma-derived finalization workflow board' })).toContainText('Design 2 Progress Rail');
-    await expect(page.getByRole('region', { name: 'Figma Design 2 visual fidelity pass' })).toContainText('Evidence Highlighter');
-    await expect(page.getByRole('article', { name: 'Figma Design 2 evidence highlighter' })).toContainText('Stable evidence spans');
-    await expect(page.getByRole('article', { name: 'Figma patient questions popup' })).toContainText('portal=false');
-    await expect(page.getByRole('article', { name: 'Figma billing dispatch dock' })).toContainText('submittedClaim=false');
+    await expect(page.getByRole('region', { name: 'Finalization workflow board' })).toContainText('Finalization Progress');
+    await expect(page.getByRole('article', { name: 'Canonical finalization step context' })).toContainText('Visit Selections Review');
+    await expect(page.getByRole('article', { name: 'Canonical finalization step context' })).toContainText('Draft Claim Preview Review');
+    await expect(page.getByRole('region', { name: 'Evidence questions and dispatch' })).toContainText('Evidence Highlighter');
+    await expect(page.getByRole('article', { name: 'Evidence highlighter' })).toContainText('Stable evidence spans');
+    await expect(page.getByRole('article', { name: 'Patient questions popup' })).toContainText('portal=false');
+    await expect(page.getByRole('article', { name: 'Billing dispatch dock' })).toContainText('submittedClaim=false');
     await expect(page.getByRole('article', { name: 'Review carousel metrics' })).toContainText('Human review required');
     await expect(page.getByRole('article', { name: 'Dual editor approval runtime state' })).toContainText('Summary: read_only');
     await expect(page.getByRole('article', { name: 'Patient questions and planning assistant runtime state' })).toContainText('Portal delivery enabled: false');
@@ -574,10 +582,10 @@ test.describe('AURA Note route accessibility smoke suite', () => {
     await expect(page.getByRole('heading', { name: 'Dual Editor Variants' })).toBeVisible();
     await expect(page.getByRole('heading', { name: 'Dispatch Metadata' })).toBeVisible();
     await expect(page.getByLabel('Patient summary side')).toHaveValue(/Today we reviewed your follow-up plan/);
-    await expect(page.getByLabel('Design 2 finalization runtime state')).toContainText('submittedClaim=false');
-    await expect(page.getByLabel('Design 2 finalization runtime state')).toContainText('Patient portal enabled: false');
+    await expect(page.getByLabel('Finalization runtime state')).toContainText('submittedClaim=false');
+    await expect(page.getByLabel('Finalization runtime state')).toContainText('Patient portal enabled: false');
     await page.reload();
-    await expect(page.getByLabel('Design 2 finalization runtime state')).toContainText('signed_dispatched');
+    await expect(page.getByLabel('Finalization runtime state')).toContainText('signed_dispatched');
 
     await page.goto('/aura-note/runtime-integration');
     await expect(page.getByRole('article', { name: 'API backed finalized notes state' })).toContainText(seeded.noteId);

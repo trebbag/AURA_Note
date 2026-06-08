@@ -162,7 +162,7 @@ export default function ClinicOsIntegrationPage() {
           <h1>ClinicOS Integration Hardening</h1>
         </div>
         <nav className="header-nav" aria-label="AURA Note sections">
-          <Link href="/aura-note">Runtime Home</Link>
+          <Link href="/aura-note">Dashboard</Link>
           <Link href="/aura-note/schedule">Schedule</Link>
           <Link href="/aura-note/operations">Operations</Link>
           <Link href="/aura-note/integrations/ehr">EHR</Link>

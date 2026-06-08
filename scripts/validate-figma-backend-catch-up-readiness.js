@@ -70,6 +70,7 @@ function assertNoLaunchClaims() {
 }
 
 assertExists('docs/FIGMA_MAKE_BACKEND_CATCH_UP_AUDIT.md');
+assertExists('docs/FIGMA_MAKE_ZIP_REFERENCE_AUDIT.md');
 assertExists('apps/api/src/app-shell/app-shell.service.ts');
 assertExists('apps/api/src/app-shell/app-shell.controller.ts');
 assertExists('apps/api/src/app-shell/app-shell.module.ts');
@@ -79,6 +80,8 @@ assertExists('apps/web/app/aura-note/app-shell-client.tsx');
 assertIncludes('docs/FIGMA_MAKE_BACKEND_CATCH_UP_AUDIT.md', [
   'AI Powered Clinical Note Editor',
   'Step by Step Workflow Wizard',
+  'Local ZIP Reference Package',
+  'docs/FIGMA_MAKE_ZIP_REFERENCE_AUDIT.md',
   'adapt/rebuild',
   'Supabase',
   'RevenuePilot',
@@ -99,6 +102,17 @@ assertIncludes('docs/FIGMA_MAKE_BACKEND_CATCH_UP_AUDIT.md', [
   'aura_markdown_v1',
   'submittedClaim: false',
   'No raw PHI'
+]);
+assertIncludes('docs/FIGMA_MAKE_ZIP_REFERENCE_AUDIT.md', [
+  'AI-Powered Clinical Note Editor.zip',
+  'Step by Step Workflow Wizard.zip',
+  '.figma-make-reference/',
+  'Design 1 source reference',
+  'Design 2 source reference',
+  'Rejected Design 1 prototype behavior',
+  'Rejected or adapted Design 2 prototype behavior',
+  'Production-intended routes must use typed API clients and backend state',
+  'final pixel-perfect Figma approval'
 ]);
 assertIncludes('packages/contracts/src/index.ts', [
   'AppShellViewDto',
@@ -285,10 +299,14 @@ assertIncludes('apps/web/app/aura-note/workspace/[appointmentId]/workspace-clien
 ]);
 assertIncludes('apps/web/app/aura-note/operations/page.tsx', [
   'getOperationsRuntime',
-  'Figma operations runtime',
-  'Figma analytics and settings polish',
-  'Figma analytics tabs polished by API',
-  'Figma settings tabs polished by API',
+  'Operations runtime',
+  'Analytics and settings',
+  'Figma operations source reference',
+  'Design 1 Operations Mapping',
+  'prototypeImport=false',
+  'typedApiClient=true',
+  'Analytics dashboard tabs',
+  'Settings dashboard tabs',
   'Billing & Coding',
   'Health Outcomes',
   'Note Quality',
@@ -297,21 +315,24 @@ assertIncludes('apps/web/app/aura-note/operations/page.tsx', [
   'Advanced Controls',
   'Operations Analytics',
   'Backend-backed operations analytics series',
-  'Design 1 Analytics Tabs',
+  'Analytics Series',
   'Settings And Governance Runtime',
   'Operations activity feed',
   'Settings Runtime',
   'productionAnalyticsVendorEnabled'
 ]);
 assertIncludes('apps/web/app/aura-note/finalization/[noteId]/finalization-client.tsx', [
-  'Figma-derived finalization workflow board',
-  'Design 2 Progress Rail',
+  'Finalization workflow board',
+  'Finalization Progress',
+  'Canonical finalization step context',
+  'Visit Selections Review',
+  'Draft Claim Preview Review',
   'Selected And Suggested Item Review',
-  'Figma Design 2 visual fidelity pass',
-  'Figma Design 2 evidence highlighter',
-  'Figma patient questions popup',
-  'Figma billing dispatch dock',
-  'Design 2 finalization runtime state',
+  'Evidence questions and dispatch',
+  'Evidence highlighter',
+  'Patient questions popup',
+  'Billing dispatch dock',
+  'Finalization runtime state',
   'Evidence Spans',
   'Dual Editor Variants',
   'Patient Questions',
@@ -326,50 +347,72 @@ assertIncludes('apps/web/app/aura-note/finalization/[noteId]/finalization-client
 assertIncludes('apps/web/app/aura-note/schedule/page.tsx', [
   'validateWorkspaceEntry',
   'updateChartIntakeStatus',
+  'Figma schedule builder',
+  'Schedule command card',
+  'Schedule filter summary',
   'Backend-backed schedule filters',
   'Workspace validation result'
 ]);
+assertIncludes('apps/web/app/aura-note/drafts/page.tsx', [
+  'Figma draft notes table',
+  'Active Documentation Table',
+  'typed API state'
+]);
+assertIncludes('apps/web/app/aura-note/finalized/page.tsx', [
+  'Figma finalized notes table',
+  'Read-Only Artifact Table',
+  'writable=false'
+]);
 assertIncludes('apps/web/app/aura-note/app-shell-client.tsx', [
   'figma-node-shell',
-  'Figma node visual fidelity pass',
-  'Design 1 visual node parity',
-  'Design 1 visual command dashboard',
-  'Figma quick actions',
-  'transient local UI state',
+  'Dashboard quick actions',
+  'Clinical command dashboard',
+  'dashboard-quick-actions',
+  'AURA Note Dashboard',
   'AURA Note sections',
   'Disabled Feature States',
-  'Runtime Contract'
+  'dashboard-feed-grid'
 ]);
 assertIncludes('apps/web/app/aura-note/workspace/[appointmentId]/workspace-client.tsx', [
-  'Figma editor command deck',
-  'Figma audio wave and transcript controls',
-  'Figma documentation workspace visual layout',
-  'Figma rich text editor surface',
-  'Figma selected-code rail',
-  'Figma suggestion intelligence rail',
+  'Editor command deck',
+  'Editor toolbar',
+  'Draft markdown changes persist only after Autosave.',
+  'Audio wave and transcript controls',
+  'Documentation workspace',
+  'Rich text editor surface',
+  'Selected codes bar',
+  'Suggestions panel',
+  'Figma compliance drawer',
+  'Compliance And Quality Drawer',
   'AURA Note &lt;75%'
 ]);
 assertIncludes('apps/web/e2e/aura-note-routes.spec.ts', [
-  'Figma node visual fidelity pass',
-  'Design 1 visual command dashboard',
-  'Figma editor command deck',
-  'Figma selected-code rail',
-  'Figma suggestion intelligence rail',
-  'Figma analytics and settings polish',
-  'Figma analytics tabs polished by API',
-  'Figma settings tabs polished by API',
-  'Figma operations runtime',
+  'Figma schedule builder',
+  'Schedule filter summary',
+  'Dashboard quick actions',
+  'Clinical command dashboard',
+  'Editor command deck',
+  'Editor toolbar',
+  'Figma compliance drawer',
+  'Selected codes bar',
+  'Suggestions panel',
+  'Analytics and settings',
+  'Figma operations source reference',
+  'Analytics dashboard tabs',
+  'Settings dashboard tabs',
+  'Operations runtime',
   'Backend-backed operations analytics series',
-  'Design 1 Analytics Tabs',
+  'Analytics Series',
   'productionAnalyticsVendorEnabled=false',
   'Operations runtime composed',
-  'Figma-derived finalization workflow board',
-  'Figma Design 2 visual fidelity pass',
-  'Figma Design 2 evidence highlighter',
-  'Figma patient questions popup',
-  'Figma billing dispatch dock',
-  'Design 2 Progress Rail',
-  'Design 2 finalization runtime state',
+  'Finalization workflow board',
+  'Canonical finalization step context',
+  'Evidence questions and dispatch',
+  'Evidence highlighter',
+  'Patient questions popup',
+  'Billing dispatch dock',
+  'Finalization Progress',
+  'Finalization runtime state',
   'Evidence Spans',
   'Dual Editor Variants',
   'Dispatch Metadata',

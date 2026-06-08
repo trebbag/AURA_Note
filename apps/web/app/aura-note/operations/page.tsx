@@ -171,14 +171,14 @@ export default function StandaloneOperationsPage() {
   const primaryAnalyticsSeries = operationsRuntime?.analytics.series[0];
 
   return (
-    <main className="operations-shell">
-      <header className="page-header">
+    <main className="operations-shell aura-operations">
+      <header className="operations-product-header">
         <div>
-          <p className="eyebrow">CR-2 / WO-064</p>
-          <h1>Standalone Operations Center</h1>
+          <p className="eyebrow">AURA Note</p>
+          <h1>Analytics Dashboard</h1>
         </div>
         <nav className="header-nav" aria-label="AURA Note sections">
-          <Link href="/aura-note">Runtime Home</Link>
+          <Link href="/aura-note">Dashboard</Link>
           <Link href="/aura-note/schedule">Schedule</Link>
           <Link href="/aura-note/drafts">Draft Notes</Link>
           <Link href="/aura-note/finalized">Finalized Notes</Link>
@@ -211,7 +211,7 @@ export default function StandaloneOperationsPage() {
         </dl>
       </section>
 
-      <section className="panel-grid" aria-label="Figma operations runtime">
+      <section className="panel-grid" aria-label="Operations runtime">
         <article className="panel-card" aria-label="Operations analytics snapshot">
           <h2>Operations Analytics</h2>
           <p>{operationsRuntime?.analytics.caveat ?? 'Loading backend-composed operations analytics.'}</p>
@@ -274,17 +274,37 @@ export default function StandaloneOperationsPage() {
         </article>
       </section>
 
-      <section className="figma-analytics-polish" aria-label="Figma analytics and settings polish">
-        <article aria-label="Figma analytics tabs polished by API">
+      <section className="figma-analytics-polish" aria-label="Analytics and settings">
+        <article aria-label="Figma operations source reference">
           <div className="section-title-row">
             <div>
-              <p className="eyebrow">Design 1 / Analytics</p>
+              <p className="eyebrow">Figma Make Source</p>
+              <h2>Design 1 Operations Mapping</h2>
+              <p>
+                Analytics, activity, notifications, and settings surfaces follow the supplied Make source while staying
+                backend-backed through the operations runtime DTO.
+              </p>
+            </div>
+            <strong>prototypeImport=false</strong>
+          </div>
+          <div className="figma-status-row">
+            <span>typedApiClient=true</span>
+            <span>secretValuesReturned={String(operationsRuntime?.settingsSummary.secretValuesReturned ?? false)}</span>
+            <span>productionAnalyticsVendorEnabled={String(operationsRuntime?.analytics.productionAnalyticsVendorEnabled ?? false)}</span>
+            <span>submittedClaim={String(operationsRuntime?.submittedClaim ?? false)}</span>
+          </div>
+        </article>
+
+        <article aria-label="Analytics dashboard tabs">
+          <div className="section-title-row">
+            <div>
+              <p className="eyebrow">Analytics</p>
               <h2>Analytics Command Center</h2>
-              <p>Tabs, metric tiles, and chart regions are rendered from operations API aggregates and safe disabled states.</p>
+              <p>Operational metrics, coding-support review posture, quality signals, and staff workflow trends.</p>
             </div>
             <strong>{operationsRuntime?.analytics.dataSource ?? 'standalone_operations_api_composite'}</strong>
           </div>
-          <div className="figma-tab-strip" role="tablist" aria-label="Design 1 analytics tabs">
+          <div className="figma-tab-strip" role="tablist" aria-label="Analytics tabs">
             {analyticsTabs.map((tab, index) => (
               <button key={tab} type="button" role="tab" aria-selected={index === 0} className={index === 0 ? 'selected-tab' : 'secondary-button'}>
                 {tab}
@@ -328,16 +348,16 @@ export default function StandaloneOperationsPage() {
           </div>
         </article>
 
-        <article aria-label="Figma settings tabs polished by API">
+        <article aria-label="Settings dashboard tabs">
           <div className="section-title-row">
             <div>
-              <p className="eyebrow">Design 1 / Settings</p>
+              <p className="eyebrow">Settings</p>
               <h2>Settings Governance Center</h2>
-              <p>Prototype API-key and model controls are adapted into masked-secret posture, governed flags, templates, and rules.</p>
+              <p>Governed suggestion settings, clinical rules, templates, interface controls, and advanced configuration.</p>
             </div>
             <strong>maskedSecretsOnly={String(operationsRuntime?.settingsSummary.maskedSecretsOnly ?? true)}</strong>
           </div>
-          <div className="figma-tab-strip" role="tablist" aria-label="Design 1 settings tabs">
+          <div className="figma-tab-strip" role="tablist" aria-label="Settings tabs">
             {settingsTabs.map((tab, index) => (
               <button key={tab} type="button" role="tab" aria-selected={index === 0} className={index === 0 ? 'selected-tab' : 'secondary-button'}>
                 {tab}
@@ -380,10 +400,10 @@ export default function StandaloneOperationsPage() {
       </section>
 
       <section className="figma-ops-board" aria-label="Backend-backed operations analytics series">
-        <article aria-label="Design 1 analytics tabs backed by API">
+        <article aria-label="Analytics series backed by API">
           <div className="section-title-row">
             <div>
-              <h2>Design 1 Analytics Tabs</h2>
+              <h2>Analytics Series</h2>
               <p>Usage, billing review, settings, rules, and templates are composed by the operations API.</p>
             </div>
             <strong>
@@ -419,11 +439,11 @@ export default function StandaloneOperationsPage() {
           </div>
         </article>
 
-        <article aria-label="Design 1 settings affordances backed by API">
+        <article aria-label="Settings affordances backed by API">
           <div className="section-title-row">
             <div>
               <h2>Settings And Governance Runtime</h2>
-              <p>Figma settings concepts are mapped to governed flags, masked secrets, templates, and rules.</p>
+              <p>Settings controls map to governed flags, masked secrets, templates, and rules.</p>
             </div>
             <strong>secretValuesReturned={String(operationsRuntime?.settingsSummary.secretValuesReturned ?? false)}</strong>
           </div>

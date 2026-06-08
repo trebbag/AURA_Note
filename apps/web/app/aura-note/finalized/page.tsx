@@ -17,7 +17,7 @@ export default async function FinalizedNotesPage() {
             <h1>Finalized Notes</h1>
           </div>
           <nav className="header-nav" aria-label="AURA Note sections">
-            <a href="/aura-note">Runtime Home</a>
+            <a href="/aura-note">Dashboard</a>
             <a href="/aura-note/schedule">Schedule</a>
             <a href="/aura-note/drafts">Draft Notes</a>
           </nav>
@@ -39,6 +39,34 @@ export default async function FinalizedNotesPage() {
               <dd>typed_api_client</dd>
             </div>
           </dl>
+        </section>
+
+        <section className="figma-note-table" aria-label="Figma finalized notes table">
+          <div className="section-title-row">
+            <div>
+              <p className="eyebrow">Finalized Notes</p>
+              <h2>Read-Only Artifact Table</h2>
+              <p>Final note, patient summary, export, and writeback metadata stay immutable from this route.</p>
+            </div>
+            <strong>writable=false</strong>
+          </div>
+          <div className="figma-status-row">
+            <span>empty: {finalizedNotes.length === 0 ? 'active' : 'covered'}</span>
+            <span>ready: {finalizedNotes.length > 0 ? 'active' : 'covered'}</span>
+            <span>read-only: active</span>
+            <span>permission-denied: covered by RBAC tests</span>
+          </div>
+          <div className="figma-note-table-grid">
+            {finalizedNotes.slice(0, 4).map((note) => (
+              <a key={note.noteId} href={`/aura-note/finalized/${note.noteId}`} data-state="read-only">
+                <strong>{note.safePatientId}</strong>
+                <span>{note.finalNoteAvailable ? 'Signed and dispatched' : 'Not finalized'}</span>
+                <small>Export: {note.exportStatus ?? 'not_generated'}</small>
+                <small>Writeback: {note.writebackStatus ?? 'disabled'}</small>
+              </a>
+            ))}
+            {finalizedNotes.length === 0 ? <p>No read-only finalized notes were returned by the API.</p> : null}
+          </div>
         </section>
 
         <section className="note-list" aria-label="Finalized notes">

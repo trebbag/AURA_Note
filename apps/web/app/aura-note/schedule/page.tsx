@@ -1,6 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
+import { Calendar, FileSearch, Filter, MapPin, Plus, Video } from 'lucide-react';
 import type { AppointmentModality, AppointmentState } from '@aura-note/domain';
 import type {
   AppointmentStatusActionDto,
@@ -224,7 +225,7 @@ export default function ScheduleBuilderPage() {
           <h1>Standalone Patient And Schedule Workspace</h1>
         </div>
         <nav className="header-nav" aria-label="AURA Note sections">
-          <a href="/aura-note">Runtime Home</a>
+          <a href="/aura-note">Dashboard</a>
           <a href="/aura-note/drafts">Draft Notes</a>
           <a href="/aura-note/finalized">Finalized Notes</a>
           <a href="/status">Status</a>
@@ -263,6 +264,113 @@ export default function ScheduleBuilderPage() {
             <dd>{disabledLiveSources.length}</dd>
           </div>
         </dl>
+      </section>
+
+      <section className="figma-schedule-board" aria-label="Figma schedule builder">
+        <article aria-label="Schedule command card">
+          <div className="section-title-row">
+            <div>
+              <p className="eyebrow">Schedule Builder</p>
+              <h2>Day And Week Workflow</h2>
+              <p>Provider, date, visit type, room, virtual visit, and chart-intake metadata are loaded from backend schedule state.</p>
+            </div>
+            <span className="figma-icon-block blue" aria-hidden="true">
+              <Calendar size={20} />
+            </span>
+          </div>
+          <div className="figma-status-row">
+            <span>View: {viewMode}</span>
+            <span>Date: {activeDate}</span>
+            <span>Appointments: {appointments.length}</span>
+            <span>Source: typed_api_client</span>
+          </div>
+        </article>
+
+        <article aria-label="Schedule filter summary">
+          <div className="section-title-row">
+            <div>
+              <p className="eyebrow">Filters</p>
+              <h2>Backend Filter Set</h2>
+            </div>
+            <span className="figma-icon-block neutral" aria-hidden="true">
+              <Filter size={20} />
+            </span>
+          </div>
+          <div className="figma-settings-grid">
+            <div>
+              <strong>Providers</strong>
+              <span>{scheduleFilters.providers.length}</span>
+            </div>
+            <div>
+              <strong>Statuses</strong>
+              <span>{scheduleFilters.statuses.length}</span>
+            </div>
+            <div>
+              <strong>Visit Types</strong>
+              <span>{scheduleFilters.visitTypes.length}</span>
+            </div>
+            <div>
+              <strong>Modalities</strong>
+              <span>{scheduleFilters.modalities.length}</span>
+            </div>
+            <div>
+              <strong>Locations</strong>
+              <span>{scheduleFilters.clinicLocations.length}</span>
+            </div>
+            <div>
+              <strong>Live Sources</strong>
+              <span>disabled={disabledLiveSources.length}</span>
+            </div>
+          </div>
+        </article>
+
+        <article aria-label="Schedule appointment metadata">
+          <div className="section-title-row">
+            <div>
+              <p className="eyebrow">Chart Intake</p>
+              <h2>Appointment Cards</h2>
+            </div>
+            <span className="figma-icon-block emerald" aria-hidden="true">
+              <FileSearch size={20} />
+            </span>
+          </div>
+          <div className="figma-series-grid">
+            {appointments.slice(0, 3).map((appointment) => (
+              <div key={appointment.appointmentId} className="figma-series-card">
+                <strong>{appointment.safePatientId}</strong>
+                <small>
+                  {appointment.state} / {appointment.scheduleMetadata.chartIntakeStatus}
+                </small>
+                <span>
+                  <MapPin size={14} aria-hidden="true" /> {appointment.scheduleMetadata.clinicLocationLabel} /{' '}
+                  {appointment.scheduleMetadata.roomLabel}
+                </span>
+                <span>
+                  <Video size={14} aria-hidden="true" /> {appointment.scheduleMetadata.virtualVisitStatus}
+                </span>
+              </div>
+            ))}
+            {appointments.length === 0 ? <p>No appointments returned by the API for this filter set.</p> : null}
+          </div>
+        </article>
+
+        <article aria-label="Schedule create action reference">
+          <div className="section-title-row">
+            <div>
+              <p className="eyebrow">Create</p>
+              <h2>Appointment + Note Shell</h2>
+              <p>Creation remains idempotent and produces a one-to-one inactive note shell.</p>
+            </div>
+            <span className="figma-icon-block amber" aria-hidden="true">
+              <Plus size={20} />
+            </span>
+          </div>
+          <div className="figma-status-row">
+            <span>Safe ID: {form.safePatientId}</span>
+            <span>Visit: {form.visitType}</span>
+            <span>Room: {form.roomLabel}</span>
+          </div>
+        </article>
       </section>
 
       <section className="builder-grid">

@@ -666,3 +666,18 @@ Do not implement these tranches directly from this backlog. Promote one tranche 
 **Known risks:**
 
 - Figma Make exposed source-tree/component context rather than a normal pixel screenshot baseline in this pass. The repo now implements the key source/node visual hierarchy, but formal designer/founder signoff and screenshot-baseline approval remain separate evidence before production launch claims.
+
+## Post-CR4 Figma Make ZIP Reference Pass
+
+**Promotion status:** Visual/runtime refinement support only; no `WO-078+` production-decision work order is promoted.
+
+**Objective:** Use the two founder-supplied Figma Make ZIP exports as local source-reference packages while preventing prototype architecture, hardcoded demo content, Supabase files, direct browser AI, live vendor behavior, patient portal delivery, claim submission, or autonomous clinical/coding/billing behavior from entering the AURA Note runtime.
+
+**Added evidence:**
+
+- `.figma-make-reference/` is ignored and used as the local extraction target for the supplied ZIPs.
+- `docs/FIGMA_MAKE_ZIP_REFERENCE_AUDIT.md` records the ZIP contents, accepted/adapted/rejected prototype behavior, and route mapping.
+- Schedule, draft notes, finalized notes, workspace, finalization, and operations routes now include additional Figma-derived source-reference surfaces while remaining typed-client/backend-backed.
+- `pnpm figma:backend-catch-up-readiness` validates the ZIP audit document, new route strings, and Playwright assertions.
+
+**Remaining limitation:** the ZIPs provide source code and handoff text, not exact inspectable Figma node coordinates or screenshot baselines. Formal pixel-level approval remains a separate founder/designer checkpoint.

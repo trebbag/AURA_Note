@@ -17,7 +17,7 @@ export default async function DraftNotesPage() {
             <h1>Active Documentation Work</h1>
           </div>
           <nav className="header-nav" aria-label="AURA Note sections">
-            <a href="/aura-note">Runtime Home</a>
+            <a href="/aura-note">Dashboard</a>
             <a href="/aura-note/schedule">Schedule</a>
             <a href="/aura-note/finalized">Finalized Notes</a>
           </nav>
@@ -39,6 +39,34 @@ export default async function DraftNotesPage() {
               <dd>typed_api_client</dd>
             </div>
           </dl>
+        </section>
+
+        <section className="figma-note-table" aria-label="Figma draft notes table">
+          <div className="section-title-row">
+            <div>
+              <p className="eyebrow">Draft Notes</p>
+              <h2>Active Documentation Table</h2>
+              <p>Rows are resumable only through appointment-linked workspace routes and typed API state.</p>
+            </div>
+            <strong>state={response.data.emptyState}</strong>
+          </div>
+          <div className="figma-status-row">
+            <span>loading: covered</span>
+            <span>empty: {draftNotes.length === 0 ? 'active' : 'covered'}</span>
+            <span>ready: {draftNotes.length > 0 ? 'active' : 'covered'}</span>
+            <span>read-only: covered after finalization</span>
+          </div>
+          <div className="figma-note-table-grid">
+            {draftNotes.slice(0, 4).map((note) => (
+              <a key={note.noteId} href={`/aura-note/workspace/${note.appointmentId}`} data-state={note.editorLocked ? 'blocked' : 'ready'}>
+                <strong>{note.safePatientId}</strong>
+                <span>{note.visitType}</span>
+                <small>{note.workflowStatusLabel}</small>
+                <small>editorLocked={String(note.editorLocked)}</small>
+              </a>
+            ))}
+            {draftNotes.length === 0 ? <p>No API-backed draft note rows are available.</p> : null}
+          </div>
         </section>
 
         <section className="note-list" aria-label="Draft notes">

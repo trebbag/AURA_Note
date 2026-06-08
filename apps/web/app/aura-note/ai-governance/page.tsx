@@ -218,7 +218,7 @@ export default function AiGovernancePage() {
           <h1>AI Governance Readiness</h1>
         </div>
         <nav className="header-nav" aria-label="AURA Note sections">
-          <Link href="/aura-note">Runtime Home</Link>
+          <Link href="/aura-note">Dashboard</Link>
           <Link href="/aura-note/schedule">Schedule</Link>
           <Link href="/aura-note/platform">Platform</Link>
           <Link href="/aura-note/integrations/clinicos">ClinicOS</Link>

@@ -9,13 +9,43 @@ interface FinalizationClientProps {
   noteId: string;
 }
 
-const steps: Array<{ id: WizardStep; label: string }> = [
-  { id: 'code_review', label: 'Code Review' },
-  { id: 'suggestion_review', label: 'Suggestion Review' },
-  { id: 'compose', label: 'Compose' },
-  { id: 'compare_edit', label: 'Compare & Edit' },
-  { id: 'billing_attest', label: 'Billing & Attest' },
-  { id: 'sign_dispatch', label: 'Sign & Dispatch' }
+const steps: Array<{ id: WizardStep; label: string; sublabel: string; purpose: string }> = [
+  {
+    id: 'code_review',
+    label: 'Code Review',
+    sublabel: 'Visit Selections Review',
+    purpose: 'Review every clinician-selected item from the frozen Visit Selections snapshot.'
+  },
+  {
+    id: 'suggestion_review',
+    label: 'Suggestion Review',
+    sublabel: 'Final-Pass Candidate Review',
+    purpose: 'Keep or remove final-pass suggestions before compose can run.'
+  },
+  {
+    id: 'compose',
+    label: 'Compose',
+    sublabel: 'Enhanced Note And Summary Drafting',
+    purpose: 'Generate draft enhanced note and patient-safe summary variants for human approval.'
+  },
+  {
+    id: 'compare_edit',
+    label: 'Compare & Edit',
+    sublabel: 'Dual Editor Review',
+    purpose: 'Compare original, enhanced, and patient-summary variants, then approve both outputs.'
+  },
+  {
+    id: 'billing_attest',
+    label: 'Billing & Attest',
+    sublabel: 'Draft Claim Preview Review',
+    purpose: 'Review billing validation and attestation while keeping submittedClaim=false.'
+  },
+  {
+    id: 'sign_dispatch',
+    label: 'Sign & Dispatch',
+    sublabel: 'Read-Only Output Dispatch',
+    purpose: 'Sign final artifacts and expose read-only/export metadata without live claim submission.'
+  }
 ];
 
 type RouteState = 'loading' | 'empty' | 'ready' | 'saving' | 'blocked' | 'failed' | 'permission-denied' | 'read-only';
@@ -159,14 +189,14 @@ export function FinalizationClient({ noteId }: FinalizationClientProps) {
   const humanReviewCount = session?.itemStatuses.filter((item) => item.humanReviewRequired).length ?? 0;
 
   return (
-    <main className="wizard-shell">
-      <header className="page-header">
+    <main className="wizard-shell aura-finalization">
+      <header className="wizard-progress-header">
         <div>
-          <p className="eyebrow">AURA Note / Finalization Wizard</p>
-          <h1>Finalization Steps 1-6</h1>
+          <p className="eyebrow">AURA Note</p>
+          <h1>Finalization Wizard</h1>
         </div>
         <nav className="header-nav" aria-label="AURA Note sections">
-          <a href="/aura-note">Runtime Home</a>
+          <a href="/aura-note">Dashboard</a>
           <a href="/aura-note/drafts">Draft Notes</a>
           <a href="/aura-note/finalized">Finalized Notes</a>
           <a href="/aura-note/schedule">Schedule</a>
@@ -208,20 +238,21 @@ export function FinalizationClient({ noteId }: FinalizationClientProps) {
       </section>
 
       <ol className="wizard-progress" aria-label="Finalization progress">
-        {steps.map((step) => (
-          <li key={step.id} className={`state-${session?.stepStatuses[step.id] ?? 'not_started'}`}>
-            <span>{step.label}</span>
-            <small>{session?.stepStatuses[step.id] ?? 'not_started'}</small>
+        {steps.map((step, index) => (
+          <li key={step.id} className={`state-${session?.stepStatuses[step.id] ?? 'not_started'}${index === currentStepIndex ? ' is-current' : ''}`}>
+            <span>{index + 1}</span>
+            <strong>{step.label}</strong>
+            <small>{step.sublabel} / {session?.stepStatuses[step.id] ?? 'not_started'}</small>
           </li>
         ))}
       </ol>
 
-      <section className="figma-wizard-board" aria-label="Figma-derived finalization workflow board">
-        <article aria-label="Design 2 progress rail">
+      <section className="figma-wizard-board" aria-label="Finalization workflow board">
+        <article aria-label="Finalization progress rail">
           <div className="section-title-row">
             <div>
-              <h2>Design 2 Progress Rail</h2>
-              <p>Six canonical AURA Note steps, rendered from finalization session status.</p>
+              <h2>Finalization Progress</h2>
+              <p>Six canonical steps, rendered from the current finalization session.</p>
             </div>
             <strong>
               Step {currentStepIndex + 1} of {steps.length}
@@ -234,10 +265,29 @@ export function FinalizationClient({ noteId }: FinalizationClientProps) {
                 <div key={step.id} className={`figma-step-card state-${status}`}>
                   <span>{index + 1}</span>
                   <strong>{step.label}</strong>
-                  <small>{status}</small>
+                  <small>{step.sublabel}</small>
+                  <em>{status}</em>
                 </div>
               );
             })}
+          </div>
+        </article>
+
+        <article aria-label="Canonical finalization step context">
+          <div className="section-title-row">
+            <div>
+              <h2>AURA Note Step Context</h2>
+              <p>The Design 2 wizard is adapted onto AURA Note's existing backend finalization session.</p>
+            </div>
+            <strong>current={steps.find((step) => step.id === currentStep)?.sublabel}</strong>
+          </div>
+          <div className="figma-step-context-list">
+            {steps.map((step) => (
+              <div key={step.id} data-state={session?.stepStatuses[step.id] ?? 'not_started'}>
+                <strong>{step.sublabel}</strong>
+                <span>{step.purpose}</span>
+              </div>
+            ))}
           </div>
         </article>
 
@@ -296,13 +346,13 @@ export function FinalizationClient({ noteId }: FinalizationClientProps) {
         </article>
       </section>
 
-      <section className="figma-finalization-polish" aria-label="Figma Design 2 visual fidelity pass">
-        <article aria-label="Figma Design 2 evidence highlighter">
+      <section className="figma-finalization-polish" aria-label="Evidence questions and dispatch">
+        <article aria-label="Evidence highlighter">
           <div className="section-title-row">
             <div>
-              <p className="eyebrow">Design 2 / Evidence</p>
+              <p className="eyebrow">Evidence</p>
               <h2>Evidence Highlighter</h2>
-              <p>Stable evidence spans are rendered from API offsets rather than prototype display labels.</p>
+              <p>Stable evidence spans are linked to source offsets and review items.</p>
             </div>
             <strong>{session?.evidenceSpans.length ?? 0} spans</strong>
           </div>
@@ -316,12 +366,12 @@ export function FinalizationClient({ noteId }: FinalizationClientProps) {
           </div>
         </article>
 
-        <article aria-label="Figma patient questions popup">
+        <article aria-label="Patient questions popup">
           <div className="section-title-row">
             <div>
-              <p className="eyebrow">Design 2 / Patient Questions</p>
+              <p className="eyebrow">Patient Questions</p>
               <h2>Question Popup</h2>
-              <p>Portal send stays disabled; staff handoff maps to the existing blocker-task workflow.</p>
+              <p>In-room answers and staff handoff stay audit-tracked; portal delivery remains gated.</p>
             </div>
             <strong>portal={String(session?.dispatchMetadata.patientPortalDeliveryEnabled ?? false)}</strong>
           </div>
@@ -337,12 +387,12 @@ export function FinalizationClient({ noteId }: FinalizationClientProps) {
           </div>
         </article>
 
-        <article aria-label="Figma billing dispatch dock">
+        <article aria-label="Billing dispatch dock">
           <div className="section-title-row">
             <div>
-              <p className="eyebrow">Design 2 / Billing And Sign</p>
+              <p className="eyebrow">Billing And Sign</p>
               <h2>Billing & Dispatch Dock</h2>
-              <p>Draft claim preview, attestation, sign, export, and writeback states stay human-controlled and gated.</p>
+              <p>Draft claim preview, attestation, sign, export, and writeback remain human-controlled and gated.</p>
             </div>
             <strong>submittedClaim={String(session?.dispatchMetadata.submittedClaim ?? false)}</strong>
           </div>
@@ -357,7 +407,7 @@ export function FinalizationClient({ noteId }: FinalizationClientProps) {
         </article>
       </section>
 
-      <section className="wizard-grid" aria-label="Design 2 finalization runtime state">
+      <section className="wizard-grid" aria-label="Finalization runtime state">
         <article>
           <h2>Evidence Spans</h2>
           <div className="opportunity-list">
@@ -457,6 +507,7 @@ export function FinalizationClient({ noteId }: FinalizationClientProps) {
       <section className="wizard-grid">
         <article>
           <h2>Step 1 / Code Review</h2>
+          <p className="step-sublabel">Visit Selections Review</p>
           <div className="decision-list">
             {(session?.frozenSnapshot.visitSelections ?? []).map((selection) => (
               <div key={selection.visitSelectionId} className="decision-row">

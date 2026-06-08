@@ -9,6 +9,12 @@ Status as of the post-CR4 Figma Make backend catch-up tranche: this document rec
 | Design 1 | [AI Powered Clinical Note Editor](https://www.figma.com/make/FCk3sMWzjg6daDx98MCH19/AI-Powered-Clinical-Note-Editor?t=aegtNl2JDW3z2Ad1-1) | Visual and interaction source for the app shell, dashboard, schedule, documentation workspace, selected-code bar, suggestions, drafts, analytics, activity, notifications, and settings. |
 | Design 2 | [Step by Step Workflow Wizard](https://www.figma.com/make/4gAaXIgsxSvlNs83hTAce8/Step-by-Step-Workflow-Wizard?t=20vVtikQezirs3zb-1) | Visual and interaction source for the six-step finalization wizard, evidence review, patient questions, dual editor variants, AI compose progress, billing/attest, sign/dispatch, and export surfaces. |
 
+## Local ZIP Reference Package
+
+The founder/operator supplied local Figma Make export ZIPs after the published `figma.site` references. `docs/FIGMA_MAKE_ZIP_REFERENCE_AUDIT.md` records the ZIP contents, local ignored extraction path, accepted/adapted/rejected prototype behavior, and route mapping. The extracted package is local reference material under `.figma-make-reference/` and is intentionally not committed wholesale.
+
+The ZIPs improve implementation fidelity because they expose Make-generated source, component names, CSS, tokens, and handoff/checklist text. They do not provide exact inspectable Figma node coordinates or screenshot baselines, so formal pixel-level approval remains a separate founder/designer checkpoint.
+
 ## Implementation Strategy
 
 AURA Note uses an adapt/rebuild strategy. The Figma Make designs are treated as product UI intent, not as an implementation architecture. Production-intended routes must continue to use:
@@ -93,6 +99,7 @@ Storybook/demo mode may still use local fixtures. Production-intended AURA Note 
 - `/aura-note/finalization/[noteId]` now includes the Design 2 evidence highlighter, patient-question popup, and billing/dispatch dock. Evidence spans use stable IDs and offsets; patient portal delivery and claim submission remain disabled.
 - `/aura-note/operations` now includes polished Design 1 analytics tabs, KPI cards, CSS-rendered chart stage, settings governance tabs, settings control matrix, and feature-flag summary sourced from `OperationsRuntimeViewDto`.
 - Playwright and `pnpm figma:backend-catch-up-readiness` now verify the Figma visual/node surfaces so they cannot silently regress to local-state-only prototype UI. Formal screenshot-baseline approval and founder/designer production visual signoff remain separate evidence.
+- The local ZIP reference pass adds explicit ignored-reference handling and keeps Design 1/Design 2 source-package evidence separate from committed AURA runtime code. It tightens visible route surfaces while continuing to source production-intended state from typed API clients.
 
 ## Guardrails
 

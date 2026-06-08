@@ -199,7 +199,7 @@ export default function EhrIntegrationPage() {
           <h1>EHR Sandbox Integration</h1>
         </div>
         <nav className="header-nav" aria-label="AURA Note sections">
-          <Link href="/aura-note">Runtime Home</Link>
+          <Link href="/aura-note">Dashboard</Link>
           <Link href="/aura-note/schedule">Schedule</Link>
           <Link href="/aura-note/finalized">Finalized Notes</Link>
           <Link href="/aura-note/platform">Platform</Link>

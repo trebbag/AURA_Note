@@ -87,7 +87,7 @@ check(
 check(
   'browser.route',
   'Browser operations route exposes worklists, billing review, settings, templates, estimates, and rules states',
-  webOperations.includes('Standalone Operations Center') &&
+  webOperations.includes('Analytics Dashboard') &&
     webOperations.includes('Billing Review Queue') &&
     webOperations.includes('Estimate Configuration') &&
     webOperations.includes('Rules Catalog'),

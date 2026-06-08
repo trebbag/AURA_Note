@@ -19,3 +19,4 @@ playwright-report/
 *.sqlite
 uploads/
 /storage/
+.figma-make-reference/
