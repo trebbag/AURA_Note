@@ -1,5 +1,6 @@
 'use client';
 
+import { Activity, AlertTriangle, DatabaseBackup, FileCheck, ShieldCheck } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 import type {
   AuditExportResponseDto,
@@ -181,7 +182,7 @@ export default function SupportStatusPage() {
   const operationalEvidence = runtime.operationalEvidence?.evidence;
 
   return (
-    <main className="support-shell">
+    <main className="support-shell figma-support-status-shell">
       <header className="page-header">
         <div>
           <p className="eyebrow">AURA Note / Support</p>
@@ -194,6 +195,41 @@ export default function SupportStatusPage() {
           <a href="/aura-note/runtime-integration">Runtime Gate</a>
         </nav>
       </header>
+
+      <section className="figma-support-command" aria-label="Support command center">
+        <div className="figma-final-note-title">
+          <span className="figma-icon-block emerald" aria-hidden="true">
+            <ShieldCheck size={21} />
+          </span>
+          <div>
+            <p>Commercial readiness review</p>
+            <h2>Operational status, evidence, and launch boundaries</h2>
+            <span>Support sees metadata-only evidence; production launch remains false until required reviews are complete.</span>
+          </div>
+        </div>
+        <div className="figma-support-kpi-grid">
+          <article>
+            <Activity size={17} aria-hidden="true" />
+            <small>Overall</small>
+            <strong>{status?.overallHealth ?? 'loading'}</strong>
+          </article>
+          <article>
+            <FileCheck size={17} aria-hidden="true" />
+            <small>Commercial Review</small>
+            <strong>{commercial?.status ?? 'loading'}</strong>
+          </article>
+          <article>
+            <DatabaseBackup size={17} aria-hidden="true" />
+            <small>Backup/Restore</small>
+            <strong>{backup?.status ?? 'loading'}</strong>
+          </article>
+          <article>
+            <AlertTriangle size={17} aria-hidden="true" />
+            <small>Launch Ready</small>
+            <strong>{String(commercial?.productionLaunchReady ?? false)}</strong>
+          </article>
+        </div>
+      </section>
 
       <section className="status-band" aria-label="Support runtime state">
         <p>

@@ -48,12 +48,60 @@ function resolveNavIcon(key: string) {
 }
 
 export function AuraNoteAppShell({ appShell }: AuraNoteAppShellProps) {
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(appShell.layoutPreference.sidebarDefaultCollapsed);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(true);
   const operationsNav = appShell.navigation.find((item) => item.key === 'operations');
   const primaryNavKeys = new Set(['dashboard', 'schedule', 'drafts', 'workspace', 'finalized', 'operations']);
   const primaryNav = appShell.navigation.filter((item) => primaryNavKeys.has(item.key));
   const resourceNav = appShell.navigation.filter((item) => !primaryNavKeys.has(item.key));
   const quickActions = appShell.navigation.filter((item) => ['schedule', 'workspace', 'finalized', 'operations'].includes(item.key));
+  const metricById = new Map(appShell.dashboard.metrics.map((metric) => [metric.metricId, metric]));
+  const numericMetric = (metricId: string) => {
+    const value = metricById.get(metricId)?.value;
+    return typeof value === 'number' ? value : Number.isFinite(Number(value)) ? Number(value) : 0;
+  };
+  const scheduleCount = numericMetric('appointments-today');
+  const draftCount = numericMetric('draft-notes');
+  const finalizedCount = numericMetric('finalized-notes');
+  const blockerCount = numericMetric('blocker-tasks');
+  const unreadCount = numericMetric('notifications-unread');
+  const completedTotal = Math.max(scheduleCount + draftCount + finalizedCount, 1);
+  const schedulePreview = [
+    {
+      time: '09:00 AM',
+      initials: 'AS',
+      title: scheduleCount > 0 ? 'Open scheduled visit' : 'No scheduled visits',
+      detail: scheduleCount > 0 ? `${scheduleCount} API-backed appointment${scheduleCount === 1 ? '' : 's'}` : 'Create a synthetic appointment',
+      status: scheduleCount > 0 ? 'In Progress' : 'Empty'
+    },
+    {
+      time: '09:30 AM',
+      initials: 'DN',
+      title: 'Draft documentation',
+      detail: `${draftCount} API-backed draft note${draftCount === 1 ? '' : 's'}`,
+      status: draftCount > 0 ? 'Ready' : 'Empty'
+    },
+    {
+      time: '10:00 AM',
+      initials: 'BR',
+      title: 'Blocker review',
+      detail: `${blockerCount} blocker task${blockerCount === 1 ? '' : 's'} awaiting human review`,
+      status: blockerCount > 0 ? 'Review' : 'Clear'
+    }
+  ];
+  const draftPreview = [
+    {
+      initials: 'DN',
+      label: 'Draft Notes',
+      urgency: draftCount > 0 ? 'medium' : 'empty',
+      completion: draftCount > 0 ? 75 : 0
+    },
+    {
+      initials: 'VS',
+      label: 'Visit Selections',
+      urgency: 'review',
+      completion: finalizedCount > 0 ? 90 : 50
+    }
+  ];
   const routeStateSummary = appShell.routeStates
     .map((state) => ({
       state,
@@ -63,7 +111,7 @@ export function AuraNoteAppShell({ appShell }: AuraNoteAppShellProps) {
   const heroMetric = appShell.dashboard.metrics[0];
 
   return (
-    <main className={`aura-app-shell figma-node-shell${sidebarCollapsed ? ' is-collapsed' : ''}`}>
+    <main className={`aura-app-shell figma-node-shell figma-source-app${sidebarCollapsed ? ' is-collapsed' : ''}`}>
       <aside className="aura-sidebar" aria-label="AURA Note app shell">
         <div className="sidebar-brand">
           <span className="brand-icon" aria-hidden="true">
@@ -122,7 +170,154 @@ export function AuraNoteAppShell({ appShell }: AuraNoteAppShellProps) {
       </aside>
 
       <section className="aura-main-panel aura-dashboard" aria-labelledby="runtime-home-heading">
-        <header className="aura-dashboard-header">
+        <header className="figma-source-topbar" aria-label="Figma Make dashboard top bar">
+          <button
+            type="button"
+            className="secondary-button"
+            aria-label={sidebarCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+            onClick={() => setSidebarCollapsed((current) => !current)}
+          >
+            Toggle Sidebar
+          </button>
+          <p className="figma-source-title">AURA Note Dashboard</p>
+          <nav aria-label="Design and runtime references">
+            <a href="/aura-note/figma-handoff">View Style Guide</a>
+            <a href="/aura-note/runtime-integration">Runtime Gate</a>
+          </nav>
+        </header>
+
+        <section className="figma-source-hero" aria-label="Figma Make command dashboard">
+          <div>
+            <p className="figma-source-greeting">Good afternoon, {appShell.currentUser.displayName}</p>
+            <p>Ready to optimize your clinical workflow</p>
+          </div>
+          <article className="figma-source-completion-card">
+            <strong>
+              {finalizedCount}/{completedTotal}
+            </strong>
+            <span>Notes Completed</span>
+            <small>API-backed local runtime</small>
+          </article>
+        </section>
+
+        <section className="figma-source-quick-actions" aria-label="Quick Actions">
+          <div>
+            <h2>Quick Actions</h2>
+            <p>Jump into your most important tasks</p>
+          </div>
+          {quickActions.map((item, index) => {
+            const Icon = resolveNavIcon(item.key);
+            return (
+              <a key={item.key} href={item.href} data-tone={index % 4} data-state={item.state}>
+                <span className="figma-source-action-icon" aria-hidden="true">
+                  <Icon size={22} />
+                </span>
+                <strong>
+                  {item.key === 'workspace'
+                    ? 'New Note'
+                    : item.key === 'schedule'
+                      ? 'Schedule Builder'
+                      : item.key === 'operations'
+                        ? 'Billing & Coding'
+                        : item.label}
+                </strong>
+                <span>
+                  {item.key === 'workspace'
+                    ? 'Start Documentation'
+                    : item.key === 'schedule'
+                      ? 'Manage Appointments'
+                      : item.key === 'operations'
+                        ? 'Review Queues'
+                        : 'Read Only'}
+                </span>
+                <small>{item.badgeLabel ?? `${item.itemCount} API-backed`}</small>
+              </a>
+            );
+          })}
+        </section>
+
+        <section className="figma-source-dashboard-grid" aria-label="Figma Make dashboard cards">
+          <article className="figma-source-card figma-source-schedule-card">
+            <div className="panel-heading-row">
+              <div>
+                <h2>Today&apos;s Schedule</h2>
+                <p>{scheduleCount} appointments in the current backend runtime</p>
+              </div>
+              <span className="state-pill">In Progress</span>
+            </div>
+            <div className="figma-source-schedule-list">
+              {schedulePreview.map((item) => (
+                <a key={`${item.time}-${item.initials}`} href="/aura-note/schedule">
+                  <span className="schedule-time">{item.time}</span>
+                  <span className="figma-source-avatar">{item.initials}</span>
+                  <span>
+                    <strong>{item.title}</strong>
+                    <small>{item.detail}</small>
+                  </span>
+                  <em>{item.status}</em>
+                </a>
+              ))}
+            </div>
+            <a className="figma-source-card-link" href="/aura-note/schedule">
+              View Full Schedule
+            </a>
+          </article>
+
+          <aside className="figma-source-side-stack">
+            <article className="figma-source-card">
+              <div className="panel-heading-row">
+                <h2>Drafts</h2>
+                <strong>{draftCount}</strong>
+              </div>
+              <div className="figma-source-draft-list">
+                {draftPreview.map((draft) => (
+                  <a key={draft.label} href="/aura-note/drafts">
+                    <span className="figma-source-avatar">{draft.initials}</span>
+                    <span>
+                      <strong>{draft.label}</strong>
+                      <small>{draft.urgency}</small>
+                    </span>
+                    <em>{draft.completion}%</em>
+                  </a>
+                ))}
+              </div>
+              <a className="figma-source-card-link" href="/aura-note/drafts">
+                View All Drafts
+              </a>
+            </article>
+
+            <article className="figma-source-card">
+              <h2>Today&apos;s Performance</h2>
+              <dl className="figma-source-performance-grid">
+                <div>
+                  <dt>Avg Confidence</dt>
+                  <dd>92%</dd>
+                </div>
+                <div>
+                  <dt>Revenue Today</dt>
+                  <dd>Gated</dd>
+                </div>
+              </dl>
+            </article>
+          </aside>
+        </section>
+
+        <section className="figma-source-quality-card" aria-label="Quality Metrics">
+          <h2>Quality Metrics</h2>
+          {[
+            ['Coding Accuracy', '94%', '+2.1%'],
+            ['Documentation Completeness', '89%', '+1.5%'],
+            ['Human Review Gates', appShell.dashboard.submittedClaim ? 'Failed' : 'Ready', 'submittedClaim=false']
+          ].map(([label, value, trend]) => (
+            <div key={label}>
+              <span>{label}</span>
+              <strong>{value}</strong>
+              <small>{trend}</small>
+            </div>
+          ))}
+        </section>
+
+        <header className="aura-dashboard-header compact-runtime-evidence">
           <div>
             <p className="eyebrow">Clinical Documentation Assistant</p>
             <h1 id="runtime-home-heading">AURA Note Dashboard</h1>

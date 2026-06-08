@@ -1,6 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
+import { Check, Settings } from 'lucide-react';
 import type { WizardStep } from '@aura-note/domain';
 import type { FinalizationSessionDto } from '@aura-note/contracts';
 import { createAuraNoteApiClient, frontendRuntimeBillingAttestationStatements } from '../../../../lib/aura-note-api-client';
@@ -191,9 +192,15 @@ export function FinalizationClient({ noteId }: FinalizationClientProps) {
   return (
     <main className="wizard-shell aura-finalization">
       <header className="wizard-progress-header">
-        <div>
-          <p className="eyebrow">AURA Note</p>
-          <h1>Finalization Wizard</h1>
+        <div className="figma-wizard-title-lockup">
+          <span className="figma-wizard-icon" aria-hidden="true">
+            <Settings size={26} />
+          </span>
+          <div>
+            <p className="eyebrow">AURA Note</p>
+            <h1>Finalization Wizard</h1>
+            <p>AI-powered documentation refinement and clinical decision support, with human review required.</p>
+          </div>
         </div>
         <nav className="header-nav" aria-label="AURA Note sections">
           <a href="/aura-note">Dashboard</a>
@@ -240,7 +247,7 @@ export function FinalizationClient({ noteId }: FinalizationClientProps) {
       <ol className="wizard-progress" aria-label="Finalization progress">
         {steps.map((step, index) => (
           <li key={step.id} className={`state-${session?.stepStatuses[step.id] ?? 'not_started'}${index === currentStepIndex ? ' is-current' : ''}`}>
-            <span>{index + 1}</span>
+            <span>{session?.stepStatuses[step.id] === 'completed' ? <Check size={16} aria-hidden="true" /> : index + 1}</span>
             <strong>{step.label}</strong>
             <small>{step.sublabel} / {session?.stepStatuses[step.id] ?? 'not_started'}</small>
           </li>

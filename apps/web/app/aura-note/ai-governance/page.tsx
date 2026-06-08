@@ -1,5 +1,6 @@
 'use client';
 
+import { BrainCircuit, CheckCircle, Lock, ShieldAlert, Sparkles } from 'lucide-react';
 import Link from 'next/link';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import type {
@@ -211,7 +212,7 @@ export default function AiGovernancePage() {
   ];
 
   return (
-    <main className="operations-shell">
+    <main className="operations-shell figma-ai-governance-shell">
       <header className="page-header">
         <div>
           <p className="eyebrow">CR-3 / WO-070</p>
@@ -225,6 +226,30 @@ export default function AiGovernancePage() {
           <Link href="/aura-note/support/status">Support</Link>
         </nav>
       </header>
+
+      <section className="figma-governance-hero" aria-label="AI governance command header">
+        <div className="figma-final-note-title">
+          <span className="figma-icon-block blue" aria-hidden="true">
+            <BrainCircuit size={21} />
+          </span>
+          <div>
+            <p>AI Gateway control room</p>
+            <h2>Mock-only, source-linked, human-review-required</h2>
+            <span>External AI, private BAA model calls, autonomous clinical decisions, and raw PHI transmission remain disabled.</span>
+          </div>
+        </div>
+        <div className="figma-governance-status-grid">
+          {summary.map(([label, value], index) => (
+            <article key={label}>
+              <span className={`figma-icon-block ${index === 0 ? 'blue' : index === 1 ? 'amber' : index === 2 ? 'rose' : 'emerald'}`} aria-hidden="true">
+                {index === 0 ? <Sparkles size={16} /> : index === 1 ? <Lock size={16} /> : index === 2 ? <ShieldAlert size={16} /> : <CheckCircle size={16} />}
+              </span>
+              <small>{label}</small>
+              <strong>{value}</strong>
+            </article>
+          ))}
+        </div>
+      </section>
 
       <section className="status-band" aria-label="AI governance readiness">
         <div>

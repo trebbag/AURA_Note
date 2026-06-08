@@ -207,6 +207,60 @@ export default function EhrIntegrationPage() {
         </nav>
       </header>
 
+      <section className="figma-drafts-source-shell figma-platform-settings-shell" aria-label="Figma EHR integration settings workspace">
+        <header className="figma-drafts-source-header">
+          <div>
+            <h2>EHR Configuration</h2>
+            <p>Athenahealth-first sandbox controls are presented as integration settings without enabling live writeback.</p>
+          </div>
+          <div className="figma-drafts-header-actions">
+            <span>{status?.status.vendor ?? 'athenahealth-first'}</span>
+            <span className="figma-readonly-badge">live delivery disabled</span>
+          </div>
+        </header>
+
+        <div className="figma-tab-strip" role="tablist" aria-label="EHR integration settings tabs">
+          {['Status', 'Patient Lookup', 'Appointment Import', 'Encounter Context', 'Writeback Queue', 'Reconciliation'].map((tab, index) => (
+            <button key={tab} type="button" role="tab" aria-selected={index === 0} className={index === 0 ? 'selected-tab' : 'secondary-button'}>
+              {tab}
+            </button>
+          ))}
+        </div>
+
+        <section className="figma-settings-matrix" aria-label="API-backed EHR integration cards">
+          <div>
+            <strong>Adapter Boundary</strong>
+            <span>{boundary?.boundary.adapterBoundary ?? 'vendor_neutral_ehr_adapter'}</span>
+            <small>Athenahealth does not leak into domain logic.</small>
+          </div>
+          <div>
+            <strong>Credential State</strong>
+            <span>{boundary?.boundary.credentialState ?? 'disabled'}</span>
+            <small>Sandbox credentials are not committed or returned.</small>
+          </div>
+          <div>
+            <strong>Sandbox Context</strong>
+            <span>{encounterContext?.encounter.externalEncounterId ?? 'loading encounter metadata'}</span>
+            <small>Raw payload storage remains false.</small>
+          </div>
+          <div>
+            <strong>Writeback Queue</strong>
+            <span>{queue?.queue.items.length ?? 0} metadata-only jobs</span>
+            <small>Human approval, retry, dead-letter, and reconciliation stay API-backed.</small>
+          </div>
+          <div>
+            <strong>Live API Calls</strong>
+            <span>{String(boundary?.boundary.liveApiCallsEnabled ?? false)}</span>
+            <small>Live calls remain gated by configuration and approval.</small>
+          </div>
+          <div>
+            <strong>Browser Payload Exposure</strong>
+            <span>{queue?.queue.payloadsExcluded ? 'excluded' : 'not loaded'}</span>
+            <small>Support/browser views receive operational metadata only.</small>
+          </div>
+        </section>
+      </section>
+
       <section className="status-band" aria-label="EHR integration readiness">
         <div>
           <h2>Sandbox Writeback Boundary</h2>

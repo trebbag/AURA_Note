@@ -1,5 +1,6 @@
 'use client';
 
+import { Copy, Download, FileText, Lock, Send, ShieldCheck } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import type { ExportArtifactDto, FinalizedNoteDetailDto } from '@aura-note/contracts';
 import { createAuraNoteApiClient } from '../../../../lib/aura-note-api-client';
@@ -127,8 +128,10 @@ export function FinalizedNoteClient({ noteId }: FinalizedNoteClientProps) {
   const artifactStatus = (artifactType: ExportArtifactDto['artifactType']) =>
     detail?.exportArtifacts.find((artifact) => artifact.artifactType === artifactType)?.status ?? 'not_generated';
 
+  const generatedArtifacts = detail?.exportArtifacts.filter((artifact) => artifact.status === 'generated').length ?? 0;
+
   return (
-    <main className="notes-shell">
+    <main className="notes-shell figma-finalized-detail-shell">
       <header className="page-header">
         <div>
           <p className="eyebrow">AURA Note / Finalized Note Viewer</p>
@@ -141,6 +144,37 @@ export function FinalizedNoteClient({ noteId }: FinalizedNoteClientProps) {
           <a href="/aura-note/schedule">Schedule</a>
         </nav>
       </header>
+
+      <section className="figma-final-note-hero" aria-label="Finalized note read-only command header">
+        <div className="figma-final-note-title">
+          <span className="figma-icon-block blue" aria-hidden="true">
+            <Lock size={20} />
+          </span>
+          <div>
+            <p>Signed artifact workspace</p>
+            <h2>{noteId}</h2>
+            <span>Read-only after sign and dispatch; editor reopen remains disabled.</span>
+          </div>
+        </div>
+        <dl className="figma-final-note-metrics">
+          <div>
+            <dt>Route State</dt>
+            <dd>{routeState}</dd>
+          </div>
+          <div>
+            <dt>Artifacts</dt>
+            <dd>{generatedArtifacts}/{detail?.exportArtifacts.length ?? 0}</dd>
+          </div>
+          <div>
+            <dt>Writeback</dt>
+            <dd>{detail?.writeback.status ?? detail?.writebackStatus ?? 'disabled'}</dd>
+          </div>
+          <div>
+            <dt>PHI Boundary</dt>
+            <dd>role checked</dd>
+          </div>
+        </dl>
+      </section>
 
       <section className="status-band" aria-live="polite">
         <p>{message}</p>
@@ -166,9 +200,15 @@ export function FinalizedNoteClient({ noteId }: FinalizedNoteClientProps) {
 
       <section className="final-viewer-grid">
         <article className="read-only-viewer" aria-label="Signed finalized artifact">
-          <div>
-            <h2>{noteId}</h2>
-            <p>This viewer cannot reopen the active editor.</p>
+          <div className="figma-final-note-card-header">
+            <div>
+              <h2>{activeTab === 'final_note' ? 'Final Note' : 'Patient Summary'}</h2>
+              <p>This viewer cannot reopen the active editor.</p>
+            </div>
+            <span className="figma-readonly-badge">
+              <ShieldCheck size={14} aria-hidden="true" />
+              read-only
+            </span>
           </div>
           <div className="segmented-control" role="tablist" aria-label="Final artifact tabs">
             <button
@@ -190,27 +230,41 @@ export function FinalizedNoteClient({ noteId }: FinalizedNoteClientProps) {
               Patient Summary
             </button>
           </div>
-          <pre className="artifact-text">{activeText}</pre>
+          <pre className="artifact-text figma-final-note-paper">{activeText}</pre>
         </article>
 
-        <aside className="export-panel" aria-label="Export and writeback actions">
-          <h2>Output Actions</h2>
+        <aside className="export-panel figma-export-panel" aria-label="Export and writeback actions">
+          <div className="figma-final-note-card-header">
+            <div>
+              <h2>Output Actions</h2>
+              <p>Every action stays API-backed, permission checked, and audit safe.</p>
+            </div>
+            <span className="figma-icon-block emerald" aria-hidden="true">
+              <Download size={18} />
+            </span>
+          </div>
           <button type="button" disabled={!detail?.availableActions.copyFinalNote} onClick={copyFinalNote}>
+            <Copy size={15} aria-hidden="true" />
             Copy Final Note
           </button>
           <button type="button" disabled={!detail?.availableActions.copyPatientSummary} onClick={copyPatientSummary}>
+            <Copy size={15} aria-hidden="true" />
             Copy Patient Summary
           </button>
           <button type="button" disabled={!detail?.availableActions.downloadFinalNotePdf} onClick={generateNotePdf}>
+            <FileText size={15} aria-hidden="true" />
             Download Note PDF
           </button>
           <button type="button" disabled={!detail?.availableActions.downloadPatientSummaryPdf} onClick={generateSummaryPdf}>
+            <FileText size={15} aria-hidden="true" />
             Download Patient Summary PDF
           </button>
           <button type="button" disabled={!detail?.availableActions.exportStructured} onClick={exportStructured}>
+            <Download size={15} aria-hidden="true" />
             Export Structured Note
           </button>
           <button type="button" disabled={!detail?.availableActions.queueEhrWriteback} onClick={() => void queueWriteback()}>
+            <Send size={15} aria-hidden="true" />
             Queue Mock Writeback
           </button>
           <button type="button" className="secondary-action" disabled={!detail?.finalNoteAvailable} onClick={() => void recordWritebackFailure()}>
@@ -222,7 +276,7 @@ export function FinalizedNoteClient({ noteId }: FinalizedNoteClientProps) {
         </aside>
       </section>
 
-      <dl className="artifact-status-grid" aria-label="Artifact statuses">
+      <dl className="artifact-status-grid figma-artifact-status-grid" aria-label="Artifact statuses">
         <div>
           <dt>Final Note PDF</dt>
           <dd>{artifactStatus('final_note_pdf')}</dd>

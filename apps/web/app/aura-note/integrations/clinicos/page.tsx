@@ -171,6 +171,60 @@ export default function ClinicOsIntegrationPage() {
         </nav>
       </header>
 
+      <section className="figma-drafts-source-shell figma-platform-settings-shell" aria-label="Figma ClinicOS integration settings workspace">
+        <header className="figma-drafts-source-header">
+          <div>
+            <h2>ClinicOS Integration Settings</h2>
+            <p>Standalone and ClinicOS-integrated modes share one AURA Note runtime with adapter-enforced boundaries.</p>
+          </div>
+          <div className="figma-drafts-header-actions">
+            <span>{status?.modeContext.hostMode ?? 'standalone + integrated'}</span>
+            <span className="figma-readonly-badge">AURA permissions enforced</span>
+          </div>
+        </header>
+
+        <div className="figma-tab-strip" role="tablist" aria-label="ClinicOS integration settings tabs">
+          {['Mode', 'Mappings', 'Modules', 'Events', 'Fallback', 'Permissions'].map((tab, index) => (
+            <button key={tab} type="button" role="tab" aria-selected={index === 0} className={index === 0 ? 'selected-tab' : 'secondary-button'}>
+              {tab}
+            </button>
+          ))}
+        </div>
+
+        <section className="figma-settings-matrix" aria-label="API-backed ClinicOS integration cards">
+          <div>
+            <strong>Mode Resolution</strong>
+            <span>{status?.modeContext.availability ?? routeState}</span>
+            <small>Standalone remains authoritative when ClinicOS is unavailable.</small>
+          </div>
+          <div>
+            <strong>Module Boundaries</strong>
+            <span>{status?.moduleBoundaries.map((boundary) => boundary.moduleId).join(', ') ?? 'loading'}</span>
+            <small>M03, M04, M17, M21, M23, M24, M25, and M26 map through adapters.</small>
+          </div>
+          <div>
+            <strong>Mapping Review</strong>
+            <span>{status?.mappings.map((mapping) => `${mapping.clinicosModuleId}:${mapping.status}`).join(', ') ?? 'loading'}</span>
+            <small>Stale mappings do not override local blockers.</small>
+          </div>
+          <div>
+            <strong>Event Publication</strong>
+            <span>{lastPublishedEvent?.status ?? status?.publishedEvents.at(-1)?.status ?? 'skipped_disabled'}</span>
+            <small>Raw payloads are excluded from browser/support views.</small>
+          </div>
+          <div>
+            <strong>Permission Boundary</strong>
+            <span>{status?.permissionsStillEnforcedByAuraNote ? 'AURA Note authoritative' : 'loading'}</span>
+            <small>ClinicOS cannot bypass AURA Note RBAC/ABAC.</small>
+          </div>
+          <div>
+            <strong>Live Sync</strong>
+            <span>{String(status?.liveClinicOsSyncEnabled ?? false)}</span>
+            <small>Live ClinicOS sync remains disabled until governed approval.</small>
+          </div>
+        </section>
+      </section>
+
       <section className="status-band" aria-label="ClinicOS integration readiness">
         <div>
           <h2>One Product, Two Host Modes</h2>

@@ -383,25 +383,22 @@ export function WorkspaceClient({ appointmentId }: WorkspaceClientProps) {
         </nav>
       </header>
 
-      <section className="workspace-topline" aria-live="polite">
-        <div>
-          <div className="dashboard-card-title">
-            <span className="figma-icon-block neutral" aria-hidden="true">
-              <Stethoscope size={22} />
-            </span>
-            <h2>{appointmentId}</h2>
-          </div>
-          <p>
-            {workspace?.appointment.safePatientId ?? 'loading'} / {workspace?.appointment.visitType ?? 'loading'} /{' '}
-            {workspace?.appointment.clinicianId ?? 'loading'}
-          </p>
-          <p>{message}</p>
-        </div>
-        <dl>
+      <section className="workspace-topline figma-note-editor-topbar" aria-live="polite">
+        <div className="figma-note-editor-context">
+          <span className="figma-source-avatar" aria-hidden="true">
+            {(workspace?.appointment.safePatientId ?? 'AN').slice(-2).toUpperCase()}
+          </span>
           <div>
-            <dt>Route State</dt>
-            <dd>{routeState}</dd>
+            <p className="eyebrow">Clinical Note Editor</p>
+            <h2>{workspace?.appointment.safePatientId ?? 'Loading patient shell'}</h2>
+            <p>
+              Encounter {appointmentId} / {workspace?.appointment.visitType ?? 'loading'} /{' '}
+              {workspace?.appointment.clinicianId ?? 'loading'}
+            </p>
           </div>
+        </div>
+
+        <dl className="figma-note-editor-status">
           <div>
             <dt>Timer</dt>
             <dd>{timerState}</dd>
@@ -412,36 +409,46 @@ export function WorkspaceClient({ appointmentId }: WorkspaceClientProps) {
           </div>
           <div>
             <dt>Elapsed</dt>
-            <dd>{seconds}s</dd>
+            <dd>{formatElapsed(seconds)}</dd>
+          </div>
+          <div>
+            <dt>Route</dt>
+            <dd>{routeState}</dd>
           </div>
         </dl>
-      </section>
 
-      <section className="controls-bar" aria-label="Visit controls">
-        <button type="button" disabled={timerState !== 'not_started'} onClick={startVisit}>
-          <Play size={16} aria-hidden="true" />
-          Start Visit
-        </button>
-        <button type="button" disabled={timerState !== 'running'} onClick={pauseVisit}>
-          <Pause size={16} aria-hidden="true" />
-          Pause
-        </button>
-        <button type="button" disabled={timerState !== 'paused'} onClick={resumeVisit}>
-          <Play size={16} aria-hidden="true" />
-          Resume
-        </button>
-        <button type="button" disabled={timerState !== 'running' && timerState !== 'paused'} onClick={stopVisit}>
-          <Timer size={16} aria-hidden="true" />
-          Stop
-        </button>
-        <button type="button" disabled={finalizeDisabled}>
-          <CheckCircle size={16} aria-hidden="true" />
-          Finalize Note
-        </button>
-        <button type="button" className="secondary-action" onClick={() => void verifyPermissionDeniedState()}>
-          <Shield size={16} aria-hidden="true" />
-          Verify Permission Denied
-        </button>
+        <div className="figma-note-editor-actions" aria-label="Visit controls">
+          <button type="button" disabled={finalizeDisabled}>
+            <CheckCircle size={16} aria-hidden="true" />
+            Finalize Note
+          </button>
+          <button type="button" className="secondary-action" disabled={readOnlyEditor || !noteId} onClick={autosaveNoteContent}>
+            <Save size={16} aria-hidden="true" />
+            Save Draft &amp; Exit
+          </button>
+          <button type="button" disabled={timerState !== 'not_started'} onClick={startVisit}>
+            <Play size={16} aria-hidden="true" />
+            Start Visit
+          </button>
+          <button type="button" disabled={timerState !== 'running'} onClick={pauseVisit}>
+            <Pause size={16} aria-hidden="true" />
+            Pause
+          </button>
+          <button type="button" disabled={timerState !== 'paused'} onClick={resumeVisit}>
+            <Play size={16} aria-hidden="true" />
+            Resume
+          </button>
+          <button type="button" disabled={timerState !== 'running' && timerState !== 'paused'} onClick={stopVisit}>
+            <Timer size={16} aria-hidden="true" />
+            Stop
+          </button>
+          <button type="button" className="secondary-action" onClick={() => void verifyPermissionDeniedState()}>
+            <Shield size={16} aria-hidden="true" />
+            Verify Permission Denied
+          </button>
+        </div>
+
+        <p className="figma-note-editor-message">{message}</p>
       </section>
 
       <section className="controls-bar secondary-controls" aria-label="Recording and transcript controls">
@@ -947,4 +954,11 @@ export function WorkspaceClient({ appointmentId }: WorkspaceClientProps) {
       </section>
     </main>
   );
+}
+
+function formatElapsed(seconds: number): string {
+  const safeSeconds = Math.max(0, seconds);
+  const minutes = Math.floor(safeSeconds / 60);
+  const remainder = safeSeconds % 60;
+  return `${minutes.toString().padStart(2, '0')}:${remainder.toString().padStart(2, '0')}`;
 }

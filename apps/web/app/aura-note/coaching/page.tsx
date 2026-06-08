@@ -55,6 +55,54 @@ export default async function CoachingPage() {
         </dl>
       </section>
 
+      <section className="figma-drafts-source-shell figma-platform-settings-shell" aria-label="Figma coaching analytics workspace">
+        <header className="figma-drafts-source-header">
+          <div>
+            <h2>Staff Performance Analytics</h2>
+            <p>Documentation coaching metrics use role-limited API responses and never appear in patient-facing output.</p>
+          </div>
+          <div className="figma-drafts-header-actions">
+            <span>{dashboard?.visibilityMode ?? 'aggregate-only'}</span>
+            <span className="figma-readonly-badge">patient view excluded</span>
+          </div>
+        </header>
+
+        <div className="figma-tab-strip" role="tablist" aria-label="Coaching analytics tabs">
+          {['Own Coaching', 'Aggregate Trends', 'Note Quality', 'Compliance Signals', 'Privacy Boundary'].map((tab, index) => (
+            <button key={tab} type="button" role="tab" aria-selected={index === 0} className={index === 0 ? 'selected-tab' : 'secondary-button'}>
+              {tab}
+            </button>
+          ))}
+        </div>
+
+        <section className="figma-kpi-grid" aria-label="API-backed coaching metric cards">
+          <div data-state={ownReport ? 'ready' : 'empty'}>
+            <span className="figma-kpi-icon tone-0" aria-hidden="true">O</span>
+            <strong>Own Score</strong>
+            <b>{ownReport?.overallScore ?? 'empty'}</b>
+            <small>{ownReport?.privacyLabel ?? 'own clinician only'}</small>
+          </div>
+          <div data-state={dashboard ? 'ready' : 'empty'}>
+            <span className="figma-kpi-icon tone-1" aria-hidden="true">P</span>
+            <strong>Providers</strong>
+            <b>{dashboard?.providerCount ?? 0}</b>
+            <small>{dashboard?.privacyLabel ?? 'aggregate-only'}</small>
+          </div>
+          <div data-state="permission-denied">
+            <span className="figma-kpi-icon tone-2" aria-hidden="true">B</span>
+            <strong>Billing Access</strong>
+            <b>denied</b>
+            <small>{billingDenied}</small>
+          </div>
+          <div data-state="read-only">
+            <span className="figma-kpi-icon tone-3" aria-hidden="true">V</span>
+            <strong>Patient Visibility</strong>
+            <b>excluded</b>
+            <small>No patient-facing coaching, revenue, confidence, or billing detail.</small>
+          </div>
+        </section>
+      </section>
+
       <section className="coaching-grid" aria-label="Coaching views">
         <article className="coaching-panel">
           <div>

@@ -1,3 +1,5 @@
+import { Figma, LayoutDashboard, LockKeyhole, Route } from 'lucide-react';
+
 const requiredStates = [
   'loading',
   'empty',
@@ -98,7 +100,7 @@ const workflowMap = [
 
 export default function FigmaHandoffInventoryPage() {
   return (
-    <main className="page-shell">
+    <main className="page-shell figma-handoff-shell">
       <nav aria-label="AURA Note sections" className="section-nav">
         <a href="/aura-note">Home</a>
         <a href="/aura-note/schedule">Schedule</a>
@@ -108,15 +110,42 @@ export default function FigmaHandoffInventoryPage() {
         <a href="/aura-note/support/status">Support</a>
       </nav>
 
-      <section className="hero-band" aria-labelledby="figma-handoff-heading">
-        <p className="eyebrow">WO-065 Figma-Ready Basic UI Scaffold</p>
-        <h1 id="figma-handoff-heading">Figma Handoff Inventory</h1>
+      <section className="hero-band figma-handoff-hero" aria-labelledby="figma-handoff-heading">
+        <div className="figma-final-note-title">
+          <span className="figma-icon-block blue" aria-hidden="true">
+            <Figma size={22} />
+          </span>
+          <div>
+            <p className="eyebrow">WO-065 Figma-Ready Basic UI Scaffold</p>
+            <h1 id="figma-handoff-heading">Figma Handoff Inventory</h1>
+            <span>
+              Read-only design handoff inventory for screens, states, roles, data sources, route actions, and safety copy.
+            </span>
+          </div>
+        </div>
         <p>
-          This read-only scaffold inventories the screens, states, roles, data sources, actions, and safety copy that
-          Figma must cover. It is metadata-only and does not enable live PHI, live vendors, autonomous finalization,
-          claim submission, or production launch behavior.
-          The design handoff posture is no live PHI, no production credentials, and no live-vendor execution.
+          This metadata-only route does not enable live PHI, live vendors, autonomous finalization, claim submission, or
+          production launch behavior. The design handoff posture is no live PHI, no production credentials, and no
+          live-vendor execution.
         </p>
+      </section>
+
+      <section className="figma-handoff-summary" aria-label="Figma handoff summary">
+        <article>
+          <LayoutDashboard size={18} aria-hidden="true" />
+          <strong>{screenInventory.length}</strong>
+          <small>route groups</small>
+        </article>
+        <article>
+          <Route size={18} aria-hidden="true" />
+          <strong>{workflowMap.length}</strong>
+          <small>workflow links</small>
+        </article>
+        <article>
+          <LockKeyhole size={18} aria-hidden="true" />
+          <strong>{roleViews.length}</strong>
+          <small>role views</small>
+        </article>
       </section>
 
       <section className="support-grid" aria-label="Figma handoff status">

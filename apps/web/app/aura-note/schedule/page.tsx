@@ -1,7 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { Calendar, FileSearch, Filter, MapPin, Plus, Video } from 'lucide-react';
+import { Calendar, ChevronLeft, ChevronRight, FileSearch, Filter, Grid3X3, List, MapPin, Plus, Search, Settings, Upload, Users, Video } from 'lucide-react';
 import type { AppointmentModality, AppointmentState } from '@aura-note/domain';
 import type {
   AppointmentStatusActionDto,
@@ -98,6 +98,7 @@ export default function ScheduleBuilderPage() {
   const selectedPatient = patients.find((patient) => patient.safePatientId === selectedPatientId) ?? patients[0];
   const selectedPatientAppointment = appointments.find((appointment) => appointment.safePatientId === selectedPatient?.safePatientId);
   const filteredAppointments = appointments;
+  const visibleSchedule = filteredAppointments.length > 0 ? filteredAppointments : [];
   const metrics = useMemo(
     () => ({
       scheduled: appointments.filter((appointment) => appointment.state === 'scheduled').length,
@@ -218,7 +219,7 @@ export default function ScheduleBuilderPage() {
   }
 
   return (
-    <main className="schedule-shell">
+    <main className="schedule-shell figma-route-shell figma-schedule-page">
       <header className="page-header">
         <div>
           <p className="eyebrow">AURA Note / Schedule Builder</p>
@@ -264,6 +265,139 @@ export default function ScheduleBuilderPage() {
             <dd>{disabledLiveSources.length}</dd>
           </div>
         </dl>
+      </section>
+
+      <section className="figma-schedule-source-shell" aria-label="Figma Make schedule workspace">
+        <header className="figma-schedule-source-topbar">
+          <div className="figma-date-controls" aria-label="Schedule date controls">
+            <button type="button" className="secondary-action" aria-label="Previous day">
+              <ChevronLeft size={16} aria-hidden="true" />
+            </button>
+            <button type="button" className="secondary-action">
+              Today
+            </button>
+            <button type="button" className="secondary-action" aria-label="Next day">
+              <ChevronRight size={16} aria-hidden="true" />
+            </button>
+            <strong>{activeDate}</strong>
+          </div>
+          <div className="figma-view-toggle" aria-label="Figma schedule view controls">
+            <button type="button" className={viewMode === 'day' ? 'selected-row' : 'text-row'} onClick={() => setViewMode('day')}>
+              Day View
+            </button>
+            <button type="button" className={viewMode === 'week' ? 'selected-row' : 'text-row'} onClick={() => setViewMode('week')}>
+              Seven Days
+            </button>
+            <button type="button" className="text-row" disabled>
+              Month View
+            </button>
+            <button type="button" className="secondary-action" aria-label="Grid view">
+              <Grid3X3 size={16} aria-hidden="true" />
+            </button>
+            <button type="button" className="secondary-action" aria-label="List view">
+              <List size={16} aria-hidden="true" />
+            </button>
+          </div>
+        </header>
+
+        <section className="figma-schedule-filter-strip" aria-label="Figma schedule filters">
+          <label>
+            <Search size={16} aria-hidden="true" />
+            Search patient shell
+            <input value={patientQuery} onChange={(event) => setPatientQuery(event.target.value)} />
+          </label>
+          <label>
+            <Users size={16} aria-hidden="true" />
+            Provider
+            <select value={providerFilter} onChange={(event) => setProviderFilter(event.target.value)}>
+              <option value="">All providers</option>
+              {scheduleFilters.providers.map((option) => (
+                <option key={option.value} value={option.value}>
+                  {option.label} ({option.count})
+                </option>
+              ))}
+            </select>
+          </label>
+          <label>
+            <Filter size={16} aria-hidden="true" />
+            Status
+            <select value={statusFilter} onChange={(event) => setStatusFilter(event.target.value)}>
+              <option value="">All statuses</option>
+              {scheduleFilters.statuses.map((option) => (
+                <option key={option.value} value={option.value}>
+                  {option.label} ({option.count})
+                </option>
+              ))}
+            </select>
+          </label>
+          <button type="button" className="secondary-action">
+            <Settings size={16} aria-hidden="true" />
+            Schedule Settings
+          </button>
+        </section>
+
+        <section className="figma-schedule-calendar-grid" aria-label="Figma calendar content">
+          <aside className="figma-time-column" aria-label="Time Slots">
+            <h2>Time Slots</h2>
+            {['08:00', '08:30', '09:00', '09:30', '10:00', '10:30', '11:00', '11:30'].map((slot, index) => (
+              <span key={slot} className={index < Math.max(visibleSchedule.length, 1) ? 'has-appointment' : ''}>
+                {slot}
+                {index < Math.max(visibleSchedule.length, 1) ? <small>{visibleSchedule.length || 0} appointment(s)</small> : null}
+              </span>
+            ))}
+          </aside>
+
+          <section className="figma-appointment-stage" aria-label="Figma day appointments">
+            <div className="panel-heading-row">
+              <div>
+                <h2>{viewMode === 'day' ? 'Day View' : 'Week View'}</h2>
+                <p>{filteredAppointments.length} API-backed appointment{filteredAppointments.length === 1 ? '' : 's'} in this filter set</p>
+              </div>
+              <span className="state-pill">{screenState}</span>
+            </div>
+
+            {filteredAppointments.length === 0 ? (
+              <article className="figma-empty-appointment-card">
+                <Calendar size={42} aria-hidden="true" />
+                <h3>No appointments today</h3>
+                <p>This day has no API-backed appointments yet. Create a synthetic appointment below to populate the schedule.</p>
+              </article>
+            ) : (
+              filteredAppointments.map((appointment) => (
+                <article key={appointment.appointmentId} className="figma-appointment-card" data-state={appointment.state}>
+                  <span className="figma-source-avatar" aria-hidden="true">
+                    {safeInitials(appointment.safePatientId)}
+                  </span>
+                  <div>
+                    <h3>{appointment.safePatientId}</h3>
+                    <p>{appointment.visitType} / {appointment.scheduleMetadata.roomLabel}</p>
+                    <small>{appointment.startsAt} / {appointment.durationMinutes} min / {appointment.modality.replace('_', ' ')}</small>
+                  </div>
+                  <div className="figma-appointment-tags">
+                    <span>{appointment.state}</span>
+                    <span>{appointment.scheduleMetadata.chartIntakeStatus}</span>
+                    {appointment.scheduleMetadata.virtualVisitStatus !== 'not_applicable' ? <span>{appointment.scheduleMetadata.virtualVisitStatus}</span> : null}
+                  </div>
+                  <div className="figma-appointment-actions">
+                    {!appointment.scheduleMetadata.chartIntakeStatus.includes('ready') ? (
+                      <button type="button" className="secondary-action" onClick={() => void markChartIntakeStale(appointment.appointmentId)}>
+                        <Upload size={15} aria-hidden="true" />
+                        Chart Status
+                      </button>
+                    ) : null}
+                    <button
+                      type="button"
+                      disabled={!appointment.startVisitEnabled}
+                      onClick={() => void updateAppointmentStatus(appointment.appointmentId, 'visit_started')}
+                    >
+                      Start Visit
+                    </button>
+                  </div>
+                </article>
+              ))
+            )}
+          </section>
+        </section>
       </section>
 
       <section className="figma-schedule-board" aria-label="Figma schedule builder">
@@ -686,4 +820,10 @@ function appointmentActionForState(state: AppointmentState): AppointmentStatusAc
 function slugRoom(roomLabel: string): string {
   const normalized = roomLabel.trim().toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
   return normalized ? `room-${normalized}` : 'room-101';
+}
+
+function safeInitials(safePatientId: string): string {
+  const parts = safePatientId.split('-').filter(Boolean);
+  const suffix = parts.at(-1) ?? safePatientId;
+  return suffix.slice(0, 2).toUpperCase();
 }

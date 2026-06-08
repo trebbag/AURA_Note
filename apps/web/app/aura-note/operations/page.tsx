@@ -304,6 +304,14 @@ export default function StandaloneOperationsPage() {
             </div>
             <strong>{operationsRuntime?.analytics.dataSource ?? 'standalone_operations_api_composite'}</strong>
           </div>
+          <div className="figma-dashboard-filters" aria-label="Analytics dashboard filters">
+            <span>Date range: last 30 days</span>
+            <span>Clinician: all authorized users</span>
+            <span>Internal metrics only</span>
+            <button type="button" disabled>
+              Export PDF disabled
+            </button>
+          </div>
           <div className="figma-tab-strip" role="tablist" aria-label="Analytics tabs">
             {analyticsTabs.map((tab, index) => (
               <button key={tab} type="button" role="tab" aria-selected={index === 0} className={index === 0 ? 'selected-tab' : 'secondary-button'}>

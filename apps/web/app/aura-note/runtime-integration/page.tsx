@@ -7,9 +7,11 @@ export default async function RuntimeIntegrationPage() {
 
   try {
     const [schedule, finalized] = await Promise.all([client.listSchedule(), client.listFinalizedNotes()]);
+    const latestAppointment = schedule.data.appointments.at(-1);
+    const latestFinalized = finalized.data.notes.at(-1);
 
     return (
-      <main className="page-shell">
+      <main className="page-shell figma-runtime-gate-shell">
         <nav aria-label="AURA Note sections" className="section-nav">
           <a href="/aura-note/schedule">Schedule</a>
           <a href="/aura-note/drafts">Drafts</a>
@@ -25,9 +27,31 @@ export default async function RuntimeIntegrationPage() {
           </p>
         </section>
 
-        <section className="panel-grid" aria-label="Runtime integration state">
+        <section className="figma-runtime-flow" aria-label="Backend-backed runtime workflow">
+          {[
+            ['01', 'Schedule', latestAppointment?.appointmentId ?? 'empty', 'typed schedule API'],
+            ['02', 'Workspace', latestAppointment?.noteId ?? 'empty', 'timer and editor gate'],
+            ['03', 'Finalization', latestFinalized?.noteId ?? 'pending', 'six-step human review'],
+            ['04', 'Export', latestFinalized?.exportStatus ?? 'not generated', 'read-only refetch proof']
+          ].map(([step, label, value, detail]) => (
+            <article key={step}>
+              <span>{step}</span>
+              <h2>{label}</h2>
+              <strong>{value}</strong>
+              <small>{detail}</small>
+            </article>
+          ))}
+        </section>
+
+        <section className="panel-grid figma-runtime-panels" aria-label="Runtime integration state">
           <article className="panel-card" aria-label="API backed schedule state">
-            <h2>Schedule API State</h2>
+            <div className="figma-final-note-card-header">
+              <div>
+                <h2>Schedule API State</h2>
+                <p>Seeded appointment-note rows are read through the typed client.</p>
+              </div>
+              <span className="state-pill">backend</span>
+            </div>
             <dl className="metric-list">
               <div>
                 <dt>delivery</dt>
@@ -52,7 +76,13 @@ export default async function RuntimeIntegrationPage() {
           </article>
 
           <article className="panel-card" aria-label="API backed finalized notes state">
-            <h2>Finalized API State</h2>
+            <div className="figma-final-note-card-header">
+              <div>
+                <h2>Finalized API State</h2>
+                <p>Signed artifacts remain immutable after reload/refetch.</p>
+              </div>
+              <span className="state-pill">read-only</span>
+            </div>
             <dl className="metric-list">
               <div>
                 <dt>delivery</dt>

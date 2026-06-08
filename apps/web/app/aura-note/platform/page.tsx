@@ -173,6 +173,60 @@ export default function ProductionPlatformPage() {
         </nav>
       </header>
 
+      <section className="figma-drafts-source-shell figma-platform-settings-shell" aria-label="Figma platform settings workspace">
+        <header className="figma-drafts-source-header">
+          <div>
+            <h2>Settings</h2>
+            <p>Configure AURA Note identity, integrations, governance, and advanced controls through API-backed state.</p>
+          </div>
+          <div className="figma-drafts-header-actions">
+            <span>routeState={routeState}</span>
+            <span className="figma-readonly-badge">secret values hidden</span>
+          </div>
+        </header>
+
+        <div className="figma-tab-strip" role="tablist" aria-label="Platform settings tabs">
+          {['Identity', 'Integrations', 'Clinical Rules', 'Templates', 'Interface', 'Advanced'].map((tab, index) => (
+            <button key={tab} type="button" role="tab" aria-selected={index === 0} className={index === 0 ? 'selected-tab' : 'secondary-button'}>
+              {tab}
+            </button>
+          ))}
+        </div>
+
+        <section className="figma-settings-matrix" aria-label="API-backed platform settings cards">
+          <div>
+            <strong>Identity Providers</strong>
+            <span>{platform?.identityAdapters.map((adapter) => `${adapter.kind}:${adapter.status}`).join(', ') ?? 'loading'}</span>
+            <small>Local synthetic identity is allowed only for local/demo mode.</small>
+          </div>
+          <div>
+            <strong>Users And Roles</strong>
+            <span>{platform?.users.map((user) => `${user.role}:${user.status}`).join(', ') ?? 'loading'}</span>
+            <small>Disabled-user and expired-session states are enforced by API actions.</small>
+          </div>
+          <div>
+            <strong>API Keys And Secrets</strong>
+            <span>{platform?.secretSources.map((source) => `${source.secretName}:${source.source}`).join(', ') ?? 'loading'}</span>
+            <small>No raw secret values are returned to the browser.</small>
+          </div>
+          <div>
+            <strong>Feature Flags</strong>
+            <span>{platform?.featureFlags.map((flag) => `${formatFeatureFlagLabel(flag.key)}:${flag.runtimeEffect}`).join(', ') ?? 'loading'}</span>
+            <small>High-risk enablement requires approval metadata.</small>
+          </div>
+          <div>
+            <strong>Advanced Configuration</strong>
+            <span>{lastAction?.configValidation ? `valid=${String(lastAction.configValidation.valid)}` : 'production config unvalidated'}</span>
+            <small>Production validation fails closed without approved secret/config posture.</small>
+          </div>
+          <div>
+            <strong>Live Execution</strong>
+            <span>disabled</span>
+            <small>External AI, EHR writeback, production storage, and claim submission remain gated.</small>
+          </div>
+        </section>
+      </section>
+
       <section className="status-band" aria-label="Production platform readiness">
         <div>
           <h2>Production-Shaped Controls</h2>
