@@ -87,14 +87,73 @@ describe('schedule appointment lifecycle API', () => {
         startsAt: '2026-05-27T15:00:00.000Z',
         durationMinutes: 30,
         modality: 'telehealth',
-        reasonForVisit: 'Synthetic WO-038 patient-linked appointment'
+        reasonForVisit: 'Synthetic WO-038 patient-linked appointment',
+        clinicLocationId: 'clinic-location-main',
+        clinicLocationLabel: 'Primary Care Clinic',
+        roomId: 'room-virtual',
+        roomLabel: 'Virtual room disabled'
       })
       .expect(201);
 
     const appointmentId = created.body.data.appointment.appointmentId;
     assert.equal(created.body.data.patient.safePatientId, 'safe-patient-e2e-038');
+    assert.equal(created.body.data.appointment.clinicLocationId, 'clinic-location-main');
+    assert.equal(created.body.data.appointment.virtualVisitStatus, 'disabled_no_phi_portal');
     assert.equal(created.body.data.linkages.some((linkage: { linkedObjectType: string }) => linkage.linkedObjectType === 'chart_context'), true);
     assert.equal(created.body.data.chartContextSnapshot.productionPhiStorageApproved, false);
+
+    const filteredSchedule = await request(app.getHttpServer())
+      .get('/api/v1/schedule/appointments')
+      .query({
+        activeDate: '2026-05-27',
+        viewMode: 'day',
+        providerId: 'clinician-e2e-038',
+        visitType: 'Chronic follow-up',
+        modality: 'telehealth',
+        clinicLocationId: 'clinic-location-main'
+      })
+      .set('x-aura-role', 'clinician')
+      .expect(200);
+
+    const filteredAppointment = filteredSchedule.body.data.appointments.find(
+      (appointment: { appointmentId: string }) => appointment.appointmentId === appointmentId
+    );
+    assert.equal(Boolean(filteredAppointment), true);
+    assert.equal(filteredSchedule.body.data.query.providerId, 'clinician-e2e-038');
+    assert.equal(filteredSchedule.body.data.metadataOnlyChartIntake, true);
+    assert.equal(filteredAppointment.scheduleMetadata.livePhiUploadEnabled, false);
+    assert.equal(filteredAppointment.scheduleMetadata.patientPortalDeliveryEnabled, false);
+    assert.equal(filteredAppointment.scheduleMetadata.virtualVisitStatus, 'disabled_no_phi_portal');
+
+    const workspaceValidation = await request(app.getHttpServer())
+      .get(`/api/v1/schedule/appointments/${appointmentId}/workspace-validation`)
+      .set('x-aura-role', 'clinician')
+      .expect(200);
+
+    assert.equal(workspaceValidation.body.data.workspaceValidation.workspaceOpenAllowed, true);
+    assert.equal(workspaceValidation.body.data.workspaceValidation.noteLinked, true);
+    assert.equal(workspaceValidation.body.data.workspaceValidation.productionPhiStorageApproved, false);
+    assert.equal(workspaceValidation.body.data.domainEvents[0].eventType, 'appointment.workspace_validation_checked.v1');
+
+    await request(app.getHttpServer())
+      .get(`/api/v1/schedule/appointments/${appointmentId}/workspace-validation`)
+      .set('x-aura-role', 'support')
+      .expect(403);
+
+    const chartIntake = await request(app.getHttpServer())
+      .post(`/api/v1/schedule/appointments/${appointmentId}/chart-intake-status`)
+      .set('x-aura-role', 'ma')
+      .send({
+        status: 'stale_warning',
+        sourceFreshness: 'historical',
+        warning: 'Synthetic metadata-only chart intake needs source freshness review.'
+      })
+      .expect(201);
+
+    assert.equal(chartIntake.body.data.chartContextSnapshot.staleWarning, true);
+    assert.equal(chartIntake.body.data.scheduleMetadata.chartIntakeStatus, 'stale_warning');
+    assert.equal(chartIntake.body.data.scheduleMetadata.livePhiUploadEnabled, false);
+    assert.equal(chartIntake.body.data.domainEvents[0].eventType, 'chart_context.intake_status_updated.v1');
 
     const edited = await request(app.getHttpServer())
       .patch(`/api/v1/schedule/appointments/${appointmentId}`)
@@ -231,6 +290,64 @@ describe('schedule appointment lifecycle API', () => {
     assert.equal(workspace.body.data.appointment.appointmentId, created.body.data.appointment.appointmentId);
     assert.equal(workspace.body.data.panels.some((panel: { panelId: string }) => panel.panelId === 'visit_selections'), true);
 
+    const initialContent = await request(app.getHttpServer())
+      .get(`/api/v1/notes/${created.body.data.note.noteId}/content`)
+      .set('x-aura-role', 'clinician')
+      .expect(200);
+
+    assert.equal(initialContent.body.data.noteContent.format, 'aura_markdown_v1');
+    assert.equal(initialContent.body.data.noteContent.revision, 1);
+    assert.equal(initialContent.body.data.autosaveStatus.conflict, false);
+
+    const autosavedContent = await request(app.getHttpServer())
+      .post(`/api/v1/notes/${created.body.data.note.noteId}/content/autosave`)
+      .set('x-aura-role', 'clinician')
+      .set('idempotency-key', 'idem-e2e-note-autosave-001')
+      .send({
+        format: 'aura_markdown_v1',
+        markdown: '# Visit Note\n\n## Subjective\nSynthetic autosaved editor content from API e2e.\n\n## Plan\nHuman review remains required.',
+        clientRevision: initialContent.body.data.noteContent.revision
+      })
+      .expect(201);
+
+    assert.equal(autosavedContent.body.data.noteContent.revision, 2);
+    assert.equal(autosavedContent.body.data.noteContent.sanitized, true);
+    assert.equal(autosavedContent.body.data.domainEvents[0].eventType, 'note.content_autosaved.v1');
+
+    const versions = await request(app.getHttpServer())
+      .get(`/api/v1/notes/${created.body.data.note.noteId}/versions`)
+      .set('x-aura-role', 'clinician')
+      .expect(200);
+
+    assert.equal(versions.body.data.versions.length >= 2, true);
+
+    const restored = await request(app.getHttpServer())
+      .post(`/api/v1/notes/${created.body.data.note.noteId}/versions/${versions.body.data.versions[1].noteVersionId}/restore`)
+      .set('x-aura-role', 'clinician')
+      .send({ restoreReason: 'Synthetic restore reason for API evidence' })
+      .expect(201);
+
+    assert.equal(restored.body.data.noteContent.source, 'version_restore');
+    assert.equal(restored.body.data.noteContent.revision, 3);
+
+    await request(app.getHttpServer())
+      .post(`/api/v1/notes/${created.body.data.note.noteId}/content/autosave`)
+      .set('x-aura-role', 'support')
+      .send({
+        format: 'aura_markdown_v1',
+        markdown: 'Synthetic denied support edit'
+      })
+      .expect(403);
+
+    await request(app.getHttpServer())
+      .post(`/api/v1/notes/${created.body.data.note.noteId}/content/autosave`)
+      .set('x-aura-role', 'clinician')
+      .send({
+        format: 'aura_markdown_v1',
+        markdown: 'MRN: SYNTHETIC-MRN'
+      })
+      .expect(400);
+
     const paused = await request(app.getHttpServer())
       .post(`/api/v1/documentation-workspace/appointments/${created.body.data.appointment.appointmentId}/visit-session/pause`)
       .set('x-aura-role', 'clinician')
@@ -333,6 +450,17 @@ describe('schedule appointment lifecycle API', () => {
     assert.equal(transcript.body.data.transcript.segments.length, 2);
     assert.equal(transcript.body.data.transcript.segments.at(-1).text, 'Synthetic mock transcript segment');
 
+    const liveTranscript = await request(app.getHttpServer())
+      .get(`/api/v1/documentation-workspace/appointments/${created.body.data.appointment.appointmentId}/transcript/live`)
+      .set('x-aura-role', 'clinician')
+      .expect(200);
+
+    assert.equal(liveTranscript.body.data.liveStreamingEnabled, false);
+    assert.equal(liveTranscript.body.data.rawPhiAudioStored, false);
+    assert.equal(liveTranscript.body.data.pollingMode, 'api_polling');
+    assert.equal(liveTranscript.body.data.segmentCount, 2);
+    assert.equal(liveTranscript.body.data.domainEvents[0].eventType, 'transcript.live_view_polled.v1');
+
     const suggestions = await request(app.getHttpServer())
       .post(`/api/v1/notes/${created.body.data.note.noteId}/suggestions/evaluate`)
       .set('x-aura-role', 'clinician')
@@ -347,12 +475,53 @@ describe('schedule appointment lifecycle API', () => {
       .expect(201);
 
     assert.equal(accepted.body.data.visitSelections.length, 1);
+    assert.equal(accepted.body.data.visitSelections[0].disposition, 'accepted');
 
     await request(app.getHttpServer())
       .post(`/api/v1/notes/${created.body.data.note.noteId}/suggestions/suggestion-demo-icd10-e119/accept`)
       .set('x-aura-role', 'clinician')
       .send({})
       .expect(400);
+
+    const removedSuggestion = await request(app.getHttpServer())
+      .post(`/api/v1/notes/${created.body.data.note.noteId}/suggestions/suggestion-demo-quality-bp/remove`)
+      .set('x-aura-role', 'clinician')
+      .send({ removalReason: 'Synthetic clinician removed the quality candidate.' })
+      .expect(201);
+
+    assert.equal(
+      removedSuggestion.body.data.suggestions.find((suggestion: { suggestionId: string }) => suggestion.suggestionId === 'suggestion-demo-quality-bp').status,
+      'removed'
+    );
+
+    const restoredSuggestion = await request(app.getHttpServer())
+      .post(`/api/v1/notes/${created.body.data.note.noteId}/suggestions/suggestion-demo-quality-bp/restore`)
+      .set('x-aura-role', 'clinician')
+      .expect(201);
+
+    assert.equal(
+      restoredSuggestion.body.data.suggestions.find((suggestion: { suggestionId: string }) => suggestion.suggestionId === 'suggestion-demo-quality-bp').status,
+      'candidate'
+    );
+
+    const selectionId = accepted.body.data.visitSelections[0].visitSelectionId;
+    const changedCategory = await request(app.getHttpServer())
+      .post(`/api/v1/notes/${created.body.data.note.noteId}/visit-selections/${selectionId}/category`)
+      .set('x-aura-role', 'clinician')
+      .send({ category: 'diagnosis', reason: 'Synthetic selected-code bar category change.' })
+      .expect(201);
+
+    assert.equal(changedCategory.body.data.visitSelections[0].category, 'diagnosis');
+    assert.equal(changedCategory.body.data.domainEvents[0].eventType, 'visit_selection.category_changed.v1');
+
+    const removedSelection = await request(app.getHttpServer())
+      .post(`/api/v1/notes/${created.body.data.note.noteId}/visit-selections/${selectionId}/remove`)
+      .set('x-aura-role', 'clinician')
+      .send({ removalReason: 'Synthetic selected-code bar removal.', returnToSuggestions: true })
+      .expect(201);
+
+    assert.equal(removedSelection.body.data.visitSelections[0].disposition, 'removed');
+    assert.equal(removedSelection.body.data.visitSelections[0].returnedToSuggestions, true);
 
     const historyGapTask = await request(app.getHttpServer())
       .post(`/api/v1/notes/${created.body.data.note.noteId}/history-gaps/history-gap-demo-001/tasks`)
@@ -362,6 +531,22 @@ describe('schedule appointment lifecycle API', () => {
 
     assert.equal(historyGapTask.body.data.tasks[0].blocksSigning, true);
     assert.equal(historyGapTask.body.data.complianceReview.finalizeDisabled, true);
+
+    await request(app.getHttpServer())
+      .post(`/api/v1/notes/${created.body.data.note.noteId}/compliance/issues/compliance-demo-history-gap-blocker/actions`)
+      .set('x-aura-role', 'clinician')
+      .send({ action: 'dismiss', reason: 'Synthetic invalid hard-block dismissal attempt.' })
+      .expect(400);
+
+    const resolvedCompliance = await request(app.getHttpServer())
+      .post(`/api/v1/notes/${created.body.data.note.noteId}/compliance/issues/compliance-demo-history-gap-blocker/actions`)
+      .set('x-aura-role', 'clinician')
+      .send({ action: 'resolve', reason: 'Synthetic blocker evidence reviewed and resolved.' })
+      .expect(201);
+
+    assert.equal(resolvedCompliance.body.data.tasks[0].blocksSigning, false);
+    assert.equal(resolvedCompliance.body.data.complianceReview.finalizeDisabled, false);
+    assert.equal(resolvedCompliance.body.data.domainEvents[0].eventType, 'compliance.issue_action_recorded.v1');
 
     const finalized = await request(app.getHttpServer())
       .get(`/api/v1/notes/finalized/${created.body.data.note.noteId}`)
@@ -401,6 +586,10 @@ describe('schedule appointment lifecycle API', () => {
 
     assert.equal(started.body.data.finalizationSession.currentStep, 'code_review');
     assert.equal(started.body.data.finalizationSession.frozenSnapshot.finalPassSuggestions.length, 3);
+    assert.equal(started.body.data.finalizationSession.evidenceSpans.length > 0, true);
+    assert.equal(started.body.data.finalizationSession.itemStatuses.some((item: { step: string }) => item.step === 'suggestion_review'), true);
+    assert.equal(started.body.data.finalizationSession.patientQuestions.every((question: { portalDeliveryEnabled: boolean }) => !question.portalDeliveryEnabled), true);
+    assert.equal(started.body.data.finalizationSession.dispatchMetadata.submittedClaim, false);
 
     await request(app.getHttpServer())
       .post(`/api/v1/notes/${noteId}/finalization/code-review/complete`)
@@ -432,6 +621,14 @@ describe('schedule appointment lifecycle API', () => {
 
     assert.equal(composed.body.data.finalizationSession.currentStep, 'compare_edit');
     assert.equal(composed.body.data.finalizationSession.composeOutput.patientSummaryInternalDetailsDetected, false);
+    assert.equal(
+      composed.body.data.finalizationSession.editorVariants.some(
+        (variant: { variantType: string; status: string }) => variant.variantType === 'enhanced_note' && variant.status === 'draft'
+      ),
+      true
+    );
+    assert.equal(composed.body.data.finalizationSession.carePlanItems.every((item: { humanReviewRequired: boolean }) => item.humanReviewRequired), true);
+    assert.equal(composed.body.data.finalizationSession.patientInsightSnapshot.predictiveInsightsEnabled, false);
 
     await request(app.getHttpServer())
       .post(`/api/v1/notes/${noteId}/finalization/compare-edit/approve-note`)
@@ -447,6 +644,7 @@ describe('schedule appointment lifecycle API', () => {
 
     assert.equal(approved.body.data.finalizationSession.readyForBillingAttest, true);
     assert.equal(approved.body.data.finalizationSession.currentStep, 'billing_attest');
+    assert.equal(approved.body.data.finalizationSession.billingValidation.some((validation: { status: string }) => validation.status === 'pending'), true);
   });
 
   it('runs WO-007 Billing & Attest and Sign & Dispatch without submitting a claim', async () => {

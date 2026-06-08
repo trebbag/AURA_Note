@@ -161,7 +161,8 @@ function withReviewPanel(entry: StoredAppointment): StoredAppointment {
         label: 'CPT 99214 candidate',
         confidence: 0.82,
         humanApproved: true,
-        sourceSuggestionId: 'suggestion-demo-cpt-99214'
+        sourceSuggestionId: 'suggestion-demo-cpt-99214',
+        disposition: 'accepted'
       },
       {
         visitSelectionId: `selection-icd-${entry.note.noteId}`,
@@ -171,14 +172,16 @@ function withReviewPanel(entry: StoredAppointment): StoredAppointment {
         confidence: 0.74,
         humanApproved: true,
         sourceSuggestionId: 'suggestion-demo-icd10-e119',
-        overrideReason: 'Synthetic override metadata completed for low-confidence diagnosis candidate.'
+        overrideReason: 'Synthetic override metadata completed for low-confidence diagnosis candidate.',
+        disposition: 'accepted'
       },
       {
         visitSelectionId: `selection-manual-plan-${entry.note.noteId}`,
         noteId: entry.note.noteId,
         category: 'plan_item',
         label: 'Manual plan item for synthetic follow-up',
-        humanApproved: true
+        humanApproved: true,
+        disposition: 'manual_added'
       }
     ],
     complianceIssues: [
@@ -189,7 +192,9 @@ function withReviewPanel(entry: StoredAppointment): StoredAppointment {
         title: 'Open MA History Gap blocker',
         detail: 'Synthetic blocker must be adjudicated before signing.',
         blocksFinalize: true,
-        source: 'deterministic_mock'
+        source: 'deterministic_mock',
+        status: 'open',
+        actionRequired: true
       }
     ],
     historyGaps: [
@@ -229,6 +234,7 @@ function createSuggestions(noteId: string): SuggestionDto[] {
       rationale: 'Synthetic chronic follow-up complexity signal.',
       supportingEvidence: ['Synthetic medication review'],
       missingEvidence: ['Final MDM support not completed'],
+      humanReviewRequired: true,
       status: 'candidate',
       lowConfidenceOverrideRequired: false,
       draftOnly: true
@@ -242,6 +248,7 @@ function createSuggestions(noteId: string): SuggestionDto[] {
       rationale: 'Synthetic diagnosis candidate below locked 75 percent threshold.',
       supportingEvidence: ['Synthetic historical problem list reference'],
       missingEvidence: ['No confirming assessment text in current draft'],
+      humanReviewRequired: true,
       status: 'candidate',
       lowConfidenceOverrideRequired: true,
       draftOnly: true
@@ -255,6 +262,7 @@ function createSuggestions(noteId: string): SuggestionDto[] {
       rationale: 'Synthetic quality review signal.',
       supportingEvidence: ['Synthetic vitals review placeholder'],
       missingEvidence: ['Final plan text not completed'],
+      humanReviewRequired: true,
       status: 'candidate',
       lowConfidenceOverrideRequired: false,
       draftOnly: true

@@ -614,3 +614,39 @@ CR-4 adds five review gates:
 - `pnpm commercial:readiness` verifies all CR-4 work orders, the `/support/commercial-readiness` contract, `docs/COMMERCIAL_READINESS_REVIEW_PACKET.md`, CR-4 checkpoint evidence, `repo_status.json`, `SPEC_GAPS.md`, CI wiring, and no production launch claim.
 
 API service and e2e tests cover `/support/commercial-readiness`, role denial, CR-4 completed work-order metadata, audit-safe domain events, and `productionLaunchReady=false`. Browser tests cover the support route CR-4 commercial readiness and work-order evidence panels. These gates do not approve production launch.
+
+## Post-CR4 Figma Make backend catch-up
+
+The Figma Make catch-up tranche adds `pnpm figma:backend-catch-up-readiness`:
+
+- API e2e tests cover `GET /api/v1/app-shell`, AURA Note branding, rejected prototype backend flags, disabled live-vendor/claim/autonomous-finalization posture, role-scoped navigation, support-role clinical count denial, and cross-tenant denial before DTO data is returned.
+- Schedule/workspace API e2e tests cover `GET /api/v1/notes/{noteId}/content`, timer-gated `POST /api/v1/notes/{noteId}/content/autosave`, `GET /api/v1/notes/{noteId}/versions`, restore, support-role denial, and obvious PHI-like content rejection.
+- Schedule/workspace metadata API e2e tests cover query-backed schedule filters, room/location metadata, virtual visit disabled-portal status, `GET /api/v1/schedule/appointments/{appointmentId}/workspace-validation`, support-role denial before workspace-validation DTO exposure, and metadata-only `POST /api/v1/schedule/appointments/{appointmentId}/chart-intake-status`.
+- Schedule/workspace review-action API e2e tests cover polling-friendly `GET /api/v1/documentation-workspace/appointments/{appointmentId}/transcript/live`, suggestion accept/remove/restore, Visit Selection disposition/category-change/removal, hard-block compliance action denial/resolution, blocker task recalculation, and audit/domain event evidence for `transcript.live_view_polled.v1`, `visit_selection.category_changed.v1`, and `compliance.issue_action_recorded.v1`.
+- Contract tests cover `TranscriptLiveViewDto`, enriched suggestion evidence, Visit Selection disposition metadata, compliance issue action history, and no live streaming/raw PHI audio posture.
+- Browser tests cover API-backed workspace transcript live state, suggestion evidence, selected-item category/remove actions, compliance acknowledge/resolve actions, and visible route state updates.
+- The readiness script verifies `docs/FIGMA_MAKE_BACKEND_CATCH_UP_AUDIT.md`, `AppShellViewDto`, `NoteContentDto`, `NoteVersionDto`, `ScheduleAppointmentMetadataDto`, `WorkspaceValidationDto`, `TranscriptLiveViewDto`, OpenAPI `/app-shell`, note-content/version paths, schedule workspace-validation and chart-intake-status paths, transcript live-view path, suggestion restore path, Visit Selection remove/category paths, compliance issue action path, the Nest app-shell module, the typed web client methods, `/aura-note` app-shell usage, `/aura-note/schedule` metadata usage, `/aura-note/workspace/[appointmentId]` note-content/review-panel usage, the app-shell visual command band, workspace editor command deck, selected-code rail, suggestion intelligence rail, CI wiring, and no-launch/no-live posture.
+- Existing frontend runtime and Figma handoff gates remain required before later route replacement work can claim backend-backed Figma-derived production route coverage.
+
+This gate is backend catch-up, shell runtime, and available Figma Make source/node visual implementation evidence only. It does not claim formal screenshot-baseline approval, production launch approval, live PHI processing, live vendor execution, direct browser AI calls, live patient portal delivery, claim submission, charge finalization, medical-necessity determination, or autonomous clinical/coding/billing behavior.
+
+### Post-CR4 Figma Make Design 2 finalization runtime coverage
+
+The same `pnpm figma:backend-catch-up-readiness` gate now verifies Design 2 finalization runtime evidence:
+
+- Contract tests cover `EvidenceSpanDto`, `FinalizationStepItemStatusDto`, `FinalizationEditorVariantDto`, `PatientQuestionWorkflowDto`, `CarePlanItemDto`, `PatientInsightSnapshotDto`, `BillingValidationDetailDto`, and `FinalizationDispatchMetadataDto`.
+- API service/e2e tests verify finalization start, compose, approval, billing, and dispatch responses include evidence spans, item statuses, editor variants, patient insight metadata, billing validation, dispatch metadata, and `submittedClaim=false`.
+- Browser tests seed a backend-backed appointment through finalization/export, open `/aura-note/finalization/[noteId]`, verify the labeled Design 2 finalization runtime section, evidence spans, dual editor variants, dispatch metadata, disabled patient portal delivery, Figma Design 2 evidence highlighter, patient-question popup, billing/dispatch dock, and reload/refetch `signed_dispatched` evidence.
+- The readiness script verifies TypeScript DTOs, OpenAPI schemas, Nest service derivation helpers, route UI panels, Figma Design 2 visual/node surfaces, e2e assertions, docs, CI wiring, and prohibited prototype/live-vendor claims.
+
+This finalization coverage is backend/runtime catch-up and available Figma Make source/node visual evidence only. It does not satisfy formal screenshot-baseline approval, production patient portal integration, live EHR writeback, live claim submission, charge finalization, medical-necessity determination, or autonomous clinical/coding/billing behavior.
+
+### Post-CR4 Figma Make operations runtime coverage
+
+The same `pnpm figma:backend-catch-up-readiness` gate now verifies Design 1 operations analytics/activity/settings runtime evidence:
+
+- API service/e2e tests cover `GET /api/v1/standalone/operations/runtime`, `OperationsRuntimeViewDto`, `OperationsAnalyticsSnapshotDto`, `OperationsSettingsSummaryDto`, support-role denial, `operational.readiness_checked.v1`, `productionAnalyticsVendorEnabled=false`, `secretValuesReturned=false`, `claimSubmissionEnabled=false`, and `submittedClaim=false`.
+- Browser tests cover `/aura-note/operations` loading the operations runtime through the typed client, displaying Operations Analytics, Activity Feed, Notifications, Settings Runtime, Figma analytics tab/KPI/chart surfaces, and Figma settings governance tabs/control matrix, and preserving existing task, MA follow-up, billing review, settings, templates, estimates, and rules actions through API mutations.
+- The readiness script verifies TypeScript DTOs, OpenAPI path/schema evidence, Nest service/controller evidence, typed web-client method, route UI strings, Figma operations visual/node surfaces, e2e assertions, docs, CI wiring, and prohibited prototype/live-vendor claims.
+
+This operations coverage is backend/runtime catch-up and available Figma Make source/node visual evidence only. It does not enable production analytics vendors, patient-facing revenue, raw PHI, live integration credentials, live claim submission, charge finalization, medical-necessity determination, formal screenshot-baseline approval, or production launch readiness.

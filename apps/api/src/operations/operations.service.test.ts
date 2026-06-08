@@ -18,6 +18,21 @@ describe('OperationsService', () => {
     assert.equal(allowed.data.transcriptAccessLimitedToTriggeredReview, true);
   });
 
+  it('composes Figma operations runtime from backend state without launch or claim behavior', () => {
+    const service = new OperationsService();
+    const response = service.getOperationsRuntime(service.createRequestContext({ 'x-aura-role': 'admin' }));
+
+    assert.equal(response.data.operationsRuntime.analytics.dataSource, 'standalone_operations_api_composite');
+    assert.equal(response.data.operationsRuntime.analytics.productionAnalyticsVendorEnabled, false);
+    assert.equal(response.data.operationsRuntime.settingsSummary.secretValuesReturned, false);
+    assert.equal(response.data.operationsRuntime.settingsSummary.claimSubmissionEnabled, false);
+    assert.equal(response.data.operationsRuntime.submittedClaim, false);
+    assert.equal(response.data.operationsRuntime.activity.some((item) => item.label === 'Operations runtime composed'), true);
+    assert.equal(response.data.domainEvents.some((event) => event.eventType === 'operational.readiness_checked.v1'), true);
+
+    assert.throws(() => service.getOperationsRuntime(service.createRequestContext({ 'x-aura-role': 'support' })), ForbiddenException);
+  });
+
   it('enforces role-limited MA task updates and emits blocker evidence', () => {
     const service = new OperationsService();
     const response = service.updateTask(

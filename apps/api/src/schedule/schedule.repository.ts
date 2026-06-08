@@ -10,7 +10,9 @@ import type {
   FinalNoteRecordDto,
   FinalizationSessionDto,
   HistoryGapQuestionDto,
+  NoteContentDto,
   NoteDto,
+  NoteVersionDto,
   PatientSummaryRecordDto,
   RawAudioRetentionMetadataDto,
   RecordingChunkMetadataDto,
@@ -41,6 +43,8 @@ export interface StoredAppointment {
   transcriptCorrections?: TranscriptCorrectionDto[];
   transcriptionProviderStatus?: TranscriptionProviderStatusDto;
   transcript?: TranscriptViewDto;
+  noteContent?: NoteContentDto;
+  noteVersions?: NoteVersionDto[];
   suggestions?: SuggestionDto[];
   visitSelections?: VisitSelectionDto[];
   complianceIssues?: ComplianceIssueDto[];

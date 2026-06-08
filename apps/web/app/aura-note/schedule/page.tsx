@@ -2,13 +2,27 @@
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import type { AppointmentModality, AppointmentState } from '@aura-note/domain';
-import type { AppointmentStatusActionDto, ScheduleAppointmentDto, StandalonePatientDto } from '@aura-note/contracts';
+import type {
+  AppointmentStatusActionDto,
+  ScheduleAppointmentDto,
+  ScheduleViewDto,
+  StandalonePatientDto,
+  WorkspaceValidationDto
+} from '@aura-note/contracts';
 import { createAuraNoteApiClient } from '../../../lib/aura-note-api-client';
 
 type ScheduleViewMode = 'day' | 'week';
 type RouteState = 'loading' | 'empty' | 'ready' | 'saving' | 'blocked' | 'failed' | 'permission-denied' | 'read-only' | 'demo fixture';
 
 const routeStates: RouteState[] = ['loading', 'empty', 'ready', 'saving', 'failed', 'permission-denied', 'read-only', 'blocked', 'demo fixture'];
+
+const emptyFilters: ScheduleViewDto['filters'] = {
+  providers: [],
+  statuses: [],
+  visitTypes: [],
+  modalities: [],
+  clinicLocations: []
+};
 
 const initialForm = {
   safePatientId: 'safe-patient-new-002',
@@ -17,7 +31,11 @@ const initialForm = {
   startsAt: '2026-05-27T15:00',
   durationMinutes: 40,
   modality: 'in_person' as AppointmentModality,
-  reasonForVisit: 'Synthetic wellness visit with problem follow-up'
+  reasonForVisit: 'Synthetic wellness visit with problem follow-up',
+  clinicLocationId: 'clinic-location-main',
+  clinicLocationLabel: 'Primary Care Clinic',
+  roomId: 'room-101',
+  roomLabel: 'Room 101'
 };
 
 export default function ScheduleBuilderPage() {
@@ -26,33 +44,51 @@ export default function ScheduleBuilderPage() {
   const [patients, setPatients] = useState<StandalonePatientDto[]>([]);
   const [appointments, setAppointments] = useState<ScheduleAppointmentDto[]>([]);
   const [viewMode, setViewMode] = useState<ScheduleViewMode>('day');
+  const [activeDate, setActiveDate] = useState('2026-05-27');
+  const [providerFilter, setProviderFilter] = useState('');
+  const [statusFilter, setStatusFilter] = useState('');
+  const [visitTypeFilter, setVisitTypeFilter] = useState('');
+  const [modalityFilter, setModalityFilter] = useState('');
+  const [locationFilter, setLocationFilter] = useState('');
+  const [scheduleFilters, setScheduleFilters] = useState<ScheduleViewDto['filters']>(emptyFilters);
+  const [disabledLiveSources, setDisabledLiveSources] = useState<string[]>([]);
+  const [workspaceValidation, setWorkspaceValidation] = useState<WorkspaceValidationDto | undefined>();
   const [selectedPatientId, setSelectedPatientId] = useState('safe-patient-demo-001');
   const [patientQuery, setPatientQuery] = useState('safe-patient-demo');
   const [screenState, setScreenState] = useState<RouteState>('loading');
   const [form, setForm] = useState(initialForm);
   const [statusMessage, setStatusMessage] = useState('Loading schedule through the typed AURA Note API client.');
-  const activeDate = '2026-05-27';
 
   const refreshRuntimeState = useCallback(async (patientSearchOverride?: string) => {
     setScreenState('loading');
     try {
       const patientSearch = patientSearchOverride ?? patientQuery;
       const [scheduleResponse, patientResponse] = await Promise.all([
-        client.listSchedule(),
+        client.listSchedule({
+          activeDate,
+          viewMode,
+          ...(providerFilter ? { providerId: providerFilter } : {}),
+          ...(statusFilter ? { status: statusFilter as AppointmentState } : {}),
+          ...(visitTypeFilter ? { visitType: visitTypeFilter } : {}),
+          ...(modalityFilter ? { modality: modalityFilter as AppointmentModality } : {}),
+          ...(locationFilter ? { clinicLocationId: locationFilter } : {})
+        }),
         client.searchPatients(patientSearch ? { safePatientId: patientSearch } : {})
       ]);
       const nextAppointments = scheduleResponse.data.appointments;
       const nextPatients = patientResponse.data.patients;
       setAppointments(nextAppointments);
+      setScheduleFilters(scheduleResponse.data.filters);
+      setDisabledLiveSources(scheduleResponse.data.disabledLiveSchedulingSources);
       setPatients(nextPatients);
       setSelectedPatientId((current) => nextPatients.find((patient) => patient.safePatientId === current)?.safePatientId ?? nextPatients[0]?.safePatientId ?? current);
       setScreenState(nextAppointments.length === 0 ? 'empty' : 'ready');
-      setStatusMessage('Schedule and patient shell state loaded from AURA Note API responses.');
+      setStatusMessage('Schedule filters, patient shell state, and chart-intake metadata loaded from AURA Note API responses.');
     } catch (error) {
       setScreenState('failed');
       setStatusMessage(error instanceof Error ? error.message : 'Schedule API load failed.');
     }
-  }, [client, patientQuery]);
+  }, [activeDate, client, locationFilter, modalityFilter, patientQuery, providerFilter, statusFilter, visitTypeFilter, viewMode]);
 
   useEffect(() => {
     void refreshRuntimeState();
@@ -60,9 +96,7 @@ export default function ScheduleBuilderPage() {
 
   const selectedPatient = patients.find((patient) => patient.safePatientId === selectedPatientId) ?? patients[0];
   const selectedPatientAppointment = appointments.find((appointment) => appointment.safePatientId === selectedPatient?.safePatientId);
-  const filteredAppointments = appointments.filter(
-    (appointment) => viewMode === 'week' || appointment.startsAt.startsWith(activeDate)
-  );
+  const filteredAppointments = appointments;
   const metrics = useMemo(
     () => ({
       scheduled: appointments.filter((appointment) => appointment.state === 'scheduled').length,
@@ -110,6 +144,40 @@ export default function ScheduleBuilderPage() {
     } catch (error) {
       setScreenState('failed');
       setStatusMessage(error instanceof Error ? error.message : `Unable to update ${appointmentId}.`);
+    }
+  }
+
+  async function validateWorkspace(appointmentId: string) {
+    setScreenState('loading');
+    try {
+      const response = await client.validateWorkspaceEntry(appointmentId);
+      setWorkspaceValidation(response.data.workspaceValidation);
+      setScreenState(response.data.workspaceValidation.workspaceOpenAllowed ? 'ready' : 'blocked');
+      setStatusMessage(`Workspace validation returned ${response.data.workspaceValidation.validationStatus} from the API.`);
+    } catch (error) {
+      setWorkspaceValidation(undefined);
+      setScreenState('failed');
+      setStatusMessage(error instanceof Error ? error.message : 'Workspace validation failed.');
+    }
+  }
+
+  async function markChartIntakeStale(appointmentId: string) {
+    setScreenState('saving');
+    try {
+      const response = await client.updateChartIntakeStatus(
+        appointmentId,
+        {
+          status: 'stale_warning',
+          sourceFreshness: 'historical',
+          warning: 'Synthetic metadata-only chart intake needs source freshness review.'
+        },
+        `chart-intake-${appointmentId}-${Date.now()}`
+      );
+      setStatusMessage(`Chart intake metadata updated to ${response.data.scheduleMetadata.chartIntakeStatus}; live PHI upload remains disabled.`);
+      await refreshRuntimeState();
+    } catch (error) {
+      setScreenState('failed');
+      setStatusMessage(error instanceof Error ? error.message : 'Chart intake metadata update failed.');
     }
   }
 
@@ -190,6 +258,10 @@ export default function ScheduleBuilderPage() {
             <dt>Blocked</dt>
             <dd>{metrics.blocked}</dd>
           </div>
+          <div>
+            <dt>Disabled Live Sources</dt>
+            <dd>{disabledLiveSources.length}</dd>
+          </div>
         </dl>
       </section>
 
@@ -252,7 +324,7 @@ export default function ScheduleBuilderPage() {
           </label>
           <label>
             Visit Type
-            <select value={form.visitType} onChange={(event) => setForm({ ...form, visitType: event.target.value })}>
+            <select aria-label="Appointment visit type" value={form.visitType} onChange={(event) => setForm({ ...form, visitType: event.target.value })}>
               <option>Chronic follow-up</option>
               <option>AWV plus problem</option>
               <option>TCM</option>
@@ -265,6 +337,26 @@ export default function ScheduleBuilderPage() {
           <label>
             Start Time
             <input type="datetime-local" value={form.startsAt} onChange={(event) => setForm({ ...form, startsAt: event.target.value })} required />
+          </label>
+          <label>
+            Clinic Location
+            <select
+              value={form.clinicLocationId}
+              onChange={(event) =>
+                setForm({
+                  ...form,
+                  clinicLocationId: event.target.value,
+                  clinicLocationLabel: event.target.selectedOptions[0]?.textContent ?? 'Primary Care Clinic'
+                })
+              }
+            >
+              <option value="clinic-location-main">Primary Care Clinic</option>
+              <option value="clinic-location-east">East Clinic</option>
+            </select>
+          </label>
+          <label>
+            Room
+            <input value={form.roomLabel} onChange={(event) => setForm({ ...form, roomLabel: event.target.value, roomId: slugRoom(event.target.value) })} />
           </label>
           <label>
             Duration
@@ -307,6 +399,75 @@ export default function ScheduleBuilderPage() {
               </button>
             </div>
           </div>
+          <div className="schedule-filter-grid" aria-label="Backend-backed schedule filters">
+            <label>
+              Active Date
+              <input type="date" value={activeDate} onChange={(event) => setActiveDate(event.target.value)} />
+            </label>
+            <label>
+              Provider
+              <select aria-label="Provider filter" value={providerFilter} onChange={(event) => setProviderFilter(event.target.value)}>
+                <option value="">All providers</option>
+                {scheduleFilters.providers.map((option) => (
+                  <option key={option.value} value={option.value}>
+                    {option.label} ({option.count})
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label>
+              Status
+              <select aria-label="Status filter" value={statusFilter} onChange={(event) => setStatusFilter(event.target.value)}>
+                <option value="">All statuses</option>
+                {scheduleFilters.statuses.map((option) => (
+                  <option key={option.value} value={option.value}>
+                    {option.label} ({option.count})
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label>
+              Visit Type
+              <select aria-label="Visit type filter" value={visitTypeFilter} onChange={(event) => setVisitTypeFilter(event.target.value)}>
+                <option value="">All visit types</option>
+                {scheduleFilters.visitTypes.map((option) => (
+                  <option key={option.value} value={option.value}>
+                    {option.label} ({option.count})
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label>
+              Modality
+              <select aria-label="Modality filter" value={modalityFilter} onChange={(event) => setModalityFilter(event.target.value)}>
+                <option value="">All modalities</option>
+                {scheduleFilters.modalities.map((option) => (
+                  <option key={option.value} value={option.value}>
+                    {option.label.replace('_', ' ')} ({option.count})
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label>
+              Location
+              <select aria-label="Location filter" value={locationFilter} onChange={(event) => setLocationFilter(event.target.value)}>
+                <option value="">All locations</option>
+                {scheduleFilters.clinicLocations.map((option) => (
+                  <option key={option.value} value={option.value}>
+                    {option.label} ({option.count})
+                  </option>
+                ))}
+              </select>
+            </label>
+          </div>
+          {workspaceValidation ? (
+            <div className="validation-panel" aria-label="Workspace validation result">
+              <strong>Workspace validation: {workspaceValidation.validationStatus}</strong>
+              <span>Open allowed: {workspaceValidation.workspaceOpenAllowed ? 'yes' : 'no'}</span>
+              <span>Editor read-only: {workspaceValidation.editorInitiallyReadOnly ? 'yes' : 'no'}</span>
+              <span>Chart freshness: {workspaceValidation.chartFreshness}</span>
+            </div>
+          ) : null}
           {filteredAppointments.length === 0 ? <p className="empty-state">No appointments returned for this schedule view.</p> : null}
           {filteredAppointments.map((appointment) => (
             <article key={appointment.appointmentId} className="appointment-row">
@@ -319,6 +480,12 @@ export default function ScheduleBuilderPage() {
                 <small>{appointment.reasonForVisit ?? 'No reason recorded.'}</small>
                 <small>
                   Chart context: {appointment.chartContextFreshness ?? 'unknown'} / {(appointment.chartContextWarnings ?? []).join(' ')}
+                </small>
+                <small>
+                  Location: {appointment.scheduleMetadata.clinicLocationLabel} / {appointment.scheduleMetadata.roomLabel}
+                </small>
+                <small>
+                  Intake: {appointment.scheduleMetadata.chartIntakeStatus} / Virtual: {appointment.scheduleMetadata.virtualVisitStatus}
                 </small>
               </div>
               <dl className="state-grid">
@@ -368,6 +535,12 @@ export default function ScheduleBuilderPage() {
                 >
                   No Show
                 </button>
+                <button type="button" onClick={() => void validateWorkspace(appointment.appointmentId)}>
+                  Validate Workspace
+                </button>
+                <button type="button" onClick={() => void markChartIntakeStale(appointment.appointmentId)}>
+                  Flag Chart Stale
+                </button>
                 <a className="button-link" href={`/aura-note/workspace/${appointment.appointmentId}`}>
                   Open Workspace
                 </a>
@@ -400,4 +573,9 @@ function appointmentActionForState(state: AppointmentState): AppointmentStatusAc
   if (state === 'cancelled') return 'cancel';
   if (state === 'no_show') return 'mark_no_show';
   return undefined;
+}
+
+function slugRoom(roomLabel: string): string {
+  const normalized = roomLabel.trim().toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+  return normalized ? `room-${normalized}` : 'room-101';
 }

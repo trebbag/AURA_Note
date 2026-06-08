@@ -14,6 +14,11 @@ import { OperationsService } from './operations.service';
 export class OperationsController {
   constructor(@Inject(OperationsService) private readonly operationsService: OperationsService) {}
 
+  @Get('runtime')
+  getOperationsRuntime(@Headers() headers: Record<string, string | string[] | undefined>) {
+    return this.operationsService.getOperationsRuntime(this.operationsService.createRequestContext(headers));
+  }
+
   @Get('tasks')
   listTasks(@Headers() headers: Record<string, string | string[] | undefined>) {
     return this.operationsService.listTasks(this.operationsService.createRequestContext(headers));

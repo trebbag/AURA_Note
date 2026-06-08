@@ -213,7 +213,8 @@ function createFinalizationSession(entry: StoredAppointment): FinalizationSessio
           category: 'cpt',
           label: 'CPT 99214 candidate',
           confidence: 0.82,
-          humanApproved: true
+          humanApproved: true,
+          disposition: 'accepted'
         }
       ],
       finalPassSuggestions: [],
@@ -237,6 +238,119 @@ function createFinalizationSession(entry: StoredAppointment): FinalizationSessio
       { phase: 'beautifying_language', status: 'completed' },
       { phase: 'final_review', status: 'completed' }
     ],
+    evidenceSpans: [
+      {
+        evidenceSpanId: `evidence-${entry.note.noteId}-source`,
+        sourceType: 'note_content',
+        sourceId: entry.note.noteId,
+        sectionId: 'section-note-body',
+        quote: 'Synthetic frozen source note.',
+        startOffset: 0,
+        endOffset: 'Synthetic frozen source note.'.length,
+        confidence: 1,
+        linkedItemId: entry.note.noteId
+      }
+    ],
+    itemStatuses: [
+      {
+        itemId: `selection-${entry.note.noteId}`,
+        itemType: 'visit_selection',
+        step: 'code_review',
+        label: 'CPT 99214 candidate',
+        status: 'kept',
+        humanReviewRequired: true,
+        stillValid: true,
+        evidenceSpanIds: [`evidence-${entry.note.noteId}-source`],
+        updatedAt: fixtureTime
+      }
+    ],
+    editorVariants: [
+      {
+        variantId: `editor-original-${entry.note.noteId}`,
+        variantType: 'original_note',
+        status: 'read_only',
+        text: 'Synthetic frozen source note.',
+        version: 1,
+        approvalRequired: false,
+        approved: true,
+        patientFacing: false,
+        internalDetailsExcluded: false,
+        evidenceSpanIds: [`evidence-${entry.note.noteId}-source`],
+        lastEditedAt: fixtureTime
+      },
+      {
+        variantId: `editor-enhanced-${entry.note.noteId}`,
+        variantType: 'enhanced_note',
+        status: 'read_only',
+        text: finalNoteText,
+        version: 1,
+        approvalRequired: true,
+        approved: true,
+        patientFacing: false,
+        internalDetailsExcluded: false,
+        evidenceSpanIds: [`evidence-${entry.note.noteId}-source`],
+        lastEditedAt: fixtureTime
+      },
+      {
+        variantId: `editor-summary-${entry.note.noteId}`,
+        variantType: 'patient_summary',
+        status: 'read_only',
+        text: patientSummaryText,
+        version: 1,
+        approvalRequired: true,
+        approved: true,
+        patientFacing: true,
+        internalDetailsExcluded: true,
+        evidenceSpanIds: [`evidence-${entry.note.noteId}-source`],
+        lastEditedAt: fixtureTime
+      }
+    ],
+    patientQuestions: [],
+    carePlanItems: [
+      {
+        carePlanItemId: `care-plan-${entry.note.noteId}`,
+        noteId: entry.note.noteId,
+        source: 'clinician_added',
+        title: 'Confirm follow-up plan',
+        detail: 'Synthetic care-plan item remains human-review-required.',
+        status: 'accepted',
+        ownerRole: 'clinician',
+        dueWindow: 'next_visit',
+        insertionEligibility: 'eligible_after_clinician_review',
+        humanReviewRequired: true,
+        evidenceSpanIds: [`evidence-${entry.note.noteId}-source`]
+      }
+    ],
+    patientInsightSnapshot: {
+      patientInsightSnapshotId: `patient-insight-${entry.note.noteId}`,
+      noteId: entry.note.noteId,
+      sourceFreshness: 'unknown',
+      allergySummaryStatus: 'unavailable',
+      careTeamSummaryStatus: 'unavailable',
+      riskStratificationStatus: 'unavailable',
+      predictiveInsightsEnabled: false,
+      staleWarnings: ['Synthetic persisted fixture has no live chart context.'],
+      generatedAt: fixtureTime
+    },
+    billingValidation: [
+      {
+        billingValidationId: `billing-validation-${entry.note.noteId}`,
+        status: 'ready',
+        severity: 'info',
+        message: 'Draft claim preview persisted with submittedClaim=false.',
+        blocksSignDispatch: false,
+        evidenceSpanIds: [`evidence-${entry.note.noteId}-source`]
+      }
+    ],
+    dispatchMetadata: {
+      submittedClaim: false,
+      patientPortalDeliveryEnabled: false,
+      ehrWritebackConfigured: true,
+      exportReady: true,
+      finalNoteReadOnly: true,
+      patientSummaryInternalDetailsExcluded: true,
+      dispatchStatus: 'signed_dispatched'
+    },
     composeOutput: {
       composeOutputId: `compose-${entry.note.noteId}`,
       noteId: entry.note.noteId,

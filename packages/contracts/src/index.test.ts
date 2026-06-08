@@ -10,6 +10,7 @@ import {
   type AiRuntimeBoundaryResponseDto,
   type AiGatewayStatusDto,
   type AiOutputValidationResponseDto,
+  type AppShellResponseDto,
   type AuditExportResponseDto,
   type BackupRestoreReadinessResponseDto,
   type ClinicOsEventPublishResponseDto,
@@ -39,6 +40,8 @@ import {
   type IdentityRuntimeBoundaryDecisionDto,
   type LocalAuthSessionDto,
   type BillingReviewQueueItemDto,
+  type NoteContentResponseDto,
+  type NoteVersionsViewDto,
   type EstimateConfigurationDto,
   type OperationalTaskDto,
   type OperationalEvidenceResponseDto,
@@ -50,6 +53,7 @@ import {
   type EhrWritebackActionResponseDto,
   type ReviewActionResponseDto,
   type RetentionJobResultDto,
+  type ScheduleViewDto,
   type SessionEvaluationDto,
   type StandaloneChartContextSnapshotDto,
   type StandalonePatientDto,
@@ -62,7 +66,8 @@ import {
   type VisitSessionControlResponseDto,
   type ScheduleAppointmentDto,
   type TenantScopeDecisionDto,
-  type SecureDownloadResponseDto
+  type SecureDownloadResponseDto,
+  type WorkspaceValidationResponseDto
 } from './index';
 
 describe('API envelope', () => {
@@ -80,6 +85,366 @@ describe('API envelope', () => {
     assert.equal(envelope.data.status, 'ok');
     assert.equal(envelope.meta.mode, 'standalone');
     assert.equal(envelope.warnings, undefined);
+  });
+});
+
+describe('Figma Make app shell contracts', () => {
+  it('represents the AURA Note shell without accepting prototype backend or launch behavior', () => {
+    const response: AppShellResponseDto = {
+      appShell: {
+        currentUser: {
+          userId: 'user-clinician-synthetic-app-shell',
+          displayName: 'Clinician',
+          role: 'clinician',
+          tenantId: 'tenant-synthetic-primary',
+          siteId: 'site-synthetic-primary',
+          identityProvider: 'local_synthetic',
+          purposeOfUse: 'treatment',
+          localSyntheticOnly: true
+        },
+        navigation: [
+          {
+            key: 'dashboard',
+            label: 'Dashboard',
+            href: '/aura-note',
+            requiredPermission: 'schedule:view',
+            state: 'ready',
+            itemCount: 0
+          },
+          {
+            key: 'support',
+            label: 'Support',
+            href: '/aura-note/support/status',
+            requiredPermission: 'support_status:view',
+            state: 'permission-denied',
+            itemCount: 0,
+            disabledReason: 'Role clinician cannot perform support_status:view.'
+          }
+        ],
+        notifications: [
+          {
+            notificationId: 'notif-live-vendors-disabled',
+            category: 'disabled_feature',
+            title: 'Live vendor actions disabled',
+            body: 'Live vendors remain gated.',
+            severity: 'info',
+            read: false,
+            linkedRoute: '/aura-note/runtime-integration',
+            patientFacingExcluded: true,
+            metadataOnly: true,
+            createdAt: '2026-06-06T22:43:24.000Z'
+          }
+        ],
+        activity: [
+          {
+            activityId: 'activity-app-shell-viewed',
+            category: 'governance',
+            label: 'App shell composed from typed API state',
+            detail: 'Prototype-local authoritative state was not used.',
+            actorLabel: 'Clinician',
+            route: '/aura-note',
+            metadataOnly: true,
+            patientFacingExcluded: true,
+            occurredAt: '2026-06-06T22:43:24.000Z'
+          }
+        ],
+        dashboard: {
+          dashboardId: 'clinical-workflow-dashboard-synthetic',
+          generatedAt: '2026-06-06T22:43:24.000Z',
+          dataSource: 'typed_api_client_composite',
+          productionLaunchApproved: false,
+          liveVendorActionsEnabled: false,
+          submittedClaim: false,
+          internalRevenueMetricsVisible: false,
+          internalRevenueMetricLabel: 'unavailable_caveated',
+          metrics: [
+            {
+              metricId: 'appointments-today',
+              label: 'Today schedule',
+              value: 2,
+              unit: 'count',
+              route: '/aura-note/schedule',
+              state: 'ready',
+              patientFacingExcluded: true
+            }
+          ],
+          disabledFeatureStates: [
+            {
+              feature: 'supabase_backend',
+              state: 'disabled',
+              reason: 'The Figma prototype backend is rejected.'
+            },
+            {
+              feature: 'claim_submission',
+              state: 'disabled',
+              reason: 'Draft claim preview stays submittedClaim=false.'
+            }
+          ],
+          requiredUiStates: ['loading', 'empty', 'ready', 'saving', 'failed', 'permission-denied', 'read-only']
+        },
+        layoutPreference: {
+          preferenceId: 'layout-pref-local-transient',
+          sidebarDefaultCollapsed: false,
+          persisted: false,
+          storageMode: 'transient_ui_only',
+          updatedAt: '2026-06-06T22:43:24.000Z'
+        },
+        routeStates: ['loading', 'empty', 'ready', 'saving', 'failed', 'permission-denied', 'read-only'],
+        localReactStateLimit: 'transient_controls_only',
+        productName: 'AURA Note',
+        rejectedPrototypeBackend: 'supabase',
+        revenuePilotBrandingAccepted: false,
+        supabaseBackendAccepted: false,
+        patientFacingRevenueExposed: false
+      },
+      auditEvent: {
+        auditEventId: 'audit-app-shell-001',
+        tenantId: 'tenant-synthetic-primary',
+        siteId: 'site-synthetic-primary',
+        actorUserId: 'user-clinician-synthetic-app-shell',
+        action: 'app_shell.view',
+        entityType: 'AppShell',
+        entityId: 'aura-note-runtime-shell',
+        traceId: 'trace-app-shell-001',
+        createdAt: '2026-06-06T22:43:24.000Z'
+      },
+      domainEvents: [
+        createEventEnvelope({
+          eventId: 'evt-app-shell-001',
+          eventType: 'audit.event_recorded.v1',
+          tenantId: 'tenant-synthetic-primary',
+          siteId: 'site-synthetic-primary',
+          producer: 'aura-note-api',
+          traceId: 'trace-app-shell-001',
+          idempotencyKey: 'idem-app-shell-001',
+          sensitivity: 'non_phi',
+          retentionClass: 'audit',
+          payload: { action: 'app_shell.view' }
+        })
+      ]
+    };
+
+    assert.equal(response.appShell.productName, 'AURA Note');
+    assert.equal(response.appShell.rejectedPrototypeBackend, 'supabase');
+    assert.equal(response.appShell.supabaseBackendAccepted, false);
+    assert.equal(response.appShell.dashboard.productionLaunchApproved, false);
+    assert.equal(response.appShell.dashboard.submittedClaim, false);
+    assert.equal(response.appShell.localReactStateLimit, 'transient_controls_only');
+    assert.equal(response.domainEvents[0]?.eventType, 'audit.event_recorded.v1');
+  });
+});
+
+describe('Figma Make note content contracts', () => {
+  it('represents API-backed autosave and version history without local-state-only editor claims', () => {
+    const response: NoteContentResponseDto = {
+      noteContent: {
+        noteContentId: 'note-content-note-synthetic-001',
+        noteId: 'note-synthetic-001',
+        appointmentId: 'appt-synthetic-001',
+        tenantId: 'tenant-synthetic-primary',
+        siteId: 'site-synthetic-primary',
+        format: 'aura_markdown_v1',
+        markdown: '# Visit Note\n\n## Subjective\nSynthetic editor content.',
+        plainText: 'Visit Note\n\nSubjective\nSynthetic editor content.',
+        sections: [
+          {
+            sectionId: 'section-visit-note',
+            title: 'Visit Note',
+            markdown: '# Visit Note\n\n## Subjective\nSynthetic editor content.',
+            plainText: 'Visit Note\n\nSubjective\nSynthetic editor content.',
+            startOffset: 0,
+            endOffset: 47
+          }
+        ],
+        revision: 2,
+        source: 'clinician_autosave',
+        sanitized: true,
+        readOnly: false,
+        updatedByUserId: 'user-clinician-synthetic-001',
+        updatedAt: '2026-06-06T22:55:00.000Z'
+      },
+      autosaveStatus: {
+        noteId: 'note-synthetic-001',
+        status: 'saved',
+        revision: 2,
+        savedAt: '2026-06-06T22:55:00.000Z',
+        conflict: false,
+        readOnly: false,
+        message: 'Note autosaved through API-backed state.'
+      },
+      latestVersion: {
+        noteVersionId: 'note-version-synthetic-002',
+        noteId: 'note-synthetic-001',
+        revision: 2,
+        format: 'aura_markdown_v1',
+        plainTextPreview: 'Visit Note\n\nSubjective\nSynthetic editor content.',
+        markdown: '# Visit Note\n\n## Subjective\nSynthetic editor content.',
+        source: 'clinician_autosave',
+        createdByUserId: 'user-clinician-synthetic-001',
+        createdAt: '2026-06-06T22:55:00.000Z',
+        auditSafe: true
+      },
+      auditEvent: {
+        auditEventId: 'audit-note-content-001',
+        tenantId: 'tenant-synthetic-primary',
+        siteId: 'site-synthetic-primary',
+        actorUserId: 'user-clinician-synthetic-001',
+        action: 'note.content_autosave',
+        entityType: 'Note',
+        entityId: 'note-synthetic-001',
+        traceId: 'trace-note-content-001',
+        createdAt: '2026-06-06T22:55:00.000Z'
+      },
+      domainEvents: [
+        createEventEnvelope({
+          eventId: 'evt-note-content-001',
+          eventType: 'note.content_autosaved.v1',
+          tenantId: 'tenant-synthetic-primary',
+          siteId: 'site-synthetic-primary',
+          producer: 'aura-note-api',
+          traceId: 'trace-note-content-001',
+          idempotencyKey: 'idem-note-content-001',
+          sensitivity: 'phi_reference',
+          retentionClass: 'audit',
+          payload: { revision: 2, format: 'aura_markdown_v1' }
+        })
+      ]
+    };
+    const versions: NoteVersionsViewDto = {
+      noteId: 'note-synthetic-001',
+      versions: [response.latestVersion],
+      autosaveStatus: response.autosaveStatus
+    };
+
+    assert.equal(response.noteContent.format, 'aura_markdown_v1');
+    assert.equal(response.noteContent.sanitized, true);
+    assert.equal(response.autosaveStatus.conflict, false);
+    assert.equal(response.domainEvents[0]?.eventType, 'note.content_autosaved.v1');
+    assert.equal(versions.versions[0]?.auditSafe, true);
+  });
+});
+
+describe('Figma Make schedule runtime contracts', () => {
+  it('represents filtered schedule metadata and workspace validation without PHI upload or portal claims', () => {
+    const appointment: ScheduleAppointmentDto = {
+      appointmentId: 'appt-synthetic-schedule-001',
+      tenantId: 'tenant-synthetic-primary',
+      siteId: 'site-synthetic-primary',
+      safePatientId: 'safe-patient-synthetic-001',
+      clinicianId: 'clinician-synthetic-001',
+      noteId: 'note-synthetic-schedule-001',
+      state: 'scheduled',
+      startsAt: '2026-05-27T15:00:00.000Z',
+      durationMinutes: 40,
+      visitType: 'AWV plus problem',
+      modality: 'telehealth',
+      source: 'standalone',
+      clinicLocationId: 'clinic-location-main',
+      clinicLocationLabel: 'Primary Care Clinic',
+      roomId: 'room-virtual',
+      roomLabel: 'Virtual room disabled',
+      virtualVisitStatus: 'disabled_no_phi_portal',
+      mode: 'standalone',
+      noteStatus: 'shell_created',
+      noteVisibleInDrafts: false,
+      startVisitEnabled: true,
+      ehrSchedulingEnabled: false,
+      clinicOsSchedulingEnabled: false,
+      patientDisplayLabel: 'Standalone safe-patient-synthetic-001',
+      chartContextFreshness: 'recent',
+      chartContextWarnings: ['Synthetic standalone chart context only; live EHR completeness is not implied.'],
+      scheduleMetadata: {
+        clinicLocationId: 'clinic-location-main',
+        clinicLocationLabel: 'Primary Care Clinic',
+        roomId: 'room-virtual',
+        roomLabel: 'Virtual room disabled',
+        virtualVisitStatus: 'disabled_no_phi_portal',
+        virtualVisitLabel: 'Virtual visit metadata only; live portal link disabled.',
+        chartIntakeStatus: 'metadata_ready',
+        chartUploadEnabled: false,
+        livePhiUploadEnabled: false,
+        patientPortalDeliveryEnabled: false,
+        encounterValidationStatus: 'valid',
+        validationWarnings: ['Patient portal delivery and live virtual-room integration remain disabled.'],
+        metadataOnly: true
+      }
+    };
+    const schedule: ScheduleViewDto = {
+      appointments: [appointment],
+      ehrSchedulingEnabled: false,
+      clinicOsSchedulingEnabled: false,
+      viewMode: 'day',
+      activeDate: '2026-05-27',
+      query: {
+        activeDate: '2026-05-27',
+        viewMode: 'day',
+        providerId: 'clinician-synthetic-001',
+        visitType: 'AWV plus problem',
+        modality: 'telehealth',
+        clinicLocationId: 'clinic-location-main'
+      },
+      filters: {
+        providers: [{ value: 'clinician-synthetic-001', label: 'clinician-synthetic-001', count: 1 }],
+        statuses: [{ value: 'scheduled', label: 'scheduled', count: 1 }],
+        visitTypes: [{ value: 'AWV plus problem', label: 'AWV plus problem', count: 1 }],
+        modalities: [{ value: 'telehealth', label: 'telehealth', count: 1 }],
+        clinicLocations: [{ value: 'clinic-location-main', label: 'Primary Care Clinic', count: 1 }]
+      },
+      disabledLiveSchedulingSources: ['ehr_schedule_import', 'clinicos_schedule_delegate', 'patient_portal_chart_upload'],
+      metadataOnlyChartIntake: true
+    };
+    const validation: WorkspaceValidationResponseDto = {
+      workspaceValidation: {
+        appointmentId: appointment.appointmentId,
+        noteId: appointment.noteId,
+        safePatientId: appointment.safePatientId,
+        validationStatus: 'valid',
+        workspaceOpenAllowed: true,
+        editorInitiallyReadOnly: true,
+        appointmentLinked: true,
+        noteLinked: true,
+        chartContextLinked: true,
+        chartFreshness: 'recent',
+        chartWarnings: appointment.chartContextWarnings ?? [],
+        productionPhiStorageApproved: false,
+        liveEhrCompletenessImplied: false,
+        validatedAt: '2026-06-06T23:45:00.000Z'
+      },
+      auditEvent: {
+        auditEventId: 'audit-workspace-validation-001',
+        tenantId: 'tenant-synthetic-primary',
+        siteId: 'site-synthetic-primary',
+        actorUserId: 'user-clinician-synthetic-001',
+        action: 'appointment.workspace_validation_check',
+        entityType: 'Appointment',
+        entityId: appointment.appointmentId,
+        traceId: 'trace-workspace-validation-001',
+        createdAt: '2026-06-06T23:45:00.000Z'
+      },
+      domainEvents: [
+        createEventEnvelope({
+          eventId: 'evt-workspace-validation-001',
+          eventType: 'appointment.workspace_validation_checked.v1',
+          tenantId: 'tenant-synthetic-primary',
+          siteId: 'site-synthetic-primary',
+          appointmentId: appointment.appointmentId,
+          noteId: appointment.noteId,
+          producer: 'aura-note-api',
+          traceId: 'trace-workspace-validation-001',
+          idempotencyKey: 'idem-workspace-validation-001',
+          sensitivity: 'phi_reference',
+          retentionClass: 'audit',
+          payload: { validationStatus: 'valid', liveEhrCompletenessImplied: false }
+        })
+      ]
+    };
+
+    assert.equal(schedule.appointments[0]?.scheduleMetadata.livePhiUploadEnabled, false);
+    assert.equal(schedule.appointments[0]?.scheduleMetadata.patientPortalDeliveryEnabled, false);
+    assert.equal(schedule.disabledLiveSchedulingSources.includes('patient_portal_chart_upload'), true);
+    assert.equal(validation.workspaceValidation.productionPhiStorageApproved, false);
+    assert.equal(validation.workspaceValidation.liveEhrCompletenessImplied, false);
+    assert.equal(validation.domainEvents[0]?.eventType, 'appointment.workspace_validation_checked.v1');
   });
 });
 
@@ -1640,13 +2005,29 @@ describe('schedule contracts', () => {
       noteVisibleInDrafts: false,
       startVisitEnabled: true,
       ehrSchedulingEnabled: false,
-      clinicOsSchedulingEnabled: false
+      clinicOsSchedulingEnabled: false,
+      scheduleMetadata: {
+        clinicLocationId: 'clinic-location-main',
+        clinicLocationLabel: 'Primary Care Clinic',
+        roomId: 'room-101',
+        roomLabel: 'Room 101',
+        virtualVisitStatus: 'not_applicable',
+        virtualVisitLabel: 'In-person roomed visit',
+        chartIntakeStatus: 'metadata_ready',
+        chartUploadEnabled: false,
+        livePhiUploadEnabled: false,
+        patientPortalDeliveryEnabled: false,
+        encounterValidationStatus: 'valid',
+        validationWarnings: [],
+        metadataOnly: true
+      }
     };
 
     assert.equal(card.noteStatus, 'shell_created');
     assert.equal(card.startVisitEnabled, true);
     assert.equal(card.ehrSchedulingEnabled, false);
     assert.equal(card.clinicOsSchedulingEnabled, false);
+    assert.equal(card.scheduleMetadata.livePhiUploadEnabled, false);
   });
 });
 
@@ -1661,6 +2042,18 @@ describe('review panel contracts', () => {
       rationale: 'Synthetic low-confidence rationale',
       supportingEvidence: ['Synthetic support'],
       missingEvidence: ['Synthetic missing evidence'],
+      evidenceFor: ['Synthetic support'],
+      evidenceAgainst: ['Synthetic missing evidence'],
+      recommendedActions: ['Review source evidence before accepting.'],
+      education: {
+        title: 'Low-confidence candidate',
+        body: 'Synthetic education content for internal review only.',
+        patientFacingExcluded: true
+      },
+      authoritySource: 'synthetic_rules_catalog',
+      documentationRequirements: ['Current visit support'],
+      testsToConsider: ['No clinical test is ordered by this draft candidate.'],
+      humanReviewRequired: true,
       status: 'candidate',
       lowConfidenceOverrideRequired: true,
       draftOnly: true
@@ -1675,7 +2068,10 @@ describe('review panel contracts', () => {
           title: 'Open blocker',
           detail: 'Synthetic blocker',
           blocksFinalize: true,
-          source: 'deterministic_mock'
+          source: 'deterministic_mock',
+          status: 'open',
+          learnMore: 'Synthetic blocker must be resolved before signing.',
+          actionRequired: true
         }
       ],
       finalizeDisabled: true
@@ -1683,7 +2079,32 @@ describe('review panel contracts', () => {
 
     assert.equal(suggestion.draftOnly, true);
     assert.equal(suggestion.lowConfidenceOverrideRequired, true);
+    assert.equal(suggestion.humanReviewRequired, true);
     assert.equal(compliance.finalizeDisabled, true);
+    assert.equal(compliance.issues[0]?.actionRequired, true);
+  });
+
+  it('represents Figma Make review disposition actions without autonomous finalization', () => {
+    const selection = {
+      visitSelectionId: 'selection-001',
+      noteId: 'note-001',
+      category: 'cpt',
+      label: 'CPT 99214 candidate',
+      confidence: 0.82,
+      humanApproved: false,
+      sourceSuggestionId: 'suggestion-001',
+      disposition: 'removed',
+      removalReason: 'Synthetic clinician removal reason.',
+      returnedToSuggestions: true
+    } satisfies ReviewActionResponseDto['visitSelections'][number];
+    const complianceAction = {
+      action: 'resolve',
+      reason: 'Synthetic issue resolved after human review.'
+    } satisfies import('./index').ComplianceIssueActionRequestDto;
+
+    assert.equal(selection.disposition, 'removed');
+    assert.equal(selection.returnedToSuggestions, true);
+    assert.equal(complianceAction.action, 'resolve');
   });
 
   it('groups Suggestions, Visit Selections, Compliance, History Gap, and tasks in one review action response', () => {
@@ -1805,7 +2226,8 @@ describe('finalization contracts', () => {
             category: 'cpt',
             label: 'CPT 99214 candidate',
             confidence: 0.82,
-            humanApproved: true
+            humanApproved: true,
+            disposition: 'accepted'
           }
         ],
         finalPassSuggestions: [
@@ -1820,7 +2242,8 @@ describe('finalization contracts', () => {
             missingEvidence: [],
             status: 'candidate',
             lowConfidenceOverrideRequired: false,
-            draftOnly: true
+            draftOnly: true,
+            humanReviewRequired: true
           }
         ],
         transcriptSegmentCount: 1,
@@ -1830,6 +2253,128 @@ describe('finalization contracts', () => {
       suggestionDecisions: [],
       unusedAuditItems: [],
       composePhases: [],
+      evidenceSpans: [
+        {
+          evidenceSpanId: 'evidence-note-001-source',
+          sourceType: 'note_content',
+          sourceId: 'note-001',
+          sectionId: 'section-note-body',
+          quote: 'Synthetic source note.',
+          startOffset: 0,
+          endOffset: 'Synthetic source note.'.length,
+          confidence: 1,
+          linkedItemId: 'note-001'
+        },
+        {
+          evidenceSpanId: 'evidence-selection-001',
+          sourceType: 'visit_selection',
+          sourceId: 'selection-001',
+          quote: 'CPT 99214 candidate',
+          startOffset: 0,
+          endOffset: 'CPT 99214 candidate'.length,
+          confidence: 0.82,
+          linkedItemId: 'selection-001'
+        }
+      ],
+      itemStatuses: [
+        {
+          itemId: 'selection-001',
+          itemType: 'visit_selection',
+          step: 'code_review',
+          label: 'CPT 99214 candidate',
+          status: 'pending',
+          humanReviewRequired: true,
+          stillValid: true,
+          evidenceSpanIds: ['evidence-selection-001'],
+          updatedAt: '2026-05-26T16:00:00.000Z'
+        }
+      ],
+      editorVariants: [
+        {
+          variantId: 'editor-original-note-001',
+          variantType: 'original_note',
+          status: 'draft',
+          text: 'Synthetic source note.',
+          version: 1,
+          approvalRequired: false,
+          approved: true,
+          patientFacing: false,
+          internalDetailsExcluded: false,
+          evidenceSpanIds: ['evidence-note-001-source'],
+          lastEditedAt: '2026-05-26T16:00:00.000Z'
+        },
+        {
+          variantId: 'editor-summary-note-001',
+          variantType: 'patient_summary',
+          status: 'not_generated',
+          text: '',
+          version: 0,
+          approvalRequired: true,
+          approved: false,
+          patientFacing: true,
+          internalDetailsExcluded: true,
+          evidenceSpanIds: ['evidence-note-001-source']
+        }
+      ],
+      patientQuestions: [
+        {
+          patientQuestionId: 'patient-question-001',
+          noteId: 'note-001',
+          question: 'Any symptoms since last visit?',
+          explanation: 'Clarifies synthetic documentation support before final output.',
+          status: 'open',
+          assigneeRole: 'clinician',
+          insertionTargetSection: 'subjective',
+          answerInsertedIntoNote: false,
+          portalDeliveryEnabled: false,
+          humanReviewRequired: true
+        }
+      ],
+      carePlanItems: [
+        {
+          carePlanItemId: 'care-plan-001',
+          noteId: 'note-001',
+          source: 'ai_candidate',
+          title: 'Confirm follow-up plan',
+          detail: 'Candidate plan item requires clinician review before insertion.',
+          status: 'candidate',
+          ownerRole: 'clinician',
+          dueWindow: 'next_visit',
+          insertionEligibility: 'eligible_after_clinician_review',
+          humanReviewRequired: true,
+          evidenceSpanIds: ['evidence-note-001-source']
+        }
+      ],
+      patientInsightSnapshot: {
+        patientInsightSnapshotId: 'patient-insight-note-001',
+        noteId: 'note-001',
+        sourceFreshness: 'unknown',
+        allergySummaryStatus: 'unavailable',
+        careTeamSummaryStatus: 'unavailable',
+        riskStratificationStatus: 'mock_only',
+        predictiveInsightsEnabled: false,
+        staleWarnings: ['Synthetic contract fixture only.'],
+        generatedAt: '2026-05-26T16:00:00.000Z'
+      },
+      billingValidation: [
+        {
+          billingValidationId: 'billing-validation-001',
+          status: 'pending',
+          severity: 'info',
+          message: 'Draft claim preview has not been generated; claim submission remains disabled.',
+          blocksSignDispatch: false,
+          evidenceSpanIds: ['evidence-note-001-source']
+        }
+      ],
+      dispatchMetadata: {
+        submittedClaim: false,
+        patientPortalDeliveryEnabled: false,
+        ehrWritebackConfigured: false,
+        exportReady: false,
+        finalNoteReadOnly: false,
+        patientSummaryInternalDetailsExcluded: false,
+        dispatchStatus: 'not_ready'
+      },
       patientOpportunities: [],
       exportArtifacts: [],
       writeback: {
@@ -1854,6 +2399,11 @@ describe('finalization contracts', () => {
     assert.equal(session.frozenSnapshot.visitSelections.length, 1);
     assert.equal(session.frozenSnapshot.finalPassSuggestions[0]?.confidence, 0.88);
     assert.equal(session.stepStatuses.billing_attest, 'not_started');
+    assert.equal(session.evidenceSpans[1]?.linkedItemId, 'selection-001');
+    assert.equal(session.editorVariants.some((variant) => variant.variantType === 'patient_summary' && variant.internalDetailsExcluded), true);
+    assert.equal(session.patientQuestions[0]?.portalDeliveryEnabled, false);
+    assert.equal(session.carePlanItems[0]?.humanReviewRequired, true);
+    assert.equal(session.dispatchMetadata.submittedClaim, false);
   });
 
   it('represents draft claim preview and final output records without claim submission', () => {
@@ -2127,6 +2677,84 @@ describe('timer and transcript contracts', () => {
 
     assert.equal(transcript.retentionPolicy, 'indefinite');
     assert.equal(transcript.segments[0]?.source, 'mock_transcription');
+  });
+
+  it('represents API-polling transcript live view without live streaming or raw PHI audio storage', () => {
+    const segment: TranscriptViewDto['segments'][number] = {
+      transcriptSegmentId: 'segment-live-001',
+      noteId: 'note-001',
+      sequence: 1,
+      speakerRole: 'clinician',
+      speakerLabel: 'Clinician',
+      text: 'Synthetic mock live transcript segment',
+      source: 'mock_transcription',
+      confidence: 0.91,
+      createdAt: '2026-06-06T23:55:00.000Z'
+    };
+    const liveView = {
+      noteId: 'note-001',
+      transcriptId: 'transcript-001',
+      liveState: 'polling_mock',
+      pollingMode: 'api_polling',
+      timerState: 'running',
+      recordingState: 'recording',
+      recentSegments: [segment],
+      fullTranscript: {
+        noteId: 'note-001',
+        transcriptId: 'transcript-001',
+        retentionPolicy: 'indefinite',
+        segments: [segment]
+      },
+      segmentCount: 1,
+      averageConfidence: 0.91,
+      speakerLabels: ['Clinician'],
+      providerStatus: {
+        providerId: 'deterministic-mock-transcription',
+        mode: 'mock_only',
+        configured: true,
+        liveProviderCallsEnabled: false,
+        baaRequiredBeforeLiveUse: true,
+        supportsDiarization: false,
+        speakerLabelMode: 'placeholder',
+        confidenceMetadataAvailable: true,
+        providerBoundary: 'server_side_adapter',
+        credentialState: 'not_configured',
+        rawAudioRetentionPolicy: 'one_week',
+        transcriptRetentionPolicy: 'indefinite',
+        rawAudioPayloadStorageEnabled: false
+      },
+      liveStreamingEnabled: false,
+      rawPhiAudioStored: false,
+      retentionPolicy: 'indefinite',
+      generatedAt: '2026-06-06T23:55:01.000Z',
+      auditEvent: {
+        auditEventId: 'audit-transcript-live-001',
+        tenantId: 'tenant-001',
+        action: 'transcript.live_view',
+        entityType: 'Appointment',
+        entityId: 'appt-001',
+        traceId: 'trace-transcript-live-001',
+        createdAt: '2026-06-06T23:55:01.000Z'
+      },
+      domainEvents: [
+        createEventEnvelope({
+          eventId: 'evt-transcript-live-001',
+          eventType: 'transcript.live_view_polled.v1',
+          tenantId: 'tenant-001',
+          siteId: 'site-001',
+          producer: 'aura-note-api',
+          traceId: 'trace-transcript-live-001',
+          idempotencyKey: 'idem-transcript-live-001',
+          sensitivity: 'phi_reference',
+          retentionClass: 'audit',
+          payload: { pollingMode: 'api_polling', rawPhiAudioStored: false }
+        })
+      ]
+    } satisfies import('./index').TranscriptLiveViewDto;
+
+    assert.equal(liveView.pollingMode, 'api_polling');
+    assert.equal(liveView.liveStreamingEnabled, false);
+    assert.equal(liveView.rawPhiAudioStored, false);
   });
 });
 

@@ -9,6 +9,7 @@ import type {
   AiOutputValidationRequestDto,
   AiOutputValidationResponseDto,
   ApiEnvelope,
+  AppShellResponseDto,
   ApprovalRequestDto,
   AppointmentActionResponseDto,
   AppointmentStatusActionRequestDto,
@@ -19,6 +20,8 @@ import type {
   BackupRestoreReadinessResponseDto,
   BillingReviewQueueViewDto,
   BillingAttestRequestDto,
+  ChartIntakeStatusRequestDto,
+  ChartIntakeStatusResponseDto,
   ClinicOsEventPublishRequestDto,
   ClinicOsEventPublishResponseDto,
   ClinicOsIntegrationStatusDto,
@@ -29,6 +32,7 @@ import type {
   CoachingDashboardDto,
   CoachingReportDto,
   CommercialReadinessResponseDto,
+  ComplianceIssueActionRequestDto,
   ComplianceReviewDto,
   CorrectTranscriptSegmentRequestDto,
   CreateAppointmentRequestDto,
@@ -56,10 +60,13 @@ import type {
   FinalizedNoteDetailDto,
   FinalizedNotesViewDto,
   HistoryGapQuestionDto,
+  NoteContentResponseDto,
+  NoteVersionsViewDto,
   OperationalActionResponseDto,
   OperationalEvidenceRequestDto,
   OperationalEvidenceResponseDto,
   OperationalReadinessResponseDto,
+  OperationsRuntimeResponseDto,
   PlatformActionResponseDto,
   PlatformAdminViewDto,
   ProductionConfigValidationRequestDto,
@@ -71,6 +78,7 @@ import type {
   RecordingRetentionResponseDto,
   ReviewActionResponseDto,
   RulesCatalogViewDto,
+  ScheduleQueryDto,
   ScheduleViewDto,
   SecureDownloadRequestDto,
   SecureDownloadResponseDto,
@@ -81,11 +89,13 @@ import type {
   StandalonePatientSearchViewDto,
   StartVisitResponseDto,
   SuggestionDecisionRequestDto,
+  SuggestionRemovalRequestDto,
   SuggestionsViewDto,
   SupportStatusResponseDto,
   TaskWorklistViewDto,
   TemplatesViewDto,
   TranscriptCorrectionResponseDto,
+  TranscriptLiveViewDto,
   TranscriptViewDto,
   TranscriptionJobResponseDto,
   TranscriptionProviderStatusDto,
@@ -95,11 +105,16 @@ import type {
   UpdateEstimateConfigurationRequestDto,
   UpdateGovernedFeatureFlagRequestDto,
   UpdateIntegrationRequestDto,
+  UpdateNoteContentRequestDto,
   UpdateOperationalTaskRequestDto,
+  RestoreNoteVersionRequestDto,
   UpdateStandalonePatientRequestDto,
   UpdateWorkforceUserRequestDto,
+  VisitSelectionCategoryChangeRequestDto,
+  VisitSelectionRemoveRequestDto,
   VisitSelectionsViewDto,
-  VisitSessionControlResponseDto
+  VisitSessionControlResponseDto,
+  WorkspaceValidationResponseDto
 } from '@aura-note/contracts';
 
 export type AuraNoteRuntimeRole = 'clinician' | 'ma' | 'billing_staff' | 'admin' | 'authorized_admin' | 'compliance_privacy_lead' | 'support';
@@ -193,6 +208,7 @@ export function createAuraNoteApiClient(options: AuraNoteApiClientOptions = {}) 
   }
 
   return {
+    getAppShell: () => request<AppShellResponseDto>('/app-shell'),
     searchPatients: (query: { safePatientId?: string; status?: 'active' | 'inactive' } = {}) => {
       const search = new URLSearchParams();
       if (query.safePatientId) search.set('safePatientId', query.safePatientId);
@@ -204,13 +220,28 @@ export function createAuraNoteApiClient(options: AuraNoteApiClientOptions = {}) 
       post<StandalonePatientResponseDto>('/standalone/patients', body, idempotencyKey),
     updatePatient: (safePatientId: string, body: UpdateStandalonePatientRequestDto, idempotencyKey?: string) =>
       patch<StandalonePatientResponseDto>(`/standalone/patients/${safePatientId}`, body, idempotencyKey),
-    listSchedule: () => request<ScheduleViewDto>('/schedule/appointments'),
+    listSchedule: (query: ScheduleQueryDto = {}) => {
+      const search = new URLSearchParams();
+      if (query.activeDate) search.set('activeDate', query.activeDate);
+      if (query.viewMode) search.set('viewMode', query.viewMode);
+      if (query.providerId) search.set('providerId', query.providerId);
+      if (query.status) search.set('status', query.status);
+      if (query.visitType) search.set('visitType', query.visitType);
+      if (query.modality) search.set('modality', query.modality);
+      if (query.clinicLocationId) search.set('clinicLocationId', query.clinicLocationId);
+      const suffix = search.size > 0 ? `?${search.toString()}` : '';
+      return request<ScheduleViewDto>(`/schedule/appointments${suffix}`);
+    },
     updateAppointment: (appointmentId: string, body: UpdateAppointmentRequestDto, idempotencyKey?: string) =>
       patch<AppointmentActionResponseDto>(`/schedule/appointments/${appointmentId}`, body, idempotencyKey),
     updateAppointmentStatus: (appointmentId: string, body: AppointmentStatusActionRequestDto, idempotencyKey?: string) =>
       post<AppointmentActionResponseDto>(`/schedule/appointments/${appointmentId}/status`, body, idempotencyKey),
     getChartContext: (appointmentId: string) =>
       request<StandaloneChartContextResponseDto>(`/schedule/appointments/${appointmentId}/chart-context`),
+    validateWorkspaceEntry: (appointmentId: string) =>
+      request<WorkspaceValidationResponseDto>(`/schedule/appointments/${appointmentId}/workspace-validation`),
+    updateChartIntakeStatus: (appointmentId: string, body: ChartIntakeStatusRequestDto, idempotencyKey?: string) =>
+      post<ChartIntakeStatusResponseDto>(`/schedule/appointments/${appointmentId}/chart-intake-status`, body, idempotencyKey),
     listDraftNotes: () => request<DraftNotesViewDto>('/notes/drafts'),
     listFinalizedNotes: () => request<FinalizedNotesViewDto>('/notes/finalized'),
     getFinalizedNote: (noteId: string) => request<FinalizedNoteDetailDto>(`/notes/finalized/${noteId}`),
@@ -245,6 +276,8 @@ export function createAuraNoteApiClient(options: AuraNoteApiClientOptions = {}) 
       post<TranscriptionJobResponseDto>(`/documentation-workspace/appointments/${appointmentId}/transcription/jobs/disabled-live-provider`),
     getTranscript: (appointmentId: string) =>
       request<TranscriptViewDto>(`/documentation-workspace/appointments/${appointmentId}/transcript`),
+    getTranscriptLiveView: (appointmentId: string) =>
+      request<TranscriptLiveViewDto>(`/documentation-workspace/appointments/${appointmentId}/transcript/live`),
     appendTranscriptSegment: (appointmentId: string, body: AppendTranscriptSegmentRequestDto, idempotencyKey?: string) =>
       post<VisitSessionControlResponseDto>(`/documentation-workspace/appointments/${appointmentId}/transcript/segments`, body, idempotencyKey),
     correctTranscriptSegment: (appointmentId: string, transcriptSegmentId: string, body: CorrectTranscriptSegmentRequestDto) =>
@@ -252,16 +285,30 @@ export function createAuraNoteApiClient(options: AuraNoteApiClientOptions = {}) 
         `/documentation-workspace/appointments/${appointmentId}/transcript/segments/${transcriptSegmentId}/correction`,
         body
       ),
+    getNoteContent: (noteId: string) => request<NoteContentResponseDto>(`/notes/${noteId}/content`),
+    autosaveNoteContent: (noteId: string, body: UpdateNoteContentRequestDto, idempotencyKey?: string) =>
+      post<NoteContentResponseDto>(`/notes/${noteId}/content/autosave`, body, idempotencyKey),
+    listNoteVersions: (noteId: string) => request<NoteVersionsViewDto>(`/notes/${noteId}/versions`),
+    restoreNoteVersion: (noteId: string, versionId: string, body: RestoreNoteVersionRequestDto) =>
+      post<NoteContentResponseDto>(`/notes/${noteId}/versions/${versionId}/restore`, body),
     listSuggestions: (noteId: string) => request<SuggestionsViewDto>(`/notes/${noteId}/suggestions`),
     evaluateSuggestions: (noteId: string) => post<ReviewActionResponseDto>(`/notes/${noteId}/suggestions/evaluate`),
     acceptSuggestion: (noteId: string, suggestionId: string, body: SuggestionDecisionRequestDto) =>
       post<ReviewActionResponseDto>(`/notes/${noteId}/suggestions/${suggestionId}/accept`, body),
-    removeSuggestion: (noteId: string, suggestionId: string) =>
-      post<ReviewActionResponseDto>(`/notes/${noteId}/suggestions/${suggestionId}/remove`),
+    removeSuggestion: (noteId: string, suggestionId: string, body: SuggestionRemovalRequestDto) =>
+      post<ReviewActionResponseDto>(`/notes/${noteId}/suggestions/${suggestionId}/remove`, body),
+    restoreSuggestion: (noteId: string, suggestionId: string) =>
+      post<ReviewActionResponseDto>(`/notes/${noteId}/suggestions/${suggestionId}/restore`),
     listVisitSelections: (noteId: string) => request<VisitSelectionsViewDto>(`/notes/${noteId}/visit-selections`),
     addVisitSelection: (noteId: string, body: AddVisitSelectionRequestDto) =>
       post<ReviewActionResponseDto>(`/notes/${noteId}/visit-selections`, body),
+    removeVisitSelection: (noteId: string, visitSelectionId: string, body: VisitSelectionRemoveRequestDto) =>
+      post<ReviewActionResponseDto>(`/notes/${noteId}/visit-selections/${visitSelectionId}/remove`, body),
+    changeVisitSelectionCategory: (noteId: string, visitSelectionId: string, body: VisitSelectionCategoryChangeRequestDto) =>
+      post<ReviewActionResponseDto>(`/notes/${noteId}/visit-selections/${visitSelectionId}/category`, body),
     evaluateCompliance: (noteId: string) => request<ComplianceReviewDto>(`/notes/${noteId}/compliance`),
+    recordComplianceIssueAction: (noteId: string, complianceIssueId: string, body: ComplianceIssueActionRequestDto) =>
+      post<ReviewActionResponseDto>(`/notes/${noteId}/compliance/issues/${complianceIssueId}/actions`, body),
     listHistoryGaps: (noteId: string) => request<{ noteId: string; questions: HistoryGapQuestionDto[] }>(`/notes/${noteId}/history-gaps`),
     createHistoryGapTask: (noteId: string, questionId: string, body: CreateHistoryGapTaskRequestDto) =>
       post<ReviewActionResponseDto>(`/notes/${noteId}/history-gaps/${questionId}/tasks`, body),
@@ -301,6 +348,7 @@ export function createAuraNoteApiClient(options: AuraNoteApiClientOptions = {}) 
     requestEhrWriteback: (noteId: string, body: EhrWritebackRequestDto) =>
       post<EhrWritebackActionResponseDto>(`/notes/${noteId}/ehr-writeback`, body),
     listOperationalTasks: () => request<TaskWorklistViewDto>('/standalone/operations/tasks'),
+    getOperationsRuntime: () => request<OperationsRuntimeResponseDto>('/standalone/operations/runtime'),
     updateOperationalTask: (taskId: string, body: UpdateOperationalTaskRequestDto) =>
       patch<OperationalActionResponseDto>(`/standalone/operations/tasks/${taskId}`, body),
     listBillingReviews: () => request<BillingReviewQueueViewDto>('/standalone/operations/billing-review'),

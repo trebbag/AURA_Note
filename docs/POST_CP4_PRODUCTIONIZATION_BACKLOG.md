@@ -8,6 +8,8 @@ Before any tranche below becomes implementation work, promote it into a numbered
 
 The sequential post-`WO-032` production build plan is maintained in `docs/PRODUCTION_BUILD_PLAN.md`. That plan defines `WO-033` through `WO-075`, checkpoint gates, per-work-order completion criteria, and overall launch-readiness criteria. `WO-033` is the re-rail/control work order; `WO-034` adds durable local visit capture runtime evidence; `WO-035` adds durable local review-panel runtime evidence; `WO-036` adds durable local finalization/output/writeback runtime evidence; `WO-037` closes P7 durable runtime metadata and broad RLS evidence; `WO-038` adds standalone patient, chart context, and schedule completion; `WO-039` closes P7.5 with standalone worklists, billing review, settings/admin/integrations, templates/dot phrases, estimate configuration, and rules catalog; `WO-040` closes P8.5 with browser audio capture and mock transcription candidate evidence; `WO-041` adds production-shaped identity/config governance; `WO-042` adds secure storage, retention deletion approval/recovery, and backup/restore readiness; `WO-043` closes P8 with production observability/support operations evidence; `WO-044` adds synthetic EHR sandbox integration and metadata-only writeback queue hardening; `WO-045` adds synthetic ClinicOS integration hardening with module boundaries, stale/degraded mapping review, failed/degraded publication metadata, and permission-boundary evidence; `WO-046` adds synthetic AI Gateway governance hardening with prompt/model metadata, deterministic evaluation runs, output validation, unsafe-output rejection, and no-live-model/no-raw-PHI evidence; `WO-047` closes P9 review; `WO-048` through `WO-050` close P10 as launch-candidate decision-package evidence; `WO-051` closes P11 as a claim/payer decision gate; `WO-052` through `WO-060` reopen commercial-readiness rails and live-review intake without enabling live behavior; `WO-061` adds the first CR-1 runtime persistence switchover evidence through explicit repository/storage ports and a composed local Prisma core workflow repository; `WO-062` adds shared API runtime boundary evidence through validation, PHI-safe errors, request correlation, security headers, request limits, redacted logs, and CI/readiness checks; `WO-063` adds identity runtime boundary evidence through explicit `AURA_NOTE_AUTH_MODE`, local demo/strict synthetic modes, and production/preview/delegated fail-closed auth posture; `WO-064` adds CR-2 primary UI runtime API-backed route evidence and `pnpm frontend:primary-runtime-readiness`; `WO-065` through `WO-075` remain the active commercial-readiness sequence. P10 and CR-2 include a Frontend Runtime Integration Gate requiring typed API clients, persisted backend state, documented mocks where live dependencies are disabled, and Playwright evidence for at least one seeded backend-backed appointment-to-finalization/export workflow before launch-candidate readiness can be claimed.
 
+Post-CR4 Figma Make catch-up is tracked in `docs/PRODUCTION_BUILD_PLAN.md` and `docs/FIGMA_MAKE_BACKEND_CATCH_UP_AUDIT.md`: app shell, editor autosave/version state, schedule/workspace handoff metadata, transcript live view, suggestion disposition, Visit Selection remove/category actions, compliance issue actions, granular Design 2 finalization runtime state, operations analytics/settings runtime state, and the key Figma Make source/node visual structures now have backend-backed contract slices. Formal screenshot-baseline approval, founder/designer visual signoff, and broader lower-priority route replacement remain future work.
+
 ## Safety boundary
 
 All post-CP4 work must preserve the existing prohibitions:
@@ -611,3 +613,56 @@ Do not implement these tranches directly from this backlog. Promote one tranche 
 **Known risks:**
 
 - Production launch, real tenant onboarding, live PHI, production credentials, live OIDC/SAML, live ClinicOS delegation, live ClinicOS event bus, live EHR/writeback, live transcription, live external AI, live Azure PHI storage, claim submission, charge finalization, medical-necessity determination, patient-facing financial conclusions, certification claims, and autonomous clinical/coding/billing behavior remain deferred.
+
+## Post-CR4 Figma Make Backend Catch-Up Note - Design 2 Finalization Runtime
+
+**Promotion status:** Backend/runtime catch-up support only; no `WO-078+` production-decision work order is promoted.
+
+**Objective:** Map the Figma Make Step by Step Workflow Wizard onto the existing AURA Note finalization APIs without importing prototype backend architecture or enabling live/high-risk behavior.
+
+**Acceptance evidence:**
+
+- `FinalizationSessionDto` now includes evidence spans, per-step item statuses, editor variants, patient questions, care-plan candidates, patient insight metadata, billing validation, and dispatch metadata.
+- `/aura-note/finalization/[noteId]` renders the Design 2 finalization runtime panels from typed API responses and keeps `submittedClaim=false` and patient portal delivery disabled.
+- `/aura-note/finalization/[noteId]` includes a Figma-derived workflow board with backend-backed progress rail, selected/suggested review metrics, dual-editor approval state, patient-question/planning state, and read-only patient summary compare state.
+- API service/e2e, contract, browser, and `pnpm figma:backend-catch-up-readiness` checks cover the new runtime sections.
+
+**Known risks:**
+
+- This is still not formal screenshot-baseline approval, production launch approval, live patient portal delivery, live EHR writeback, live claim submission, charge finalization, medical-necessity determination, or autonomous clinical/coding/billing behavior.
+
+## Post-CR4 Figma Make Backend Catch-Up Note - Operations Runtime
+
+**Promotion status:** Backend/runtime catch-up support only; no `WO-078+` production-decision work order is promoted.
+
+**Objective:** Map the Figma Make operations analytics, activity, notification, and settings affordances onto the existing AURA Note operations APIs without importing prototype backend architecture or enabling live/high-risk behavior.
+
+**Acceptance evidence:**
+
+- `OperationsRuntimeViewDto` now includes backend-composed operations analytics, notification feed, activity feed, settings runtime summary, route state vocabulary, and no-launch safety posture.
+- `GET /api/v1/standalone/operations/runtime` composes existing task, billing review, settings, templates, estimates, and rules catalog state and emits metadata-only audit/event evidence.
+- `/aura-note/operations` renders Operations Analytics, Activity Feed, Notifications, and Settings Runtime panels from typed API responses while existing task/billing/settings/template/estimate/rules actions remain API-backed.
+- `/aura-note/operations` includes Figma-derived backend-backed analytics series and settings/governance panels that render `OperationsAnalyticsSnapshotDto` and `OperationsSettingsSummaryDto` while keeping secret values, live vendors, patient-facing revenue, and claim submission disabled.
+- API service/e2e, browser, OpenAPI, docs, and `pnpm figma:backend-catch-up-readiness` checks cover the new operations runtime sections.
+
+**Known risks:**
+
+- This is still not formal screenshot-baseline approval, production analytics activation, production launch approval, live credentials, live integrations, patient-facing revenue, live claim submission, charge finalization, medical-necessity determination, or autonomous clinical/coding/billing behavior.
+
+## Post-CR4 Figma Make Source/Node Visual Implementation Pass
+
+**Promotion status:** Visual/runtime refinement support only; no `WO-078+` production-decision work order is promoted.
+
+**Objective:** Carry the supplied Figma Make source/node hierarchy into the existing runtime-backed AURA Note routes without introducing a second frontend architecture or local-state authoritative product data.
+
+**Acceptance evidence:**
+
+- `/aura-note` now includes the Design 1 Figma-style sidebar grouping, brand tile, user context chip, quick-action band, command dashboard, dashboard side cards, and route-state summary sourced from `AppShellViewDto`.
+- `/aura-note/workspace/[appointmentId]` now includes a Figma-style editor command deck, mock audio waveform, API-backed editor preview, selected-code rail, and suggestion intelligence rail sourced from workspace, transcript, suggestion, and Visit Selection DTOs.
+- `/aura-note/finalization/[noteId]` now includes a Design 2 visual fidelity section with API-backed evidence highlighter, patient-question popup, and billing/dispatch dock sourced from `FinalizationSessionDto`.
+- `/aura-note/operations` now includes polished analytics tabs, KPI cards, chart stage, settings governance tabs, settings control matrix, and feature-flag summary sourced from `OperationsRuntimeViewDto`.
+- Playwright and `pnpm figma:backend-catch-up-readiness` now assert those visual/node surfaces while preserving typed API client usage and no-live/no-launch safety posture.
+
+**Known risks:**
+
+- Figma Make exposed source-tree/component context rather than a normal pixel screenshot baseline in this pass. The repo now implements the key source/node visual hierarchy, but formal designer/founder signoff and screenshot-baseline approval remain separate evidence before production launch claims.

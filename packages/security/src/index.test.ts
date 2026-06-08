@@ -427,6 +427,32 @@ describe('schedule lifecycle permissions', () => {
     );
   });
 
+  it('limits draft note editing to linked treating clinicians or authorized admins', () => {
+    assert.equal(
+      canPerform('draft_note:edit', {
+        role: 'clinician',
+        linkedToPatient: true,
+        linkedToVisit: true,
+        treatingClinician: true,
+        billingReviewTriggered: false,
+        authorizedAdmin: false
+      }),
+      true
+    );
+
+    assert.equal(
+      canPerform('draft_note:edit', {
+        role: 'ma',
+        linkedToPatient: true,
+        linkedToVisit: true,
+        treatingClinician: false,
+        billingReviewTriggered: false,
+        authorizedAdmin: false
+      }),
+      false
+    );
+  });
+
   it('limits finalization management to linked treating clinicians or authorized admins', () => {
     assert.equal(
       canPerform('finalization:manage', {

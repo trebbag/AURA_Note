@@ -11,12 +11,52 @@ paths:
       operationId: getHealth
       responses:
         '200': { description: OK }
+  /app-shell:
+    get:
+      operationId: getAppShell
+      description: Figma Make backend catch-up shell state for AURA Note. This is a typed, role-scoped composite of runtime API state and rejects prototype-only Supabase/local-state authority.
+      responses:
+        '200':
+          description: AURA Note app shell, dashboard, notifications, activity, and disabled-feature posture.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AppShellResponse'
   /schedule/appointments:
     get:
       operationId: listAppointments
+      parameters:
+        - name: activeDate
+          in: query
+          required: false
+          schema: { type: string, format: date }
+        - name: viewMode
+          in: query
+          required: false
+          schema: { type: string, enum: [day, week] }
+        - name: providerId
+          in: query
+          required: false
+          schema: { type: string }
+        - name: status
+          in: query
+          required: false
+          schema: { type: string, enum: [scheduled, checked_in, in_room, visit_started, visit_paused, visit_completed, finalization_in_progress, finalized, cancelled, no_show] }
+        - name: visitType
+          in: query
+          required: false
+          schema: { type: string }
+        - name: modality
+          in: query
+          required: false
+          schema: { type: string, enum: [in_person, telehealth, phone] }
+        - name: clinicLocationId
+          in: query
+          required: false
+          schema: { type: string }
       responses:
         '200':
-          description: Appointment list with note shell status.
+          description: Appointment list with note shell status, backend filters, room/location metadata, and metadata-only chart-intake state.
           content:
             application/json:
               schema:
@@ -86,6 +126,17 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/StandalonePatientResponse'
+  /standalone/operations/runtime:
+    get:
+      operationId: getStandaloneOperationsRuntime
+      description: Figma Make backend catch-up route-level operations runtime view composed from tasks, billing review, settings, templates, estimates, and rules state.
+      responses:
+        '200':
+          description: Synthetic operations runtime view.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OperationsRuntimeResponse'
   /standalone/operations/tasks:
     get:
       operationId: listStandaloneOperationTasks
@@ -349,6 +400,44 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/StandaloneChartContextResponse'
+  /schedule/appointments/{appointmentId}/workspace-validation:
+    get:
+      operationId: validateWorkspaceEntry
+      description: Validate appointment, note, and chart-context linkage before opening the documentation workspace. This returns metadata-only safe identifiers and does not imply live EHR completeness.
+      parameters:
+        - name: appointmentId
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: Workspace validation metadata.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WorkspaceValidationResponse'
+  /schedule/appointments/{appointmentId}/chart-intake-status:
+    post:
+      operationId: updateChartIntakeStatus
+      description: Update metadata-only chart-intake status for the schedule/workspace handoff. Live PHI file upload and patient portal delivery remain disabled.
+      parameters:
+        - name: appointmentId
+          in: path
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ChartIntakeStatusRequest'
+      responses:
+        '201':
+          description: Metadata-only chart-intake status updated.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ChartIntakeStatusResponse'
   /schedule/appointments/{appointmentId}/start-visit:
     post:
       operationId: startVisit
@@ -613,6 +702,22 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/TranscriptResponse'
+  /documentation-workspace/appointments/{appointmentId}/transcript/live:
+    get:
+      operationId: getTranscriptLiveView
+      description: Polling-friendly transcript live view backed by mock/local provider state. Live streaming and raw PHI audio storage remain disabled.
+      parameters:
+        - name: appointmentId
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: Transcript live view metadata.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TranscriptLiveViewResponse'
   /documentation-workspace/appointments/{appointmentId}/transcript/segments:
     post:
       operationId: appendMockTranscriptSegment
@@ -681,6 +786,86 @@ paths:
           schema: { type: string }
       responses:
         '200': { description: Updated }
+  /notes/{noteId}/content:
+    get:
+      operationId: getNoteContent
+      description: Read the API-backed aura_markdown_v1 note document and autosave metadata for a draft or finalized read-only note.
+      parameters:
+        - name: noteId
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: Note content loaded.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NoteContentResponse'
+  /notes/{noteId}/content/autosave:
+    post:
+      operationId: autosaveNoteContent
+      description: Autosave timer-gated clinician note content in aura_markdown_v1 and create an audit-safe version snapshot.
+      parameters:
+        - name: noteId
+          in: path
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateNoteContentRequest'
+      responses:
+        '201':
+          description: Note content autosaved.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NoteContentResponse'
+  /notes/{noteId}/versions:
+    get:
+      operationId: listNoteVersions
+      description: List audit-safe note content versions for the API-backed editor.
+      parameters:
+        - name: noteId
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: Note version history.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NoteVersionsView'
+  /notes/{noteId}/versions/{versionId}/restore:
+    post:
+      operationId: restoreNoteVersion
+      description: Restore an earlier note version through the same timer-gated clinician edit boundary.
+      parameters:
+        - name: noteId
+          in: path
+          required: true
+          schema: { type: string }
+        - name: versionId
+          in: path
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RestoreNoteVersionRequest'
+      responses:
+        '201':
+          description: Note version restored.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NoteContentResponse'
   /notes/{noteId}/suggestions/evaluate:
     post:
       operationId: evaluateSuggestions
@@ -730,9 +915,26 @@ paths:
   /notes/{noteId}/suggestions/{suggestionId}/remove:
     post:
       operationId: removeSuggestion
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SuggestionRemovalRequest'
       responses:
         '201':
           description: Suggestion removed from candidate review.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReviewActionResponse'
+  /notes/{noteId}/suggestions/{suggestionId}/restore:
+    post:
+      operationId: restoreSuggestion
+      description: Return a previously removed draft-only suggestion to candidate review.
+      responses:
+        '201':
+          description: Suggestion restored to candidate review.
           content:
             application/json:
               schema:
@@ -749,9 +951,49 @@ paths:
                 $ref: '#/components/schemas/VisitSelectionsViewResponse'
     post:
       operationId: addVisitSelection
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AddVisitSelectionRequest'
       responses:
         '201':
           description: Visit selection added.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReviewActionResponse'
+  /notes/{noteId}/visit-selections/{visitSelectionId}/remove:
+    post:
+      operationId: removeVisitSelection
+      description: Remove a Visit Selection with a clinician reason and optionally return the source suggestion to candidate review.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/VisitSelectionRemoveRequest'
+      responses:
+        '201':
+          description: Visit Selection removed with audit-safe disposition metadata.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReviewActionResponse'
+  /notes/{noteId}/visit-selections/{visitSelectionId}/category:
+    post:
+      operationId: changeVisitSelectionCategory
+      description: Change a Visit Selection category with a documented human-review reason.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/VisitSelectionCategoryChangeRequest'
+      responses:
+        '201':
+          description: Visit Selection category changed.
           content:
             application/json:
               schema:
@@ -771,6 +1013,23 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ComplianceReviewResponse'
+  /notes/{noteId}/compliance/issues/{complianceIssueId}/actions:
+    post:
+      operationId: recordComplianceIssueAction
+      description: Record a compliance issue action. Hard blocks cannot be dismissed; resolved hard blocks recalculate finalization readiness.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ComplianceIssueActionRequest'
+      responses:
+        '201':
+          description: Compliance issue action recorded.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReviewActionResponse'
   /notes/{noteId}/history-gaps:
     get:
       operationId: listHistoryGaps
@@ -1630,6 +1889,104 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/ApiWarning'
+    NoteSection:
+      type: object
+      required: [sectionId, title, markdown, plainText, startOffset, endOffset]
+      properties:
+        sectionId: { type: string }
+        title: { type: string }
+        markdown: { type: string }
+        plainText: { type: string }
+        startOffset: { type: integer }
+        endOffset: { type: integer }
+    NoteContent:
+      type: object
+      required: [noteContentId, noteId, appointmentId, tenantId, siteId, format, markdown, plainText, sections, revision, source, sanitized, readOnly, updatedByUserId, updatedAt]
+      description: API-backed note editor content. The canonical rich-text scaffold format is aura_markdown_v1, not Figma/Supabase local state.
+      properties:
+        noteContentId: { type: string }
+        noteId: { type: string }
+        appointmentId: { type: string }
+        tenantId: { type: string }
+        siteId: { type: string }
+        format: { type: string, enum: [aura_markdown_v1] }
+        markdown: { type: string }
+        plainText: { type: string }
+        sections:
+          type: array
+          items:
+            $ref: '#/components/schemas/NoteSection'
+        revision: { type: integer }
+        source: { type: string, enum: [system_seed, clinician_autosave, version_restore] }
+        sanitized: { type: boolean, enum: [true] }
+        readOnly: { type: boolean }
+        updatedByUserId: { type: string }
+        updatedAt: { type: string, format: date-time }
+    NoteVersion:
+      type: object
+      required: [noteVersionId, noteId, revision, format, plainTextPreview, markdown, source, createdByUserId, createdAt, auditSafe]
+      properties:
+        noteVersionId: { type: string }
+        noteId: { type: string }
+        revision: { type: integer }
+        format: { type: string, enum: [aura_markdown_v1] }
+        plainTextPreview: { type: string }
+        markdown: { type: string }
+        source: { type: string, enum: [system_seed, clinician_autosave, version_restore] }
+        createdByUserId: { type: string }
+        createdAt: { type: string, format: date-time }
+        restoredFromVersionId: { type: string }
+        auditSafe: { type: boolean, enum: [true] }
+    AutosaveStatus:
+      type: object
+      required: [noteId, status, revision, conflict, readOnly, message]
+      properties:
+        noteId: { type: string }
+        status: { type: string, enum: [idle, saving, saved, failed, blocked, conflict] }
+        revision: { type: integer }
+        savedAt: { type: string, format: date-time }
+        conflict: { type: boolean, enum: [false] }
+        readOnly: { type: boolean }
+        message: { type: string }
+    UpdateNoteContentRequest:
+      type: object
+      required: [format, markdown]
+      properties:
+        format: { type: string, enum: [aura_markdown_v1] }
+        markdown: { type: string }
+        clientRevision: { type: integer }
+    RestoreNoteVersionRequest:
+      type: object
+      required: [restoreReason]
+      properties:
+        restoreReason: { type: string }
+    NoteContentResponse:
+      type: object
+      required: [noteContent, autosaveStatus, latestVersion, auditEvent, domainEvents]
+      properties:
+        noteContent:
+          $ref: '#/components/schemas/NoteContent'
+        autosaveStatus:
+          $ref: '#/components/schemas/AutosaveStatus'
+        latestVersion:
+          $ref: '#/components/schemas/NoteVersion'
+        auditEvent:
+          $ref: '#/components/schemas/AuditEvent'
+        domainEvents:
+          type: array
+          items:
+            type: object
+    NoteVersionsView:
+      type: object
+      required: [noteId, versions, autosaveStatus]
+      properties:
+        noteId: { type: string }
+        versions:
+          type: array
+          items:
+            $ref: '#/components/schemas/NoteVersion'
+        autosaveStatus:
+          $ref: '#/components/schemas/AutosaveStatus'
     IdentityRuntimeBoundaryDecision:
       type: object
       required:
@@ -1894,6 +2251,11 @@ components:
         modality: { type: string, enum: [in_person, telehealth, phone] }
         source: { type: string, enum: [standalone, ehr_import, clinicos] }
         reasonForVisit: { type: string }
+        clinicLocationId: { type: string }
+        clinicLocationLabel: { type: string }
+        roomId: { type: string }
+        roomLabel: { type: string }
+        virtualVisitStatus: { type: string, enum: [not_applicable, metadata_ready, link_not_configured, disabled_no_phi_portal] }
         mode: { type: string, enum: [standalone, clinicos_integrated] }
     CreateAppointmentRequest:
       type: object
@@ -1906,6 +2268,10 @@ components:
         durationMinutes: { type: integer, minimum: 5, maximum: 480 }
         modality: { type: string, enum: [in_person, telehealth, phone] }
         reasonForVisit: { type: string }
+        clinicLocationId: { type: string }
+        clinicLocationLabel: { type: string }
+        roomId: { type: string }
+        roomLabel: { type: string }
     UpdateAppointmentRequest:
       type: object
       properties:
@@ -1915,6 +2281,10 @@ components:
         durationMinutes: { type: integer, minimum: 5, maximum: 480 }
         modality: { type: string, enum: [in_person, telehealth, phone] }
         reasonForVisit: { type: string }
+        clinicLocationId: { type: string }
+        clinicLocationLabel: { type: string }
+        roomId: { type: string }
+        roomLabel: { type: string }
     AppointmentStatusActionRequest:
       type: object
       required: [action]
@@ -1983,11 +2353,131 @@ components:
         productionPhiStorageApproved: { type: boolean, enum: [false] }
         createdAt: { type: string, format: date-time }
         mode: { type: string, enum: [standalone, clinicos_integrated] }
+    ScheduleQuery:
+      type: object
+      properties:
+        activeDate: { type: string, format: date }
+        viewMode: { type: string, enum: [day, week] }
+        providerId: { type: string }
+        status: { type: string, enum: [scheduled, checked_in, in_room, visit_started, visit_paused, visit_completed, finalization_in_progress, finalized, cancelled, no_show] }
+        visitType: { type: string }
+        modality: { type: string, enum: [in_person, telehealth, phone] }
+        clinicLocationId: { type: string }
+    ScheduleFilterOption:
+      type: object
+      required: [value, label, count]
+      properties:
+        value: { type: string }
+        label: { type: string }
+        count: { type: integer, minimum: 0 }
+    ScheduleFilterSet:
+      type: object
+      required: [providers, statuses, visitTypes, modalities, clinicLocations]
+      properties:
+        providers:
+          type: array
+          items: { $ref: '#/components/schemas/ScheduleFilterOption' }
+        statuses:
+          type: array
+          items: { $ref: '#/components/schemas/ScheduleFilterOption' }
+        visitTypes:
+          type: array
+          items: { $ref: '#/components/schemas/ScheduleFilterOption' }
+        modalities:
+          type: array
+          items: { $ref: '#/components/schemas/ScheduleFilterOption' }
+        clinicLocations:
+          type: array
+          items: { $ref: '#/components/schemas/ScheduleFilterOption' }
+    ScheduleAppointmentMetadata:
+      type: object
+      required: [clinicLocationId, clinicLocationLabel, roomId, roomLabel, virtualVisitStatus, virtualVisitLabel, chartIntakeStatus, chartUploadEnabled, livePhiUploadEnabled, patientPortalDeliveryEnabled, encounterValidationStatus, validationWarnings, metadataOnly]
+      properties:
+        clinicLocationId: { type: string }
+        clinicLocationLabel: { type: string }
+        roomId: { type: string }
+        roomLabel: { type: string }
+        virtualVisitStatus: { type: string, enum: [not_applicable, metadata_ready, link_not_configured, disabled_no_phi_portal] }
+        virtualVisitLabel: { type: string }
+        chartIntakeStatus: { type: string, enum: [not_started, metadata_pending, metadata_ready, stale_warning, failed, disabled_phi_upload] }
+        chartUploadEnabled: { type: boolean, enum: [false] }
+        livePhiUploadEnabled: { type: boolean, enum: [false] }
+        patientPortalDeliveryEnabled: { type: boolean, enum: [false] }
+        encounterValidationStatus: { type: string, enum: [valid, linkage_missing, permission_denied, stale_context] }
+        validationWarnings:
+          type: array
+          items: { type: string }
+        metadataOnly: { type: boolean, enum: [true] }
+    WorkspaceValidation:
+      type: object
+      required: [appointmentId, noteId, safePatientId, validationStatus, workspaceOpenAllowed, editorInitiallyReadOnly, appointmentLinked, noteLinked, chartContextLinked, chartFreshness, chartWarnings, productionPhiStorageApproved, liveEhrCompletenessImplied, validatedAt]
+      properties:
+        appointmentId: { type: string }
+        noteId: { type: string }
+        safePatientId: { type: string }
+        validationStatus: { type: string, enum: [valid, linkage_missing, permission_denied, stale_context] }
+        workspaceOpenAllowed: { type: boolean }
+        editorInitiallyReadOnly: { type: boolean }
+        appointmentLinked: { type: boolean }
+        noteLinked: { type: boolean }
+        chartContextLinked: { type: boolean }
+        chartFreshness: { type: string, enum: [current_visit, recent, historical, unknown] }
+        chartWarnings:
+          type: array
+          items: { type: string }
+        productionPhiStorageApproved: { type: boolean, enum: [false] }
+        liveEhrCompletenessImplied: { type: boolean, enum: [false] }
+        validatedAt: { type: string, format: date-time }
+    WorkspaceValidationResponse:
+      type: object
+      required: [data, meta]
+      properties:
+        data:
+          type: object
+          required: [workspaceValidation, auditEvent, domainEvents]
+          properties:
+            workspaceValidation:
+              $ref: '#/components/schemas/WorkspaceValidation'
+            auditEvent:
+              $ref: '#/components/schemas/AuditEvent'
+            domainEvents:
+              type: array
+              items:
+                $ref: '#/components/schemas/AuraNoteEvent'
+        meta:
+          $ref: '#/components/schemas/ApiMeta'
+    ChartIntakeStatusRequest:
+      type: object
+      required: [status]
+      properties:
+        status: { type: string, enum: [not_started, metadata_pending, metadata_ready, stale_warning, failed, disabled_phi_upload] }
+        sourceFreshness: { type: string, enum: [current_visit, recent, historical, unknown] }
+        warning: { type: string }
+    ChartIntakeStatusResponse:
+      type: object
+      required: [data, meta]
+      properties:
+        data:
+          type: object
+          required: [chartContextSnapshot, scheduleMetadata, auditEvent, domainEvents]
+          properties:
+            chartContextSnapshot:
+              $ref: '#/components/schemas/StandaloneChartContextSnapshot'
+            scheduleMetadata:
+              $ref: '#/components/schemas/ScheduleAppointmentMetadata'
+            auditEvent:
+              $ref: '#/components/schemas/AuditEvent'
+            domainEvents:
+              type: array
+              items:
+                $ref: '#/components/schemas/AuraNoteEvent'
+        meta:
+          $ref: '#/components/schemas/ApiMeta'
     ScheduleAppointment:
       allOf:
         - $ref: '#/components/schemas/Appointment'
         - type: object
-          required: [noteStatus, noteVisibleInDrafts, startVisitEnabled, ehrSchedulingEnabled, clinicOsSchedulingEnabled]
+          required: [noteStatus, noteVisibleInDrafts, startVisitEnabled, ehrSchedulingEnabled, clinicOsSchedulingEnabled, scheduleMetadata]
           properties:
             noteStatus:
               type: string
@@ -2001,9 +2491,11 @@ components:
             chartContextWarnings:
               type: array
               items: { type: string }
+            scheduleMetadata:
+              $ref: '#/components/schemas/ScheduleAppointmentMetadata'
     ScheduleView:
       type: object
-      required: [appointments, ehrSchedulingEnabled, clinicOsSchedulingEnabled]
+      required: [appointments, ehrSchedulingEnabled, clinicOsSchedulingEnabled, query, filters, disabledLiveSchedulingSources, metadataOnlyChartIntake]
       properties:
         appointments:
           type: array
@@ -2011,6 +2503,16 @@ components:
             $ref: '#/components/schemas/ScheduleAppointment'
         ehrSchedulingEnabled: { type: boolean }
         clinicOsSchedulingEnabled: { type: boolean }
+        viewMode: { type: string, enum: [day, week] }
+        activeDate: { type: string, format: date }
+        query:
+          $ref: '#/components/schemas/ScheduleQuery'
+        filters:
+          $ref: '#/components/schemas/ScheduleFilterSet'
+        disabledLiveSchedulingSources:
+          type: array
+          items: { type: string }
+        metadataOnlyChartIntake: { type: boolean, enum: [true] }
     ScheduleViewResponse:
       type: object
       required: [data, meta]
@@ -2277,7 +2779,7 @@ components:
         deliveryMode: { type: string, enum: [storage_backed] }
         serverMediated: { type: boolean, const: true }
         publicUrl: { nullable: true }
-        permission: { type: string, enum: [final_note:export, patient_summary:export, audit:export] }
+        permission: { type: string, enum: ['final_note:export', 'patient_summary:export', 'audit:export'] }
         patientSummaryInternalDetailsExcluded: { type: boolean, const: true }
         traceId: { type: string }
     SecureDownloadResponse:
@@ -2757,6 +3259,16 @@ components:
                 enum: [cpt, hcpcs, icd10, hcc, em, quality_measure, diagnosis, differential, service, procedure, appointment_to_schedule, plan_item, staff_task]
         meta:
           $ref: '#/components/schemas/ApiMeta'
+    AddVisitSelectionRequest:
+      type: object
+      required: [category, label]
+      properties:
+        category:
+          type: string
+          enum: [cpt, hcpcs, icd10, hcc, em, quality_measure, diagnosis, differential, service, procedure, appointment_to_schedule, plan_item, staff_task]
+        label: { type: string }
+        confidence: { type: number, minimum: 0, maximum: 1 }
+        sourceSuggestionId: { type: string }
     ComplianceReviewResponse:
       type: object
       required: [data, meta]
@@ -2922,7 +3434,7 @@ components:
         routeToBillingReview: { type: boolean }
     FinalizationSession:
       type: object
-      required: [finalizationSessionId, noteId, appointmentId, currentStep, completedSteps, stepStatuses, frozenSnapshot, selectionDecisions, suggestionDecisions, unusedAuditItems, composePhases, patientOpportunities, exportArtifacts, writeback, finalNoteApproved, patientSummaryApproved, readyForBillingAttest, billingAttested, signedAndDispatched, createdAt, updatedAt]
+      required: [finalizationSessionId, noteId, appointmentId, currentStep, completedSteps, stepStatuses, frozenSnapshot, selectionDecisions, suggestionDecisions, unusedAuditItems, composePhases, evidenceSpans, itemStatuses, editorVariants, patientQuestions, carePlanItems, patientInsightSnapshot, billingValidation, dispatchMetadata, patientOpportunities, exportArtifacts, writeback, finalNoteApproved, patientSummaryApproved, readyForBillingAttest, billingAttested, signedAndDispatched, createdAt, updatedAt]
       properties:
         finalizationSessionId: { type: string }
         noteId: { type: string }
@@ -2998,6 +3510,34 @@ components:
             properties:
               phase: { type: string, enum: [analyzing_content, enhancing_structure, beautifying_language, final_review] }
               status: { type: string, enum: [pending, running, completed, failed] }
+        evidenceSpans:
+          type: array
+          items:
+            $ref: '#/components/schemas/EvidenceSpan'
+        itemStatuses:
+          type: array
+          items:
+            $ref: '#/components/schemas/FinalizationStepItemStatus'
+        editorVariants:
+          type: array
+          items:
+            $ref: '#/components/schemas/FinalizationEditorVariant'
+        patientQuestions:
+          type: array
+          items:
+            $ref: '#/components/schemas/PatientQuestionWorkflow'
+        carePlanItems:
+          type: array
+          items:
+            $ref: '#/components/schemas/CarePlanItem'
+        patientInsightSnapshot:
+          $ref: '#/components/schemas/PatientInsightSnapshot'
+        billingValidation:
+          type: array
+          items:
+            $ref: '#/components/schemas/BillingValidationDetail'
+        dispatchMetadata:
+          $ref: '#/components/schemas/FinalizationDispatchMetadata'
         composeOutput:
           type: object
           properties:
@@ -3114,6 +3654,131 @@ components:
         signedAndDispatched: { type: boolean }
         createdAt: { type: string, format: date-time }
         updatedAt: { type: string, format: date-time }
+    EvidenceSpan:
+      type: object
+      required: [evidenceSpanId, sourceType, sourceId, quote, startOffset, endOffset, confidence]
+      properties:
+        evidenceSpanId: { type: string }
+        sourceType:
+          type: string
+          enum: [note_content, transcript_segment, visit_selection, suggestion, compliance_issue, patient_question, finalization_output]
+        sourceId: { type: string }
+        sectionId: { type: string }
+        quote: { type: string }
+        startOffset: { type: integer, minimum: 0 }
+        endOffset: { type: integer, minimum: 0 }
+        confidence: { type: number, minimum: 0, maximum: 1 }
+        linkedItemId: { type: string }
+    FinalizationStepItemStatus:
+      type: object
+      required: [itemId, itemType, step, label, status, humanReviewRequired, stillValid, evidenceSpanIds, updatedAt]
+      properties:
+        itemId: { type: string }
+        itemType:
+          type: string
+          enum: [visit_selection, suggestion, evidence, patient_question, care_plan_item, billing_validation, dispatch_target]
+        step:
+          type: string
+          enum: [code_review, suggestion_review, compose, compare_edit, billing_attest, sign_dispatch]
+        label: { type: string }
+        status:
+          type: string
+          enum: [pending, kept, removed, approved, resolved, blocked, ready, disabled]
+        humanReviewRequired: { type: boolean, const: true }
+        stillValid: { type: boolean }
+        evidenceSpanIds:
+          type: array
+          items: { type: string }
+        blockerReason: { type: string }
+        updatedAt: { type: string, format: date-time }
+    FinalizationEditorVariant:
+      type: object
+      required: [variantId, variantType, status, text, version, approvalRequired, approved, patientFacing, internalDetailsExcluded, evidenceSpanIds]
+      properties:
+        variantId: { type: string }
+        variantType: { type: string, enum: [original_note, enhanced_note, patient_summary] }
+        status: { type: string, enum: [not_generated, draft, stale, approved, read_only] }
+        text: { type: string }
+        version: { type: integer, minimum: 0 }
+        approvalRequired: { type: boolean }
+        approved: { type: boolean }
+        patientFacing: { type: boolean }
+        internalDetailsExcluded: { type: boolean }
+        evidenceSpanIds:
+          type: array
+          items: { type: string }
+        lastEditedAt: { type: string, format: date-time }
+    PatientQuestionWorkflow:
+      type: object
+      required: [patientQuestionId, noteId, question, explanation, status, insertionTargetSection, answerInsertedIntoNote, portalDeliveryEnabled, humanReviewRequired]
+      properties:
+        patientQuestionId: { type: string }
+        noteId: { type: string }
+        question: { type: string }
+        explanation: { type: string }
+        status: { type: string, enum: [open, answered_in_room, forwarded_to_staff, portal_disabled, dismissed] }
+        assigneeRole: { type: string, enum: [clinician, ma] }
+        linkedBlockerTaskId: { type: string }
+        insertionTargetSection: { type: string, enum: [subjective, assessment_plan] }
+        answer: { type: string }
+        answerInsertedIntoNote: { type: boolean }
+        portalDeliveryEnabled: { type: boolean, const: false }
+        humanReviewRequired: { type: boolean, const: true }
+    CarePlanItem:
+      type: object
+      required: [carePlanItemId, noteId, source, title, detail, status, ownerRole, dueWindow, insertionEligibility, humanReviewRequired, evidenceSpanIds]
+      properties:
+        carePlanItemId: { type: string }
+        noteId: { type: string }
+        source: { type: string, enum: [ai_candidate, clinician_added] }
+        title: { type: string }
+        detail: { type: string }
+        status: { type: string, enum: [candidate, accepted, removed, inserted] }
+        ownerRole: { type: string, enum: [clinician, ma] }
+        dueWindow: { type: string, enum: [today, one_week, next_visit] }
+        insertionEligibility: { type: string, enum: [eligible_after_clinician_review, inserted, not_eligible] }
+        humanReviewRequired: { type: boolean, const: true }
+        evidenceSpanIds:
+          type: array
+          items: { type: string }
+    PatientInsightSnapshot:
+      type: object
+      required: [patientInsightSnapshotId, noteId, sourceFreshness, allergySummaryStatus, careTeamSummaryStatus, riskStratificationStatus, predictiveInsightsEnabled, staleWarnings, generatedAt]
+      properties:
+        patientInsightSnapshotId: { type: string }
+        noteId: { type: string }
+        sourceFreshness: { type: string, enum: [current_visit, recent, historical, unknown] }
+        allergySummaryStatus: { type: string, enum: [metadata_only, unavailable] }
+        careTeamSummaryStatus: { type: string, enum: [metadata_only, unavailable] }
+        riskStratificationStatus: { type: string, enum: [mock_only, unavailable] }
+        predictiveInsightsEnabled: { type: boolean, const: false }
+        staleWarnings:
+          type: array
+          items: { type: string }
+        generatedAt: { type: string, format: date-time }
+    BillingValidationDetail:
+      type: object
+      required: [billingValidationId, status, severity, message, blocksSignDispatch, evidenceSpanIds]
+      properties:
+        billingValidationId: { type: string }
+        status: { type: string, enum: [pending, ready, blocked, disabled] }
+        severity: { type: string, enum: [info, warning, hard_block] }
+        message: { type: string }
+        blocksSignDispatch: { type: boolean }
+        evidenceSpanIds:
+          type: array
+          items: { type: string }
+    FinalizationDispatchMetadata:
+      type: object
+      required: [submittedClaim, patientPortalDeliveryEnabled, ehrWritebackConfigured, exportReady, finalNoteReadOnly, patientSummaryInternalDetailsExcluded, dispatchStatus]
+      properties:
+        submittedClaim: { type: boolean, const: false }
+        patientPortalDeliveryEnabled: { type: boolean, const: false }
+        ehrWritebackConfigured: { type: boolean }
+        exportReady: { type: boolean }
+        finalNoteReadOnly: { type: boolean }
+        patientSummaryInternalDetailsExcluded: { type: boolean }
+        dispatchStatus: { type: string, enum: [not_ready, ready, signed_dispatched] }
     Note:
       type: object
       required: [noteId, appointmentId, tenantId, siteId, safePatientId, clinicianId, state, mode]
@@ -3407,6 +4072,43 @@ components:
             $ref: '#/components/schemas/TranscriptCorrection'
         providerStatus:
           $ref: '#/components/schemas/TranscriptionProviderStatus'
+    TranscriptLiveViewResponse:
+      type: object
+      required: [data, meta]
+      properties:
+        data:
+          $ref: '#/components/schemas/TranscriptLiveView'
+        meta: { $ref: '#/components/schemas/ApiMeta' }
+    TranscriptLiveView:
+      type: object
+      required: [noteId, transcriptId, liveState, pollingMode, timerState, recordingState, recentSegments, fullTranscript, segmentCount, averageConfidence, speakerLabels, providerStatus, liveStreamingEnabled, rawPhiAudioStored, retentionPolicy, generatedAt, auditEvent, domainEvents]
+      properties:
+        noteId: { type: string }
+        transcriptId: { type: string }
+        liveState: { type: string, enum: [not_started, polling_mock, ready, permission_denied, provider_disabled, read_only] }
+        pollingMode: { type: string, enum: [api_polling] }
+        timerState: { type: string, enum: [not_started, running, paused, stopped] }
+        recordingState: { type: string, enum: [not_started, recording, paused, stopped, exception_approved] }
+        recentSegments:
+          type: array
+          items: { $ref: '#/components/schemas/TranscriptSegment' }
+        fullTranscript: { $ref: '#/components/schemas/TranscriptView' }
+        segmentCount: { type: integer }
+        averageConfidence:
+          nullable: true
+          type: number
+        speakerLabels:
+          type: array
+          items: { type: string }
+        providerStatus: { $ref: '#/components/schemas/TranscriptionProviderStatus' }
+        liveStreamingEnabled: { type: boolean, enum: [false] }
+        rawPhiAudioStored: { type: boolean, enum: [false] }
+        retentionPolicy: { type: string, enum: [indefinite] }
+        generatedAt: { type: string, format: date-time }
+        auditEvent: { $ref: '#/components/schemas/AuditEvent' }
+        domainEvents:
+          type: array
+          items: { $ref: '#/components/schemas/AuraNoteEvent' }
     RecordingRetentionResponse:
       type: object
       required: [data, meta]
@@ -3429,7 +4131,7 @@ components:
         meta: { $ref: '#/components/schemas/ApiMeta' }
     VisitSelection:
       type: object
-      required: [visitSelectionId, noteId, category, label, humanApproved]
+      required: [visitSelectionId, noteId, category, label, humanApproved, disposition]
       properties:
         visitSelectionId: { type: string }
         noteId: { type: string }
@@ -3441,9 +4143,14 @@ components:
         humanApproved: { type: boolean }
         sourceSuggestionId: { type: string }
         overrideReason: { type: string }
+        disposition: { type: string, enum: [accepted, manual_added, removed] }
+        removalReason: { type: string }
+        categoryChangeReason: { type: string }
+        returnedToSuggestions: { type: boolean }
+        lastActionAt: { type: string, format: date-time }
     Suggestion:
       type: object
-      required: [suggestionId, noteId, category, label, confidence, rationale, supportingEvidence, missingEvidence, status, lowConfidenceOverrideRequired, draftOnly]
+      required: [suggestionId, noteId, category, label, confidence, rationale, supportingEvidence, missingEvidence, humanReviewRequired, status, lowConfidenceOverrideRequired, draftOnly]
       properties:
         suggestionId: { type: string }
         noteId: { type: string }
@@ -3459,7 +4166,32 @@ components:
         missingEvidence:
           type: array
           items: { type: string }
+        evidenceFor:
+          type: array
+          items: { type: string }
+        evidenceAgainst:
+          type: array
+          items: { type: string }
+        recommendedActions:
+          type: array
+          items: { type: string }
+        education:
+          type: object
+          required: [title, body, patientFacingExcluded]
+          properties:
+            title: { type: string }
+            body: { type: string }
+            patientFacingExcluded: { type: boolean, enum: [true] }
+        authoritySource: { type: string }
+        documentationRequirements:
+          type: array
+          items: { type: string }
+        testsToConsider:
+          type: array
+          items: { type: string }
+        humanReviewRequired: { type: boolean, enum: [true] }
         status: { type: string, enum: [candidate, accepted, removed] }
+        removalReason: { type: string }
         lowConfidenceOverrideRequired: { type: boolean }
         draftOnly: { type: boolean, const: true }
     SuggestionDecisionRequest:
@@ -3470,9 +4202,29 @@ components:
         nonSupportingEvidence: { type: string }
         uncertaintyExplanation: { type: string }
         confidenceImprovementPlan: { type: string }
+    SuggestionRemovalRequest:
+      type: object
+      required: [removalReason]
+      properties:
+        removalReason: { type: string }
+        returnToSuggestions: { type: boolean }
+    VisitSelectionRemoveRequest:
+      type: object
+      required: [removalReason]
+      properties:
+        removalReason: { type: string }
+        returnToSuggestions: { type: boolean }
+    VisitSelectionCategoryChangeRequest:
+      type: object
+      required: [category, reason]
+      properties:
+        category:
+          type: string
+          enum: [cpt, hcpcs, icd10, hcc, em, quality_measure, diagnosis, differential, service, procedure, appointment_to_schedule, plan_item, staff_task]
+        reason: { type: string }
     ComplianceIssue:
       type: object
-      required: [complianceIssueId, noteId, severity, title, detail, blocksFinalize, source]
+      required: [complianceIssueId, noteId, severity, title, detail, blocksFinalize, source, status, actionRequired]
       properties:
         complianceIssueId: { type: string }
         noteId: { type: string }
@@ -3481,6 +4233,30 @@ components:
         detail: { type: string }
         blocksFinalize: { type: boolean }
         source: { type: string, enum: [deterministic_mock] }
+        status: { type: string, enum: [open, acknowledged, dismissed, assigned, resolved] }
+        learnMore: { type: string }
+        actionRequired: { type: boolean }
+        actionHistory:
+          type: array
+          items:
+            $ref: '#/components/schemas/ComplianceIssueActionRecord'
+    ComplianceIssueActionRecord:
+      type: object
+      required: [actionId, action, reason, actorRole, recordedAt]
+      properties:
+        actionId: { type: string }
+        action: { type: string, enum: [dismiss, restore, acknowledge, assign, resolve] }
+        reason: { type: string }
+        actorRole: { type: string }
+        assignedRole: { type: string }
+        recordedAt: { type: string, format: date-time }
+    ComplianceIssueActionRequest:
+      type: object
+      required: [action, reason]
+      properties:
+        action: { type: string, enum: [dismiss, restore, acknowledge, assign, resolve] }
+        reason: { type: string }
+        assignedRole: { type: string, enum: [clinician, ma, billing_staff, admin, authorized_admin, compliance_privacy_lead] }
     ComplianceReview:
       type: object
       required: [noteId, issues, finalizeDisabled]
@@ -5055,6 +5831,346 @@ components:
                     $ref: '#/components/schemas/AuraNoteEvent'
             meta:
               $ref: '#/components/schemas/ApiMeta'
+    AppShellResponse:
+      allOf:
+        - type: object
+          properties:
+            data:
+              type: object
+              required: [appShell, auditEvent, domainEvents]
+              properties:
+                appShell:
+                  $ref: '#/components/schemas/AppShellView'
+                auditEvent:
+                  $ref: '#/components/schemas/AuditEvent'
+                domainEvents:
+                  type: array
+                  items:
+                    $ref: '#/components/schemas/AuraNoteEvent'
+            meta:
+              $ref: '#/components/schemas/ApiMeta'
+    AppShellView:
+      type: object
+      required:
+        - currentUser
+        - navigation
+        - notifications
+        - activity
+        - dashboard
+        - layoutPreference
+        - routeStates
+        - localReactStateLimit
+        - productName
+        - rejectedPrototypeBackend
+        - revenuePilotBrandingAccepted
+        - supabaseBackendAccepted
+        - patientFacingRevenueExposed
+      properties:
+        currentUser:
+          $ref: '#/components/schemas/AppShellCurrentUser'
+        navigation:
+          type: array
+          items:
+            $ref: '#/components/schemas/AppShellNavItem'
+        notifications:
+          type: array
+          items:
+            $ref: '#/components/schemas/Notification'
+        activity:
+          type: array
+          items:
+            $ref: '#/components/schemas/ActivityFeedItem'
+        dashboard:
+          $ref: '#/components/schemas/ClinicalWorkflowDashboard'
+        layoutPreference:
+          $ref: '#/components/schemas/AppShellLayoutPreference'
+        routeStates:
+          type: array
+          items:
+            $ref: '#/components/schemas/AppShellRouteState'
+        localReactStateLimit: { type: string, enum: [transient_controls_only] }
+        productName: { type: string, enum: ['AURA Note'] }
+        rejectedPrototypeBackend: { type: string, enum: [supabase] }
+        revenuePilotBrandingAccepted: { type: boolean, const: false }
+        supabaseBackendAccepted: { type: boolean, const: false }
+        patientFacingRevenueExposed: { type: boolean, const: false }
+    AppShellRouteState:
+      type: string
+      enum: [loading, empty, ready, saving, failed, permission-denied, read-only, blocked, degraded, disabled, demo fixture]
+    AppShellCurrentUser:
+      type: object
+      required: [userId, displayName, role, tenantId, siteId, identityProvider, purposeOfUse, localSyntheticOnly]
+      properties:
+        userId: { type: string }
+        displayName: { type: string }
+        role:
+          type: string
+          enum: [clinician, ma, billing_staff, admin, authorized_admin, clinic_manager, compliance_privacy_lead, support, service_account]
+        tenantId: { type: string }
+        siteId: { type: string }
+        identityProvider:
+          type: string
+          enum: [local_synthetic, clinicos_delegate_disabled, oidc_delegate_disabled, saml_delegate_disabled]
+        purposeOfUse:
+          type: string
+          enum: [treatment, payment, operations, support, audit, coaching, break_glass]
+        localSyntheticOnly: { type: boolean, const: true }
+    AppShellNavItem:
+      type: object
+      required: [key, label, href, requiredPermission, state, itemCount]
+      properties:
+        key:
+          type: string
+          enum: [dashboard, schedule, drafts, workspace, finalized, operations, platform, ehr, clinicos, ai_governance, coaching, support, runtime_integration, figma_handoff]
+        label: { type: string }
+        href: { type: string }
+        requiredPermission: { type: string }
+        state:
+          $ref: '#/components/schemas/AppShellRouteState'
+        itemCount: { type: integer }
+        badgeLabel: { type: string }
+        disabledReason: { type: string }
+    AppShellLayoutPreference:
+      type: object
+      required: [preferenceId, sidebarDefaultCollapsed, persisted, storageMode, updatedAt]
+      properties:
+        preferenceId: { type: string }
+        sidebarDefaultCollapsed: { type: boolean }
+        persisted: { type: boolean }
+        storageMode: { type: string, enum: [server_preference, transient_ui_only] }
+        updatedAt: { type: string, format: date-time }
+    Notification:
+      type: object
+      required: [notificationId, category, title, body, severity, read, patientFacingExcluded, metadataOnly, createdAt]
+      properties:
+        notificationId: { type: string }
+        category: { type: string, enum: [draft, task, compliance, system, disabled_feature] }
+        title: { type: string }
+        body: { type: string }
+        severity: { type: string, enum: [info, warning, critical, success] }
+        read: { type: boolean }
+        linkedRoute: { type: string }
+        patientFacingExcluded: { type: boolean, const: true }
+        metadataOnly: { type: boolean, const: true }
+        createdAt: { type: string, format: date-time }
+    ActivityFeedItem:
+      type: object
+      required: [activityId, category, label, detail, actorLabel, metadataOnly, patientFacingExcluded, occurredAt]
+      properties:
+        activityId: { type: string }
+        category: { type: string, enum: [appointment, note, visit, finalization, export, support, integration, governance] }
+        label: { type: string }
+        detail: { type: string }
+        actorLabel: { type: string }
+        route: { type: string }
+        metadataOnly: { type: boolean, const: true }
+        patientFacingExcluded: { type: boolean, const: true }
+        occurredAt: { type: string, format: date-time }
+    ClinicalWorkflowDashboard:
+      type: object
+      required:
+        - dashboardId
+        - generatedAt
+        - dataSource
+        - productionLaunchApproved
+        - liveVendorActionsEnabled
+        - submittedClaim
+        - internalRevenueMetricsVisible
+        - internalRevenueMetricLabel
+        - metrics
+        - disabledFeatureStates
+        - requiredUiStates
+      properties:
+        dashboardId: { type: string }
+        generatedAt: { type: string, format: date-time }
+        dataSource: { type: string, enum: [typed_api_client_composite] }
+        productionLaunchApproved: { type: boolean, const: false }
+        liveVendorActionsEnabled: { type: boolean, const: false }
+        submittedClaim: { type: boolean, const: false }
+        internalRevenueMetricsVisible: { type: boolean }
+        internalRevenueMetricLabel: { type: string, enum: [configured_internal_only, unavailable_caveated] }
+        metrics:
+          type: array
+          items:
+            $ref: '#/components/schemas/DashboardMetric'
+        disabledFeatureStates:
+          type: array
+          items:
+            $ref: '#/components/schemas/DisabledFeatureState'
+        requiredUiStates:
+          type: array
+          items:
+            $ref: '#/components/schemas/AppShellRouteState'
+    DashboardMetric:
+      type: object
+      required: [metricId, label, value, state, patientFacingExcluded]
+      properties:
+        metricId: { type: string }
+        label: { type: string }
+        value:
+          oneOf:
+            - type: string
+            - type: number
+        unit: { type: string, enum: [count, percent, status] }
+        route: { type: string }
+        state:
+          $ref: '#/components/schemas/AppShellRouteState'
+        patientFacingExcluded: { type: boolean, const: true }
+    DisabledFeatureState:
+      type: object
+      required: [feature, state, reason]
+      properties:
+        feature:
+          type: string
+          enum: [live_ehr_writeback, live_transcription_vendor, live_external_ai, patient_portal_delivery, claim_submission, autonomous_finalization, public_object_url, supabase_backend]
+        state: { type: string, enum: [disabled, gated, mock_only] }
+        reason: { type: string }
+    OperationsRuntimeResponse:
+      type: object
+      properties:
+        data:
+          type: object
+          required: [operationsRuntime, auditEvent, domainEvents]
+          properties:
+            operationsRuntime:
+              $ref: '#/components/schemas/OperationsRuntimeView'
+            auditEvent:
+              $ref: '#/components/schemas/AuditEvent'
+            domainEvents:
+              type: array
+              items:
+                $ref: '#/components/schemas/AuraNoteEvent'
+    OperationsRuntimeView:
+      type: object
+      required:
+        - runtimeId
+        - routeState
+        - requiredUiStates
+        - analytics
+        - notifications
+        - activity
+        - settingsSummary
+        - localReactStateLimit
+        - productionLaunchApproved
+        - liveVendorActionsEnabled
+        - submittedClaim
+        - demoFixture
+      properties:
+        runtimeId: { type: string }
+        routeState:
+          $ref: '#/components/schemas/AppShellRouteState'
+        requiredUiStates:
+          type: array
+          items:
+            $ref: '#/components/schemas/AppShellRouteState'
+        analytics:
+          $ref: '#/components/schemas/OperationsAnalyticsSnapshot'
+        notifications:
+          type: array
+          items:
+            $ref: '#/components/schemas/Notification'
+        activity:
+          type: array
+          items:
+            $ref: '#/components/schemas/ActivityFeedItem'
+        settingsSummary:
+          $ref: '#/components/schemas/OperationsSettingsSummary'
+        localReactStateLimit: { type: string, enum: [transient_tabs_and_form_inputs_only] }
+        productionLaunchApproved: { type: boolean, const: false }
+        liveVendorActionsEnabled: { type: boolean, const: false }
+        submittedClaim: { type: boolean, const: false }
+        demoFixture: { type: boolean, const: true }
+    OperationsAnalyticsSnapshot:
+      type: object
+      required: [analyticsId, generatedAt, dataSource, metrics, series, internalRevenueVisible, patientFacingRevenueExposed, productionAnalyticsVendorEnabled, caveat]
+      properties:
+        analyticsId: { type: string }
+        generatedAt: { type: string, format: date-time }
+        dataSource: { type: string, enum: [standalone_operations_api_composite] }
+        metrics:
+          type: array
+          items:
+            $ref: '#/components/schemas/DashboardMetric'
+        series:
+          type: array
+          items:
+            $ref: '#/components/schemas/OperationsAnalyticsSeries'
+        internalRevenueVisible: { type: boolean, const: false }
+        patientFacingRevenueExposed: { type: boolean, const: false }
+        productionAnalyticsVendorEnabled: { type: boolean, const: false }
+        caveat: { type: string }
+    OperationsAnalyticsSeries:
+      type: object
+      required: [seriesId, label, kind, points, source, patientFacingExcluded, internalOnly]
+      properties:
+        seriesId: { type: string }
+        label: { type: string }
+        kind: { type: string, enum: [bar, line, status] }
+        points:
+          type: array
+          items:
+            $ref: '#/components/schemas/OperationsAnalyticsPoint'
+        source: { type: string, enum: [tasks, billing_review, settings, templates, rules_catalog, disabled_feature] }
+        patientFacingExcluded: { type: boolean, const: true }
+        internalOnly: { type: boolean, const: true }
+    OperationsAnalyticsPoint:
+      type: object
+      required: [label, value, state, patientFacingExcluded]
+      properties:
+        label: { type: string }
+        value:
+          oneOf:
+            - type: string
+            - type: number
+        state:
+          $ref: '#/components/schemas/AppShellRouteState'
+        patientFacingExcluded: { type: boolean, const: true }
+    OperationsSettingsSummary:
+      type: object
+      required:
+        - settingsSummaryId
+        - tenantId
+        - siteId
+        - integrations
+        - featureFlags
+        - maskedSecretsOnly
+        - secretValuesReturned
+        - aiPreferencesGovernedBy
+        - patientFacingRevenueEnabled
+        - claimSubmissionEnabled
+        - certifiedProductionRules
+      properties:
+        settingsSummaryId: { type: string }
+        tenantId: { type: string }
+        siteId: { type: string }
+        integrations:
+          type: array
+          items:
+            type: object
+            required: [integrationId, vendor, status, liveCredentialPresent, routeState]
+            properties:
+              integrationId: { type: string }
+              vendor: { type: string }
+              status: { type: string }
+              liveCredentialPresent: { type: boolean, const: false }
+              routeState:
+                $ref: '#/components/schemas/AppShellRouteState'
+        featureFlags:
+          type: array
+          items:
+            type: object
+            required: [key, enabled, governs, runtimeEffect]
+            properties:
+              key: { type: string }
+              enabled: { type: boolean }
+              governs: { type: string }
+              runtimeEffect: { type: string, enum: [disabled, mock_only, internal_only] }
+        maskedSecretsOnly: { type: boolean, const: true }
+        secretValuesReturned: { type: boolean, const: false }
+        aiPreferencesGovernedBy: { type: string, enum: [ai_gateway_policy] }
+        patientFacingRevenueEnabled: { type: boolean, const: false }
+        claimSubmissionEnabled: { type: boolean, const: false }
+        certifiedProductionRules: { type: boolean, const: false }
     LocalAuthSession:
       type: object
       description: Local synthetic auth/session scaffold only. This does not represent production SSO.

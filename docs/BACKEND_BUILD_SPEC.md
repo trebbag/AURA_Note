@@ -361,3 +361,66 @@ Any future claim submission backend must be a separate approved work order with 
 `WO-071` through `WO-075` add the `/support/commercial-readiness` backend review boundary. The endpoint is permission checked through existing support/audit access controls, emits audit-safe CR-4 review events, and returns review metadata only for security/privacy/compliance, observability/support, billing/revenue integrity, beta-pilot, and final decision-gate evidence.
 
 The backend posture remains no-launch: `productionLaunchReady=false`, `liveVendorEnabled=false`, `claimSubmissionEnabled=false`, no certification claim, no live credentials, no live PHI, no raw support payloads, no live telemetry sink, no live AI/EHR/ClinicOS/transcription/storage execution, no charge finalization, no medical-necessity determination, and no autonomous clinical/coding/billing behavior.
+
+## Post-CR4 Figma Make backend catch-up status
+
+The Figma Make catch-up tranche adds `GET /api/v1/app-shell` as a role-scoped composite backend surface for the Figma-derived AURA Note shell. The route returns `AppShellViewDto`, `ClinicalWorkflowDashboardDto`, `NotificationDto`, `ActivityFeedItemDto`, layout preference metadata, disabled-feature states, and required UI state vocabulary. It composes existing schedule, notes, and operations runtime data when the caller role has permission; otherwise it returns permission-denied route state rather than exposing restricted counts.
+
+The same catch-up sequence adds the editor persistence foundation required by the Figma note editor:
+
+- `GET /api/v1/notes/{noteId}/content`
+- `POST /api/v1/notes/{noteId}/content/autosave`
+- `GET /api/v1/notes/{noteId}/versions`
+- `POST /api/v1/notes/{noteId}/versions/{versionId}/restore`
+
+The canonical persisted rich-text scaffold is `aura_markdown_v1`. The API stores sanitized markdown, derived plain text, section offsets, autosave status, and audit-safe version metadata. Autosave and restore require the existing timer/editor gate and `draft_note:edit` permission; finalized notes remain read-only. This does not introduce Supabase, a direct browser AI path, live PHI storage approval, autonomous finalization, charge finalization, claim submission, or production launch readiness.
+
+The same catch-up sequence adds backend-backed Schedule Builder metadata for the Figma-derived route:
+
+- query-aware `GET /api/v1/schedule/appointments` returns active query, filter options, disabled live scheduling sources, and `ScheduleAppointmentMetadataDto` with clinic location, room, virtual visit state, metadata-only chart-intake state, validation warnings, and disabled live upload/portal flags;
+- `GET /api/v1/schedule/appointments/{appointmentId}/workspace-validation` validates appointment, note, and chart-context linkage before opening the workspace;
+- `POST /api/v1/schedule/appointments/{appointmentId}/chart-intake-status` updates metadata-only chart-intake status and emits `chart_context.intake_status_updated.v1`.
+
+These additions keep appointment as the primary workflow key, use safe synthetic identifiers, and keep live PHI upload, live patient portal delivery, live EHR completeness, Supabase, claim submission, autonomous clinical/coding/billing behavior, and production launch approval disabled.
+
+The same catch-up sequence adds backend-backed workspace review actions for the Figma-derived transcript preview, Suggestions panel, Visit Selections bar, and Compliance Review drawer:
+
+- `GET /api/v1/documentation-workspace/appointments/{appointmentId}/transcript/live` returns `TranscriptLiveViewDto` with recent/full synthetic transcript state, confidence summary, speaker labels, timer state, provider status, `liveStreamingEnabled=false`, `rawPhiAudioStored=false`, and indefinite transcript retention metadata;
+- suggestion DTOs now carry human-review-required evidence, education, documentation requirements, recommended actions, and optional removal reason;
+- Visit Selection DTOs now carry disposition, removal reason, category-change reason, return-to-suggestions state, and action timestamps;
+- `POST /api/v1/notes/{noteId}/suggestions/{suggestionId}/restore`, `POST /api/v1/notes/{noteId}/visit-selections/{visitSelectionId}/remove`, and `POST /api/v1/notes/{noteId}/visit-selections/{visitSelectionId}/category` provide auditable disposition actions;
+- `POST /api/v1/notes/{noteId}/compliance/issues/{complianceIssueId}/actions` records acknowledge, assign, restore, dismiss, and resolve attempts while failing closed on hard-block dismissal and recalculating blocker/finalization readiness after resolution.
+
+All review-panel mutations remain tenant-scoped, permission-checked, audit/event-emitting, and draft/candidate-only. They do not introduce autonomous diagnosis, code finalization, charge finalization, medical-necessity determination, live claim submission, direct browser AI, live patient portal delivery, raw PHI audio transport, Supabase, or production launch readiness.
+
+The route emits an `app_shell.view` audit event plus an `audit.event_recorded.v1` metadata event. It explicitly records `AURA Note` branding, `revenuePilotBrandingAccepted=false`, `supabaseBackendAccepted=false`, `patientFacingRevenueExposed=false`, `productionLaunchApproved=false`, `liveVendorActionsEnabled=false`, and `submittedClaim=false`.
+
+No Supabase backend, direct browser AI call, live patient portal delivery, live claim submission, public object URL, live EHR/writeback, live transcription vendor, production PHI, autonomous finalization, charge finalization, medical-necessity determination, or production launch behavior is enabled.
+
+## Post-CR4 Figma Make Design 2 finalization backend catch-up
+
+The Figma Make Design 2 finalization wizard is mapped onto the existing Nest finalization service and `FinalizationSessionDto`, not a separate prototype backend. `GET /api/v1/notes/{noteId}/finalization` and every finalization action response now refresh derived finalization runtime state for evidence spans, per-step item statuses, editor variants, patient questions, care-plan candidates, patient insight metadata, billing validation detail, and dispatch metadata.
+
+This backend state remains synthetic/local and human-review controlled:
+
+- evidence spans are keyed by stable source IDs and offsets rather than display labels;
+- patient questions map to History Gap and MA-task concepts, while patient portal delivery stays disabled;
+- care-plan items are candidate-only and do not place orders;
+- patient insight metadata reports source freshness, stale warnings, metadata-only/unavailable states, and `predictiveInsightsEnabled=false`;
+- billing validation preserves draft-claim-preview semantics and `submittedClaim=false`;
+- dispatch metadata reports export/read-only state but does not enable live EHR writeback, live patient portal delivery, charge finalization, claim submission, or autonomous clinical/coding/billing behavior.
+
+The service refresh path intentionally derives these UI runtime sections from existing finalization/session state so older persisted finalization output can be rehydrated with safe defaults until a later persistence-deepening work order promotes every derived field into first-class durable tables.
+
+## Post-CR4 Figma Make operations runtime backend catch-up
+
+Design 1 operations analytics, activity, notification, and settings-summary affordances are now mapped to `GET /api/v1/standalone/operations/runtime`. The endpoint composes existing operations state from the task worklist, billing-review queue, settings/admin center, templates/dot phrases, estimate configuration, and rules catalog.
+
+The runtime response includes:
+
+- `OperationsRuntimeViewDto` with required route states, demo-fixture posture, `productionLaunchApproved=false`, `liveVendorActionsEnabled=false`, and `submittedClaim=false`;
+- `OperationsAnalyticsSnapshotDto` with backend-composed synthetic metrics and chart series for worklists, billing review, settings/integrations, templates, and rules;
+- notification and activity feed items that are metadata-only and patient-facing excluded;
+- `OperationsSettingsSummaryDto` with integration statuses, feature-flag effects, masked-secret posture, AI Gateway policy governance, patient-facing revenue disabled, claim submission disabled, and production rules certification disabled.
+
+The endpoint is tenant/site scoped, permission checked, and audit/event emitting through `operations.runtime_view`, `operational.readiness_checked.v1`, and `audit.event_recorded.v1`. It does not enable production analytics vendors, raw PHI, secret values, patient-facing revenue, live integrations, charge finalization, medical-necessity determination, claim submission, or production launch readiness.

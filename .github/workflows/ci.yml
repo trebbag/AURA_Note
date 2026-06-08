@@ -65,6 +65,7 @@ jobs:
       - run: pnpm security:review-readiness
       - run: pnpm frontend:runtime-integration-readiness
       - run: pnpm frontend:primary-runtime-readiness
+      - run: pnpm figma:backend-catch-up-readiness
       - run: pnpm figma:handoff-readiness
       - run: pnpm standalone:workflow-readiness
       - run: pnpm launch:readiness

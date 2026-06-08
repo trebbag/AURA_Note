@@ -468,6 +468,10 @@ describe('ScheduleService', () => {
     assert.equal(started.data.finalizationSession.currentStep, 'code_review');
     assert.equal(started.data.finalizationSession.frozenSnapshot.finalPassSuggestions.every((suggestion) => suggestion.confidence > 0.5), true);
     assert.equal(started.data.finalizationSession.frozenSnapshot.transcriptSegmentCount, 0);
+    assert.equal(started.data.finalizationSession.evidenceSpans.length > 0, true);
+    assert.equal(started.data.finalizationSession.itemStatuses.some((item) => item.step === 'code_review'), true);
+    assert.equal(started.data.finalizationSession.editorVariants.some((variant) => variant.variantType === 'original_note'), true);
+    assert.equal(started.data.finalizationSession.dispatchMetadata.submittedClaim, false);
     assert.throws(() => service.completeCodeReview(appointment.noteId, clinician), BadRequestException);
 
     service.decideFinalizationSelection(
@@ -541,6 +545,14 @@ describe('ScheduleService', () => {
     assert.equal(composed.data.finalizationSession.currentStep, 'compare_edit');
     assert.equal(composed.data.finalizationSession.composeOutput?.draftOnly, true);
     assert.equal(composed.data.finalizationSession.composeOutput?.patientSummaryInternalDetailsDetected, false);
+    assert.equal(
+      composed.data.finalizationSession.editorVariants.some(
+        (variant) => variant.variantType === 'enhanced_note' && variant.status === 'draft' && variant.approvalRequired
+      ),
+      true
+    );
+    assert.equal(composed.data.finalizationSession.carePlanItems.every((item) => item.humanReviewRequired), true);
+    assert.equal(composed.data.finalizationSession.patientInsightSnapshot.predictiveInsightsEnabled, false);
 
     service.updateCompareEditOriginal(
       appointment.noteId,
@@ -587,6 +599,7 @@ describe('ScheduleService', () => {
     assert.equal(preview.data.finalizationSession.draftClaimPreview?.status, 'draft_preview');
     assert.equal(preview.data.finalizationSession.draftClaimPreview?.submittedClaim, false);
     assert.equal(preview.data.finalizationSession.draftClaimPreview?.estimateStatus, 'unavailable_caveated');
+    assert.equal(preview.data.finalizationSession.billingValidation.some((validation) => validation.message.includes('submittedClaim=false')), true);
     assert.equal(preview.data.domainEvents[0]?.eventType, 'draft_claim_preview.generated.v1');
   });
 
@@ -613,6 +626,7 @@ describe('ScheduleService', () => {
 
     assert.equal(attested.data.finalizationSession.billingAttested, true);
     assert.equal(attested.data.finalizationSession.currentStep, 'sign_dispatch');
+    assert.equal(attested.data.finalizationSession.dispatchMetadata.dispatchStatus, 'ready');
   });
 
   it('routes billing review and grants billing staff transcript access only after the trigger', () => {

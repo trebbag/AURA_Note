@@ -5,6 +5,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import type {
   BillingReviewQueueViewDto,
   EstimateConfigurationDto,
+  OperationsRuntimeViewDto,
   RulesCatalogViewDto,
   SettingsAdminViewDto,
   TaskWorklistViewDto,
@@ -14,6 +15,8 @@ import { createAuraNoteApiClient } from '../../../lib/aura-note-api-client';
 
 const states = ['empty', 'loading', 'ready', 'saving', 'blocked', 'failed', 'permission-denied', 'read-only', 'demo fixture'];
 const tabs = ['Task Inbox', 'MA Follow-Up', 'Billing Review', 'Settings', 'Templates', 'Estimates', 'Rules Catalog'] as const;
+const analyticsTabs = ['Billing & Coding', 'Health Outcomes', 'Note Quality', 'Staff Performance'] as const;
+const settingsTabs = ['Suggestion Governance', 'Clinical Rules', 'Templates', 'Interface', 'Advanced Controls'] as const;
 
 type Tab = (typeof tabs)[number];
 type RouteState = (typeof states)[number];
@@ -31,12 +34,14 @@ export default function StandaloneOperationsPage() {
   const [templates, setTemplates] = useState<TemplatesViewDto | null>(null);
   const [estimate, setEstimate] = useState<EstimateConfigurationDto | null>(null);
   const [rules, setRules] = useState<RulesCatalogViewDto | null>(null);
+  const [operationsRuntime, setOperationsRuntime] = useState<OperationsRuntimeViewDto | null>(null);
   const [statusMessage, setStatusMessage] = useState('Loading operations from typed API responses.');
 
   const refreshOperations = useCallback(async () => {
     setRouteState('loading');
     try {
-      const [taskResponse, billingResponse, settingsResponse, templatesResponse, estimateResponse, rulesResponse] = await Promise.all([
+      const [runtimeResponse, taskResponse, billingResponse, settingsResponse, templatesResponse, estimateResponse, rulesResponse] = await Promise.all([
+        adminClient.getOperationsRuntime(),
         adminClient.listOperationalTasks(),
         adminClient.listBillingReviews(),
         adminClient.getSettings(),
@@ -44,6 +49,7 @@ export default function StandaloneOperationsPage() {
         adminClient.getEstimateConfig(),
         adminClient.listRulesCatalog()
       ]);
+      setOperationsRuntime(runtimeResponse.data.operationsRuntime);
       setTasks(taskResponse.data);
       setBilling(billingResponse.data);
       setSettings(settingsResponse.data);
@@ -161,6 +167,8 @@ export default function StandaloneOperationsPage() {
     ['Estimate', estimate?.patientFacingEstimatesEnabled ? 'unsafe enabled' : 'patient-facing disabled'],
     ['Rules', rules?.entries.map((entry) => `${entry.codeOrKey}:${entry.status}`).join(', ') ?? 'not loaded']
   ];
+  const settingsFeatureFlags = operationsRuntime?.settingsSummary.featureFlags ?? [];
+  const primaryAnalyticsSeries = operationsRuntime?.analytics.series[0];
 
   return (
     <main className="operations-shell">
@@ -201,6 +209,257 @@ export default function StandaloneOperationsPage() {
             <dd>Claim submission remains disabled.</dd>
           </div>
         </dl>
+      </section>
+
+      <section className="panel-grid" aria-label="Figma operations runtime">
+        <article className="panel-card" aria-label="Operations analytics snapshot">
+          <h2>Operations Analytics</h2>
+          <p>{operationsRuntime?.analytics.caveat ?? 'Loading backend-composed operations analytics.'}</p>
+          <div className="analytics-list">
+            {operationsRuntime?.analytics.metrics.map((metric) => (
+              <span key={metric.metricId}>
+                {metric.label}: {metric.value}
+              </span>
+            ))}
+          </div>
+          <small>productionAnalyticsVendorEnabled={String(operationsRuntime?.analytics.productionAnalyticsVendorEnabled ?? false)}</small>
+        </article>
+
+        <article className="panel-card" aria-label="Operations activity feed">
+          <h2>Activity Feed</h2>
+          <ul className="stack-list">
+            {operationsRuntime?.activity.map((item) => (
+              <li key={item.activityId}>
+                <strong>{item.label}</strong>
+                <span>{item.detail}</span>
+                <small>{item.actorLabel}</small>
+              </li>
+            ))}
+          </ul>
+        </article>
+
+        <article className="panel-card" aria-label="Operations notification feed">
+          <h2>Notifications</h2>
+          <ul className="stack-list">
+            {operationsRuntime?.notifications.map((notification) => (
+              <li key={notification.notificationId}>
+                <strong>{notification.title}</strong>
+                <span>{notification.body}</span>
+                <small>{notification.severity}</small>
+              </li>
+            ))}
+          </ul>
+        </article>
+
+        <article className="panel-card" aria-label="Settings runtime summary">
+          <h2>Settings Runtime</h2>
+          <dl className="metric-list">
+            <div>
+              <dt>Masked secrets</dt>
+              <dd>{String(operationsRuntime?.settingsSummary.maskedSecretsOnly ?? true)}</dd>
+            </div>
+            <div>
+              <dt>Secret values returned</dt>
+              <dd>{String(operationsRuntime?.settingsSummary.secretValuesReturned ?? false)}</dd>
+            </div>
+            <div>
+              <dt>AI preference governance</dt>
+              <dd>{operationsRuntime?.settingsSummary.aiPreferencesGovernedBy ?? 'ai_gateway_policy'}</dd>
+            </div>
+            <div>
+              <dt>Claim submission</dt>
+              <dd>{String(operationsRuntime?.settingsSummary.claimSubmissionEnabled ?? false)}</dd>
+            </div>
+          </dl>
+        </article>
+      </section>
+
+      <section className="figma-analytics-polish" aria-label="Figma analytics and settings polish">
+        <article aria-label="Figma analytics tabs polished by API">
+          <div className="section-title-row">
+            <div>
+              <p className="eyebrow">Design 1 / Analytics</p>
+              <h2>Analytics Command Center</h2>
+              <p>Tabs, metric tiles, and chart regions are rendered from operations API aggregates and safe disabled states.</p>
+            </div>
+            <strong>{operationsRuntime?.analytics.dataSource ?? 'standalone_operations_api_composite'}</strong>
+          </div>
+          <div className="figma-tab-strip" role="tablist" aria-label="Design 1 analytics tabs">
+            {analyticsTabs.map((tab, index) => (
+              <button key={tab} type="button" role="tab" aria-selected={index === 0} className={index === 0 ? 'selected-tab' : 'secondary-button'}>
+                {tab}
+              </button>
+            ))}
+          </div>
+          <div className="figma-kpi-grid" aria-label="API-backed analytics metric cards">
+            {operationsRuntime?.analytics.metrics.map((metric, index) => (
+              <div key={metric.metricId} data-state={metric.state}>
+                <span className={`figma-kpi-icon tone-${index % 4}`} aria-hidden="true">
+                  {metric.label.slice(0, 1)}
+                </span>
+                <strong>{metric.label}</strong>
+                <b>{metric.value}</b>
+                <small>
+                  {metric.unit ?? 'status'} / patientFacingExcluded={String(metric.patientFacingExcluded)}
+                </small>
+              </div>
+            ))}
+            {!operationsRuntime ? <p>Loading analytics metric cards from the operations runtime API.</p> : null}
+          </div>
+          <div className="figma-chart-stage" aria-label="API-backed analytics chart stage">
+            <div>
+              <strong>{primaryAnalyticsSeries?.label ?? 'Worklist composition'}</strong>
+              <small>CSS-rendered chart; no production analytics vendor enabled.</small>
+            </div>
+            <div className="figma-line-chart" aria-hidden="true">
+              {(primaryAnalyticsSeries?.points ?? []).map((point, index) => {
+                const numericValue = typeof point.value === 'number' ? point.value : 0;
+                return <i key={`${point.label}-${index}`} style={{ height: `${Math.max(12, numericValue * 22)}px` }} />;
+              })}
+            </div>
+            <ul>
+              {(primaryAnalyticsSeries?.points ?? []).map((point) => (
+                <li key={point.label}>
+                  <span>{point.label}</span>
+                  <strong>{point.value}</strong>
+                </li>
+              ))}
+            </ul>
+          </div>
+        </article>
+
+        <article aria-label="Figma settings tabs polished by API">
+          <div className="section-title-row">
+            <div>
+              <p className="eyebrow">Design 1 / Settings</p>
+              <h2>Settings Governance Center</h2>
+              <p>Prototype API-key and model controls are adapted into masked-secret posture, governed flags, templates, and rules.</p>
+            </div>
+            <strong>maskedSecretsOnly={String(operationsRuntime?.settingsSummary.maskedSecretsOnly ?? true)}</strong>
+          </div>
+          <div className="figma-tab-strip" role="tablist" aria-label="Design 1 settings tabs">
+            {settingsTabs.map((tab, index) => (
+              <button key={tab} type="button" role="tab" aria-selected={index === 0} className={index === 0 ? 'selected-tab' : 'secondary-button'}>
+                {tab}
+              </button>
+            ))}
+          </div>
+          <div className="figma-settings-matrix" aria-label="API-backed settings controls">
+            <div>
+              <strong>Suggestion Governance</strong>
+              <span>{operationsRuntime?.settingsSummary.aiPreferencesGovernedBy ?? 'ai_gateway_policy'}</span>
+              <small>Direct browser AI remains disabled.</small>
+            </div>
+            <div>
+              <strong>Clinical Rules</strong>
+              <span>{rules?.entries.length ?? 0} source-linked rules</span>
+              <small>Autonomous finalization: false</small>
+            </div>
+            <div>
+              <strong>Templates</strong>
+              <span>{templates?.templates.length ?? 0} templates / {templates?.dotPhrases.length ?? 0} dot phrases</span>
+              <small>Variables stay placeholder-only.</small>
+            </div>
+            <div>
+              <strong>Interface</strong>
+              <span>routeState={operationsRuntime?.routeState ?? routeState}</span>
+              <small>Transient tabs only; backend state remains authoritative.</small>
+            </div>
+            <div>
+              <strong>Advanced Controls</strong>
+              <span>secretValuesReturned={String(operationsRuntime?.settingsSummary.secretValuesReturned ?? false)}</span>
+              <small>Live credentials are never returned to the browser.</small>
+            </div>
+            <div>
+              <strong>Feature Flags</strong>
+              <span>{settingsFeatureFlags.length} governed flags</span>
+              <small>{settingsFeatureFlags.map((flag) => `${flag.key}:${flag.runtimeEffect}`).join(', ') || 'loading'}</small>
+            </div>
+          </div>
+        </article>
+      </section>
+
+      <section className="figma-ops-board" aria-label="Backend-backed operations analytics series">
+        <article aria-label="Design 1 analytics tabs backed by API">
+          <div className="section-title-row">
+            <div>
+              <h2>Design 1 Analytics Tabs</h2>
+              <p>Usage, billing review, settings, rules, and templates are composed by the operations API.</p>
+            </div>
+            <strong>
+              {operationsRuntime?.analytics.dataSource ?? 'standalone_operations_api_composite'} / localReactState=
+              {operationsRuntime?.localReactStateLimit ?? 'transient_tabs_and_form_inputs_only'}
+            </strong>
+          </div>
+          <div className="figma-series-grid">
+            {operationsRuntime?.analytics.series.map((series) => (
+              <div key={series.seriesId} className="figma-series-card">
+                <div>
+                  <strong>{series.label}</strong>
+                  <small>
+                    {series.source} / {series.kind} / internalOnly={String(series.internalOnly)}
+                  </small>
+                </div>
+                <div className="figma-bar-list">
+                  {series.points.map((point) => {
+                    const numericValue = typeof point.value === 'number' ? point.value : 0;
+                    const width = `${Math.max(6, Math.min(100, numericValue * 12))}%`;
+                    return (
+                      <span key={point.label}>
+                        <small>{point.label}</small>
+                        <i style={{ width }} />
+                        <strong>{point.value}</strong>
+                      </span>
+                    );
+                  })}
+                </div>
+              </div>
+            ))}
+            {!operationsRuntime ? <p>Loading API-backed analytics series.</p> : null}
+          </div>
+        </article>
+
+        <article aria-label="Design 1 settings affordances backed by API">
+          <div className="section-title-row">
+            <div>
+              <h2>Settings And Governance Runtime</h2>
+              <p>Figma settings concepts are mapped to governed flags, masked secrets, templates, and rules.</p>
+            </div>
+            <strong>secretValuesReturned={String(operationsRuntime?.settingsSummary.secretValuesReturned ?? false)}</strong>
+          </div>
+          <div className="figma-settings-grid">
+            <div>
+              <strong>AI Suggestions</strong>
+              <span>{operationsRuntime?.settingsSummary.aiPreferencesGovernedBy ?? 'ai_gateway_policy'}</span>
+            </div>
+            <div>
+              <strong>Templates</strong>
+              <span>{templates?.templates.length ?? 0} templates / {templates?.dotPhrases.length ?? 0} dot phrases</span>
+            </div>
+            <div>
+              <strong>Clinical Rules</strong>
+              <span>{rules?.entries.length ?? 0} entries / certifiedProductionRules={String(rules?.certifiedProductionRules ?? false)}</span>
+            </div>
+            <div>
+              <strong>Advanced Config</strong>
+              <span>maskedSecretsOnly={String(operationsRuntime?.settingsSummary.maskedSecretsOnly ?? true)}</span>
+            </div>
+            <div>
+              <strong>Integrations</strong>
+              <span>
+                {operationsRuntime?.settingsSummary.integrations.map((integration) => `${integration.vendor}:${integration.routeState}`).join(', ') ??
+                  'loading'}
+              </span>
+            </div>
+            <div>
+              <strong>Revenue Controls</strong>
+              <span>
+                patientFacingRevenueEnabled={String(operationsRuntime?.settingsSummary.patientFacingRevenueEnabled ?? false)} /
+                submittedClaim={String(operationsRuntime?.submittedClaim ?? false)}
+              </span>
+            </div>
+          </div>
+        </article>
       </section>
 
       <section className="operations-tabs" aria-label="Operations sections">

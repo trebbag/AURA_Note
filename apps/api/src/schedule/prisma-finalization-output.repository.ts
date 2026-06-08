@@ -673,6 +673,47 @@ export class PrismaFinalizationOutputRepository implements AsyncFinalizationOutp
       suggestionDecisions: jsonArray<FinalizationSuggestionDecisionDto>(input.finalizationRun.suggestionDecisionsJson),
       unusedAuditItems: jsonArray(input.finalizationRun.unusedAuditItemsJson),
       composePhases: jsonArray(input.finalizationRun.composePhasesJson),
+      evidenceSpans: [],
+      itemStatuses: [],
+      editorVariants: [],
+      patientQuestions: [],
+      carePlanItems: [],
+      patientInsightSnapshot: {
+        patientInsightSnapshotId: `patient-insight-${noteId}`,
+        noteId,
+        sourceFreshness: 'unknown',
+        allergySummaryStatus: 'unavailable',
+        careTeamSummaryStatus: 'unavailable',
+        riskStratificationStatus: 'unavailable',
+        predictiveInsightsEnabled: false,
+        staleWarnings: ['Persisted finalization output rehydrated without live chart context.'],
+        generatedAt: input.finalizationRun.updatedAt.toISOString()
+      },
+      billingValidation: [
+        {
+          billingValidationId: `billing-validation-claim-${noteId}`,
+          status: draftClaimPreview ? 'ready' : 'pending',
+          severity: 'info',
+          message: draftClaimPreview
+            ? 'Draft claim preview persisted with submittedClaim=false.'
+            : 'Draft claim preview is not present in persisted output.',
+          blocksSignDispatch: false,
+          evidenceSpanIds: []
+        }
+      ],
+      dispatchMetadata: {
+        submittedClaim: false,
+        patientPortalDeliveryEnabled: false,
+        ehrWritebackConfigured: writeback.configured,
+        exportReady: input.finalizationRun.signedAndDispatched,
+        finalNoteReadOnly: Boolean(finalNote?.readOnly),
+        patientSummaryInternalDetailsExcluded: Boolean(patientSummary?.internalBillingDetailsExcluded),
+        dispatchStatus: input.finalizationRun.signedAndDispatched
+          ? 'signed_dispatched'
+          : input.finalizationRun.billingAttested && input.finalizationRun.finalNoteApproved && input.finalizationRun.patientSummaryApproved
+            ? 'ready'
+            : 'not_ready'
+      },
       ...(composeOutput ? { composeOutput } : {}),
       patientOpportunities: jsonArray(input.finalizationRun.patientOpportunitiesJson),
       ...(draftClaimPreview ? { draftClaimPreview } : {}),

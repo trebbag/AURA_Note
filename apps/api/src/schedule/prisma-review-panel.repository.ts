@@ -399,6 +399,7 @@ export class PrismaReviewPanelRepository implements AsyncReviewPanelRepository {
       rationale: record.rationale,
       supportingEvidence: jsonStringArray(record.supportingEvidenceJson),
       missingEvidence: jsonStringArray(record.missingEvidenceJson),
+      humanReviewRequired: true,
       status: toSuggestionStatus(record.status),
       lowConfidenceOverrideRequired: record.lowConfidenceOverrideRequired,
       draftOnly: true
@@ -417,7 +418,10 @@ export class PrismaReviewPanelRepository implements AsyncReviewPanelRepository {
       ...(record.confidence === null ? {} : { confidence: record.confidence }),
       humanApproved: record.status === 'accepted',
       ...(record.sourceSuggestion ? { sourceSuggestionId: record.sourceSuggestion.sourceRef } : {}),
-      ...(record.overrideReason ? { overrideReason: record.overrideReason } : {})
+      ...(record.overrideReason ? { overrideReason: record.overrideReason } : {}),
+      disposition: record.status === 'accepted' ? 'accepted' : 'removed',
+      ...(record.status === 'removed' ? { removalReason: 'Persisted synthetic review-panel removal.' } : {}),
+      lastActionAt: record.updatedAt.toISOString()
     };
   }
 
@@ -429,7 +433,9 @@ export class PrismaReviewPanelRepository implements AsyncReviewPanelRepository {
       title: record.title,
       detail: record.detail,
       blocksFinalize: record.blocksAction,
-      source: 'deterministic_mock'
+      source: 'deterministic_mock',
+      status: 'open',
+      actionRequired: record.blocksAction
     };
   }
 

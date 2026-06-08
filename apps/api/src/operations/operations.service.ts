@@ -13,6 +13,8 @@ import {
   type IntegrationConnectionDto,
   type OperationalActionResponseDto,
   type OperationalTaskDto,
+  type OperationsRuntimeResponseDto,
+  type OperationsRuntimeViewDto,
   type PublishRulesCatalogRequestDto,
   type RulesCatalogEntryDto,
   type RulesCatalogViewDto,
@@ -234,6 +236,56 @@ export class OperationsService {
           overdue: 0
         },
         states: ['empty', 'loading', 'ready', 'saving', 'blocked', 'failed', 'permission-denied', 'read-only', 'demo fixture']
+      },
+      this.createMeta(context)
+    );
+  }
+
+  getOperationsRuntime(context: RequestContext): ApiEnvelope<OperationsRuntimeResponseDto> {
+    this.assertTenantScope(context);
+    if (!canPerform('task:view', context.access) && !canPerform('settings:view', context.access)) {
+      throw new ForbiddenException('role cannot view operations runtime');
+    }
+
+    const tasks = canPerform('task:view', context.access) ? this.listTasks(context).data : undefined;
+    const billing =
+      canPerform('billing_review:view', context.access) && context.access.role !== 'support'
+        ? this.listBillingReviews(context).data
+        : undefined;
+    const settings = canPerform('settings:view', context.access) ? this.getSettings(context).data : undefined;
+    const templates = canPerform('template:manage', context.access) ? this.listTemplates(context).data : undefined;
+    const estimate =
+      canPerform('settings:view', context.access) || canPerform('billing_review:view', context.access)
+        ? this.getEstimateConfig(context).data
+        : undefined;
+    const rules = canPerform('rules_catalog:view', context.access) ? this.listRulesCatalog(context).data : undefined;
+
+    const operationsRuntime = this.createOperationsRuntime(context, {
+      tasks,
+      billing,
+      settings,
+      templates,
+      estimate,
+      rules
+    });
+
+    return createApiEnvelope(
+      {
+        operationsRuntime,
+        auditEvent: this.createAuditEvent('operations.runtime_view', 'OperationsRuntime', operationsRuntime.runtimeId, context),
+        domainEvents: [
+          this.createDomainEvent('operational.readiness_checked.v1', context, {
+            runtimeId: operationsRuntime.runtimeId,
+            analyticsSeriesCount: operationsRuntime.analytics.series.length,
+            productionAnalyticsVendorEnabled: false,
+            submittedClaim: false
+          }),
+          this.createDomainEvent('audit.event_recorded.v1', context, {
+            action: 'operations.runtime_view',
+            metadataOnly: true,
+            patientFacingRevenueExposed: false
+          })
+        ]
       },
       this.createMeta(context)
     );
@@ -559,6 +611,260 @@ export class OperationsService {
       access: session.access,
       ...(session.idempotencyKey ? { idempotencyKey: session.idempotencyKey } : {})
     };
+  }
+
+  private createOperationsRuntime(
+    context: RequestContext,
+    sources: {
+      tasks: TaskWorklistViewDto | undefined;
+      billing: BillingReviewQueueViewDto | undefined;
+      settings: SettingsAdminViewDto | undefined;
+      templates: TemplatesViewDto | undefined;
+      estimate: EstimateConfigurationDto | undefined;
+      rules: RulesCatalogViewDto | undefined;
+    }
+  ): OperationsRuntimeViewDto {
+    const now = new Date().toISOString();
+    const blockerCount = sources.tasks?.counts.blockers ?? 0;
+    const billingReviewCount = sources.billing?.items.length ?? 0;
+    const integrationCount = sources.settings?.integrations.length ?? 0;
+    const disabledIntegrationCount = sources.settings?.integrations.filter((integration) => integration.status !== 'mock_ready').length ?? 0;
+    const activeTemplateCount = sources.templates?.templates.filter((template) => template.status === 'active').length ?? 0;
+    const activeRuleCount = sources.rules?.entries.filter((rule) => rule.status === 'active').length ?? 0;
+    const routeState = sources.tasks || sources.settings ? 'ready' : 'permission-denied';
+
+    return {
+      runtimeId: 'operations-runtime-synthetic',
+      routeState,
+      requiredUiStates: ['empty', 'loading', 'ready', 'saving', 'failed', 'permission-denied', 'read-only', 'blocked', 'degraded', 'disabled', 'demo fixture'],
+      analytics: {
+        analyticsId: 'operations-analytics-synthetic',
+        generatedAt: now,
+        dataSource: 'standalone_operations_api_composite',
+        metrics: [
+          this.operationsMetric('operations-blockers', 'Open blockers', blockerCount, 'count', '/aura-note/operations', sources.tasks),
+          this.operationsMetric('billing-review-items', 'Billing review items', billingReviewCount, 'count', '/aura-note/operations', sources.billing),
+          this.operationsMetric('active-templates', 'Active templates', activeTemplateCount, 'count', '/aura-note/operations', sources.templates),
+          this.operationsMetric('active-rules', 'Active rules', activeRuleCount, 'count', '/aura-note/operations', sources.rules),
+          {
+            metricId: 'internal-revenue-caveat',
+            label: 'Internal revenue estimate posture',
+            value: sources.estimate?.patientFacingEstimatesEnabled ? 'blocked' : 'unavailable_caveated',
+            unit: 'status',
+            route: '/aura-note/operations',
+            state: sources.estimate ? 'disabled' : 'permission-denied',
+            patientFacingExcluded: true
+          }
+        ],
+        series: [
+          {
+            seriesId: 'worklist-composition',
+            label: 'Worklist composition',
+            kind: 'bar',
+            source: 'tasks',
+            patientFacingExcluded: true,
+            internalOnly: true,
+            points: [
+              this.analyticsPoint('total tasks', sources.tasks?.counts.total ?? 0, sources.tasks),
+              this.analyticsPoint('blockers', blockerCount, sources.tasks),
+              this.analyticsPoint('MA follow-up', sources.tasks?.counts.maFollowUp ?? 0, sources.tasks)
+            ]
+          },
+          {
+            seriesId: 'billing-review-posture',
+            label: 'Billing review posture',
+            kind: 'status',
+            source: 'billing_review',
+            patientFacingExcluded: true,
+            internalOnly: true,
+            points: [
+              this.analyticsPoint('triggered reviews', billingReviewCount, sources.billing),
+              this.analyticsPoint('submitted claims', 0, sources.billing),
+              this.analyticsPoint('transcript access limited', sources.billing?.transcriptAccessLimitedToTriggeredReview ? 1 : 0, sources.billing)
+            ]
+          },
+          {
+            seriesId: 'settings-integration-posture',
+            label: 'Settings and integration posture',
+            kind: 'bar',
+            source: 'settings',
+            patientFacingExcluded: true,
+            internalOnly: true,
+            points: [
+              this.analyticsPoint('integrations', integrationCount, sources.settings),
+              this.analyticsPoint('disabled or gated', disabledIntegrationCount, sources.settings),
+              this.analyticsPoint('live credentials', 0, sources.settings)
+            ]
+          },
+          {
+            seriesId: 'rules-and-templates',
+            label: 'Rules and templates',
+            kind: 'bar',
+            source: 'rules_catalog',
+            patientFacingExcluded: true,
+            internalOnly: true,
+            points: [
+              this.analyticsPoint('active templates', activeTemplateCount, sources.templates),
+              this.analyticsPoint('active rules', activeRuleCount, sources.rules),
+              this.analyticsPoint('certified production rules', sources.rules?.certifiedProductionRules ? 1 : 0, sources.rules)
+            ]
+          }
+        ],
+        internalRevenueVisible: false,
+        patientFacingRevenueExposed: false,
+        productionAnalyticsVendorEnabled: false,
+        caveat: 'Synthetic operational analytics are backend-composed for workflow review only; they are not production analytics, patient-facing revenue, or claim submission evidence.'
+      },
+      notifications: this.createOperationsNotifications(blockerCount, disabledIntegrationCount, now),
+      activity: this.createOperationsActivity(context, sources, now),
+      settingsSummary: {
+        settingsSummaryId: 'operations-settings-summary-synthetic',
+        tenantId: TENANT_ID,
+        siteId: SITE_ID,
+        integrations:
+          sources.settings?.integrations.map((integration) => ({
+            integrationId: integration.integrationId,
+            vendor: integration.vendor,
+            status: integration.status,
+            liveCredentialPresent: false,
+            routeState: integration.status === 'mock_ready' ? 'degraded' : 'disabled'
+          })) ?? [],
+        featureFlags:
+          sources.settings?.featureFlags.map((flag) => ({
+            key: flag.key,
+            enabled: flag.enabled,
+            governs: flag.governs,
+            runtimeEffect: flag.enabled ? 'internal_only' : 'disabled'
+          })) ?? [],
+        maskedSecretsOnly: true,
+        secretValuesReturned: false,
+        aiPreferencesGovernedBy: 'ai_gateway_policy',
+        patientFacingRevenueEnabled: false,
+        claimSubmissionEnabled: false,
+        certifiedProductionRules: sources.rules?.certifiedProductionRules ?? false
+      },
+      localReactStateLimit: 'transient_tabs_and_form_inputs_only',
+      productionLaunchApproved: false,
+      liveVendorActionsEnabled: false,
+      submittedClaim: false,
+      demoFixture: true
+    };
+  }
+
+  private operationsMetric(
+    metricId: string,
+    label: string,
+    value: number | string,
+    unit: 'count' | 'percent' | 'status',
+    route: string,
+    source: unknown
+  ) {
+    return {
+      metricId,
+      label,
+      value,
+      unit,
+      route,
+      state: source ? 'ready' : 'permission-denied',
+      patientFacingExcluded: true
+    } as const;
+  }
+
+  private analyticsPoint(label: string, value: number | string, source: unknown) {
+    return {
+      label,
+      value,
+      state: source ? 'ready' : 'permission-denied',
+      patientFacingExcluded: true
+    } as const;
+  }
+
+  private createOperationsNotifications(blockerCount: number, disabledIntegrationCount: number, now: string) {
+    return [
+      {
+        notificationId: 'operations-notif-blockers',
+        category: 'task',
+        title: 'Operational blockers',
+        body: `${blockerCount} blocker tasks require human review before signing/finalization preparation.`,
+        severity: blockerCount > 0 ? 'warning' : 'success',
+        read: blockerCount === 0,
+        linkedRoute: '/aura-note/operations',
+        patientFacingExcluded: true,
+        metadataOnly: true,
+        createdAt: now
+      },
+      {
+        notificationId: 'operations-notif-live-integrations-disabled',
+        category: 'disabled_feature',
+        title: 'Live integrations gated',
+        body: `${disabledIntegrationCount} integration surfaces remain disabled or mock-only with no live credentials.`,
+        severity: 'info',
+        linkedRoute: '/aura-note/platform',
+        read: false,
+        patientFacingExcluded: true,
+        metadataOnly: true,
+        createdAt: now
+      }
+    ] satisfies OperationsRuntimeViewDto['notifications'];
+  }
+
+  private createOperationsActivity(
+    context: RequestContext,
+    sources: {
+      tasks: TaskWorklistViewDto | undefined;
+      billing: BillingReviewQueueViewDto | undefined;
+      settings: SettingsAdminViewDto | undefined;
+      templates: TemplatesViewDto | undefined;
+      rules: RulesCatalogViewDto | undefined;
+    },
+    now: string
+  ) {
+    return [
+      {
+        activityId: 'operations-activity-runtime-composed',
+        category: 'governance',
+        label: 'Operations runtime composed',
+        detail: `Trace ${context.traceId} composed tasks, billing, settings, templates, estimates, and rules into one typed API view.`,
+        actorLabel: context.actorUserId,
+        route: '/aura-note/operations',
+        metadataOnly: true,
+        patientFacingExcluded: true,
+        occurredAt: now
+      },
+      {
+        activityId: 'operations-activity-billing-safe',
+        category: 'support',
+        label: 'Billing review remains draft-only',
+        detail: `${sources.billing?.items.length ?? 0} billing review records are visible for authorized roles with submittedClaim=false.`,
+        actorLabel: 'AURA Note API',
+        route: '/aura-note/operations',
+        metadataOnly: true,
+        patientFacingExcluded: true,
+        occurredAt: now
+      },
+      {
+        activityId: 'operations-activity-settings-gated',
+        category: 'integration',
+        label: 'Settings and integrations are gated',
+        detail: `${sources.settings?.integrations.length ?? 0} integration settings are metadata-only; secret values are never returned.`,
+        actorLabel: 'AURA Note API',
+        route: '/aura-note/platform',
+        metadataOnly: true,
+        patientFacingExcluded: true,
+        occurredAt: now
+      },
+      {
+        activityId: 'operations-activity-rules-human-review',
+        category: 'governance',
+        label: 'Rules catalog requires human review',
+        detail: `${sources.rules?.entries.length ?? 0} rules are source-linked and cannot autonomously finalize coding or medical necessity.`,
+        actorLabel: 'AURA Note API',
+        route: '/aura-note/operations',
+        metadataOnly: true,
+        patientFacingExcluded: true,
+        occurredAt: now
+      }
+    ] satisfies OperationsRuntimeViewDto['activity'];
   }
 
   private canSeeTask(task: OperationalTaskDto, access: AccessContext): boolean {

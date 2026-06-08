@@ -158,6 +158,9 @@ Implemented runtime invariants:
 - `DraftNoteSummary` rows derive from active appointment-linked note shells;
 - `FinalizedNoteSummary` rows are read-only placeholders until finalization work orders create final artifacts;
 - `DocumentationWorkspace` is an appointment-linked view over the note, visit-session gate, and required workspace panels.
+- Post-CR4 Figma Make editor catch-up adds `NoteContent` and `NoteVersion` DTOs over the same appointment-linked note. `NoteContent` stores canonical `aura_markdown_v1`, derived plain text, section offsets, revision, source, sanitizer status, read-only state, and update metadata. `NoteVersion` stores audit-safe snapshots for autosave and restore evidence.
+- Post-CR4 Figma Make schedule/workspace catch-up adds read-model DTOs over the existing appointment, note, patient linkage, and chart-context snapshot records: `ScheduleQuery`, `ScheduleFilterSet`, `ScheduleAppointmentMetadata`, `WorkspaceValidation`, and metadata-only `ChartIntakeStatus`. These carry clinic location, room, virtual visit status, chart-intake status, and workspace linkage validation. They do not add PHI-bearing chart upload storage, patient portal delivery, live EHR completeness, or production PHI storage approval.
+- Post-CR4 Figma Make workspace review-action catch-up adds read/action DTOs over existing transcript, suggestion, Visit Selection, compliance, history-gap, blocker-task, and audit/event records. `TranscriptLiveView` is a polling-friendly read model over synthetic/mock transcript segments; enriched `Suggestion` carries human-review-required evidence, education, documentation requirements, and optional removal reason; `VisitSelection` carries disposition, removal/category-change reasons, return-to-suggestions state, and action timestamps; `ComplianceIssue` carries status/action metadata and action history. These do not add live audio streaming, raw PHI audio storage, direct external AI, autonomous clinical/coding/billing finalization, live patient portal delivery, claim submission, or production launch approval.
 
 The shell preserves the appointment-to-note one-to-one relationship and adds explicit panel states for empty, loading, ready, saving, warning, blocked, failed, permission-denied, finalized read-only, and demo fixture states. It does not introduce durable persistence beyond the existing synthetic process-local repository.
 
@@ -720,3 +723,33 @@ Evaluation and validation records now include schema-validation status, source-f
 `WO-071` through `WO-075` add no PHI-bearing persistence and no production launch tables. Commercial readiness evidence is represented as audit-safe metadata in `CommercialReadinessDto`, support audit events, docs, checkpoint evidence, and readiness scripts.
 
 The new metadata records CR-4 section IDs, work-order IDs, checklist status, evidence paths, missing approvals, disabled capabilities, final review roles, `productionLaunchReady=false`, `liveVendorEnabled=false`, and `phiSafe=true`. No raw support logs, transcripts, final notes, billing detail, coaching output, credentials, vendor payloads, production PHI, charge-finalization record, medical-necessity record, claim submission, denial automation, payment posting, or patient financial conclusion is persisted by CR-4.
+
+## Post-CR4 Figma Make Design 2 finalization runtime data status
+
+The Design 2 finalization catch-up adds no new production database tables and no PHI-bearing storage. It extends the typed finalization session read model with derived runtime sections used by the frontend:
+
+- evidence spans;
+- item statuses;
+- editor variants;
+- patient questions;
+- care-plan candidates;
+- patient insight snapshots;
+- billing validation details;
+- dispatch metadata.
+
+Current persistence remains the existing finalization output/session path plus safe rehydration defaults. Evidence spans and item statuses are derived from note content, Visit Selections, suggestions, compliance issues, History Gap questions, compose output, tasks, and draft-claim metadata. Patient insight snapshots use existing chart-context source-freshness/stale-warning metadata and never fabricate allergies, vitals, care-team facts, or predictive clinical conclusions. Dispatch metadata keeps `submittedClaim=false`, patient portal delivery disabled, and live EHR dispatch gated.
+
+A later persistence-deepening work order may promote these derived runtime sections into durable tenant-owned tables, at which point RLS/tenant isolation evidence must be added for each table before production-readiness claims.
+
+## Post-CR4 Figma Make operations runtime data status
+
+The operations runtime catch-up adds no new production database tables and no PHI-bearing storage. It extends the typed operations read model with derived runtime sections used by the frontend:
+
+- backend-composed operations analytics metrics and chart series;
+- operations notification feed;
+- operations activity feed;
+- settings runtime summary.
+
+Current state is derived from existing task, billing-review, settings/admin, template, estimate configuration, and rules catalog runtime data. `OperationsAnalyticsSnapshotDto` is synthetic/local aggregate metadata only and keeps production analytics vendors disabled. `OperationsSettingsSummaryDto` returns integration/feature-flag posture, masked-secret metadata, AI Gateway governance posture, patient-facing revenue disabled, claim submission disabled, and production rules certification disabled. No secret values, real patient identifiers, production analytics records, patient-facing revenue, live vendor payloads, charge-finalization records, medical-necessity records, or submitted-claim records are persisted.
+
+A later persistence-deepening work order may promote activity/notification/analytics signals into durable tenant-owned event/feed tables, at which point RLS/tenant isolation evidence must be added for each table before production-readiness claims.

@@ -1,8 +1,10 @@
 import { Body, Controller, Get, Headers, Inject, Param, Patch, Post, Query } from '@nestjs/common';
 import type {
   AppointmentStatusActionRequestDto,
+  ChartIntakeStatusRequestDto,
   CreateAppointmentRequestDto,
   CreateStandalonePatientRequestDto,
+  ScheduleQueryDto,
   UpdateAppointmentRequestDto,
   UpdateStandalonePatientRequestDto
 } from '@aura-note/contracts';
@@ -43,8 +45,11 @@ export class ScheduleController {
   constructor(@Inject(ScheduleService) private readonly scheduleService: ScheduleService) {}
 
   @Get()
-  listAppointments(@Headers() headers: Record<string, string | string[] | undefined>) {
-    return this.scheduleService.listAppointments(this.scheduleService.createRequestContext(headers));
+  listAppointments(
+    @Query() query: ScheduleQueryDto,
+    @Headers() headers: Record<string, string | string[] | undefined>
+  ) {
+    return this.scheduleService.listAppointments(query, this.scheduleService.createRequestContext(headers));
   }
 
   @Post()
@@ -79,6 +84,23 @@ export class ScheduleController {
     @Headers() headers: Record<string, string | string[] | undefined>
   ) {
     return this.scheduleService.getChartContextSnapshot(appointmentId, this.scheduleService.createRequestContext(headers));
+  }
+
+  @Get(':appointmentId/workspace-validation')
+  validateWorkspaceEntry(
+    @Param('appointmentId') appointmentId: string,
+    @Headers() headers: Record<string, string | string[] | undefined>
+  ) {
+    return this.scheduleService.validateWorkspaceEntry(appointmentId, this.scheduleService.createRequestContext(headers));
+  }
+
+  @Post(':appointmentId/chart-intake-status')
+  updateChartIntakeStatus(
+    @Param('appointmentId') appointmentId: string,
+    @Body() body: ChartIntakeStatusRequestDto,
+    @Headers() headers: Record<string, string | string[] | undefined>
+  ) {
+    return this.scheduleService.updateChartIntakeStatus(appointmentId, body, this.scheduleService.createRequestContext(headers));
   }
 
   @Post(':appointmentId/start-visit')

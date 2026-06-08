@@ -32,9 +32,15 @@ export type CoreEventType =
   | 'appointment.checked_in.v1'
   | 'appointment.cancelled.v1'
   | 'appointment.no_show_marked.v1'
+  | 'schedule.view_filtered.v1'
+  | 'appointment.workspace_validation_checked.v1'
   | 'note.shell_created.v1'
   | 'chart_context.snapshot_created.v1'
   | 'chart_context.snapshot_viewed.v1'
+  | 'chart_context.intake_status_updated.v1'
+  | 'note.content_viewed.v1'
+  | 'note.content_autosaved.v1'
+  | 'note.version_restored.v1'
   | 'visit.started.v1'
   | 'visit.paused.v1'
   | 'visit.resumed.v1'
@@ -59,11 +65,17 @@ export type CoreEventType =
   | 'transcription.correction_recorded.v1'
   | 'transcript.segment_appended.v1'
   | 'transcript.segment_corrected.v1'
+  | 'transcript.live_view_polled.v1'
   | 'suggestions.evaluated.v1'
   | 'suggestion.accepted.v1'
   | 'suggestion.removed.v1'
+  | 'suggestion.restored.v1'
   | 'visit_selection.added.v1'
+  | 'visit_selection.removed.v1'
+  | 'visit_selection.restored_to_suggestions.v1'
+  | 'visit_selection.category_changed.v1'
   | 'compliance.evaluated.v1'
+  | 'compliance.issue_action_recorded.v1'
   | 'history_gap.task_created.v1'
   | 'task.adjudicated.v1'
   | 'task.blocker_changed.v1'
@@ -437,6 +449,11 @@ export interface AppointmentDto {
   modality: AppointmentModality;
   source: AppointmentSource;
   reasonForVisit?: string;
+  clinicLocationId?: string;
+  clinicLocationLabel?: string;
+  roomId?: string;
+  roomLabel?: string;
+  virtualVisitStatus?: VirtualVisitStatusDto;
   mode: AppMode;
 }
 
@@ -449,6 +466,85 @@ export interface NoteDto {
   clinicianId: string;
   state: NoteState;
   mode: AppMode;
+}
+
+export type NoteContentFormatDto = 'aura_markdown_v1';
+export type NoteContentSourceDto = 'system_seed' | 'clinician_autosave' | 'version_restore';
+export type AutosaveStatusStateDto = 'idle' | 'saving' | 'saved' | 'failed' | 'blocked' | 'conflict';
+
+export interface NoteSectionDto {
+  sectionId: string;
+  title: string;
+  markdown: string;
+  plainText: string;
+  startOffset: number;
+  endOffset: number;
+}
+
+export interface NoteContentDto {
+  noteContentId: string;
+  noteId: string;
+  appointmentId: string;
+  tenantId: string;
+  siteId: string;
+  format: NoteContentFormatDto;
+  markdown: string;
+  plainText: string;
+  sections: NoteSectionDto[];
+  revision: number;
+  source: NoteContentSourceDto;
+  sanitized: true;
+  readOnly: boolean;
+  updatedByUserId: string;
+  updatedAt: string;
+}
+
+export interface NoteVersionDto {
+  noteVersionId: string;
+  noteId: string;
+  revision: number;
+  format: NoteContentFormatDto;
+  plainTextPreview: string;
+  markdown: string;
+  source: NoteContentSourceDto;
+  createdByUserId: string;
+  createdAt: string;
+  restoredFromVersionId?: string;
+  auditSafe: true;
+}
+
+export interface AutosaveStatusDto {
+  noteId: string;
+  status: AutosaveStatusStateDto;
+  revision: number;
+  savedAt?: string;
+  conflict: false;
+  readOnly: boolean;
+  message: string;
+}
+
+export interface UpdateNoteContentRequestDto {
+  format: NoteContentFormatDto;
+  markdown: string;
+  clientRevision?: number;
+}
+
+export interface RestoreNoteVersionRequestDto {
+  restoreReason: string;
+}
+
+export interface NoteContentResponseDto {
+  noteContent: NoteContentDto;
+  autosaveStatus: AutosaveStatusDto;
+  latestVersion: NoteVersionDto;
+  auditEvent: AuditEventDto;
+  domainEvents: Array<AuraNoteEvent<Record<string, unknown>>>;
+}
+
+export interface NoteVersionsViewDto {
+  noteId: string;
+  versions: NoteVersionDto[];
+  autosaveStatus: AutosaveStatusDto;
 }
 
 export interface VisitSessionDto {
@@ -637,6 +733,27 @@ export interface TranscriptViewDto {
   providerStatus?: TranscriptionProviderStatusDto;
 }
 
+export interface TranscriptLiveViewDto {
+  noteId: string;
+  transcriptId: string;
+  liveState: 'not_started' | 'polling_mock' | 'ready' | 'permission_denied' | 'provider_disabled' | 'read_only';
+  pollingMode: 'api_polling';
+  timerState: TimerState;
+  recordingState: RecordingState;
+  recentSegments: TranscriptSegmentDto[];
+  fullTranscript: TranscriptViewDto;
+  segmentCount: number;
+  averageConfidence: number | null;
+  speakerLabels: string[];
+  providerStatus: TranscriptionProviderStatusDto;
+  liveStreamingEnabled: false;
+  rawPhiAudioStored: false;
+  retentionPolicy: 'indefinite';
+  generatedAt: string;
+  auditEvent: AuditEventDto;
+  domainEvents: Array<AuraNoteEvent<Record<string, unknown>>>;
+}
+
 export interface VisitSessionControlResponseDto {
   appointment: AppointmentDto;
   note: NoteDto;
@@ -695,6 +812,11 @@ export interface VisitSelectionDto {
   humanApproved: boolean;
   sourceSuggestionId?: string;
   overrideReason?: string;
+  disposition: 'accepted' | 'manual_added' | 'removed';
+  removalReason?: string;
+  categoryChangeReason?: string;
+  returnedToSuggestions?: boolean;
+  lastActionAt?: string;
 }
 
 export interface SuggestionDto {
@@ -706,7 +828,20 @@ export interface SuggestionDto {
   rationale: string;
   supportingEvidence: string[];
   missingEvidence: string[];
+  evidenceFor?: string[];
+  evidenceAgainst?: string[];
+  recommendedActions?: string[];
+  education?: {
+    title: string;
+    body: string;
+    patientFacingExcluded: true;
+  };
+  authoritySource?: string;
+  documentationRequirements?: string[];
+  testsToConsider?: string[];
+  humanReviewRequired: true;
   status: 'candidate' | 'accepted' | 'removed';
+  removalReason?: string;
   lowConfidenceOverrideRequired: boolean;
   draftOnly: true;
 }
@@ -717,6 +852,21 @@ export interface SuggestionDecisionRequestDto {
   nonSupportingEvidence?: string;
   uncertaintyExplanation?: string;
   confidenceImprovementPlan?: string;
+}
+
+export interface SuggestionRemovalRequestDto {
+  removalReason: string;
+  returnToSuggestions?: boolean;
+}
+
+export interface VisitSelectionRemoveRequestDto {
+  removalReason: string;
+  returnToSuggestions?: boolean;
+}
+
+export interface VisitSelectionCategoryChangeRequestDto {
+  category: VisitSelectionCategory;
+  reason: string;
 }
 
 export interface SuggestionsViewDto {
@@ -734,6 +884,18 @@ export interface AddVisitSelectionRequestDto {
   category: VisitSelectionCategory;
   label: string;
   confidence?: number;
+  sourceSuggestionId?: string;
+}
+
+export type ComplianceIssueActionDto = 'dismiss' | 'restore' | 'acknowledge' | 'assign' | 'resolve';
+
+export interface ComplianceIssueActionRecordDto {
+  actionId: string;
+  action: ComplianceIssueActionDto;
+  reason: string;
+  actorRole: LocalAuthSessionDto['role'];
+  assignedRole?: 'clinician' | 'ma' | 'billing_staff' | 'admin' | 'authorized_admin' | 'compliance_privacy_lead';
+  recordedAt: string;
 }
 
 export interface ComplianceIssueDto {
@@ -744,12 +906,22 @@ export interface ComplianceIssueDto {
   detail: string;
   blocksFinalize: boolean;
   source: 'deterministic_mock';
+  status: 'open' | 'acknowledged' | 'dismissed' | 'assigned' | 'resolved';
+  learnMore?: string;
+  actionHistory?: ComplianceIssueActionRecordDto[];
+  actionRequired: boolean;
 }
 
 export interface ComplianceReviewDto {
   noteId: string;
   issues: ComplianceIssueDto[];
   finalizeDisabled: boolean;
+}
+
+export interface ComplianceIssueActionRequestDto {
+  action: ComplianceIssueActionDto;
+  reason: string;
+  assignedRole?: 'clinician' | 'ma' | 'billing_staff' | 'admin' | 'authorized_admin' | 'compliance_privacy_lead';
 }
 
 export interface HistoryGapQuestionDto {
@@ -1023,6 +1195,119 @@ export interface ComposeProgressPhaseDto {
   status: 'pending' | 'running' | 'completed' | 'failed';
 }
 
+export interface EvidenceSpanDto {
+  evidenceSpanId: string;
+  sourceType:
+    | 'note_content'
+    | 'transcript_segment'
+    | 'visit_selection'
+    | 'suggestion'
+    | 'compliance_issue'
+    | 'patient_question'
+    | 'finalization_output';
+  sourceId: string;
+  sectionId?: string;
+  quote: string;
+  startOffset: number;
+  endOffset: number;
+  confidence: number;
+  linkedItemId?: string;
+}
+
+export interface FinalizationStepItemStatusDto {
+  itemId: string;
+  itemType:
+    | 'visit_selection'
+    | 'suggestion'
+    | 'evidence'
+    | 'patient_question'
+    | 'care_plan_item'
+    | 'billing_validation'
+    | 'dispatch_target';
+  step: WizardStep;
+  label: string;
+  status: 'pending' | 'kept' | 'removed' | 'approved' | 'resolved' | 'blocked' | 'ready' | 'disabled';
+  humanReviewRequired: true;
+  stillValid: boolean;
+  evidenceSpanIds: string[];
+  blockerReason?: string;
+  updatedAt: string;
+}
+
+export interface FinalizationEditorVariantDto {
+  variantId: string;
+  variantType: 'original_note' | 'enhanced_note' | 'patient_summary';
+  status: 'not_generated' | 'draft' | 'stale' | 'approved' | 'read_only';
+  text: string;
+  version: number;
+  approvalRequired: boolean;
+  approved: boolean;
+  patientFacing: boolean;
+  internalDetailsExcluded: boolean;
+  evidenceSpanIds: string[];
+  lastEditedAt?: string;
+}
+
+export interface PatientQuestionWorkflowDto {
+  patientQuestionId: string;
+  noteId: string;
+  question: string;
+  explanation: string;
+  status: 'open' | 'answered_in_room' | 'forwarded_to_staff' | 'portal_disabled' | 'dismissed';
+  assigneeRole?: 'clinician' | 'ma';
+  linkedBlockerTaskId?: string;
+  insertionTargetSection: 'subjective' | 'assessment_plan';
+  answer?: string;
+  answerInsertedIntoNote: boolean;
+  portalDeliveryEnabled: false;
+  humanReviewRequired: true;
+}
+
+export interface CarePlanItemDto {
+  carePlanItemId: string;
+  noteId: string;
+  source: 'ai_candidate' | 'clinician_added';
+  title: string;
+  detail: string;
+  status: 'candidate' | 'accepted' | 'removed' | 'inserted';
+  ownerRole: 'clinician' | 'ma';
+  dueWindow: 'today' | 'one_week' | 'next_visit';
+  insertionEligibility: 'eligible_after_clinician_review' | 'inserted' | 'not_eligible';
+  humanReviewRequired: true;
+  evidenceSpanIds: string[];
+}
+
+export interface PatientInsightSnapshotDto {
+  patientInsightSnapshotId: string;
+  noteId: string;
+  sourceFreshness: StandaloneChartContextSnapshotDto['sourceFreshness'];
+  allergySummaryStatus: 'metadata_only' | 'unavailable';
+  careTeamSummaryStatus: 'metadata_only' | 'unavailable';
+  riskStratificationStatus: 'mock_only' | 'unavailable';
+  predictiveInsightsEnabled: false;
+  staleWarnings: string[];
+  generatedAt: string;
+}
+
+export interface BillingValidationDetailDto {
+  billingValidationId: string;
+  status: 'pending' | 'ready' | 'blocked' | 'disabled';
+  severity: 'info' | 'warning' | 'hard_block';
+  message: string;
+  blocksSignDispatch: boolean;
+  evidenceSpanIds: string[];
+}
+
+export interface FinalizationDispatchMetadataDto {
+  submittedClaim: false;
+  patientPortalDeliveryEnabled: false;
+  ehrWritebackConfigured: boolean;
+  exportReady: boolean;
+  finalNoteReadOnly: boolean;
+  patientSummaryInternalDetailsExcluded: boolean;
+  dispatchStatus: 'not_ready' | 'ready' | 'signed_dispatched';
+}
+
 export interface FinalizationComposeOutputDto {
   composeOutputId: string;
   noteId: string;
@@ -1212,6 +1497,14 @@ export interface FinalizationSessionDto {
   suggestionDecisions: FinalizationSuggestionDecisionDto[];
   unusedAuditItems: UnusedAuditItemDto[];
   composePhases: ComposeProgressPhaseDto[];
+  evidenceSpans: EvidenceSpanDto[];
+  itemStatuses: FinalizationStepItemStatusDto[];
+  editorVariants: FinalizationEditorVariantDto[];
+  patientQuestions: PatientQuestionWorkflowDto[];
+  carePlanItems: CarePlanItemDto[];
+  patientInsightSnapshot: PatientInsightSnapshotDto;
+  billingValidation: BillingValidationDetailDto[];
+  dispatchMetadata: FinalizationDispatchMetadataDto;
   composeOutput?: FinalizationComposeOutputDto;
   patientOpportunities: PatientOpportunityDto[];
   draftClaimPreview?: DraftClaimPreviewDto;
@@ -1521,6 +1814,17 @@ export interface StandalonePatientResponseDto {
   domainEvents: Array<AuraNoteEvent<Record<string, unknown>>>;
 }
 
+export type ScheduleViewModeDto = 'day' | 'week';
+export type ChartIntakeStatusDto =
+  | 'not_started'
+  | 'metadata_pending'
+  | 'metadata_ready'
+  | 'stale_warning'
+  | 'failed'
+  | 'disabled_phi_upload';
+export type VirtualVisitStatusDto = 'not_applicable' | 'metadata_ready' | 'link_not_configured' | 'disabled_no_phi_portal';
+export type EncounterValidationStatusDto = 'valid' | 'linkage_missing' | 'permission_denied' | 'stale_context';
+
 export interface StandaloneChartContextSnapshotDto {
   chartContextSnapshotId: string;
   tenantId: string;
@@ -1537,6 +1841,82 @@ export interface StandaloneChartContextSnapshotDto {
   productionPhiStorageApproved: false;
   createdAt: string;
   mode: AppMode;
+}
+
+export interface ScheduleQueryDto {
+  activeDate?: string;
+  viewMode?: ScheduleViewModeDto;
+  providerId?: string;
+  status?: AppointmentState;
+  visitType?: string;
+  modality?: AppointmentModality;
+  clinicLocationId?: string;
+}
+
+export interface ScheduleFilterOptionDto {
+  value: string;
+  label: string;
+  count: number;
+}
+
+export interface ScheduleFilterSetDto {
+  providers: ScheduleFilterOptionDto[];
+  statuses: ScheduleFilterOptionDto[];
+  visitTypes: ScheduleFilterOptionDto[];
+  modalities: ScheduleFilterOptionDto[];
+  clinicLocations: ScheduleFilterOptionDto[];
+}
+
+export interface ScheduleAppointmentMetadataDto {
+  clinicLocationId: string;
+  clinicLocationLabel: string;
+  roomId: string;
+  roomLabel: string;
+  virtualVisitStatus: VirtualVisitStatusDto;
+  virtualVisitLabel: string;
+  chartIntakeStatus: ChartIntakeStatusDto;
+  chartUploadEnabled: false;
+  livePhiUploadEnabled: false;
+  patientPortalDeliveryEnabled: false;
+  encounterValidationStatus: EncounterValidationStatusDto;
+  validationWarnings: string[];
+  metadataOnly: true;
+}
+
+export interface WorkspaceValidationDto {
+  appointmentId: string;
+  noteId: string;
+  safePatientId: string;
+  validationStatus: EncounterValidationStatusDto;
+  workspaceOpenAllowed: boolean;
+  editorInitiallyReadOnly: boolean;
+  appointmentLinked: boolean;
+  noteLinked: boolean;
+  chartContextLinked: boolean;
+  chartFreshness: ChartContextSourceFreshnessDto;
+  chartWarnings: string[];
+  productionPhiStorageApproved: false;
+  liveEhrCompletenessImplied: false;
+  validatedAt: string;
+}
+
+export interface WorkspaceValidationResponseDto {
+  workspaceValidation: WorkspaceValidationDto;
+  auditEvent: AuditEventDto;
+  domainEvents: Array<AuraNoteEvent<Record<string, unknown>>>;
+}
+
+export interface ChartIntakeStatusRequestDto {
+  status: ChartIntakeStatusDto;
+  sourceFreshness?: ChartContextSourceFreshnessDto;
+  warning?: string;
+}
+
+export interface ChartIntakeStatusResponseDto {
+  chartContextSnapshot: StandaloneChartContextSnapshotDto;
+  scheduleMetadata: ScheduleAppointmentMetadataDto;
+  auditEvent: AuditEventDto;
+  domainEvents: Array<AuraNoteEvent<Record<string, unknown>>>;
 }
 
 export interface StandaloneChartContextResponseDto {
@@ -2463,6 +2843,10 @@ export interface CreateAppointmentRequestDto {
   durationMinutes: number;
   modality: AppointmentModality;
   reasonForVisit?: string;
+  clinicLocationId?: string;
+  clinicLocationLabel?: string;
+  roomId?: string;
+  roomLabel?: string;
 }
 
 export interface UpdateAppointmentRequestDto {
@@ -2472,6 +2856,10 @@ export interface UpdateAppointmentRequestDto {
   durationMinutes?: number;
   modality?: AppointmentModality;
   reasonForVisit?: string;
+  clinicLocationId?: string;
+  clinicLocationLabel?: string;
+  roomId?: string;
+  roomLabel?: string;
 }
 
 export type AppointmentStatusActionDto = 'check_in' | 'cancel' | 'mark_no_show';
@@ -2490,6 +2878,7 @@ export interface ScheduleAppointmentDto extends AppointmentDto {
   patientDisplayLabel?: string;
   chartContextFreshness?: ChartContextSourceFreshnessDto;
   chartContextWarnings?: string[];
+  scheduleMetadata: ScheduleAppointmentMetadataDto;
 }
 
 export interface CreateAppointmentResponseDto {
@@ -2525,8 +2914,255 @@ export interface ScheduleViewDto {
   appointments: ScheduleAppointmentDto[];
   ehrSchedulingEnabled: boolean;
   clinicOsSchedulingEnabled: boolean;
-  viewMode?: 'day' | 'week';
+  viewMode?: ScheduleViewModeDto;
   activeDate?: string;
+  query: ScheduleQueryDto;
+  filters: ScheduleFilterSetDto;
+  disabledLiveSchedulingSources: string[];
+  metadataOnlyChartIntake: true;
+}
+
+export type AppShellUserRoleDto =
+  | 'clinician'
+  | 'ma'
+  | 'billing_staff'
+  | 'admin'
+  | 'authorized_admin'
+  | 'clinic_manager'
+  | 'compliance_privacy_lead'
+  | 'support'
+  | 'service_account';
+
+export type AppShellRequiredPermissionDto =
+  | 'schedule:view'
+  | 'draft_note:view'
+  | 'final_note:view'
+  | 'task:view'
+  | 'billing_review:view'
+  | 'settings:view'
+  | 'ehr_adapter:view'
+  | 'clinicos_adapter:view'
+  | 'ai_governance:view'
+  | 'coaching_own:view'
+  | 'coaching_dashboard:view'
+  | 'support_status:view'
+  | 'config:view';
+
+export type AppShellRouteStateDto =
+  | 'loading'
+  | 'empty'
+  | 'ready'
+  | 'saving'
+  | 'failed'
+  | 'permission-denied'
+  | 'read-only'
+  | 'blocked'
+  | 'degraded'
+  | 'disabled'
+  | 'demo fixture';
+
+export interface AppShellCurrentUserDto {
+  userId: string;
+  displayName: string;
+  role: AppShellUserRoleDto;
+  tenantId: string;
+  siteId: string;
+  identityProvider: 'local_synthetic' | 'clinicos_delegate_disabled' | 'oidc_delegate_disabled' | 'saml_delegate_disabled';
+  purposeOfUse: 'treatment' | 'payment' | 'operations' | 'support' | 'audit' | 'coaching' | 'break_glass';
+  localSyntheticOnly: true;
+}
+
+export interface AppShellNavItemDto {
+  key:
+    | 'dashboard'
+    | 'schedule'
+    | 'drafts'
+    | 'workspace'
+    | 'finalized'
+    | 'operations'
+    | 'platform'
+    | 'ehr'
+    | 'clinicos'
+    | 'ai_governance'
+    | 'coaching'
+    | 'support'
+    | 'runtime_integration'
+    | 'figma_handoff';
+  label: string;
+  href: string;
+  requiredPermission: AppShellRequiredPermissionDto;
+  state: AppShellRouteStateDto;
+  itemCount: number;
+  badgeLabel?: string;
+  disabledReason?: string;
+}
+
+export interface AppShellLayoutPreferenceDto {
+  preferenceId: string;
+  sidebarDefaultCollapsed: boolean;
+  persisted: boolean;
+  storageMode: 'server_preference' | 'transient_ui_only';
+  updatedAt: string;
+}
+
+export interface NotificationDto {
+  notificationId: string;
+  category: 'draft' | 'task' | 'compliance' | 'system' | 'disabled_feature';
+  title: string;
+  body: string;
+  severity: 'info' | 'warning' | 'critical' | 'success';
+  read: boolean;
+  linkedRoute?: string;
+  patientFacingExcluded: true;
+  metadataOnly: true;
+  createdAt: string;
+}
+
+export interface ActivityFeedItemDto {
+  activityId: string;
+  category: 'appointment' | 'note' | 'visit' | 'finalization' | 'export' | 'support' | 'integration' | 'governance';
+  label: string;
+  detail: string;
+  actorLabel: string;
+  route?: string;
+  metadataOnly: true;
+  patientFacingExcluded: true;
+  occurredAt: string;
+}
+
+export interface DashboardMetricDto {
+  metricId: string;
+  label: string;
+  value: number | string;
+  unit?: 'count' | 'percent' | 'status';
+  route?: string;
+  state: AppShellRouteStateDto;
+  patientFacingExcluded: true;
+}
+
+export interface DisabledFeatureStateDto {
+  feature:
+    | 'live_ehr_writeback'
+    | 'live_transcription_vendor'
+    | 'live_external_ai'
+    | 'patient_portal_delivery'
+    | 'claim_submission'
+    | 'autonomous_finalization'
+    | 'public_object_url'
+    | 'supabase_backend';
+  state: 'disabled' | 'gated' | 'mock_only';
+  reason: string;
+}
+
+export interface ClinicalWorkflowDashboardDto {
+  dashboardId: string;
+  generatedAt: string;
+  dataSource: 'typed_api_client_composite';
+  productionLaunchApproved: false;
+  liveVendorActionsEnabled: false;
+  submittedClaim: false;
+  internalRevenueMetricsVisible: boolean;
+  internalRevenueMetricLabel: 'configured_internal_only' | 'unavailable_caveated';
+  metrics: DashboardMetricDto[];
+  disabledFeatureStates: DisabledFeatureStateDto[];
+  requiredUiStates: AppShellRouteStateDto[];
+}
+
+export interface AppShellViewDto {
+  currentUser: AppShellCurrentUserDto;
+  navigation: AppShellNavItemDto[];
+  notifications: NotificationDto[];
+  activity: ActivityFeedItemDto[];
+  dashboard: ClinicalWorkflowDashboardDto;
+  layoutPreference: AppShellLayoutPreferenceDto;
+  routeStates: AppShellRouteStateDto[];
+  localReactStateLimit: 'transient_controls_only';
+  productName: 'AURA Note';
+  rejectedPrototypeBackend: 'supabase';
+  revenuePilotBrandingAccepted: false;
+  supabaseBackendAccepted: false;
+  patientFacingRevenueExposed: false;
+}
+
+export interface AppShellResponseDto {
+  appShell: AppShellViewDto;
+  auditEvent: AuditEventDto;
+  domainEvents: Array<AuraNoteEvent<Record<string, unknown>>>;
+}
+
+export interface OperationsAnalyticsPointDto {
+  label: string;
+  value: number | string;
+  state: AppShellRouteStateDto;
+  patientFacingExcluded: true;
+}
+
+export interface OperationsAnalyticsSeriesDto {
+  seriesId: string;
+  label: string;
+  kind: 'bar' | 'line' | 'status';
+  points: OperationsAnalyticsPointDto[];
+  source: 'tasks' | 'billing_review' | 'settings' | 'templates' | 'rules_catalog' | 'disabled_feature';
+  patientFacingExcluded: true;
+  internalOnly: true;
+}
+
+export interface OperationsAnalyticsSnapshotDto {
+  analyticsId: string;
+  generatedAt: string;
+  dataSource: 'standalone_operations_api_composite';
+  metrics: DashboardMetricDto[];
+  series: OperationsAnalyticsSeriesDto[];
+  internalRevenueVisible: false;
+  patientFacingRevenueExposed: false;
+  productionAnalyticsVendorEnabled: false;
+  caveat: string;
+}
+
+export interface OperationsSettingsSummaryDto {
+  settingsSummaryId: string;
+  tenantId: string;
+  siteId: string;
+  integrations: Array<{
+    integrationId: string;
+    vendor: IntegrationConnectionDto['vendor'];
+    status: IntegrationConnectionDto['status'];
+    liveCredentialPresent: false;
+    routeState: AppShellRouteStateDto;
+  }>;
+  featureFlags: Array<{
+    key: string;
+    enabled: boolean;
+    governs: string;
+    runtimeEffect: 'disabled' | 'mock_only' | 'internal_only';
+  }>;
+  maskedSecretsOnly: true;
+  secretValuesReturned: false;
+  aiPreferencesGovernedBy: 'ai_gateway_policy';
+  patientFacingRevenueEnabled: false;
+  claimSubmissionEnabled: false;
+  certifiedProductionRules: false;
+}
+
+export interface OperationsRuntimeViewDto {
+  runtimeId: string;
+  routeState: AppShellRouteStateDto;
+  requiredUiStates: AppShellRouteStateDto[];
+  analytics: OperationsAnalyticsSnapshotDto;
+  notifications: NotificationDto[];
+  activity: ActivityFeedItemDto[];
+  settingsSummary: OperationsSettingsSummaryDto;
+  localReactStateLimit: 'transient_tabs_and_form_inputs_only';
+  productionLaunchApproved: false;
+  liveVendorActionsEnabled: false;
+  submittedClaim: false;
+  demoFixture: true;
+}
+
+export interface OperationsRuntimeResponseDto {
+  operationsRuntime: OperationsRuntimeViewDto;
+  auditEvent: AuditEventDto;
+  domainEvents: Array<AuraNoteEvent<Record<string, unknown>>>;
 }
 
 export type WorkspacePanelState =

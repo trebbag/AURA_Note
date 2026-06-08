@@ -143,4 +143,25 @@ describe('standalone operations API', () => {
 
     assert.equal(rules.body.data.rulesCatalog.certifiedProductionRules, false);
   });
+
+  it('returns a backend-composed operations runtime view for Figma analytics/activity/settings surfaces', async () => {
+    const response = await request(app.getHttpServer())
+      .get('/api/v1/standalone/operations/runtime')
+      .set('x-aura-role', 'admin')
+      .expect(200);
+
+    const runtime = response.body.data.operationsRuntime;
+    assert.equal(runtime.analytics.dataSource, 'standalone_operations_api_composite');
+    assert.equal(runtime.analytics.productionAnalyticsVendorEnabled, false);
+    assert.equal(runtime.analytics.patientFacingRevenueExposed, false);
+    assert.equal(runtime.settingsSummary.secretValuesReturned, false);
+    assert.equal(runtime.settingsSummary.aiPreferencesGovernedBy, 'ai_gateway_policy');
+    assert.equal(runtime.settingsSummary.claimSubmissionEnabled, false);
+    assert.equal(runtime.submittedClaim, false);
+    assert.equal(runtime.notifications.some((item: { category: string }) => item.category === 'disabled_feature'), true);
+    assert.equal(runtime.activity.some((item: { label: string }) => item.label === 'Operations runtime composed'), true);
+    assert.equal(response.body.data.domainEvents.some((event: { eventType: string }) => event.eventType === 'operational.readiness_checked.v1'), true);
+
+    await request(app.getHttpServer()).get('/api/v1/standalone/operations/runtime').set('x-aura-role', 'support').expect(403);
+  });
 });

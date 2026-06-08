@@ -5,7 +5,10 @@ import type {
   ComplianceReviewDto,
   DocumentationWorkspaceDto,
   HistoryGapQuestionDto,
+  NoteContentDto,
+  NoteVersionDto,
   SuggestionDto,
+  TranscriptLiveViewDto,
   TranscriptViewDto,
   TranscriptionProviderStatusDto,
   VisitSelectionDto
@@ -29,6 +32,10 @@ export function WorkspaceClient({ appointmentId }: WorkspaceClientProps) {
   const [compliance, setCompliance] = useState<ComplianceReviewDto | null>(null);
   const [historyGaps, setHistoryGaps] = useState<HistoryGapQuestionDto[]>([]);
   const [transcript, setTranscript] = useState<TranscriptViewDto | null>(null);
+  const [transcriptLiveView, setTranscriptLiveView] = useState<TranscriptLiveViewDto | null>(null);
+  const [noteContent, setNoteContent] = useState<NoteContentDto | null>(null);
+  const [noteVersions, setNoteVersions] = useState<NoteVersionDto[]>([]);
+  const [draftMarkdown, setDraftMarkdown] = useState('');
   const [providerStatus, setProviderStatus] = useState<TranscriptionProviderStatusDto | null>(null);
   const [recordingChunks, setRecordingChunks] = useState(0);
   const [microphonePermissionState, setMicrophonePermissionState] = useState('prompt_required');
@@ -42,6 +49,7 @@ export function WorkspaceClient({ appointmentId }: WorkspaceClientProps) {
   const timerState = workspace?.visitSession?.timerState ?? 'not_started';
   const recordingState = workspace?.visitSession?.recordingState ?? 'not_started';
   const seconds = workspace?.visitSession?.elapsedSeconds ?? 0;
+  const readOnlyEditor = !editorUnlocked || Boolean(noteContent?.readOnly);
 
   const refreshWorkspace = useCallback(async () => {
     setRouteState('loading');
@@ -57,6 +65,9 @@ export function WorkspaceClient({ appointmentId }: WorkspaceClientProps) {
           complianceResponse,
           gapsResponse,
           transcriptResponse,
+          transcriptLiveResponse,
+          noteContentResponse,
+          noteVersionsResponse,
           providerResponse
         ] = await Promise.all([
           client.listSuggestions(nextWorkspace.note.noteId),
@@ -64,6 +75,9 @@ export function WorkspaceClient({ appointmentId }: WorkspaceClientProps) {
           client.evaluateCompliance(nextWorkspace.note.noteId),
           client.listHistoryGaps(nextWorkspace.note.noteId),
           client.getTranscript(appointmentId),
+          client.getTranscriptLiveView(appointmentId),
+          client.getNoteContent(nextWorkspace.note.noteId),
+          client.listNoteVersions(nextWorkspace.note.noteId),
           client.getTranscriptionProviderStatus(appointmentId)
         ]);
         setSuggestions(suggestionsResponse.data.suggestions);
@@ -71,6 +85,10 @@ export function WorkspaceClient({ appointmentId }: WorkspaceClientProps) {
         setCompliance(complianceResponse.data);
         setHistoryGaps(gapsResponse.data.questions);
         setTranscript(transcriptResponse.data);
+        setTranscriptLiveView(transcriptLiveResponse.data);
+        setNoteContent(noteContentResponse.data.noteContent);
+        setDraftMarkdown(noteContentResponse.data.noteContent.markdown);
+        setNoteVersions(noteVersionsResponse.data.versions);
         setProviderStatus(providerResponse.data);
       }
 
@@ -186,6 +204,32 @@ export function WorkspaceClient({ appointmentId }: WorkspaceClientProps) {
     );
   }
 
+  function autosaveNoteContent() {
+    if (!noteId) return;
+    void runAction('Note content autosaved and versioned through API.', () =>
+      client.autosaveNoteContent(
+        noteId,
+        {
+          format: 'aura_markdown_v1',
+          markdown: draftMarkdown,
+          ...(noteContent ? { clientRevision: noteContent.revision } : {})
+        },
+        `workspace-note-autosave-${noteId}-${(noteContent?.revision ?? 0) + 1}`
+      )
+    );
+  }
+
+  function restoreLatestPreviousVersion() {
+    if (!noteId || noteVersions.length < 2) return;
+    const previous = noteVersions[1];
+    if (!previous) return;
+    void runAction('Previous note version restored through API.', () =>
+      client.restoreNoteVersion(noteId, previous.noteVersionId, {
+        restoreReason: 'Synthetic workspace restore evidence for Figma backend catch-up'
+      })
+    );
+  }
+
   function evaluateSuggestions() {
     if (!noteId) return;
     void runAction('Deterministic suggestions evaluated through API.', () => client.evaluateSuggestions(noteId));
@@ -207,7 +251,60 @@ export function WorkspaceClient({ appointmentId }: WorkspaceClientProps) {
 
   function removeSuggestion(suggestion: SuggestionDto) {
     if (!noteId) return;
-    void runAction('Suggestion removed through API.', () => client.removeSuggestion(noteId, suggestion.suggestionId));
+    void runAction('Suggestion removed through API with a documented reason.', () =>
+      client.removeSuggestion(noteId, suggestion.suggestionId, {
+        removalReason: 'Synthetic clinician removal reason for Figma backend catch-up'
+      })
+    );
+  }
+
+  function restoreSuggestion(suggestion: SuggestionDto) {
+    if (!noteId) return;
+    void runAction('Suggestion returned to candidate review through API.', () =>
+      client.restoreSuggestion(noteId, suggestion.suggestionId)
+    );
+  }
+
+  function removeVisitSelection(selection: VisitSelectionDto) {
+    if (!noteId) return;
+    void runAction('Visit Selection removed with API-backed disposition evidence.', () =>
+      client.removeVisitSelection(noteId, selection.visitSelectionId, {
+        removalReason: 'Synthetic clinician removed this selection after review.',
+        returnToSuggestions: Boolean(selection.sourceSuggestionId)
+      })
+    );
+  }
+
+  function changeVisitSelectionCategory(selection: VisitSelectionDto) {
+    if (!noteId) return;
+    void runAction('Visit Selection category changed through API.', () =>
+      client.changeVisitSelectionCategory(noteId, selection.visitSelectionId, {
+        category: selection.category === 'diagnosis' ? 'differential' : 'diagnosis',
+        reason: 'Synthetic clinician category correction for Figma selected-code bar.'
+      })
+    );
+  }
+
+  function acknowledgeFirstComplianceIssue() {
+    if (!noteId || !compliance?.issues[0]) return;
+    const issue = compliance.issues[0];
+    void runAction('Compliance issue acknowledged through API.', () =>
+      client.recordComplianceIssueAction(noteId, issue.complianceIssueId, {
+        action: 'acknowledge',
+        reason: 'Synthetic clinician acknowledged the compliance issue for review tracking.'
+      })
+    );
+  }
+
+  function resolveFirstComplianceIssue() {
+    if (!noteId || !compliance?.issues[0]) return;
+    const issue = compliance.issues[0];
+    void runAction('Compliance issue resolved through API with blocker recalculation.', () =>
+      client.recordComplianceIssueAction(noteId, issue.complianceIssueId, {
+        action: 'resolve',
+        reason: 'Synthetic clinician resolved the issue after reviewing required evidence.'
+      })
+    );
   }
 
   function createHistoryGapTask() {
@@ -235,6 +332,9 @@ export function WorkspaceClient({ appointmentId }: WorkspaceClientProps) {
   const transcriptSegments = transcript?.segments ?? workspace?.transcript?.segments ?? [];
   const correctionCount = transcript?.corrections?.length ?? 0;
   const providerRuntimeStates = providerStatus?.runtimeStates ?? [];
+  const acceptedSelectionCount = visitSelections.filter((selection) => selection.disposition !== 'removed').length;
+  const lowConfidenceSuggestionCount = suggestions.filter((suggestion) => suggestion.lowConfidenceOverrideRequired).length;
+  const topSuggestions = suggestions.slice(0, 4);
 
   return (
     <main className="workspace-shell">
@@ -325,6 +425,37 @@ export function WorkspaceClient({ appointmentId }: WorkspaceClientProps) {
         </button>
       </section>
 
+      <section className="figma-editor-command-deck" aria-label="Figma editor command deck">
+        <article>
+          <p className="eyebrow">Design 1 / Note Editor</p>
+          <h2>Patient And Encounter Command Bar</h2>
+          <p>
+            {workspace?.appointment.safePatientId ?? 'loading'} / {workspace?.appointment.visitType ?? 'loading'} / note{' '}
+            {noteId ?? 'loading'}
+          </p>
+          <div className="figma-status-row">
+            <span>Editor: {editorUnlocked ? 'unlocked' : 'locked'}</span>
+            <span>Timer: {timerState}</span>
+            <span>Recording: {recordingState}</span>
+            <span>Route: {routeState}</span>
+          </div>
+        </article>
+        <article aria-label="Figma audio wave and transcript controls">
+          <p className="eyebrow">Audio / Transcript</p>
+          <h2>Mock Recording Runtime</h2>
+          <div className="figma-audio-wave" aria-hidden="true">
+            {Array.from({ length: 14 }, (_, index) => (
+              <i key={index} style={{ height: `${12 + ((index + recordingChunks) % 6) * 6}px` }} />
+            ))}
+          </div>
+          <small>
+            {transcriptLiveView?.pollingMode ?? 'api_polling'} / liveStreamingEnabled=
+            {String(transcriptLiveView?.liveStreamingEnabled ?? false)} / rawPhiAudioStored=
+            {String(transcriptLiveView?.rawPhiAudioStored ?? false)}
+          </small>
+        </article>
+      </section>
+
       <section className="status-band" aria-label="Audio capture and transcription status">
         <div>
           <h2>Audio Capture Candidate</h2>
@@ -366,12 +497,83 @@ export function WorkspaceClient({ appointmentId }: WorkspaceClientProps) {
             <dt>Transcript retention</dt>
             <dd>{transcript?.retentionPolicy ?? 'indefinite'}</dd>
           </div>
+          <div>
+            <dt>Live transcript state</dt>
+            <dd>{transcriptLiveView?.liveState ?? 'not_started'}</dd>
+          </div>
+          <div>
+            <dt>Average confidence</dt>
+            <dd>{transcriptLiveView?.averageConfidence === null || transcriptLiveView?.averageConfidence === undefined ? 'not_available' : `${Math.round(transcriptLiveView.averageConfidence * 100)}%`}</dd>
+          </div>
+          <div>
+            <dt>Speaker labels</dt>
+            <dd>{transcriptLiveView?.speakerLabels.join(', ') || 'not_available'}</dd>
+          </div>
         </dl>
         <section className="state-grid" aria-label="Transcription runtime states">
           {providerRuntimeStates.map((state) => (
             <span key={state}>{state}</span>
           ))}
         </section>
+      </section>
+
+      <section className="figma-workspace-three-pane" aria-label="Figma documentation workspace visual layout">
+        <article className="figma-editor-pane" aria-label="Figma rich text editor surface">
+          <div className="section-title-row">
+            <div>
+              <p className="eyebrow">Design 1 / Rich Text Editor</p>
+              <h2>{readOnlyEditor ? 'Locked Draft Surface' : 'Editable Draft Surface'}</h2>
+            </div>
+            <strong>{noteContent?.format ?? 'aura_markdown_v1'}</strong>
+          </div>
+          <div className="figma-editor-preview" aria-label="API-backed editor preview">
+            <p>{draftMarkdown || workspace?.editorLockedReason || 'Draft-only note content loads from the API.'}</p>
+          </div>
+          <div className="figma-status-row">
+            <span>Revision {noteContent?.revision ?? 'loading'}</span>
+            <span>{noteVersions.length} versions</span>
+            <span>readOnly={String(readOnlyEditor)}</span>
+          </div>
+        </article>
+
+        <aside className="figma-selected-code-rail" aria-label="Figma selected-code rail">
+          <div>
+            <p className="eyebrow">Selected Codes</p>
+            <h2>{acceptedSelectionCount} Active</h2>
+          </div>
+          {visitSelections.slice(0, 5).map((selection) => (
+            <div key={selection.visitSelectionId} data-state={selection.disposition}>
+              <strong>{selection.label}</strong>
+              <span>
+                {selection.category} / {selection.disposition}
+              </span>
+              <small>humanApproved={String(selection.humanApproved)}</small>
+            </div>
+          ))}
+          {visitSelections.length === 0 ? <p>No selected items yet.</p> : null}
+        </aside>
+
+        <aside className="figma-suggestion-rail" aria-label="Figma suggestion intelligence rail">
+          <div>
+            <p className="eyebrow">AI Suggestions</p>
+            <h2>Candidate Review</h2>
+            <small>Low-confidence threshold remains AURA Note &lt;75%.</small>
+          </div>
+          {topSuggestions.map((suggestion) => (
+            <div key={suggestion.suggestionId} data-state={suggestion.status}>
+              <strong>{suggestion.label}</strong>
+              <span>{suggestion.category}</span>
+              <i aria-hidden="true">
+                <b style={{ width: `${Math.max(8, Math.round(suggestion.confidence * 100))}%` }} />
+              </i>
+              <small>
+                {Math.round(suggestion.confidence * 100)}% / humanReviewRequired=
+                {String(suggestion.humanReviewRequired)}
+              </small>
+            </div>
+          ))}
+          <span className="state-pill">override-required={lowConfidenceSuggestionCount}</span>
+        </aside>
       </section>
 
       <section className="review-board" aria-label="Suggestions and review panels" aria-live="polite">
@@ -399,11 +601,19 @@ export function WorkspaceClient({ appointmentId }: WorkspaceClientProps) {
                     {suggestion.category} / {Math.round(suggestion.confidence * 100)}% / {suggestion.status}
                   </span>
                 </div>
+                <p>{suggestion.rationale}</p>
+                <small>
+                  {suggestion.humanReviewRequired ? 'human review required' : 'review state missing'} /{' '}
+                  {suggestion.documentationRequirements?.join(', ') ?? 'documentation requirements pending'}
+                </small>
                 <button type="button" disabled={suggestion.status !== 'candidate'} onClick={() => acceptSuggestion(suggestion)}>
                   Accept
                 </button>
                 <button type="button" disabled={suggestion.status !== 'candidate'} onClick={() => removeSuggestion(suggestion)}>
                   Remove
+                </button>
+                <button type="button" disabled={suggestion.status !== 'removed'} onClick={() => restoreSuggestion(suggestion)}>
+                  Return to Suggestions
                 </button>
               </div>
             ))}
@@ -415,9 +625,21 @@ export function WorkspaceClient({ appointmentId }: WorkspaceClientProps) {
           <div className="selection-list">
             {visitSelections.length === 0 ? <p>No selected items yet.</p> : null}
             {visitSelections.map((selection) => (
-              <span key={selection.visitSelectionId}>
-                {selection.category}: {selection.label}
-              </span>
+              <div key={selection.visitSelectionId} className="suggestion-row">
+                <div>
+                  <strong>{selection.category}: {selection.label}</strong>
+                  <span>
+                    {selection.disposition} / {selection.humanApproved ? 'approved' : 'not approved'}
+                  </span>
+                  {selection.removalReason ? <small>{selection.removalReason}</small> : null}
+                </div>
+                <button type="button" disabled={selection.disposition === 'removed'} onClick={() => changeVisitSelectionCategory(selection)}>
+                  Change Category
+                </button>
+                <button type="button" disabled={selection.disposition === 'removed'} onClick={() => removeVisitSelection(selection)}>
+                  Remove Selection
+                </button>
+              </div>
             ))}
           </div>
         </article>
@@ -458,13 +680,37 @@ export function WorkspaceClient({ appointmentId }: WorkspaceClientProps) {
           <textarea
             aria-label="Documentation editor"
             rows={14}
-            value={
-              editorUnlocked
-                ? 'Synthetic editor scaffold is available from API-backed visit state. Clinical note drafting depth remains human-reviewed.'
-                : workspace?.editorLockedReason ?? 'Editor locked until Start Visit runs the timer or a recording exception is approved.'
-            }
-            readOnly
+            disabled={readOnlyEditor}
+            value={readOnlyEditor && !noteContent ? workspace?.editorLockedReason ?? 'Editor locked until Start Visit runs the timer or a recording exception is approved.' : draftMarkdown}
+            onChange={(event) => setDraftMarkdown(event.target.value)}
+            readOnly={readOnlyEditor}
           />
+          <div className="inline-actions">
+            <button type="button" disabled={readOnlyEditor || !noteId} onClick={autosaveNoteContent}>
+              Autosave
+            </button>
+            <button type="button" disabled={readOnlyEditor || noteVersions.length < 2} onClick={restoreLatestPreviousVersion}>
+              Restore Version
+            </button>
+          </div>
+          <dl className="compact-facts">
+            <div>
+              <dt>Format</dt>
+              <dd>{noteContent?.format ?? 'loading'}</dd>
+            </div>
+            <div>
+              <dt>Revision</dt>
+              <dd>{noteContent?.revision ?? 'loading'}</dd>
+            </div>
+            <div>
+              <dt>Versions</dt>
+              <dd>{noteVersions.length}</dd>
+            </div>
+            <div>
+              <dt>Sections</dt>
+              <dd>{noteContent?.sections.map((section) => section.title).join(', ') ?? 'loading'}</dd>
+            </div>
+          </dl>
         </article>
 
         <aside className="workspace-panels" aria-label="Workspace panels">
@@ -481,11 +727,20 @@ export function WorkspaceClient({ appointmentId }: WorkspaceClientProps) {
             <article key={issue.complianceIssueId} className={`panel-row state-${issue.blocksFinalize ? 'blocked' : 'ready'}`}>
               <div>
                 <strong>{issue.title}</strong>
-                <span>{issue.severity}</span>
+                <span>{issue.severity} / {issue.status}</span>
               </div>
               <p>{issue.detail}</p>
+              <small>{issue.actionHistory?.length ?? 0} action{issue.actionHistory?.length === 1 ? '' : 's'} recorded.</small>
             </article>
           ))}
+          <div className="inline-actions">
+            <button type="button" disabled={!compliance?.issues.length} onClick={acknowledgeFirstComplianceIssue}>
+              Acknowledge Issue
+            </button>
+            <button type="button" disabled={!compliance?.issues.length} onClick={resolveFirstComplianceIssue}>
+              Resolve Issue
+            </button>
+          </div>
         </aside>
       </section>
 

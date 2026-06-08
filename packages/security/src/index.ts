@@ -41,6 +41,7 @@ export type Permission =
   | 'transcription_provider:view'
   | 'transcript:correct'
   | 'draft_note:view'
+  | 'draft_note:edit'
   | 'finalization:manage'
   | 'final_note:view'
   | 'patient_summary:view'
@@ -560,6 +561,8 @@ export function canPerform(permission: Permission, ctx: AccessContext): boolean 
       return ctx.authorizedAdmin || (ctx.role === 'clinician' && ctx.treatingClinician && ctx.linkedToVisit);
     case 'draft_note:view':
       return ctx.authorizedAdmin || (ctx.treatingClinician && ctx.linkedToVisit);
+    case 'draft_note:edit':
+      return ctx.authorizedAdmin || (ctx.role === 'clinician' && ctx.treatingClinician && ctx.linkedToVisit);
     case 'finalization:manage':
       return ctx.authorizedAdmin || (ctx.role === 'clinician' && ctx.treatingClinician && ctx.linkedToVisit);
     case 'final_note:view':

@@ -4,6 +4,7 @@ import type {
   AppendRecordingChunkRequestDto,
   ApprovalRequestDto,
   BillingAttestRequestDto,
+  ComplianceIssueActionRequestDto,
   CorrectTranscriptSegmentRequestDto,
   EhrWritebackRequestDto,
   AppendTranscriptSegmentRequestDto,
@@ -14,8 +15,13 @@ import type {
   RecordMicrophonePermissionRequestDto,
   RecordingExceptionRequestDto,
   RebeautifyRequestDto,
+  RestoreNoteVersionRequestDto,
   SecureDownloadRequestDto,
-  SuggestionDecisionRequestDto
+  SuggestionDecisionRequestDto,
+  SuggestionRemovalRequestDto,
+  UpdateNoteContentRequestDto,
+  VisitSelectionCategoryChangeRequestDto,
+  VisitSelectionRemoveRequestDto
 } from '@aura-note/contracts';
 import { ScheduleService } from '../schedule/schedule.service';
 
@@ -149,6 +155,17 @@ export class NotesController {
     return this.scheduleService.getTranscriptByAppointment(appointmentId, this.scheduleService.createRequestContext(headers));
   }
 
+  @Get('documentation-workspace/appointments/:appointmentId/transcript/live')
+  getTranscriptLiveView(
+    @Param('appointmentId') appointmentId: string,
+    @Headers() headers: Record<string, string | string[] | undefined>
+  ) {
+    return this.scheduleService.getTranscriptLiveViewByAppointment(
+      appointmentId,
+      this.scheduleService.createRequestContext(headers)
+    );
+  }
+
   @Post('documentation-workspace/appointments/:appointmentId/transcript/segments')
   appendTranscriptSegment(
     @Param('appointmentId') appointmentId: string,
@@ -175,6 +192,35 @@ export class NotesController {
       body,
       this.scheduleService.createRequestContext(headers)
     );
+  }
+
+  @Get('notes/:noteId/content')
+  getNoteContent(@Param('noteId') noteId: string, @Headers() headers: Record<string, string | string[] | undefined>) {
+    return this.scheduleService.getNoteContent(noteId, this.scheduleService.createRequestContext(headers));
+  }
+
+  @Post('notes/:noteId/content/autosave')
+  autosaveNoteContent(
+    @Param('noteId') noteId: string,
+    @Body() body: UpdateNoteContentRequestDto,
+    @Headers() headers: Record<string, string | string[] | undefined>
+  ) {
+    return this.scheduleService.autosaveNoteContent(noteId, body, this.scheduleService.createRequestContext(headers));
+  }
+
+  @Get('notes/:noteId/versions')
+  listNoteVersions(@Param('noteId') noteId: string, @Headers() headers: Record<string, string | string[] | undefined>) {
+    return this.scheduleService.listNoteVersions(noteId, this.scheduleService.createRequestContext(headers));
+  }
+
+  @Post('notes/:noteId/versions/:versionId/restore')
+  restoreNoteVersion(
+    @Param('noteId') noteId: string,
+    @Param('versionId') versionId: string,
+    @Body() body: RestoreNoteVersionRequestDto,
+    @Headers() headers: Record<string, string | string[] | undefined>
+  ) {
+    return this.scheduleService.restoreNoteVersion(noteId, versionId, body, this.scheduleService.createRequestContext(headers));
   }
 
   @Get('notes/:noteId/suggestions')
@@ -206,9 +252,24 @@ export class NotesController {
   removeSuggestion(
     @Param('noteId') noteId: string,
     @Param('suggestionId') suggestionId: string,
+    @Body() body: SuggestionRemovalRequestDto,
     @Headers() headers: Record<string, string | string[] | undefined>
   ) {
-    return this.scheduleService.removeSuggestion(noteId, suggestionId, this.scheduleService.createRequestContext(headers));
+    return this.scheduleService.removeSuggestion(
+      noteId,
+      suggestionId,
+      body,
+      this.scheduleService.createRequestContext(headers)
+    );
+  }
+
+  @Post('notes/:noteId/suggestions/:suggestionId/restore')
+  restoreSuggestion(
+    @Param('noteId') noteId: string,
+    @Param('suggestionId') suggestionId: string,
+    @Headers() headers: Record<string, string | string[] | undefined>
+  ) {
+    return this.scheduleService.restoreSuggestion(noteId, suggestionId, this.scheduleService.createRequestContext(headers));
   }
 
   @Get('notes/:noteId/visit-selections')
@@ -228,9 +289,54 @@ export class NotesController {
     return this.scheduleService.addVisitSelection(noteId, body, this.scheduleService.createRequestContext(headers));
   }
 
+  @Post('notes/:noteId/visit-selections/:visitSelectionId/remove')
+  removeVisitSelection(
+    @Param('noteId') noteId: string,
+    @Param('visitSelectionId') visitSelectionId: string,
+    @Body() body: VisitSelectionRemoveRequestDto,
+    @Headers() headers: Record<string, string | string[] | undefined>
+  ) {
+    return this.scheduleService.removeVisitSelection(
+      noteId,
+      visitSelectionId,
+      body,
+      this.scheduleService.createRequestContext(headers)
+    );
+  }
+
+  @Post('notes/:noteId/visit-selections/:visitSelectionId/category')
+  changeVisitSelectionCategory(
+    @Param('noteId') noteId: string,
+    @Param('visitSelectionId') visitSelectionId: string,
+    @Body() body: VisitSelectionCategoryChangeRequestDto,
+    @Headers() headers: Record<string, string | string[] | undefined>
+  ) {
+    return this.scheduleService.changeVisitSelectionCategory(
+      noteId,
+      visitSelectionId,
+      body,
+      this.scheduleService.createRequestContext(headers)
+    );
+  }
+
   @Get('notes/:noteId/compliance')
   evaluateCompliance(@Param('noteId') noteId: string, @Headers() headers: Record<string, string | string[] | undefined>) {
     return this.scheduleService.evaluateCompliance(noteId, this.scheduleService.createRequestContext(headers));
+  }
+
+  @Post('notes/:noteId/compliance/issues/:complianceIssueId/actions')
+  recordComplianceIssueAction(
+    @Param('noteId') noteId: string,
+    @Param('complianceIssueId') complianceIssueId: string,
+    @Body() body: ComplianceIssueActionRequestDto,
+    @Headers() headers: Record<string, string | string[] | undefined>
+  ) {
+    return this.scheduleService.recordComplianceIssueAction(
+      noteId,
+      complianceIssueId,
+      body,
+      this.scheduleService.createRequestContext(headers)
+    );
   }
 
   @Get('notes/:noteId/history-gaps')

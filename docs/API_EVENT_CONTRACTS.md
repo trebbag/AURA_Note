@@ -405,3 +405,96 @@ Payloads are audit-safe metadata only. They must not include raw prompts, raw mo
 New event types are `security.privacy_review_checked.v1`, `threat_model.reviewed.v1`, `support.incident_taxonomy_checked.v1`, `billing.revenue_integrity_checked.v1`, `beta.pilot_package_checked.v1`, and `commercial.readiness_decision_checked.v1`.
 
 Payloads are audit-safe metadata only. They must not include PHI-bearing support content, raw logs, credentials, vendor payloads, final clinical/coding/billing determinations, claim submissions, certification claims, or production launch approval.
+
+## Post-CR4 Figma Make app-shell catch-up contracts
+
+The Figma Make backend catch-up tranche adds a read-only composite shell route:
+
+- `GET /app-shell` returns `AppShellResponse`, including `AppShellViewDto`, role-scoped navigation, dashboard metrics, notifications, activity feed, layout preference metadata, disabled-feature states, and required UI state vocabulary.
+- The endpoint emits an `app_shell.view` audit event and an `audit.event_recorded.v1` metadata event. It does not create a new clinical workflow state transition.
+- The response records `productName='AURA Note'`, `revenuePilotBrandingAccepted=false`, `supabaseBackendAccepted=false`, `patientFacingRevenueExposed=false`, `productionLaunchApproved=false`, `liveVendorActionsEnabled=false`, and `submittedClaim=false`.
+
+Payloads are audit-safe metadata only. They must not include PHI-like prototype fixture labels, raw transcripts, final-note text, billing details, credentials, production URLs, raw vendor payloads, direct browser AI calls, live patient portal delivery, live claim submission, autonomous finalization, charge finalization, medical-necessity determination, orders, or production launch approval.
+
+## Post-CR4 Figma Make editor autosave/version contracts
+
+The documentation workspace catch-up adds API-backed note content and version history for the Figma-derived editor:
+
+- `GET /notes/{noteId}/content` returns `NoteContentResponse`, including `NoteContentDto`, `AutosaveStatusDto`, and the latest `NoteVersionDto`.
+- `POST /notes/{noteId}/content/autosave` persists sanitized `aura_markdown_v1`, derived plain text, section offsets, and a version snapshot when the timer/editor gate allows editing.
+- `GET /notes/{noteId}/versions` returns audit-safe version history.
+- `POST /notes/{noteId}/versions/{versionId}/restore` restores a prior version through the same clinician edit boundary.
+
+New event types are:
+
+- `note.content_viewed.v1`: content read metadata only; not a clinical-state change.
+- `note.content_autosaved.v1`: saved revision, format, section count, and plain-text length metadata.
+- `note.version_restored.v1`: restored version ID and revision metadata.
+
+Payloads must remain audit-safe. They must not include raw PHI-like prototype fixtures, real patient identifiers, direct AI prompts, final clinical/coding/billing determinations, claim submissions, or production launch approval. The editor content format is `aura_markdown_v1`; Figma/Supabase local state is not an accepted production runtime backend.
+
+## Post-CR4 Figma Make schedule/workspace metadata contracts
+
+The schedule/workspace catch-up adds backend-backed metadata needed for the Figma-derived Schedule Builder and documentation handoff:
+
+- `GET /schedule/appointments` accepts active date, view mode, provider, status, visit type, modality, and clinic-location filters and returns `ScheduleQueryDto`, `ScheduleFilterSetDto`, `ScheduleAppointmentMetadataDto`, disabled live scheduling sources, and metadata-only chart-intake posture.
+- `GET /schedule/appointments/{appointmentId}/workspace-validation` returns `WorkspaceValidationDto`, proving appointment, note, and chart-context linkage before opening the workspace.
+- `POST /schedule/appointments/{appointmentId}/chart-intake-status` updates metadata-only chart-intake status. It does not enable live PHI upload, live EHR completeness, patient portal delivery, public object URLs, or production PHI storage.
+
+New event types are:
+
+- `schedule.view_filtered.v1`: cataloged for future durable audit feeds; current list response remains read-only and does not emit a state-changing event.
+- `appointment.workspace_validation_checked.v1`: validation status, workspace-open flag, chart freshness, and disabled live-source posture.
+- `chart_context.intake_status_updated.v1`: metadata-only chart-intake status, source freshness, stale-warning flag, and disabled live upload/portal flags.
+
+Payloads must remain audit-safe metadata only. They must not include PHI-like prototype fixture labels, uploaded chart files, patient contact data, raw EHR payloads, direct AI prompts, live portal messages, claim submission, final clinical/coding/billing determinations, or production launch approval.
+
+## Post-CR4 Figma Make workspace review/action contracts
+
+The documentation workspace catch-up adds backend-backed review panel actions needed by the Figma-derived transcript preview, Suggestions panel, Visit Selections bar, and Compliance Review drawer:
+
+- `GET /documentation-workspace/appointments/{appointmentId}/transcript/live` returns `TranscriptLiveView`, including recent segments, full transcript text assembled from synthetic/mock transcript segments, average confidence, speaker labels, timer state, provider status, `liveStreamingEnabled=false`, `rawPhiAudioStored=false`, and transcript retention metadata.
+- `POST /notes/{noteId}/suggestions/{suggestionId}/restore` returns an API-backed suggestion state after a removed candidate is returned to review.
+- `POST /notes/{noteId}/visit-selections/{visitSelectionId}/remove` marks the selected item as removed with a required reason and optional return-to-suggestions behavior.
+- `POST /notes/{noteId}/visit-selections/{visitSelectionId}/category` changes a selected item's category with a required reason so diagnosis/differential/category movement is auditable.
+- `POST /notes/{noteId}/compliance/issues/{complianceIssueId}/actions` records acknowledge, assign, restore, dismiss, and resolve actions. Hard-block dismissal fails closed; hard-block resolution requires a documented reason and recalculates finalization readiness.
+
+New event types are:
+
+- `transcript.live_view_polled.v1`: transcript live-view poll metadata, segment counts, source status, and disabled live-stream/raw-audio posture.
+- `suggestion.restored.v1`: restored suggestion metadata and human-review-required posture.
+- `visit_selection.removed.v1`: removed Visit Selection item, category, reason, and return-to-suggestions flag.
+- `visit_selection.restored_to_suggestions.v1`: selected item returned to the Suggestions panel for renewed human review.
+- `visit_selection.category_changed.v1`: category-change metadata and reason.
+- `compliance.issue_action_recorded.v1`: compliance action, issue severity/status, hard-block posture, reason, and trace ID.
+
+Payloads must remain audit-safe. They must not include raw PHI-like prototype fixtures, raw audio, real patient identifiers, direct AI prompts, final clinical/coding/billing determinations, medical-necessity conclusions, claim submissions, public object URLs, live patient portal delivery, or production launch approval. Suggestions and selections remain draft/candidate-only and human-review-required.
+
+## Post-CR4 Figma Make Design 2 finalization runtime contracts
+
+The finalization catch-up maps Design 2 onto the existing `/notes/{noteId}/finalization` API family. It does not create Supabase tables, `/workflow/sessions`, live portal delivery, live EHR dispatch, live claim submission, or autonomous finalization.
+
+The expanded `FinalizationSession` response now carries:
+
+- `evidenceSpans`: stable source/type/offset evidence for note text, selections, suggestions, compliance issues, patient questions, and finalization output.
+- `itemStatuses`: per-step review status for selections, suggestions, patient questions, care-plan candidates, billing validation, and dispatch targets.
+- `editorVariants`: original note, enhanced note, and patient summary variants with approval/read-only state.
+- `patientQuestions`: History Gap/patient-question workflow metadata with portal delivery disabled.
+- `carePlanItems`: candidate plan items marked human-review-required.
+- `patientInsightSnapshot`: source-freshness and metadata-only/unavailable patient-review panel state.
+- `billingValidation`: claim/support checks that preserve draft-only billing posture.
+- `dispatchMetadata`: `submittedClaim=false`, patient portal delivery disabled, export/read-only status, and dispatch state.
+
+Existing finalization, billing, note signing, export, and audit events remain the state-change evidence. Their payloads may include counts/statuses for the new runtime sections, but must remain audit-safe and must not include raw PHI, direct AI prompts, unsupported clinical facts, charge finalization, medical-necessity conclusions, live claim submission, live patient portal delivery, or production launch approval.
+
+## Post-CR4 Figma Make operations runtime contracts
+
+The operations catch-up maps the Design 1 analytics/activity/settings affordances onto existing AURA Note operations APIs:
+
+- `GET /standalone/operations/runtime` returns `OperationsRuntimeResponse`, including `OperationsRuntimeViewDto`, `OperationsAnalyticsSnapshotDto`, `OperationsSettingsSummaryDto`, notifications, activity feed items, required UI states, and no-launch safety posture.
+- The runtime view composes existing task, billing-review, settings/admin, templates, estimate configuration, and rules catalog state. It does not create a new production analytics backend or vendor integration.
+- The route emits an `operations.runtime_view` audit event plus `operational.readiness_checked.v1` and `audit.event_recorded.v1` metadata events.
+- `OperationsAnalyticsSnapshotDto` keeps `productionAnalyticsVendorEnabled=false`, `internalRevenueVisible=false`, and `patientFacingRevenueExposed=false`.
+- `OperationsSettingsSummaryDto` keeps `secretValuesReturned=false`, `maskedSecretsOnly=true`, `aiPreferencesGovernedBy=ai_gateway_policy`, `claimSubmissionEnabled=false`, and `certifiedProductionRules=false`.
+
+Payloads must remain audit-safe metadata only. They must not include real patient identifiers, PHI-like prototype fixture labels, raw transcripts, final-note text, billing detail beyond authorized draft-review metadata, secret values, production URLs, live vendor payloads, patient-facing revenue, charge finalization, medical-necessity conclusions, live claim submission, or production launch approval.

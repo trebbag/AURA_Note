@@ -17,10 +17,18 @@ import {
   type DraftNotesViewDto,
   type FinalizedNoteSummaryDto,
   type FinalizedNotesViewDto,
+  type NoteContentDto,
+  type NoteContentResponseDto,
   type NoteDto,
+  type NoteSectionDto,
+  type NoteVersionDto,
+  type NoteVersionsViewDto,
   type AppendTranscriptSegmentRequestDto,
   type AddVisitSelectionRequestDto,
   type RecordingExceptionRequestDto,
+  type ChartIntakeStatusRequestDto,
+  type ChartIntakeStatusResponseDto,
+  type ComplianceIssueActionRequestDto,
   type ComplianceIssueDto,
   type ComplianceReviewDto,
   type CreateHistoryGapTaskRequestDto,
@@ -39,7 +47,9 @@ import {
   type RawAudioRetentionMetadataDto,
   type RecordingChunkMetadataDto,
   type RecordingChunkResponseDto,
+  type ScheduleAppointmentMetadataDto,
   type ScheduleAppointmentDto,
+  type ScheduleQueryDto,
   type ScheduleViewDto,
   type StandaloneChartContextResponseDto,
   type StandaloneChartContextSnapshotDto,
@@ -56,6 +66,7 @@ import {
   type ReviewActionResponseDto,
   type RebeautifyRequestDto,
   type SuggestionDecisionRequestDto,
+  type SuggestionRemovalRequestDto,
   type SuggestionDto,
   type SuggestionsViewDto,
   type TaskDto,
@@ -63,6 +74,7 @@ import {
   type StartVisitResponseDto,
   type TranscriptCorrectionDto,
   type TranscriptCorrectionResponseDto,
+  type TranscriptLiveViewDto,
   type TranscriptSegmentDto,
   type TranscriptViewDto,
   type TranscriptionJobDto,
@@ -70,14 +82,20 @@ import {
   type TranscriptionProviderStatusDto,
   type UnusedAuditItemDto,
   type UpdateAppointmentRequestDto,
+  type UpdateNoteContentRequestDto,
   type UpdateStandalonePatientRequestDto,
   type VisitSelectionDto,
+  type VisitSelectionCategoryChangeRequestDto,
+  type VisitSelectionRemoveRequestDto,
   type VisitSelectionsViewDto,
   type VisitSessionControlResponseDto,
   type VisitSessionDto,
   type RecordingPermissionResponseDto,
   type RecordingRetentionResponseDto,
-  type SecureDownloadResponseDto
+  type SecureDownloadResponseDto,
+  type RestoreNoteVersionRequestDto,
+  type VirtualVisitStatusDto,
+  type WorkspaceValidationResponseDto
 } from '@aura-note/contracts';
 import {
   approveRecordingException,
@@ -154,18 +172,30 @@ export class ScheduleService {
     private readonly disabledLiveTranscriptionProvider: ServerSideTranscriptionProviderAdapter = new DisabledLiveTranscriptionProvider()
   ) {}
 
-  listAppointments(context: RequestContext): ApiEnvelope<ScheduleViewDto> {
-    if (!canPerform('schedule:view', context.access)) {
+  listAppointments(query: ScheduleQueryDto | RequestContext = {}, context?: RequestContext): ApiEnvelope<ScheduleViewDto> {
+    const resolvedContext = context ?? (query as RequestContext);
+    const requestedQuery = context ? (query as ScheduleQueryDto) : {};
+    if (!canPerform('schedule:view', resolvedContext.access)) {
       throw new ForbiddenException('role cannot view schedule');
     }
 
+    const normalizedQuery = this.normalizeScheduleQuery(requestedQuery);
+    const allAppointments = this.repository.listAppointments();
+    const filteredAppointments = allAppointments.filter((entry) => this.matchesScheduleQuery(entry, normalizedQuery));
+
     return createApiEnvelope(
       {
-        appointments: this.repository.listAppointments().map((entry) => this.toScheduleCard(entry)),
+        appointments: filteredAppointments.map((entry) => this.toScheduleCard(entry)),
         ehrSchedulingEnabled: false,
-        clinicOsSchedulingEnabled: false
+        clinicOsSchedulingEnabled: false,
+        viewMode: normalizedQuery.viewMode ?? 'day',
+        ...(normalizedQuery.activeDate ? { activeDate: normalizedQuery.activeDate } : {}),
+        query: normalizedQuery,
+        filters: this.createScheduleFilterSet(allAppointments),
+        disabledLiveSchedulingSources: ['ehr_schedule_import', 'clinicos_schedule_delegate', 'patient_portal_chart_upload'],
+        metadataOnlyChartIntake: true
       },
-      this.createMeta(context)
+      this.createMeta(resolvedContext)
     );
   }
 
@@ -315,6 +345,11 @@ export class ScheduleService {
       modality: request.modality,
       source: 'standalone',
       ...(request.reasonForVisit ? { reasonForVisit: request.reasonForVisit } : {}),
+      clinicLocationId: request.clinicLocationId ?? this.defaultClinicLocationId(),
+      clinicLocationLabel: request.clinicLocationLabel ?? this.defaultClinicLocationLabel(),
+      roomId: request.roomId ?? this.defaultRoomId(request.modality),
+      roomLabel: request.roomLabel ?? this.defaultRoomLabel(request.modality),
+      virtualVisitStatus: this.resolveVirtualVisitStatus(request.modality),
       mode: APP_MODE
     };
 
@@ -336,8 +371,19 @@ export class ScheduleService {
 
     const linkages = this.createAppointmentPatientLinkages(appointment, note);
     const chartContextSnapshot = this.createChartContextSnapshot(patient, appointment, note);
+    const seededNoteContent = this.createInitialNoteContent(appointment, note, context.actorUserId);
+    const seededNoteVersion = this.createNoteVersion(seededNoteContent, context.actorUserId);
 
-    this.repository.saveAppointment({ appointment, note, patient, linkages, chartContextSnapshot, lifecycle });
+    this.repository.saveAppointment({
+      appointment,
+      note,
+      patient,
+      linkages,
+      chartContextSnapshot,
+      lifecycle,
+      noteContent: seededNoteContent,
+      noteVersions: [seededNoteVersion]
+    });
     if (context.idempotencyKey) {
       this.repository.saveIdempotencyKey(context.idempotencyKey, appointmentId);
     }
@@ -360,6 +406,7 @@ export class ScheduleService {
       throw new BadRequestException('cancelled or no-show appointments cannot be edited in this scaffold');
     }
 
+    const resolvedModality = request.modality ?? stored.appointment.modality;
     const updatedAppointment: AppointmentDto = {
       ...stored.appointment,
       ...(request.clinicianId ? { clinicianId: request.clinicianId } : {}),
@@ -367,7 +414,12 @@ export class ScheduleService {
       ...(request.startsAt ? { startsAt: request.startsAt } : {}),
       ...(request.durationMinutes ? { durationMinutes: request.durationMinutes } : {}),
       ...(request.modality ? { modality: request.modality } : {}),
-      ...(request.reasonForVisit !== undefined ? { reasonForVisit: request.reasonForVisit } : {})
+      ...(request.reasonForVisit !== undefined ? { reasonForVisit: request.reasonForVisit } : {}),
+      ...(request.clinicLocationId !== undefined ? { clinicLocationId: request.clinicLocationId } : {}),
+      ...(request.clinicLocationLabel !== undefined ? { clinicLocationLabel: request.clinicLocationLabel } : {}),
+      ...(request.roomId !== undefined ? { roomId: request.roomId } : request.modality ? { roomId: this.defaultRoomId(resolvedModality) } : {}),
+      ...(request.roomLabel !== undefined ? { roomLabel: request.roomLabel } : request.modality ? { roomLabel: this.defaultRoomLabel(resolvedModality) } : {}),
+      ...(request.modality ? { virtualVisitStatus: this.resolveVirtualVisitStatus(request.modality) } : {})
     };
     const validationErrors = validateAppointmentDraft({
       tenantId: updatedAppointment.tenantId,
@@ -478,6 +530,300 @@ export class ScheduleService {
             safePatientId: stored.appointment.safePatientId,
             sourceFreshness: stored.chartContextSnapshot.sourceFreshness,
             staleWarning: stored.chartContextSnapshot.staleWarning
+          })
+        ]
+      },
+      this.createMeta(context)
+    );
+  }
+
+  validateWorkspaceEntry(
+    appointmentId: string,
+    context: RequestContext
+  ): ApiEnvelope<WorkspaceValidationResponseDto> {
+    const stored = this.getStoredAppointment(appointmentId);
+    const linkedContext = this.createLinkedVisitContext(context.access);
+    if (!canPerform('draft_note:view', linkedContext) && !canPerform('final_note:view', context.access)) {
+      throw new ForbiddenException('role cannot validate workspace entry');
+    }
+
+    const appointmentLinked = stored.linkages.some(
+      (linkage) => linkage.linkedObjectType === 'appointment' && linkage.linkedObjectId === stored.appointment.appointmentId && linkage.active
+    );
+    const noteLinked = stored.linkages.some(
+      (linkage) => linkage.linkedObjectType === 'note' && linkage.linkedObjectId === stored.note.noteId && linkage.active
+    );
+    const chartContextLinked = stored.linkages.some(
+      (linkage) =>
+        linkage.linkedObjectType === 'chart_context' &&
+        linkage.linkedObjectId === stored.chartContextSnapshot.chartContextSnapshotId &&
+        linkage.active
+    );
+    const validationStatus =
+      appointmentLinked && noteLinked && chartContextLinked
+        ? stored.chartContextSnapshot.staleWarning
+          ? 'stale_context'
+          : 'valid'
+        : 'linkage_missing';
+    const gate = stored.visitSession ?? {
+      visitSessionId: 'visit-session-not-started',
+      noteId: stored.note.noteId,
+      timerState: 'not_started' as const,
+      recordingState: 'not_started' as const,
+      editorUnlocked: false
+    };
+
+    return createApiEnvelope(
+      {
+        workspaceValidation: {
+          appointmentId: stored.appointment.appointmentId,
+          noteId: stored.note.noteId,
+          safePatientId: stored.appointment.safePatientId,
+          validationStatus,
+          workspaceOpenAllowed: validationStatus !== 'linkage_missing',
+          editorInitiallyReadOnly: !canEditNote(gate),
+          appointmentLinked,
+          noteLinked,
+          chartContextLinked,
+          chartFreshness: stored.chartContextSnapshot.sourceFreshness,
+          chartWarnings: stored.chartContextSnapshot.warnings,
+          productionPhiStorageApproved: false,
+          liveEhrCompletenessImplied: false,
+          validatedAt: new Date().toISOString()
+        },
+        auditEvent: this.createAuditEvent('appointment.workspace_validation_check', 'Appointment', appointmentId, context),
+        domainEvents: [
+          this.createDomainEventForAppointment(stored, context, 'appointment.workspace_validation_checked.v1', {
+            validationStatus,
+            workspaceOpenAllowed: validationStatus !== 'linkage_missing',
+            chartFreshness: stored.chartContextSnapshot.sourceFreshness,
+            productionPhiStorageApproved: false,
+            liveEhrCompletenessImplied: false
+          })
+        ]
+      },
+      this.createMeta(context)
+    );
+  }
+
+  updateChartIntakeStatus(
+    appointmentId: string,
+    request: ChartIntakeStatusRequestDto,
+    context: RequestContext
+  ): ApiEnvelope<ChartIntakeStatusResponseDto> {
+    const stored = this.getStoredAppointment(appointmentId);
+    const linkedContext = this.createLinkedPatientContext(context.access);
+    if (!canPerform('chart_context:view', linkedContext) || !canPerform('appointment:update', context.access)) {
+      throw new ForbiddenException('role cannot update chart intake metadata');
+    }
+    if (!this.isChartIntakeStatus(request.status)) {
+      throw new BadRequestException('unsupported chart intake status');
+    }
+    if (request.warning && containsForbiddenPhiText(request.warning)) {
+      throw new BadRequestException('chart intake warning contains forbidden PHI-like text');
+    }
+
+    const sourceFreshness = request.sourceFreshness ?? this.sourceFreshnessForChartIntakeStatus(request.status);
+    const warnings = this.chartWarningsForIntakeStatus(request.status, request.warning);
+    stored.chartContextSnapshot = {
+      ...stored.chartContextSnapshot,
+      sourceFreshness,
+      staleWarning: request.status === 'stale_warning' || chartContextRequiresFreshnessWarning({
+        sourceFreshness,
+        sliceCount: stored.chartContextSnapshot.slices.length
+      }),
+      warnings,
+      aiPackagingAllowed: false,
+      productionPhiStorageApproved: false,
+      createdAt: new Date().toISOString()
+    };
+    this.persistStoredAppointment(stored);
+
+    return createApiEnvelope(
+      {
+        chartContextSnapshot: stored.chartContextSnapshot,
+        scheduleMetadata: this.createScheduleMetadata(stored),
+        auditEvent: this.createAuditEvent('chart_context.intake_status_update', 'ChartContextSnapshot', stored.chartContextSnapshot.chartContextSnapshotId, context),
+        domainEvents: [
+          this.createDomainEventForAppointment(stored, context, 'chart_context.intake_status_updated.v1', {
+            chartIntakeStatus: request.status,
+            sourceFreshness: stored.chartContextSnapshot.sourceFreshness,
+            staleWarning: stored.chartContextSnapshot.staleWarning,
+            livePhiUploadEnabled: false,
+            patientPortalDeliveryEnabled: false
+          })
+        ]
+      },
+      this.createMeta(context)
+    );
+  }
+
+  getNoteContent(noteId: string, context: RequestContext): ApiEnvelope<NoteContentResponseDto> {
+    const stored = this.getStoredByNoteId(noteId);
+    const linkedContext = this.createLinkedVisitContext(context.access);
+    if (!canPerform('draft_note:view', linkedContext) && !canPerform('final_note:view', context.access)) {
+      throw new ForbiddenException('role cannot view note content');
+    }
+
+    const noteContent = this.ensureNoteContent(stored, context.actorUserId);
+    const latestVersion = this.ensureLatestNoteVersion(stored, noteContent, context.actorUserId);
+    this.persistStoredAppointment(stored);
+
+    return createApiEnvelope(
+      {
+        noteContent,
+        autosaveStatus: this.createAutosaveStatus(noteContent, 'idle', noteContent.readOnly, 'Note content loaded from API-backed state.'),
+        latestVersion,
+        auditEvent: this.createAuditEvent('note.content_view', 'Note', noteId, context),
+        domainEvents: [
+          this.createDomainEventForNote(stored, context, 'note.content_viewed.v1', {
+            revision: noteContent.revision,
+            format: noteContent.format,
+            readOnly: noteContent.readOnly
+          })
+        ]
+      },
+      this.createMeta(context)
+    );
+  }
+
+  autosaveNoteContent(
+    noteId: string,
+    request: UpdateNoteContentRequestDto,
+    context: RequestContext
+  ): ApiEnvelope<NoteContentResponseDto> {
+    const stored = this.getStoredByNoteId(noteId);
+    this.assertCanEditNoteContent(stored, context);
+    if (request.format !== 'aura_markdown_v1') {
+      throw new BadRequestException('note content format must be aura_markdown_v1');
+    }
+    if (!request.markdown.trim()) {
+      throw new BadRequestException('note content cannot be empty');
+    }
+    if (containsForbiddenPhiKeys(request) || containsForbiddenPhiText(request.markdown)) {
+      throw new BadRequestException('note content request contains forbidden PHI-like content');
+    }
+
+    const previousContent = this.ensureNoteContent(stored, context.actorUserId);
+    const sanitizedMarkdown = this.sanitizeAuraMarkdown(request.markdown);
+    const revision = previousContent.revision + 1;
+    const updatedAt = new Date().toISOString();
+    const noteContent: NoteContentDto = {
+      ...previousContent,
+      markdown: sanitizedMarkdown,
+      plainText: this.toPlainText(sanitizedMarkdown),
+      sections: this.createNoteSections(sanitizedMarkdown),
+      revision,
+      source: 'clinician_autosave',
+      sanitized: true,
+      readOnly: false,
+      updatedByUserId: context.actorUserId,
+      updatedAt
+    };
+    const latestVersion = this.createNoteVersion(noteContent, context.actorUserId);
+    stored.noteContent = noteContent;
+    stored.noteVersions = [...(stored.noteVersions ?? []), latestVersion];
+    if (stored.finalization?.frozenSnapshot) {
+      stored.finalization.frozenSnapshot.originalNoteText = noteContent.plainText;
+      stored.finalization.updatedAt = updatedAt;
+    }
+    this.persistStoredAppointment(stored);
+
+    return createApiEnvelope(
+      {
+        noteContent,
+        autosaveStatus: this.createAutosaveStatus(noteContent, 'saved', false, 'Note autosaved through API-backed state.'),
+        latestVersion,
+        auditEvent: this.createAuditEvent('note.content_autosave', 'Note', noteId, context),
+        domainEvents: [
+          this.createDomainEventForNote(stored, context, 'note.content_autosaved.v1', {
+            revision,
+            format: noteContent.format,
+            clientRevision: request.clientRevision ?? null,
+            sectionCount: noteContent.sections.length,
+            plainTextLength: noteContent.plainText.length
+          })
+        ]
+      },
+      this.createMeta(context)
+    );
+  }
+
+  listNoteVersions(noteId: string, context: RequestContext): ApiEnvelope<NoteVersionsViewDto> {
+    const stored = this.getStoredByNoteId(noteId);
+    const linkedContext = this.createLinkedVisitContext(context.access);
+    if (!canPerform('draft_note:view', linkedContext) && !canPerform('final_note:view', context.access)) {
+      throw new ForbiddenException('role cannot view note version history');
+    }
+
+    const noteContent = this.ensureNoteContent(stored, context.actorUserId);
+    this.ensureLatestNoteVersion(stored, noteContent, context.actorUserId);
+    this.persistStoredAppointment(stored);
+
+    return createApiEnvelope(
+      {
+        noteId,
+        versions: [...(stored.noteVersions ?? [])].sort((left, right) => right.revision - left.revision),
+        autosaveStatus: this.createAutosaveStatus(noteContent, 'idle', noteContent.readOnly, 'Version history loaded from API-backed state.')
+      },
+      this.createMeta(context)
+    );
+  }
+
+  restoreNoteVersion(
+    noteId: string,
+    versionId: string,
+    request: RestoreNoteVersionRequestDto,
+    context: RequestContext
+  ): ApiEnvelope<NoteContentResponseDto> {
+    const stored = this.getStoredByNoteId(noteId);
+    this.assertCanEditNoteContent(stored, context);
+    if (!request.restoreReason.trim()) {
+      throw new BadRequestException('restore reason is required');
+    }
+    if (containsForbiddenPhiKeys(request) || containsForbiddenPhiText(request.restoreReason)) {
+      throw new BadRequestException('restore request contains forbidden PHI-like content');
+    }
+
+    const version = (stored.noteVersions ?? []).find((candidate) => candidate.noteVersionId === versionId);
+    if (!version) {
+      throw new NotFoundException('note version not found');
+    }
+
+    const previousContent = this.ensureNoteContent(stored, context.actorUserId);
+    const restoredAt = new Date().toISOString();
+    const restoredContent: NoteContentDto = {
+      ...previousContent,
+      markdown: version.markdown,
+      plainText: this.toPlainText(version.markdown),
+      sections: this.createNoteSections(version.markdown),
+      revision: previousContent.revision + 1,
+      source: 'version_restore',
+      sanitized: true,
+      readOnly: false,
+      updatedByUserId: context.actorUserId,
+      updatedAt: restoredAt
+    };
+    const latestVersion = this.createNoteVersion(restoredContent, context.actorUserId, version.noteVersionId);
+    stored.noteContent = restoredContent;
+    stored.noteVersions = [...(stored.noteVersions ?? []), latestVersion];
+    if (stored.finalization?.frozenSnapshot) {
+      stored.finalization.frozenSnapshot.originalNoteText = restoredContent.plainText;
+      stored.finalization.updatedAt = restoredAt;
+    }
+    this.persistStoredAppointment(stored);
+
+    return createApiEnvelope(
+      {
+        noteContent: restoredContent,
+        autosaveStatus: this.createAutosaveStatus(restoredContent, 'saved', false, 'Note version restored through API-backed state.'),
+        latestVersion,
+        auditEvent: this.createAuditEvent('note.version_restore', 'NoteVersion', versionId, context),
+        domainEvents: [
+          this.createDomainEventForNote(stored, context, 'note.version_restored.v1', {
+            restoredFromVersionId: versionId,
+            restoredRevision: restoredContent.revision,
+            restoreReason: request.restoreReason
           })
         ]
       },
@@ -871,6 +1217,74 @@ export class ScheduleService {
         transcriptId: 'transcript-not-started',
         retentionPolicy: 'indefinite',
         segments: []
+      },
+      this.createMeta(context)
+    );
+  }
+
+  getTranscriptLiveViewByAppointment(appointmentId: string, context: RequestContext): ApiEnvelope<TranscriptLiveViewDto> {
+    const stored = this.getStoredAppointment(appointmentId);
+    const linkedContext = this.createLinkedVisitContext(context.access);
+    const billingReviewContext =
+      stored.finalization?.draftClaimPreview?.billingReviewTriggered && context.access.role === 'billing_staff'
+        ? { ...linkedContext, billingReviewTriggered: true }
+        : linkedContext;
+    if (!canPerform('transcript:view', billingReviewContext)) {
+      throw new ForbiddenException('role cannot view transcript live view');
+    }
+
+    const providerStatus = stored.transcriptionProviderStatus ?? this.createTranscriptionProviderStatus();
+    const transcript: TranscriptViewDto = {
+      ...(stored.transcript ?? {
+        noteId: stored.note.noteId,
+        transcriptId: 'transcript-not-started',
+        retentionPolicy: 'indefinite' as const,
+        segments: []
+      }),
+      providerStatus
+    };
+    const confidenceValues = transcript.segments
+      .map((segment) => segment.confidence)
+      .filter((confidence): confidence is number => confidence !== undefined);
+    const liveState: TranscriptLiveViewDto['liveState'] =
+      providerStatus.mode === 'external_disabled'
+        ? 'provider_disabled'
+        : stored.note.state === 'finalized'
+          ? 'read_only'
+          : transcript.segments.length === 0
+            ? 'not_started'
+            : 'ready';
+    const generatedAt = new Date().toISOString();
+    return createApiEnvelope(
+      {
+        noteId: stored.note.noteId,
+        transcriptId: transcript.transcriptId,
+        liveState: liveState === 'ready' && stored.visitSession?.timerState === 'running' ? 'polling_mock' : liveState,
+        pollingMode: 'api_polling',
+        timerState: stored.visitSession?.timerState ?? 'not_started',
+        recordingState: stored.visitSession?.recordingState ?? 'not_started',
+        recentSegments: transcript.segments.slice(-3),
+        fullTranscript: transcript,
+        segmentCount: transcript.segments.length,
+        averageConfidence:
+          confidenceValues.length === 0
+            ? null
+            : confidenceValues.reduce((total, confidence) => total + confidence, 0) / confidenceValues.length,
+        speakerLabels: Array.from(new Set(transcript.segments.map((segment) => segment.speakerLabel ?? segment.speakerRole))),
+        providerStatus,
+        liveStreamingEnabled: false,
+        rawPhiAudioStored: false,
+        retentionPolicy: 'indefinite',
+        generatedAt,
+        auditEvent: this.createAuditEvent('transcript.live_view', 'Appointment', appointmentId, context),
+        domainEvents: [
+          this.createDomainEventForAppointment(stored, context, 'transcript.live_view_polled.v1', {
+            segmentCount: transcript.segments.length,
+            pollingMode: 'api_polling',
+            liveStreamingEnabled: false,
+            rawPhiAudioStored: false
+          })
+        ]
       },
       this.createMeta(context)
     );
@@ -1323,6 +1737,8 @@ export class ScheduleService {
         confidence: suggestion.confidence,
         humanApproved: true,
         sourceSuggestionId: suggestion.suggestionId,
+        disposition: 'accepted',
+        lastActionAt: new Date().toISOString(),
         ...(request.overrideReason ? { overrideReason: request.overrideReason } : {})
       }
     ];
@@ -1334,16 +1750,40 @@ export class ScheduleService {
     ]);
   }
 
-  removeSuggestion(noteId: string, suggestionId: string, context: RequestContext): ApiEnvelope<ReviewActionResponseDto> {
+  removeSuggestion(
+    noteId: string,
+    suggestionId: string,
+    request: SuggestionRemovalRequestDto,
+    context: RequestContext
+  ): ApiEnvelope<ReviewActionResponseDto> {
     const stored = this.getReviewableNote(noteId, context);
     stored.suggestions = stored.suggestions ?? this.createDeterministicSuggestions(stored);
+    if (!request?.removalReason?.trim()) {
+      throw new BadRequestException('suggestion removal reason is required');
+    }
     this.getSuggestion(stored, suggestionId);
     stored.suggestions = stored.suggestions.map((candidate) =>
-      candidate.suggestionId === suggestionId ? { ...candidate, status: 'removed' } : candidate
+      candidate.suggestionId === suggestionId
+        ? { ...candidate, status: 'removed', removalReason: request.removalReason.trim() }
+        : candidate
     );
     stored.complianceIssues = this.evaluateComplianceIssues(stored);
 
     return this.createReviewActionEnvelope(stored, context, 'suggestion.remove', ['suggestion.removed.v1']);
+  }
+
+  restoreSuggestion(noteId: string, suggestionId: string, context: RequestContext): ApiEnvelope<ReviewActionResponseDto> {
+    const stored = this.getReviewableNote(noteId, context);
+    stored.suggestions = stored.suggestions ?? this.createDeterministicSuggestions(stored);
+    this.getSuggestion(stored, suggestionId);
+    stored.suggestions = stored.suggestions.map((candidate) => {
+      if (candidate.suggestionId !== suggestionId) return candidate;
+      const { removalReason: _removalReason, ...restored } = candidate;
+      return { ...restored, status: 'candidate' };
+    });
+    stored.complianceIssues = this.evaluateComplianceIssues(stored);
+
+    return this.createReviewActionEnvelope(stored, context, 'suggestion.restore', ['suggestion.restored.v1']);
   }
 
   listVisitSelections(noteId: string, context: RequestContext): ApiEnvelope<VisitSelectionsViewDto> {
@@ -1375,7 +1815,10 @@ export class ScheduleService {
         category: request.category,
         label: request.label,
         ...(request.confidence === undefined ? {} : { confidence: request.confidence }),
-        humanApproved: true
+        humanApproved: true,
+        ...(request.sourceSuggestionId ? { sourceSuggestionId: request.sourceSuggestionId } : {}),
+        disposition: 'manual_added',
+        lastActionAt: new Date().toISOString()
       }
     ];
     stored.complianceIssues = this.evaluateComplianceIssues(stored);
@@ -1383,11 +1826,161 @@ export class ScheduleService {
     return this.createReviewActionEnvelope(stored, context, 'visit_selection.add', ['visit_selection.added.v1']);
   }
 
+  removeVisitSelection(
+    noteId: string,
+    visitSelectionId: string,
+    request: VisitSelectionRemoveRequestDto,
+    context: RequestContext
+  ): ApiEnvelope<ReviewActionResponseDto> {
+    const stored = this.getReviewableNote(noteId, context);
+    if (!request?.removalReason?.trim()) {
+      throw new BadRequestException('visit selection removal reason is required');
+    }
+    const selection = (stored.visitSelections ?? []).find((candidate) => candidate.visitSelectionId === visitSelectionId);
+    if (!selection) {
+      throw new NotFoundException('visit selection not found');
+    }
+    const removedAt = new Date().toISOString();
+    stored.visitSelections = (stored.visitSelections ?? []).map((candidate) =>
+      candidate.visitSelectionId === visitSelectionId
+        ? {
+            ...candidate,
+            humanApproved: false,
+            disposition: 'removed',
+            removalReason: request.removalReason.trim(),
+            returnedToSuggestions: Boolean(request.returnToSuggestions),
+            lastActionAt: removedAt
+          }
+        : candidate
+    );
+    if (request.returnToSuggestions && selection.sourceSuggestionId) {
+      stored.suggestions = (stored.suggestions ?? this.createDeterministicSuggestions(stored)).map((candidate) => {
+        if (candidate.suggestionId !== selection.sourceSuggestionId) return candidate;
+        const { removalReason: _removalReason, ...restored } = candidate;
+        return { ...restored, status: 'candidate' };
+      });
+    }
+    stored.complianceIssues = this.evaluateComplianceIssues(stored);
+
+    return this.createReviewActionEnvelope(
+      stored,
+      context,
+      'visit_selection.remove',
+      request.returnToSuggestions && selection.sourceSuggestionId
+        ? ['visit_selection.removed.v1', 'visit_selection.restored_to_suggestions.v1']
+        : ['visit_selection.removed.v1']
+    );
+  }
+
+  changeVisitSelectionCategory(
+    noteId: string,
+    visitSelectionId: string,
+    request: VisitSelectionCategoryChangeRequestDto,
+    context: RequestContext
+  ): ApiEnvelope<ReviewActionResponseDto> {
+    const stored = this.getReviewableNote(noteId, context);
+    if (!request.reason.trim()) {
+      throw new BadRequestException('visit selection category change reason is required');
+    }
+    const selection = (stored.visitSelections ?? []).find((candidate) => candidate.visitSelectionId === visitSelectionId);
+    if (!selection) {
+      throw new NotFoundException('visit selection not found');
+    }
+    stored.visitSelections = (stored.visitSelections ?? []).map((candidate) =>
+      candidate.visitSelectionId === visitSelectionId
+        ? {
+            ...candidate,
+            category: request.category,
+            categoryChangeReason: request.reason.trim(),
+            lastActionAt: new Date().toISOString()
+          }
+        : candidate
+    );
+    stored.complianceIssues = this.evaluateComplianceIssues(stored);
+
+    return this.createReviewActionEnvelope(stored, context, 'visit_selection.category_change', [
+      'visit_selection.category_changed.v1'
+    ]);
+  }
+
   evaluateCompliance(noteId: string, context: RequestContext): ApiEnvelope<ComplianceReviewDto> {
     const stored = this.getReviewableNote(noteId, context);
     stored.complianceIssues = this.evaluateComplianceIssues(stored);
     this.persistStoredAppointment(stored);
     return createApiEnvelope(this.toComplianceReview(stored), this.createMeta(context));
+  }
+
+  recordComplianceIssueAction(
+    noteId: string,
+    complianceIssueId: string,
+    request: ComplianceIssueActionRequestDto,
+    context: RequestContext
+  ): ApiEnvelope<ReviewActionResponseDto> {
+    const stored = this.getReviewableNote(noteId, context);
+    if (!canPerform('finalization:manage', this.createLinkedVisitContext(context.access))) {
+      throw new ForbiddenException('role cannot act on compliance issue');
+    }
+    if (!request.reason.trim()) {
+      throw new BadRequestException('compliance issue action reason is required');
+    }
+    stored.complianceIssues = this.evaluateComplianceIssues(stored);
+    const issue = stored.complianceIssues.find((candidate) => candidate.complianceIssueId === complianceIssueId);
+    if (!issue) {
+      throw new NotFoundException('compliance issue not found');
+    }
+    if ((issue.blocksFinalize || issue.severity === 'hard_block') && request.action === 'dismiss') {
+      throw new BadRequestException('hard-block compliance issues cannot be dismissed');
+    }
+    if (request.action === 'assign' && !request.assignedRole) {
+      throw new BadRequestException('assignedRole is required when assigning a compliance issue');
+    }
+
+    const recordedAt = new Date().toISOString();
+    const statusByAction: Record<ComplianceIssueActionRequestDto['action'], ComplianceIssueDto['status']> = {
+      dismiss: 'dismissed',
+      restore: 'open',
+      acknowledge: 'acknowledged',
+      assign: 'assigned',
+      resolve: 'resolved'
+    };
+    stored.complianceIssues = stored.complianceIssues.map((candidate) => {
+      if (candidate.complianceIssueId !== complianceIssueId) return candidate;
+      const actionRecord = {
+        actionId: this.nextId('compliance-action'),
+        action: request.action,
+        reason: request.reason.trim(),
+        actorRole: context.access.role,
+        ...(request.assignedRole ? { assignedRole: request.assignedRole } : {}),
+        recordedAt
+      };
+      const actionHistory = request.action === 'restore' ? [] : [...(candidate.actionHistory ?? []), actionRecord];
+      return {
+        ...candidate,
+        status: statusByAction[request.action],
+        actionHistory,
+        blocksFinalize:
+          request.action === 'resolve'
+            ? false
+            : request.action === 'dismiss' && candidate.severity !== 'hard_block'
+              ? false
+              : candidate.blocksFinalize,
+        actionRequired:
+          request.action === 'resolve' || (request.action === 'dismiss' && candidate.severity !== 'hard_block')
+            ? false
+            : candidate.actionRequired
+      };
+    });
+    if (request.action === 'resolve' && complianceIssueId === 'compliance-demo-history-gap-blocker') {
+      stored.tasks = (stored.tasks ?? []).map((task) =>
+        task.blocksSigning && task.adjudicationStatus === 'open'
+          ? { ...task, adjudicationStatus: 'closed', blocksSigning: false }
+          : task
+      );
+    }
+
+    return this.createReviewActionEnvelope(stored, context, 'compliance.issue_action', [
+      'compliance.issue_action_recorded.v1'
+    ]);
   }
 
   listHistoryGaps(noteId: string, context: RequestContext): ApiEnvelope<{ noteId: string; questions: HistoryGapQuestionDto[] }> {
@@ -1440,6 +2033,7 @@ export class ScheduleService {
     if (!stored.finalization) {
       throw new NotFoundException('finalization session not found');
     }
+    this.refreshFinalizationDesignRuntime(stored as StoredAppointment & { finalization: FinalizationSessionDto });
     return createApiEnvelope(stored.finalization, this.createMeta(context));
   }
 
@@ -1589,7 +2183,9 @@ export class ScheduleService {
             label: suggestion.label,
             confidence: suggestion.confidence,
             humanApproved: true,
-            sourceSuggestionId: suggestion.suggestionId
+            sourceSuggestionId: suggestion.suggestionId,
+            disposition: 'accepted',
+            lastActionAt: decidedAt
           }
         ];
       }
@@ -2014,8 +2610,146 @@ export class ScheduleService {
       clinicOsSchedulingEnabled: false,
       patientDisplayLabel: entry.patient.displayLabel,
       chartContextFreshness: entry.chartContextSnapshot.sourceFreshness,
-      chartContextWarnings: entry.chartContextSnapshot.warnings
+      chartContextWarnings: entry.chartContextSnapshot.warnings,
+      scheduleMetadata: this.createScheduleMetadata(entry)
     };
+  }
+
+  private normalizeScheduleQuery(query: ScheduleQueryDto): ScheduleQueryDto {
+    return {
+      viewMode: query.viewMode === 'week' ? 'week' : 'day',
+      ...(query.activeDate ? { activeDate: query.activeDate } : {}),
+      ...(query.providerId ? { providerId: query.providerId } : {}),
+      ...(query.status ? { status: query.status } : {}),
+      ...(query.visitType ? { visitType: query.visitType } : {}),
+      ...(query.modality ? { modality: query.modality } : {}),
+      ...(query.clinicLocationId ? { clinicLocationId: query.clinicLocationId } : {})
+    };
+  }
+
+  private matchesScheduleQuery(entry: StoredAppointment, query: ScheduleQueryDto): boolean {
+    if (query.providerId && entry.appointment.clinicianId !== query.providerId) return false;
+    if (query.status && entry.appointment.state !== query.status) return false;
+    if (query.visitType && entry.appointment.visitType !== query.visitType) return false;
+    if (query.modality && entry.appointment.modality !== query.modality) return false;
+    if (query.clinicLocationId && this.appointmentClinicLocationId(entry.appointment) !== query.clinicLocationId) return false;
+    if (query.activeDate && query.viewMode === 'day' && !entry.appointment.startsAt.startsWith(query.activeDate)) return false;
+    if (query.activeDate && query.viewMode === 'week' && !this.isAppointmentInActiveWeek(entry.appointment.startsAt, query.activeDate)) return false;
+    return true;
+  }
+
+  private createScheduleFilterSet(entries: StoredAppointment[]): ScheduleViewDto['filters'] {
+    return {
+      providers: this.createFilterOptions(entries.map((entry) => entry.appointment.clinicianId)),
+      statuses: this.createFilterOptions(entries.map((entry) => entry.appointment.state)),
+      visitTypes: this.createFilterOptions(entries.map((entry) => entry.appointment.visitType)),
+      modalities: this.createFilterOptions(entries.map((entry) => entry.appointment.modality)),
+      clinicLocations: this.createFilterOptions(
+        entries.map((entry) => this.appointmentClinicLocationId(entry.appointment)),
+        (value) => entries.find((entry) => this.appointmentClinicLocationId(entry.appointment) === value)?.appointment.clinicLocationLabel ?? value
+      )
+    };
+  }
+
+  private createFilterOptions(values: string[], labelForValue: (value: string) => string = (value) => value): ScheduleViewDto['filters']['providers'] {
+    const counts = values.reduce((accumulator, value) => {
+      accumulator.set(value, (accumulator.get(value) ?? 0) + 1);
+      return accumulator;
+    }, new Map<string, number>());
+    return [...counts.entries()]
+      .sort(([left], [right]) => left.localeCompare(right))
+      .map(([value, count]) => ({
+        value,
+        label: labelForValue(value),
+        count
+      }));
+  }
+
+  private createScheduleMetadata(entry: StoredAppointment): ScheduleAppointmentMetadataDto {
+    const clinicLocationId = this.appointmentClinicLocationId(entry.appointment);
+    const clinicLocationLabel = entry.appointment.clinicLocationLabel ?? this.defaultClinicLocationLabel();
+    const roomId = entry.appointment.roomId ?? this.defaultRoomId(entry.appointment.modality);
+    const roomLabel = entry.appointment.roomLabel ?? this.defaultRoomLabel(entry.appointment.modality);
+    const chartIntakeStatus = this.chartIntakeStatusForSnapshot(entry.chartContextSnapshot);
+    const encounterValidationStatus = entry.chartContextSnapshot.staleWarning ? 'stale_context' : 'valid';
+    return {
+      clinicLocationId,
+      clinicLocationLabel,
+      roomId,
+      roomLabel,
+      virtualVisitStatus: entry.appointment.virtualVisitStatus ?? this.resolveVirtualVisitStatus(entry.appointment.modality),
+      virtualVisitLabel: entry.appointment.modality === 'in_person' ? 'In-person roomed visit' : 'Virtual visit metadata only; live portal link disabled.',
+      chartIntakeStatus,
+      chartUploadEnabled: false,
+      livePhiUploadEnabled: false,
+      patientPortalDeliveryEnabled: false,
+      encounterValidationStatus,
+      validationWarnings: [
+        ...entry.chartContextSnapshot.warnings,
+        ...(entry.appointment.modality === 'in_person' ? [] : ['Patient portal delivery and live virtual-room integration remain disabled.'])
+      ],
+      metadataOnly: true
+    };
+  }
+
+  private appointmentClinicLocationId(appointment: AppointmentDto): string {
+    return appointment.clinicLocationId ?? this.defaultClinicLocationId();
+  }
+
+  private defaultClinicLocationId(): string {
+    return 'clinic-location-main';
+  }
+
+  private defaultClinicLocationLabel(): string {
+    return 'Primary Care Clinic';
+  }
+
+  private defaultRoomId(modality: AppointmentDto['modality']): string {
+    return modality === 'in_person' ? 'room-101' : 'room-virtual';
+  }
+
+  private defaultRoomLabel(modality: AppointmentDto['modality']): string {
+    return modality === 'in_person' ? 'Room 101' : 'Virtual room disabled';
+  }
+
+  private resolveVirtualVisitStatus(modality: AppointmentDto['modality']): VirtualVisitStatusDto {
+    return modality === 'in_person' ? 'not_applicable' : 'disabled_no_phi_portal';
+  }
+
+  private chartIntakeStatusForSnapshot(snapshot: StandaloneChartContextSnapshotDto): ScheduleAppointmentMetadataDto['chartIntakeStatus'] {
+    if (snapshot.staleWarning) return 'stale_warning';
+    if (snapshot.sourceFreshness === 'recent' || snapshot.sourceFreshness === 'current_visit') return 'metadata_ready';
+    if (snapshot.sourceFreshness === 'historical') return 'stale_warning';
+    return 'metadata_pending';
+  }
+
+  private sourceFreshnessForChartIntakeStatus(status: ScheduleAppointmentMetadataDto['chartIntakeStatus']): StandaloneChartContextSnapshotDto['sourceFreshness'] {
+    if (status === 'metadata_ready') return 'recent';
+    if (status === 'stale_warning') return 'historical';
+    return 'unknown';
+  }
+
+  private chartWarningsForIntakeStatus(status: ScheduleAppointmentMetadataDto['chartIntakeStatus'], warning?: string): string[] {
+    return [
+      'Synthetic standalone chart context only; live EHR completeness is not implied.',
+      ...(status === 'disabled_phi_upload' ? ['Live PHI upload remains disabled pending production approval.'] : []),
+      ...(status === 'metadata_pending' ? ['Chart intake metadata is pending; no PHI-bearing upload is enabled.'] : []),
+      ...(status === 'stale_warning' ? ['Some chart context slices require source freshness review.'] : []),
+      ...(status === 'failed' ? ['Chart intake metadata failed in the synthetic local workflow.'] : []),
+      ...(warning?.trim() ? [warning.trim()] : [])
+    ];
+  }
+
+  private isChartIntakeStatus(status: string): status is ScheduleAppointmentMetadataDto['chartIntakeStatus'] {
+    return ['not_started', 'metadata_pending', 'metadata_ready', 'stale_warning', 'failed', 'disabled_phi_upload'].includes(status);
+  }
+
+  private isAppointmentInActiveWeek(startsAt: string, activeDate: string): boolean {
+    const appointmentDate = new Date(startsAt);
+    const active = new Date(`${activeDate}T00:00:00.000Z`);
+    if (Number.isNaN(appointmentDate.getTime()) || Number.isNaN(active.getTime())) return true;
+    const sevenDaysMs = 7 * 24 * 60 * 60 * 1000;
+    return appointmentDate.getTime() >= active.getTime() && appointmentDate.getTime() < active.getTime() + sevenDaysMs;
   }
 
   private persistStoredAppointment(entry: StoredAppointment): void {
@@ -2400,7 +3134,7 @@ export class ScheduleService {
         sign_dispatch: 'not_started'
       },
       frozenSnapshot: {
-        originalNoteText: this.createDeterministicOriginalNote(entry),
+        originalNoteText: entry.noteContent?.plainText ?? this.createDeterministicOriginalNote(entry),
         visitSelections: entry.visitSelections ?? [],
         finalPassSuggestions,
         transcriptSegmentCount: entry.transcript?.segments.length ?? 0,
@@ -2410,6 +3144,32 @@ export class ScheduleService {
       suggestionDecisions: [],
       unusedAuditItems: [],
       composePhases: [],
+      evidenceSpans: [],
+      itemStatuses: [],
+      editorVariants: [],
+      patientQuestions: [],
+      carePlanItems: [],
+      patientInsightSnapshot: {
+        patientInsightSnapshotId: `patient-insight-${entry.note.noteId}`,
+        noteId: entry.note.noteId,
+        sourceFreshness: entry.chartContextSnapshot.sourceFreshness,
+        allergySummaryStatus: 'metadata_only',
+        careTeamSummaryStatus: 'metadata_only',
+        riskStratificationStatus: 'mock_only',
+        predictiveInsightsEnabled: false,
+        staleWarnings: entry.chartContextSnapshot.warnings,
+        generatedAt: now
+      },
+      billingValidation: [],
+      dispatchMetadata: {
+        submittedClaim: false,
+        patientPortalDeliveryEnabled: false,
+        ehrWritebackConfigured: false,
+        exportReady: false,
+        finalNoteReadOnly: false,
+        patientSummaryInternalDetailsExcluded: false,
+        dispatchStatus: 'not_ready'
+      },
       patientOpportunities: this.createDeterministicPatientOpportunities(entry),
       exportArtifacts: [],
       writeback: this.createWritebackQueue(entry, 'final_note', 'disabled', false),
@@ -2421,6 +3181,583 @@ export class ScheduleService {
       createdAt: now,
       updatedAt: now
     };
+  }
+
+  private refreshFinalizationDesignRuntime(entry: StoredAppointment & { finalization: FinalizationSessionDto }): void {
+    const session = entry.finalization;
+    const updatedAt = session.updatedAt;
+    const evidenceSpans = this.createFinalizationEvidenceSpans(entry);
+    session.evidenceSpans = evidenceSpans;
+    session.itemStatuses = this.createFinalizationItemStatuses(entry, evidenceSpans, updatedAt);
+    session.editorVariants = this.createFinalizationEditorVariants(entry, evidenceSpans, updatedAt);
+    session.patientQuestions = this.createFinalizationPatientQuestions(entry, evidenceSpans);
+    session.carePlanItems = this.createFinalizationCarePlanItems(entry, evidenceSpans);
+    session.patientInsightSnapshot = {
+      patientInsightSnapshotId: `patient-insight-${entry.note.noteId}`,
+      noteId: entry.note.noteId,
+      sourceFreshness: entry.chartContextSnapshot.sourceFreshness,
+      allergySummaryStatus: 'metadata_only',
+      careTeamSummaryStatus: 'metadata_only',
+      riskStratificationStatus: 'mock_only',
+      predictiveInsightsEnabled: false,
+      staleWarnings: entry.chartContextSnapshot.warnings,
+      generatedAt: updatedAt
+    };
+    session.billingValidation = this.createFinalizationBillingValidation(entry, evidenceSpans);
+    session.dispatchMetadata = {
+      submittedClaim: false,
+      patientPortalDeliveryEnabled: false,
+      ehrWritebackConfigured: entry.finalization.writeback.configured,
+      exportReady: entry.finalization.signedAndDispatched,
+      finalNoteReadOnly: Boolean(entry.finalization.finalNote?.readOnly),
+      patientSummaryInternalDetailsExcluded: Boolean(entry.finalization.patientSummary?.internalBillingDetailsExcluded),
+      dispatchStatus: entry.finalization.signedAndDispatched
+        ? 'signed_dispatched'
+        : entry.finalization.billingAttested && entry.finalization.finalNoteApproved && entry.finalization.patientSummaryApproved
+          ? 'ready'
+      : 'not_ready'
+    };
+  }
+
+  private createFinalizationEvidenceSpans(
+    entry: StoredAppointment & { finalization: FinalizationSessionDto }
+  ): FinalizationSessionDto['evidenceSpans'] {
+    const originalNoteText = entry.finalization.frozenSnapshot.originalNoteText || this.createDeterministicOriginalNote(entry);
+    const spans: FinalizationSessionDto['evidenceSpans'] = [
+      {
+        evidenceSpanId: `evidence-${entry.note.noteId}-original-note`,
+        sourceType: 'note_content',
+        sourceId: entry.note.noteId,
+        sectionId: entry.noteContent?.sections[0]?.sectionId ?? 'section-note-body',
+        quote: originalNoteText.slice(0, 180),
+        startOffset: 0,
+        endOffset: Math.min(originalNoteText.length, 180),
+        confidence: 1,
+        linkedItemId: entry.note.noteId
+      }
+    ];
+
+    for (const selection of entry.finalization.frozenSnapshot.visitSelections) {
+      const quote = `${selection.category}: ${selection.label}`;
+      spans.push({
+        evidenceSpanId: `evidence-${selection.visitSelectionId}`,
+        sourceType: 'visit_selection',
+        sourceId: selection.visitSelectionId,
+        quote,
+        startOffset: 0,
+        endOffset: quote.length,
+        confidence: selection.confidence ?? 1,
+        linkedItemId: selection.visitSelectionId
+      });
+    }
+
+    for (const suggestion of entry.finalization.frozenSnapshot.finalPassSuggestions) {
+      const quote = suggestion.supportingEvidence[0] ?? suggestion.rationale;
+      spans.push({
+        evidenceSpanId: `evidence-${suggestion.suggestionId}`,
+        sourceType: 'suggestion',
+        sourceId: suggestion.suggestionId,
+        quote,
+        startOffset: 0,
+        endOffset: quote.length,
+        confidence: suggestion.confidence,
+        linkedItemId: suggestion.suggestionId
+      });
+    }
+
+    for (const issue of entry.complianceIssues ?? []) {
+      spans.push({
+        evidenceSpanId: `evidence-${issue.complianceIssueId}`,
+        sourceType: 'compliance_issue',
+        sourceId: issue.complianceIssueId,
+        quote: issue.detail,
+        startOffset: 0,
+        endOffset: issue.detail.length,
+        confidence: issue.severity === 'hard_block' ? 1 : 0.85,
+        linkedItemId: issue.complianceIssueId
+      });
+    }
+
+    for (const question of entry.historyGaps ?? []) {
+      spans.push({
+        evidenceSpanId: `evidence-${question.historyGapQuestionId}`,
+        sourceType: 'patient_question',
+        sourceId: question.historyGapQuestionId,
+        quote: question.supportsItem,
+        startOffset: 0,
+        endOffset: question.supportsItem.length,
+        confidence: question.confidenceImpact === 'high' ? 0.9 : 0.75,
+        linkedItemId: question.historyGapQuestionId
+      });
+    }
+
+    if (entry.finalization.composeOutput) {
+      const quote = entry.finalization.composeOutput.payerReadableSupportSection.slice(0, 180);
+      spans.push({
+        evidenceSpanId: `evidence-${entry.finalization.composeOutput.composeOutputId}`,
+        sourceType: 'finalization_output',
+        sourceId: entry.finalization.composeOutput.composeOutputId,
+        quote,
+        startOffset: 0,
+        endOffset: quote.length,
+        confidence: 1,
+        linkedItemId: entry.finalization.composeOutput.composeOutputId
+      });
+    }
+
+    return spans;
+  }
+
+  private createFinalizationItemStatuses(
+    entry: StoredAppointment & { finalization: FinalizationSessionDto },
+    evidenceSpans: FinalizationSessionDto['evidenceSpans'],
+    updatedAt: string
+  ): FinalizationSessionDto['itemStatuses'] {
+    const statuses: FinalizationSessionDto['itemStatuses'] = [];
+
+    for (const selection of entry.finalization.frozenSnapshot.visitSelections) {
+      const decision = entry.finalization.selectionDecisions.find((candidate) => candidate.visitSelectionId === selection.visitSelectionId);
+      statuses.push({
+        itemId: selection.visitSelectionId,
+        itemType: 'visit_selection',
+        step: 'code_review',
+        label: selection.label,
+        status: decision?.decision === 'remove' || selection.disposition === 'removed' ? 'removed' : decision?.decision === 'keep' ? 'kept' : 'pending',
+        humanReviewRequired: true,
+        stillValid: selection.disposition !== 'removed',
+        evidenceSpanIds: evidenceSpans
+          .filter((span) => span.linkedItemId === selection.visitSelectionId)
+          .map((span) => span.evidenceSpanId),
+        updatedAt: decision?.decidedAt ?? selection.lastActionAt ?? updatedAt
+      });
+    }
+
+    for (const suggestion of entry.finalization.frozenSnapshot.finalPassSuggestions) {
+      const decision = entry.finalization.suggestionDecisions.find((candidate) => candidate.suggestionId === suggestion.suggestionId);
+      statuses.push({
+        itemId: suggestion.suggestionId,
+        itemType: 'suggestion',
+        step: 'suggestion_review',
+        label: suggestion.label,
+        status: decision?.decision === 'remove' || suggestion.status === 'removed' ? 'removed' : decision?.decision === 'keep' ? 'kept' : 'pending',
+        humanReviewRequired: true,
+        stillValid: suggestion.status !== 'removed',
+        evidenceSpanIds: evidenceSpans
+          .filter((span) => span.linkedItemId === suggestion.suggestionId)
+          .map((span) => span.evidenceSpanId),
+        ...(suggestion.lowConfidenceOverrideRequired ? { blockerReason: 'Low-confidence diagnosis candidates require override metadata.' } : {}),
+        updatedAt: decision?.decidedAt ?? updatedAt
+      });
+    }
+
+    for (const question of entry.historyGaps ?? []) {
+      const linkedTask = (entry.tasks ?? []).find((task) => task.noteId === entry.note.noteId && task.title.includes(question.question));
+      statuses.push({
+        itemId: question.historyGapQuestionId,
+        itemType: 'patient_question',
+        step: 'compare_edit',
+        label: question.question,
+        status: question.status === 'answered' || question.status === 'closed' ? 'resolved' : linkedTask?.blocksSigning ? 'blocked' : 'pending',
+        humanReviewRequired: true,
+        stillValid: question.status !== 'closed',
+        evidenceSpanIds: evidenceSpans
+          .filter((span) => span.linkedItemId === question.historyGapQuestionId)
+          .map((span) => span.evidenceSpanId),
+        ...(linkedTask?.blocksSigning ? { blockerReason: 'Linked MA follow-up task blocks signing until adjudicated.' } : {}),
+        updatedAt
+      });
+    }
+
+    for (const validation of this.createFinalizationBillingValidation(entry, evidenceSpans)) {
+      statuses.push({
+        itemId: validation.billingValidationId,
+        itemType: 'billing_validation',
+        step: validation.blocksSignDispatch ? 'sign_dispatch' : 'billing_attest',
+        label: validation.message,
+        status: validation.status === 'ready' ? 'ready' : validation.status === 'blocked' ? 'blocked' : validation.status,
+        humanReviewRequired: true,
+        stillValid: true,
+        evidenceSpanIds: validation.evidenceSpanIds,
+        ...(validation.blocksSignDispatch ? { blockerReason: validation.message } : {}),
+        updatedAt
+      });
+    }
+
+    return statuses;
+  }
+
+  private createFinalizationEditorVariants(
+    entry: StoredAppointment & { finalization: FinalizationSessionDto },
+    evidenceSpans: FinalizationSessionDto['evidenceSpans'],
+    updatedAt: string
+  ): FinalizationSessionDto['editorVariants'] {
+    const noteEvidenceIds = evidenceSpans
+      .filter((span) => span.sourceType === 'note_content' || span.sourceType === 'finalization_output')
+      .map((span) => span.evidenceSpanId);
+    const composeOutput = entry.finalization.composeOutput;
+    const originalText = entry.finalization.frozenSnapshot.originalNoteText || this.createDeterministicOriginalNote(entry);
+
+    return [
+      {
+        variantId: `editor-original-${entry.note.noteId}`,
+        variantType: 'original_note',
+        status: entry.finalization.signedAndDispatched ? 'read_only' : 'draft',
+        text: originalText,
+        version: entry.noteContent?.revision ?? 1,
+        approvalRequired: false,
+        approved: true,
+        patientFacing: false,
+        internalDetailsExcluded: false,
+        evidenceSpanIds: noteEvidenceIds,
+        lastEditedAt: entry.noteContent?.updatedAt ?? updatedAt
+      },
+      {
+        variantId: `editor-enhanced-${entry.note.noteId}`,
+        variantType: 'enhanced_note',
+        status: entry.finalization.finalNote?.readOnly
+          ? 'read_only'
+          : composeOutput?.staleDueToEdit
+            ? 'stale'
+            : composeOutput
+              ? entry.finalization.finalNoteApproved
+                ? 'approved'
+                : 'draft'
+              : 'not_generated',
+        text: entry.finalization.finalNote?.finalNoteText ?? composeOutput?.enhancedNoteText ?? '',
+        version: composeOutput?.version ?? 0,
+        approvalRequired: true,
+        approved: entry.finalization.finalNoteApproved,
+        patientFacing: false,
+        internalDetailsExcluded: false,
+        evidenceSpanIds: noteEvidenceIds,
+        ...(composeOutput ? { lastEditedAt: composeOutput.generatedAt } : {})
+      },
+      {
+        variantId: `editor-summary-${entry.note.noteId}`,
+        variantType: 'patient_summary',
+        status: entry.finalization.patientSummary?.internalBillingDetailsExcluded
+          ? 'read_only'
+          : composeOutput?.staleDueToEdit
+            ? 'stale'
+            : composeOutput
+              ? entry.finalization.patientSummaryApproved
+                ? 'approved'
+                : 'draft'
+              : 'not_generated',
+        text: entry.finalization.patientSummary?.patientSummaryText ?? composeOutput?.patientSummaryText ?? '',
+        version: composeOutput?.version ?? 0,
+        approvalRequired: true,
+        approved: entry.finalization.patientSummaryApproved,
+        patientFacing: true,
+        internalDetailsExcluded: true,
+        evidenceSpanIds: noteEvidenceIds,
+        ...(composeOutput ? { lastEditedAt: composeOutput.generatedAt } : {})
+      }
+    ];
+  }
+
+  private createFinalizationPatientQuestions(
+    entry: StoredAppointment & { finalization: FinalizationSessionDto },
+    evidenceSpans: FinalizationSessionDto['evidenceSpans']
+  ): FinalizationSessionDto['patientQuestions'] {
+    return (entry.historyGaps ?? []).map((question) => {
+      const linkedTask = (entry.tasks ?? []).find((task) => task.noteId === entry.note.noteId && task.title.includes(question.question));
+      return {
+        patientQuestionId: `patient-question-${question.historyGapQuestionId}`,
+        noteId: entry.note.noteId,
+        question: question.question,
+        explanation: `Clarifies ${question.supportsItem} before a human reviewer can carry it into final documentation.`,
+        status:
+          question.status === 'answered'
+            ? 'answered_in_room'
+            : question.status === 'sent_to_ma'
+              ? 'forwarded_to_staff'
+              : question.status === 'closed'
+                ? 'dismissed'
+                : 'open',
+        assigneeRole: linkedTask ? 'ma' : 'clinician',
+        ...(linkedTask ? { linkedBlockerTaskId: linkedTask.taskId } : {}),
+        insertionTargetSection: question.category === 'plan_clarity' || question.category === 'care_gap' ? 'assessment_plan' : 'subjective',
+        answerInsertedIntoNote: false,
+        portalDeliveryEnabled: false,
+        humanReviewRequired: true
+      };
+    });
+  }
+
+  private createFinalizationCarePlanItems(
+    entry: StoredAppointment & { finalization: FinalizationSessionDto },
+    evidenceSpans: FinalizationSessionDto['evidenceSpans']
+  ): FinalizationSessionDto['carePlanItems'] {
+    const selectedPlanItems = entry.finalization.frozenSnapshot.visitSelections.filter(
+      (selection) => selection.category === 'plan_item' || selection.category === 'staff_task'
+    );
+    const sourceItems = selectedPlanItems.length > 0
+      ? selectedPlanItems
+      : [
+          {
+            visitSelectionId: `care-plan-seed-${entry.note.noteId}`,
+            noteId: entry.note.noteId,
+            category: 'plan_item' as const,
+            label: 'Confirm follow-up plan before patient-facing output',
+            humanApproved: false,
+            disposition: 'manual_added' as const
+          }
+        ];
+
+    return sourceItems.map((item, index) => ({
+      carePlanItemId: `care-plan-${item.visitSelectionId}`,
+      noteId: entry.note.noteId,
+      source: item.sourceSuggestionId ? 'ai_candidate' : 'clinician_added',
+      title: item.label,
+      detail: 'Candidate care-plan content is eligible only after clinician review and does not place orders.',
+      status: item.humanApproved ? 'accepted' : 'candidate',
+      ownerRole: index === 0 ? 'clinician' : 'ma',
+      dueWindow: index === 0 ? 'next_visit' : 'one_week',
+      insertionEligibility: item.humanApproved ? 'eligible_after_clinician_review' : 'eligible_after_clinician_review',
+      humanReviewRequired: true,
+      evidenceSpanIds: evidenceSpans
+        .filter((span) => span.linkedItemId === item.visitSelectionId || span.sourceType === 'note_content')
+        .map((span) => span.evidenceSpanId)
+    }));
+  }
+
+  private createFinalizationBillingValidation(
+    entry: StoredAppointment & { finalization: FinalizationSessionDto },
+    evidenceSpans: FinalizationSessionDto['evidenceSpans']
+  ): FinalizationSessionDto['billingValidation'] {
+    const noteEvidenceIds = evidenceSpans
+      .filter((span) => span.sourceType === 'note_content' || span.sourceType === 'finalization_output')
+      .map((span) => span.evidenceSpanId);
+    const unresolvedBlockers = this.countUnresolvedBlockerTasks(entry);
+    const draftClaimPreview = entry.finalization.draftClaimPreview;
+    const validations: FinalizationSessionDto['billingValidation'] = [
+      {
+        billingValidationId: `billing-validation-human-review-${entry.note.noteId}`,
+        status: entry.finalization.billingAttested ? 'ready' : 'pending',
+        severity: 'info',
+        message: 'Billing and attestation remain human-review-required; no charge or claim is finalized automatically.',
+        blocksSignDispatch: false,
+        evidenceSpanIds: noteEvidenceIds
+      },
+      {
+        billingValidationId: `billing-validation-claim-${entry.note.noteId}`,
+        status: draftClaimPreview ? 'ready' : 'pending',
+        severity: 'info',
+        message: draftClaimPreview
+          ? 'Draft claim preview generated with submittedClaim=false.'
+          : 'Draft claim preview is not generated yet and claim submission is disabled.',
+        blocksSignDispatch: false,
+        evidenceSpanIds: noteEvidenceIds
+      }
+    ];
+
+    if (unresolvedBlockers > 0) {
+      validations.push({
+        billingValidationId: `billing-validation-blockers-${entry.note.noteId}`,
+        status: 'blocked',
+        severity: 'hard_block',
+        message: 'Unresolved blocker tasks prevent sign and dispatch preparation.',
+        blocksSignDispatch: true,
+        evidenceSpanIds: evidenceSpans
+          .filter((span) => span.sourceType === 'patient_question' || span.sourceType === 'compliance_issue')
+          .map((span) => span.evidenceSpanId)
+      });
+    }
+
+    if (draftClaimPreview?.claimReadiness === 'blocked') {
+      validations.push({
+        billingValidationId: `billing-validation-payer-evidence-${entry.note.noteId}`,
+        status: 'blocked',
+        severity: 'hard_block',
+        message: 'Payer-readable support is blocked until missing evidence is resolved.',
+        blocksSignDispatch: true,
+        evidenceSpanIds: noteEvidenceIds
+      });
+    }
+
+    return validations;
+  }
+
+  private assertCanEditNoteContent(entry: StoredAppointment, context: RequestContext): void {
+    const linkedContext = this.createLinkedVisitContext(context.access);
+    if (!canPerform('draft_note:edit', linkedContext)) {
+      throw new ForbiddenException('role cannot edit note content');
+    }
+    if (entry.note.state === 'finalized' || entry.finalization?.signedAndDispatched) {
+      throw new BadRequestException('finalized notes are read-only');
+    }
+    const gate = entry.visitSession ?? {
+      visitSessionId: 'visit-session-not-started',
+      noteId: entry.note.noteId,
+      timerState: 'not_started' as const,
+      recordingState: 'not_started' as const,
+      editorUnlocked: false
+    };
+    if (!canEditNote(gate)) {
+      throw new BadRequestException('editor is locked until the timer is running or an approved recording exception is active');
+    }
+  }
+
+  private ensureNoteContent(entry: StoredAppointment, actorUserId: string): NoteContentDto {
+    if (entry.noteContent) {
+      const readOnly = entry.note.state === 'finalized' || Boolean(entry.finalization?.signedAndDispatched);
+      if (entry.noteContent.readOnly === readOnly) {
+        return entry.noteContent;
+      }
+      entry.noteContent = { ...entry.noteContent, readOnly };
+      return entry.noteContent;
+    }
+
+    entry.noteContent = this.createInitialNoteContent(entry.appointment, entry.note, actorUserId);
+    return entry.noteContent;
+  }
+
+  private ensureLatestNoteVersion(entry: StoredAppointment, noteContent: NoteContentDto, actorUserId: string): NoteVersionDto {
+    const existing = (entry.noteVersions ?? []).find((version) => version.revision === noteContent.revision);
+    if (existing) {
+      return existing;
+    }
+
+    const version = this.createNoteVersion(noteContent, actorUserId);
+    entry.noteVersions = [...(entry.noteVersions ?? []), version];
+    return version;
+  }
+
+  private createInitialNoteContent(appointment: AppointmentDto, note: NoteDto, actorUserId: string): NoteContentDto {
+    const markdown = this.sanitizeAuraMarkdown(
+      [
+        '# Visit Note',
+        '',
+        `Visit type: ${appointment.visitType}`,
+        `Reason: ${appointment.reasonForVisit ?? 'Synthetic standalone appointment'}`,
+        '',
+        '## Subjective',
+        'Synthetic clinician draft pending timer-gated documentation.',
+        '',
+        '## Objective',
+        'Synthetic chart context and transcript evidence will appear here after review.',
+        '',
+        '## Assessment and Plan',
+        'Draft-only note content. Clinical, coding, billing, and claim decisions require human review.'
+      ].join('\n')
+    );
+    const generatedAt = new Date().toISOString();
+    return {
+      noteContentId: `note-content-${note.noteId}`,
+      noteId: note.noteId,
+      appointmentId: note.appointmentId,
+      tenantId: note.tenantId,
+      siteId: note.siteId,
+      format: 'aura_markdown_v1',
+      markdown,
+      plainText: this.toPlainText(markdown),
+      sections: this.createNoteSections(markdown),
+      revision: 1,
+      source: 'system_seed',
+      sanitized: true,
+      readOnly: false,
+      updatedByUserId: actorUserId,
+      updatedAt: generatedAt
+    };
+  }
+
+  private createNoteVersion(
+    noteContent: NoteContentDto,
+    actorUserId: string,
+    restoredFromVersionId?: string
+  ): NoteVersionDto {
+    return {
+      noteVersionId: this.nextId('note-version'),
+      noteId: noteContent.noteId,
+      revision: noteContent.revision,
+      format: noteContent.format,
+      plainTextPreview: noteContent.plainText.slice(0, 160),
+      markdown: noteContent.markdown,
+      source: noteContent.source,
+      createdByUserId: actorUserId,
+      createdAt: noteContent.updatedAt,
+      ...(restoredFromVersionId ? { restoredFromVersionId } : {}),
+      auditSafe: true
+    };
+  }
+
+  private createAutosaveStatus(
+    noteContent: NoteContentDto,
+    status: 'idle' | 'saved',
+    readOnly: boolean,
+    message: string
+  ) {
+    return {
+      noteId: noteContent.noteId,
+      status,
+      revision: noteContent.revision,
+      ...(status === 'saved' ? { savedAt: noteContent.updatedAt } : {}),
+      conflict: false as const,
+      readOnly,
+      message
+    };
+  }
+
+  private sanitizeAuraMarkdown(markdown: string): string {
+    return markdown
+      .replace(/\u0000/g, '')
+      .replace(/<script[\s\S]*?>[\s\S]*?<\/script>/gi, '[removed script]')
+      .replace(/\son[a-z]+\s*=\s*("[^"]*"|'[^']*'|[^\s>]+)/gi, '')
+      .slice(0, 16_000)
+      .trim();
+  }
+
+  private toPlainText(markdown: string): string {
+    return markdown
+      .replace(/^#{1,6}\s+/gm, '')
+      .replace(/[*_`>#-]/g, '')
+      .replace(/\n{3,}/g, '\n\n')
+      .trim();
+  }
+
+  private createNoteSections(markdown: string): NoteSectionDto[] {
+    const headingMatches = [...markdown.matchAll(/^##?\s+(.+)$/gm)];
+    if (headingMatches.length === 0) {
+      const plainText = this.toPlainText(markdown);
+      return [
+        {
+          sectionId: 'section-note-body',
+          title: 'Note body',
+          markdown,
+          plainText,
+          startOffset: 0,
+          endOffset: plainText.length
+        }
+      ];
+    }
+
+    return headingMatches.map((match, index) => {
+      const startIndex = match.index ?? 0;
+      const nextMatch = headingMatches[index + 1];
+      const endIndex = nextMatch?.index ?? markdown.length;
+      const sectionMarkdown = markdown.slice(startIndex, endIndex).trim();
+      const title = match[1]?.trim() ?? `Section ${index + 1}`;
+      const plainBeforeSection = this.toPlainText(markdown.slice(0, startIndex));
+      const plainText = this.toPlainText(sectionMarkdown);
+      const startOffset = plainBeforeSection.length;
+      return {
+        sectionId: this.sectionIdFromTitle(title, index),
+        title,
+        markdown: sectionMarkdown,
+        plainText,
+        startOffset,
+        endOffset: startOffset + plainText.length
+      };
+    });
+  }
+
+  private sectionIdFromTitle(title: string, index: number): string {
+    const normalized = title
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/^-|-$/g, '');
+    return `section-${normalized || index + 1}`;
   }
 
   private createDeterministicOriginalNote(entry: StoredAppointment): string {
@@ -2636,6 +3973,7 @@ export class ScheduleService {
     if (!entry.finalization) {
       throw new BadRequestException('finalization session is not active');
     }
+    this.refreshFinalizationDesignRuntime(entry as StoredAppointment & { finalization: FinalizationSessionDto });
     const finalization = entry.finalization;
     this.persistStoredAppointment(entry);
 
@@ -2784,6 +4122,18 @@ export class ScheduleService {
         rationale: 'Synthetic chronic follow-up complexity signal.',
         supportingEvidence: ['Synthetic medication review', 'Synthetic chronic condition follow-up'],
         missingEvidence: ['Final MDM support not completed'],
+        evidenceFor: ['Medication review section references synthetic chronic follow-up support.'],
+        evidenceAgainst: ['No finalized MDM attestation exists yet.'],
+        recommendedActions: ['Review documentation support before finalization.', 'Keep only if the clinician agrees with the current visit complexity.'],
+        education: {
+          title: 'CPT candidate review',
+          body: 'Candidate code support must be reviewed by the clinician and billing workflow before dispatch.',
+          patientFacingExcluded: true
+        },
+        authoritySource: 'synthetic_rules_catalog',
+        documentationRequirements: ['Assessment and plan support', 'MDM or time support where applicable'],
+        testsToConsider: ['Not applicable to this synthetic code candidate'],
+        humanReviewRequired: true,
         status: 'candidate',
         lowConfidenceOverrideRequired: false,
         draftOnly: true
@@ -2797,6 +4147,18 @@ export class ScheduleService {
         rationale: 'Synthetic diagnosis candidate below locked 75 percent threshold.',
         supportingEvidence: ['Synthetic historical problem list reference'],
         missingEvidence: ['No confirming assessment text in current draft'],
+        evidenceFor: ['Historical synthetic problem-list reference exists.'],
+        evidenceAgainst: ['Current draft lacks confirming assessment language.'],
+        recommendedActions: ['Capture override metadata or leave as a candidate only.'],
+        education: {
+          title: 'Low-confidence diagnosis candidate',
+          body: 'Diagnosis candidates under 75 percent confidence require override metadata before acceptance.',
+          patientFacingExcluded: true
+        },
+        authoritySource: 'synthetic_rules_catalog',
+        documentationRequirements: ['Current-visit assessment support', 'Clinician override reason when accepted below threshold'],
+        testsToConsider: ['Use source evidence review rather than ordering or autonomous diagnosis.'],
+        humanReviewRequired: true,
         status: 'candidate',
         lowConfidenceOverrideRequired: true,
         draftOnly: true
@@ -2810,6 +4172,18 @@ export class ScheduleService {
         rationale: 'Synthetic quality review signal.',
         supportingEvidence: ['Synthetic vitals review placeholder'],
         missingEvidence: ['Final plan text not completed'],
+        evidenceFor: ['Synthetic vitals review placeholder is present.'],
+        evidenceAgainst: ['Final plan text has not been approved.'],
+        recommendedActions: ['Review plan support before carrying this into finalization.'],
+        education: {
+          title: 'Quality measure candidate',
+          body: 'Quality candidates remain draft support items until reviewed in the note workflow.',
+          patientFacingExcluded: true
+        },
+        authoritySource: 'synthetic_quality_rules_catalog',
+        documentationRequirements: ['Plan linkage', 'Reviewed source evidence'],
+        testsToConsider: ['No clinical test is suggested by this synthetic quality candidate.'],
+        humanReviewRequired: true,
         status: 'candidate',
         lowConfidenceOverrideRequired: false,
         draftOnly: true
@@ -2844,7 +4218,10 @@ export class ScheduleService {
         title: 'Visit Selections not reviewed',
         detail: 'Synthetic CP-1 review requires human review of candidate selections before finalize preparation.',
         blocksFinalize: false,
-        source: 'deterministic_mock'
+        source: 'deterministic_mock',
+        status: 'open',
+        learnMore: 'Review candidate selections before moving toward finalization preparation.',
+        actionRequired: true
       });
     }
 
@@ -2856,16 +4233,52 @@ export class ScheduleService {
         title: 'Open MA History Gap blocker',
         detail: 'A History Gap follow-up task blocks signing until answered, closed, or reassigned nonblocking.',
         blocksFinalize: true,
-        source: 'deterministic_mock'
+        source: 'deterministic_mock',
+        status: 'open',
+        learnMore: 'Resolve or close blocker tasks before signing or finalization preparation.',
+        actionRequired: true
       });
     }
 
-    return issues;
+    return issues.map((issue) => this.applyStoredComplianceActionState(entry, issue));
+  }
+
+  private applyStoredComplianceActionState(entry: StoredAppointment, issue: ComplianceIssueDto): ComplianceIssueDto {
+    const storedIssue = (entry.complianceIssues ?? []).find(
+      (candidate) => candidate.complianceIssueId === issue.complianceIssueId
+    );
+    if (!storedIssue) return issue;
+    if (storedIssue.status === 'resolved') {
+      return {
+        ...issue,
+        status: 'resolved',
+        blocksFinalize: false,
+        actionRequired: false,
+        ...(storedIssue.actionHistory ? { actionHistory: storedIssue.actionHistory } : {})
+      };
+    }
+    if (storedIssue.status === 'dismissed' && issue.severity !== 'hard_block') {
+      return {
+        ...issue,
+        status: 'dismissed',
+        blocksFinalize: false,
+        actionRequired: false,
+        ...(storedIssue.actionHistory ? { actionHistory: storedIssue.actionHistory } : {})
+      };
+    }
+    return {
+      ...issue,
+      status: storedIssue.status,
+      ...(storedIssue.actionHistory ? { actionHistory: storedIssue.actionHistory } : {}),
+      actionRequired: storedIssue.status === 'acknowledged' || storedIssue.status === 'assigned' ? true : issue.actionRequired
+    };
   }
 
   private toComplianceReview(entry: StoredAppointment): ComplianceReviewDto {
     const issues = entry.complianceIssues ?? this.evaluateComplianceIssues(entry);
-    const hardBlockCount = issues.filter((issue) => issue.blocksFinalize || issue.severity === 'hard_block').length;
+    const hardBlockCount = issues.filter(
+      (issue) => issue.status !== 'resolved' && issue.status !== 'dismissed' && (issue.blocksFinalize || issue.severity === 'hard_block')
+    ).length;
     const unresolvedBlockerTaskCount = (entry.tasks ?? []).filter(
       (task) => task.blocksSigning && task.adjudicationStatus === 'open'
     ).length;
