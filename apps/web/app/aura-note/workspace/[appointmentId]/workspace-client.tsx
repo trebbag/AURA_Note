@@ -366,6 +366,37 @@ export function WorkspaceClient({ appointmentId }: WorkspaceClientProps) {
   const acceptedSelectionCount = visitSelections.filter((selection) => selection.disposition !== 'removed').length;
   const lowConfidenceSuggestionCount = suggestions.filter((suggestion) => suggestion.lowConfidenceOverrideRequired).length;
   const topSuggestions = suggestions.slice(0, 4);
+  const exactWorkspaceSelections = visitSelections.filter((selection) => selection.disposition !== 'removed').slice(0, 6);
+  const exactWorkspaceSuggestions =
+    topSuggestions.length > 0
+      ? topSuggestions
+      : [
+          {
+            suggestionId: 'workspace-loading-suggestion',
+            noteId: noteId ?? 'note-loading',
+            label: 'Candidate suggestions load from the API',
+            category: 'cpt' as const,
+            confidence: 0,
+            humanReviewRequired: true,
+            lowConfidenceOverrideRequired: false,
+            rationale: 'Backend-backed suggestions appear after evaluation.',
+            supportingEvidence: [],
+            missingEvidence: [],
+            evidenceFor: [],
+            evidenceAgainst: [],
+            recommendedActions: [],
+            documentationRequirements: [],
+            testsToConsider: [],
+            authoritySource: 'aura_note_runtime',
+            education: {
+              title: 'Synthetic placeholder',
+              body: 'Typed API-backed suggestions replace this placeholder after evaluation.',
+              patientFacingExcluded: true
+            },
+            status: 'candidate' as const,
+            draftOnly: true
+          } satisfies SuggestionDto
+        ];
 
   return (
     <main className="workspace-shell aura-workspace">
@@ -382,6 +413,108 @@ export function WorkspaceClient({ appointmentId }: WorkspaceClientProps) {
           <a href="/aura-note/finalized">Finalized Notes</a>
         </nav>
       </header>
+
+      <section className="figma-exact-workspace-frame" aria-label="Figma clinical editor runtime frame">
+        <header className="figma-exact-editor-topbar">
+          <div>
+            <label>
+              Patient ID
+              <input readOnly value={workspace?.appointment.safePatientId ?? 'Loading safe patient ID'} />
+            </label>
+            <label>
+              Encounter ID
+              <input readOnly value={appointmentId} />
+            </label>
+          </div>
+          <nav aria-label="Figma editor visit controls">
+            <button type="button" disabled={finalizeDisabled}>
+              <AlertTriangle size={15} aria-hidden="true" />
+              Issues Must Be Resolved
+            </button>
+            <button
+              type="button"
+              aria-label="Preview save draft and exit"
+              disabled={readOnlyEditor || !noteId}
+              onClick={autosaveNoteContent}
+            >
+              <Save size={15} aria-hidden="true" />
+              Save Draft &amp; Exit
+            </button>
+            <button type="button" aria-label="Preview begin timer" disabled={timerState !== 'not_started'} onClick={startVisit}>
+              <Play size={15} aria-hidden="true" />
+              Start Visit
+            </button>
+          </nav>
+        </header>
+
+        <div className="figma-exact-editor-body">
+          <article className="figma-exact-editor-canvas" aria-label="Figma clinical note editor">
+            <div className="figma-exact-editor-toolbar" role="toolbar" aria-label="Figma rich text controls">
+              <span>B</span>
+              <span>I</span>
+              <span>U</span>
+              <span>list</span>
+              <span>align</span>
+              <span>+ Section</span>
+              <span>Templates</span>
+              <em>{compliance?.issues.length ?? 0}</em>
+            </div>
+            <textarea
+              aria-label="Figma source note preview"
+              readOnly
+              value={
+                draftMarkdown ||
+                [
+                  'SUBJECTIVE:',
+                  'Patient presents with synthetic visit concerns.',
+                  '',
+                  'OBJECTIVE:',
+                  'Vitals and exam context remain source-linked when available.',
+                  '',
+                  'ASSESSMENT:',
+                  'Candidate diagnoses and codes require human review.',
+                  '',
+                  'PLAN:',
+                  'Treatment plan and follow-up remain clinician-controlled.'
+                ].join('\n')
+              }
+            />
+            <footer>
+              <span>Selected Codes</span>
+              {exactWorkspaceSelections.map((selection) => (
+                <button key={selection.visitSelectionId} type="button" onClick={() => changeVisitSelectionCategory(selection)}>
+                  <Code size={15} aria-hidden="true" />
+                  {selection.label}
+                </button>
+              ))}
+              {exactWorkspaceSelections.length === 0 ? <button type="button" disabled>No selected codes</button> : null}
+            </footer>
+          </article>
+
+          <aside className="figma-exact-suggestion-drawer" aria-label="Figma suggestions drawer">
+            <header>
+              <h2>Suggestions</h2>
+              <span>{suggestions.length}</span>
+            </header>
+            {exactWorkspaceSuggestions.map((suggestion) => (
+              <section key={suggestion.suggestionId}>
+                <div>
+                  <strong>{suggestion.label}</strong>
+                  <em>{Math.round(suggestion.confidence * 100)}%</em>
+                </div>
+                <small>{suggestion.rationale}</small>
+                <button
+                  type="button"
+                  disabled={!noteId || suggestion.suggestionId === 'workspace-loading-suggestion'}
+                  onClick={() => acceptSuggestion(suggestion)}
+                >
+                  + Add as {suggestion.category}
+                </button>
+              </section>
+            ))}
+          </aside>
+        </div>
+      </section>
 
       <section className="workspace-topline figma-note-editor-topbar" aria-live="polite">
         <div className="figma-note-editor-context">

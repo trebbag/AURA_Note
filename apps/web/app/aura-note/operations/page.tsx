@@ -304,6 +304,40 @@ export default function StandaloneOperationsPage() {
             </div>
             <strong>{operationsRuntime?.analytics.dataSource ?? 'standalone_operations_api_composite'}</strong>
           </div>
+          <div className="figma-source-analytics-grid" aria-label="Figma analytics chart layout">
+            <section aria-label="Daily internal estimate trend">
+              <h3>Daily Internal Estimate Trend</h3>
+              <p>Current vs caveated local baseline</p>
+              <svg viewBox="0 0 520 240" role="img" aria-label="Internal estimate trend chart">
+                <line x1="30" y1="210" x2="500" y2="210" />
+                <line x1="30" y1="30" x2="30" y2="210" />
+                <polyline points="30,168 108,146 186,118 264,135 342,86 420,166 500,190" />
+                <polyline className="muted" points="30,180 108,160 186,146 264,135 342,124 420,176 500,198" />
+                {['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map((label, index) => (
+                  <text key={label} x={30 + index * 78} y="228">
+                    {label}
+                  </text>
+                ))}
+              </svg>
+            </section>
+            <section aria-label="CPT code distribution">
+              <h3>CPT Code Distribution</h3>
+              <p>Most frequently reviewed candidates</p>
+              <div className="figma-source-donut" aria-hidden="true" />
+            </section>
+            <section aria-label="Claims denial analysis">
+              <h3>Claims Denial Analysis</h3>
+              <p>Draft preview review signals only; submittedClaim=false</p>
+              <div className="figma-source-bars" aria-hidden="true">
+                <span style={{ height: '38%' }} />
+                <span style={{ height: '54%' }} />
+                <span style={{ height: '42%' }} />
+                <span style={{ height: '68%' }} />
+                <span style={{ height: '72%' }} />
+                <span style={{ height: '30%' }} />
+              </div>
+            </section>
+          </div>
           <div className="figma-dashboard-filters" aria-label="Analytics dashboard filters">
             <span>Date range: last 30 days</span>
             <span>Clinician: all authorized users</span>

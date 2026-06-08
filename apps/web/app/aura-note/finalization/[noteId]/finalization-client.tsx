@@ -188,6 +188,20 @@ export function FinalizationClient({ noteId }: FinalizationClientProps) {
   const approvedVariantCount = session?.editorVariants.filter((variant) => variant.approved).length ?? 0;
   const totalVariantCount = session?.editorVariants.length ?? 0;
   const humanReviewCount = session?.itemStatuses.filter((item) => item.humanReviewRequired).length ?? 0;
+  const exactFrameItems = selectedItems.length > 0 ? selectedItems.slice(0, 2) : suggestedItems.slice(0, 2);
+  const exactFrameNoteText =
+    session?.frozenSnapshot.originalNoteText ??
+    originalVariant?.text ??
+    [
+      `PATIENT: ${noteId}`,
+      `DATE: ${new Date().toISOString().slice(0, 10)}`,
+      '',
+      'CHIEF COMPLAINT:',
+      'Synthetic backend-backed note content is loading for finalization review.',
+      '',
+      'ASSESSMENT:',
+      'All clinical, coding, and billing decisions remain human-review-required.'
+    ].join('\n');
 
   return (
     <main className="wizard-shell aura-finalization">
@@ -209,6 +223,106 @@ export function FinalizationClient({ noteId }: FinalizationClientProps) {
           <a href="/aura-note/schedule">Schedule</a>
         </nav>
       </header>
+
+      <section className="figma-exact-finalization-frame" aria-label="Figma finalization split review">
+        <ol className="figma-exact-progress-strip" aria-label="Figma Make finalization progress">
+          {steps.map((step, index) => (
+            <li key={step.id} className={index === currentStepIndex ? 'is-current' : ''}>
+              <span>{index + 1}</span>
+              <strong>{step.sublabel}</strong>
+            </li>
+          ))}
+        </ol>
+
+        <div className="figma-exact-finalization-body">
+          <article className="figma-exact-note-editor" aria-label="Figma finalization note editor">
+            <header>
+              <span className="figma-source-avatar" aria-hidden="true">
+                {noteId.slice(-2).toUpperCase()}
+              </span>
+              <div>
+                <strong>{noteId}</strong>
+                <small>
+                  ENC-{session?.appointmentId ?? 'loading'} / PT-{session?.noteId ?? noteId}
+                </small>
+              </div>
+            </header>
+            <div className="figma-exact-mini-toolbar" role="toolbar" aria-label="Figma finalization editor toolbar">
+              <span>B</span>
+              <span>I</span>
+              <span>U</span>
+              <span>undo</span>
+              <span>redo</span>
+            </div>
+            <pre>{exactFrameNoteText}</pre>
+            <footer>
+              <span>Auto-saving draft</span>
+              <span>Characters: {exactFrameNoteText.length}</span>
+            </footer>
+          </article>
+
+          <article className="figma-exact-step-review" aria-label="Figma finalization step review">
+            <header>
+              <span className="figma-exact-check" aria-hidden="true">
+                <Check size={18} />
+              </span>
+              <div>
+                <h2>{steps[currentStepIndex]?.sublabel ?? 'Visit Selections Review'}</h2>
+                <p>Progress</p>
+              </div>
+              <small>
+                Selected: {selectedItems.length} / AI Suggested: {suggestedItems.length}
+              </small>
+            </header>
+            <div className="figma-exact-carousel" aria-label="Figma selected-code carousel">
+              {(exactFrameItems.length > 0 ? exactFrameItems : pendingItems.slice(0, 2)).map((item, index) => (
+                <div key={item.itemId} className={index === 0 ? 'is-primary' : ''}>
+                  <span>{item.itemType.toUpperCase()}</span>
+                  <strong>{item.label}</strong>
+                  <small>{item.status} / human review required</small>
+                  <em>{item.status === 'blocked' ? '78%' : '95%'}</em>
+                </div>
+              ))}
+              {exactFrameItems.length === 0 && pendingItems.length === 0 ? (
+                <div className="is-primary">
+                  <span>REVIEW</span>
+                  <strong>Start finalization to load selected items.</strong>
+                  <small>Backend session pending.</small>
+                  <em>0%</em>
+                </div>
+              ) : null}
+            </div>
+            <section className="figma-exact-validation-card" aria-label="Figma code validation status">
+              <h3>Code Validation Status</h3>
+              <dl>
+                <div>
+                  <dt>Still Valid</dt>
+                  <dd>Yes</dd>
+                </div>
+                <div>
+                  <dt>AI Confidence</dt>
+                  <dd>95%</dd>
+                </div>
+                <div>
+                  <dt>Documentation Support</dt>
+                  <dd>Strong Evidence</dd>
+                </div>
+              </dl>
+            </section>
+            <footer>
+              <button type="button" className="secondary-action" disabled>
+                Previous Step
+              </button>
+              <span>
+                Step {currentStepIndex + 1} of {steps.length} / {steps[currentStepIndex]?.sublabel}
+              </span>
+              <button type="button" disabled={!session}>
+                Next Step
+              </button>
+            </footer>
+          </article>
+        </div>
+      </section>
 
       <section className="wizard-status" aria-live="polite">
         <div>

@@ -641,6 +641,18 @@ The Figma Make ZIP reference pass adds `docs/FIGMA_MAKE_ZIP_REFERENCE_AUDIT.md` 
 
 This coverage is stronger source-package implementation evidence. It still is not formal pixel-level approval because the ZIPs do not contain inspectable Figma node coordinates or screenshot baselines.
 
+### Post-CR4 Figma visual baselines and screenshot regression
+
+The formal visual-regression tranche adds committed AURA route screenshots and ignored local Figma Make comparison artifacts:
+
+- `pnpm frontend:visual-regression:update` refreshes committed AURA screenshots in `apps/web/visual/aura-note-visual-regression.spec.ts-snapshots/`.
+- `pnpm frontend:visual-regression` runs the committed Playwright screenshot suite over the production-intended AURA routes.
+- `pnpm figma:visual-comparison -- --install-references` captures ignored local Figma Make reference screenshots, backend-backed AURA screenshots, and pixel diffs under `artifacts/figma-visual-comparison/latest/`.
+- `AURA_NOTE_STRICT_VISUAL_COMPARE=1 pnpm figma:visual-comparison -- --install-references` enforces the current per-route thresholds for dashboard, schedule, drafts, workspace, operations, platform settings, and finalization.
+- `pnpm figma:visual-readiness` verifies the visual-regression config, comparison script, signoff document, committed AURA baselines, and ignored reference-artifact posture.
+
+The latest strict local comparison passed all seven mapped Figma scenarios against tightened thresholds. This is automated regression evidence only. Founder/designer visual approval is still required before claiming exact Figma visual parity, and none of these gates approve production launch, live PHI, live vendors, direct external AI, patient portal delivery, charge finalization, medical-necessity determination, or claim submission.
+
 ### Post-CR4 Figma Make Design 2 finalization runtime coverage
 
 The same `pnpm figma:backend-catch-up-readiness` gate now verifies Design 2 finalization runtime evidence:

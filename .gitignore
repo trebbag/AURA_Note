@@ -20,3 +20,5 @@ playwright-report/
 uploads/
 /storage/
 .figma-make-reference/
+artifacts/
+artifacts/figma-visual-comparison/

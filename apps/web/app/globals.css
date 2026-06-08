@@ -193,7 +193,7 @@ dd {
 
 .builder-grid {
   grid-template-columns: minmax(280px, 360px) 1fr;
-  align-items: start;
+  align-items: flex-start;
   margin-top: 20px;
 }
 
@@ -458,7 +458,7 @@ textarea {
 
 .workspace-grid {
   grid-template-columns: minmax(0, 1fr) minmax(280px, 380px);
-  align-items: start;
+  align-items: flex-start;
 }
 
 .editor-pane textarea {
@@ -611,7 +611,7 @@ textarea {
 .figma-wizard-board,
 .figma-ops-board {
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  align-items: start;
+  align-items: flex-start;
   margin: 18px 0;
 }
 
@@ -806,7 +806,7 @@ textarea {
 .figma-line-chart {
   display: grid;
   grid-template-columns: repeat(3, minmax(32px, 1fr));
-  align-items: end;
+  align-items: flex-end;
   gap: 10px;
   min-height: 112px;
   border-bottom: 1px solid var(--aura-color-border-strong);
@@ -863,7 +863,7 @@ textarea {
 
 .figma-workspace-three-pane {
   grid-template-columns: minmax(0, 1.25fr) minmax(220px, 0.75fr) minmax(260px, 0.9fr);
-  align-items: start;
+  align-items: flex-start;
   margin-top: 16px;
 }
 
@@ -1012,7 +1012,7 @@ textarea {
 .coaching-grid,
 .support-grid {
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  align-items: start;
+  align-items: flex-start;
   margin-top: 20px;
 }
 
@@ -1038,7 +1038,7 @@ textarea {
 
 .figma-screen-grid {
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  align-items: start;
+  align-items: flex-start;
   margin-top: 20px;
 }
 
@@ -1168,7 +1168,7 @@ textarea {
 }
 
 .app-shell-header {
-  align-items: start;
+  align-items: flex-start;
   border: 1px solid var(--aura-color-border);
   padding: 18px;
   background: var(--aura-color-surface);
@@ -1204,7 +1204,7 @@ textarea {
 
 .panel-grid {
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  align-items: start;
+  align-items: flex-start;
 }
 
 .panel-card {
@@ -1372,7 +1372,7 @@ textarea {
 
 .coaching-signal {
   grid-template-columns: minmax(0, 1fr) 60px;
-  align-items: start;
+  align-items: flex-start;
 }
 
 .coaching-signal p {
@@ -1396,7 +1396,7 @@ textarea {
 
 .final-viewer-grid {
   grid-template-columns: minmax(0, 1fr) minmax(240px, 320px);
-  align-items: start;
+  align-items: flex-start;
   margin-top: 20px;
 }
 
@@ -2284,6 +2284,505 @@ button,
   border-radius: 16px;
 }
 
+nextjs-portal,
+[data-nextjs-toast],
+[data-nextjs-dialog-overlay],
+[data-nextjs-dev-tools-button] {
+  display: none !important;
+}
+
+.figma-source-analytics-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(280px, 0.85fr);
+  gap: 16px;
+}
+
+.figma-source-analytics-grid section {
+  display: grid;
+  gap: 8px;
+  min-height: 220px;
+  border: 1px solid rgb(226 232 240 / 0.88);
+  border-radius: 16px;
+  background: #ffffff;
+  padding: 16px;
+  overflow: hidden;
+}
+
+.figma-source-analytics-grid section:last-child {
+  grid-column: 1 / -1;
+  min-height: 250px;
+}
+
+.figma-source-analytics-grid h3,
+.figma-source-analytics-grid p {
+  margin: 0;
+}
+
+.figma-source-analytics-grid h3 {
+  color: #1f2937;
+  font-size: 0.98rem;
+}
+
+.figma-source-analytics-grid p {
+  color: #64748b;
+  font-size: 0.9rem;
+}
+
+.figma-source-analytics-grid svg {
+  width: 100%;
+  min-height: 190px;
+}
+
+.figma-source-analytics-grid svg line {
+  stroke: rgb(148 163 184 / 0.62);
+  stroke-width: 1;
+}
+
+.figma-source-analytics-grid svg polyline {
+  fill: none;
+  stroke: #3b82f6;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 3;
+}
+
+.figma-source-analytics-grid svg polyline.muted {
+  stroke: rgb(148 163 184 / 0.72);
+  stroke-dasharray: 5 7;
+  stroke-width: 1.4;
+}
+
+.figma-source-analytics-grid svg text {
+  fill: #64748b;
+  font-size: 12px;
+}
+
+.figma-source-donut {
+  width: min(230px, 70%);
+  aspect-ratio: 1;
+  place-self: center;
+  border-radius: 999px;
+  background: conic-gradient(#3b82f6 0 30%, #64748b 30% 37%, #f59e0b 37% 48%, #8b5cf6 48% 64%, #10b981 64% 100%);
+  box-shadow: inset 0 0 0 48px #ffffff;
+}
+
+.figma-source-bars {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  align-items: flex-end;
+  gap: 18px;
+  min-height: 190px;
+  border-bottom: 1px solid rgb(148 163 184 / 0.55);
+  padding: 18px 22px 0;
+}
+
+.figma-source-bars span {
+  display: block;
+  min-height: 18px;
+  border-radius: 6px 6px 0 0;
+  background: linear-gradient(180deg, #ef4444, #dc2626);
+}
+
+.figma-source-bars span:nth-child(odd) {
+  background: #94a3b8;
+}
+
+.figma-exact-workspace-frame {
+  display: grid;
+  width: min(100% - 48px, 1360px);
+  margin: 22px auto 0;
+  border: 1px solid rgb(226 232 240 / 0.82);
+  background: #ffffff;
+  box-shadow: 0 16px 42px rgb(15 23 42 / 0.06);
+  overflow: hidden;
+}
+
+.figma-exact-editor-topbar {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 18px;
+  border-bottom: 1px solid rgb(226 232 240 / 0.82);
+  padding: 14px 16px;
+}
+
+.figma-exact-editor-topbar > div {
+  display: grid;
+  grid-template-columns: minmax(260px, 0.42fr) minmax(260px, 0.42fr);
+  gap: 14px;
+}
+
+.figma-exact-editor-topbar label {
+  display: grid;
+  gap: 6px;
+  color: #111827;
+  font-size: 0.78rem;
+  font-weight: 700;
+}
+
+.figma-exact-editor-topbar input {
+  border: 0;
+  border-radius: 8px;
+  background: #f3f4f6;
+  color: #64748b;
+}
+
+.figma-exact-editor-topbar nav {
+  display: flex;
+  align-items: flex-end;
+  gap: 10px;
+}
+
+.figma-exact-editor-body {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(360px, 396px);
+  min-height: 610px;
+}
+
+.figma-exact-editor-canvas {
+  display: grid;
+  grid-template-rows: auto 1fr auto;
+  min-width: 0;
+  border-right: 1px solid rgb(226 232 240 / 0.82);
+}
+
+.figma-exact-editor-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 22px;
+  min-height: 52px;
+  border-bottom: 1px solid rgb(226 232 240 / 0.82);
+  padding: 10px 18px;
+  color: #94a3b8;
+  font-size: 0.82rem;
+  font-weight: 650;
+}
+
+.figma-exact-editor-toolbar em {
+  margin-left: auto;
+  border-radius: 999px;
+  background: #e11d48;
+  color: #ffffff;
+  padding: 3px 8px;
+  font-style: normal;
+}
+
+.figma-exact-editor-canvas textarea {
+  min-height: 100%;
+  border: 0;
+  border-radius: 0;
+  background: #fbfdff;
+  color: #64748b;
+  font-size: 0.96rem;
+  line-height: 1.7;
+  resize: none;
+}
+
+.figma-exact-editor-canvas footer {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  border-top: 1px solid rgb(226 232 240 / 0.82);
+  padding: 10px 14px;
+  overflow-x: auto;
+}
+
+.figma-exact-editor-canvas footer span {
+  flex: 0 0 auto;
+  color: #64748b;
+  font-weight: 700;
+}
+
+.figma-exact-editor-canvas footer button {
+  flex: 0 0 auto;
+  min-height: 42px;
+  border-color: rgb(191 219 254);
+  background: #eff6ff;
+  color: #1d4ed8;
+}
+
+.figma-exact-suggestion-drawer {
+  display: grid;
+  align-content: start;
+  gap: 14px;
+  padding: 18px;
+}
+
+.figma-exact-suggestion-drawer header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.figma-exact-suggestion-drawer h2 {
+  font-size: 1rem;
+}
+
+.figma-exact-suggestion-drawer header span {
+  border-radius: 999px;
+  background: #e5e7eb;
+  padding: 4px 9px;
+  font-size: 0.78rem;
+  font-weight: 800;
+}
+
+.figma-exact-suggestion-drawer section {
+  display: grid;
+  gap: 10px;
+  border: 1px solid rgb(226 232 240 / 0.95);
+  border-radius: 12px;
+  padding: 14px;
+}
+
+.figma-exact-suggestion-drawer section > div {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+  justify-content: space-between;
+}
+
+.figma-exact-suggestion-drawer em {
+  display: inline-grid;
+  width: 34px;
+  height: 34px;
+  place-items: center;
+  border: 2px solid #10b981;
+  border-radius: 999px;
+  color: #059669;
+  font-size: 0.78rem;
+  font-style: normal;
+  font-weight: 800;
+}
+
+.figma-exact-finalization-frame {
+  display: grid;
+  width: 100%;
+  margin: 0;
+  background: #ffffff;
+  box-shadow: 0 1px 0 rgb(226 232 240 / 0.9);
+}
+
+.figma-exact-progress-strip {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: 0;
+  margin: 0;
+  border-bottom: 1px solid rgb(226 232 240 / 0.9);
+  padding: 10px 40px 18px;
+  list-style: none;
+}
+
+.figma-exact-progress-strip li {
+  position: relative;
+  display: grid;
+  justify-items: center;
+  gap: 7px;
+  color: #94a3b8;
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-align: center;
+}
+
+.figma-exact-progress-strip li::before {
+  position: absolute;
+  top: 22px;
+  left: calc(-50% + 24px);
+  width: calc(100% - 48px);
+  height: 4px;
+  background: #e2e8f0;
+  content: '';
+}
+
+.figma-exact-progress-strip li:first-child::before {
+  display: none;
+}
+
+.figma-exact-progress-strip span {
+  z-index: 1;
+  display: inline-grid;
+  width: 42px;
+  height: 42px;
+  place-items: center;
+  border: 2px solid #cbd5e1;
+  border-radius: 999px;
+  background: #ffffff;
+}
+
+.figma-exact-progress-strip .is-current span {
+  border-color: #4f46e5;
+  background: #4f46e5;
+  color: #ffffff;
+  box-shadow: 0 10px 22px rgb(79 70 229 / 0.25);
+}
+
+.figma-exact-progress-strip .is-current strong {
+  color: #2563eb;
+}
+
+.figma-exact-finalization-body {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  height: 760px;
+  overflow: hidden;
+}
+
+.figma-exact-note-editor,
+.figma-exact-step-review {
+  min-width: 0;
+  overflow: hidden;
+}
+
+.figma-exact-note-editor {
+  display: grid;
+  grid-template-rows: auto auto 1fr auto;
+  border-right: 1px solid rgb(226 232 240 / 0.86);
+  background: rgb(248 250 252 / 0.55);
+}
+
+.figma-exact-note-editor header,
+.figma-exact-step-review header {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  min-height: 78px;
+  border-bottom: 1px solid rgb(226 232 240 / 0.86);
+  padding: 14px;
+}
+
+.figma-exact-note-editor header small,
+.figma-exact-step-review header small {
+  color: #64748b;
+}
+
+.figma-exact-mini-toolbar {
+  display: flex;
+  gap: 26px;
+  align-items: center;
+  min-height: 42px;
+  border-bottom: 1px solid rgb(226 232 240 / 0.86);
+  padding: 8px 24px;
+  color: #64748b;
+  font-size: 0.82rem;
+}
+
+.figma-exact-note-editor pre {
+  margin: 14px;
+  border: 1px solid rgb(226 232 240 / 0.75);
+  border-radius: 12px;
+  background: #ffffff;
+  padding: 18px;
+  color: #334155;
+  font-family: inherit;
+  font-size: 0.93rem;
+  line-height: 1.6;
+  white-space: pre-wrap;
+  overflow: hidden;
+}
+
+.figma-exact-note-editor footer,
+.figma-exact-step-review footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  min-height: 48px;
+  border-top: 1px solid rgb(226 232 240 / 0.86);
+  padding: 10px 14px;
+  color: #64748b;
+  font-size: 0.78rem;
+}
+
+.figma-exact-step-review {
+  display: grid;
+  grid-template-rows: auto auto auto 1fr auto;
+  background: #ffffff;
+}
+
+.figma-exact-step-review h2,
+.figma-exact-step-review h3 {
+  margin: 0;
+}
+
+.figma-exact-check {
+  display: inline-grid;
+  width: 32px;
+  height: 32px;
+  place-items: center;
+  border-radius: 10px;
+  background: #10b981;
+  color: #ffffff;
+}
+
+.figma-exact-carousel {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 0.8fr);
+  gap: 18px;
+  min-height: 190px;
+  padding: 34px 44px 18px;
+}
+
+.figma-exact-carousel div {
+  position: relative;
+  display: grid;
+  align-content: center;
+  gap: 10px;
+  border: 1px solid rgb(226 232 240 / 0.92);
+  border-radius: 14px;
+  background: #ffffff;
+  padding: 20px;
+  box-shadow: 0 12px 28px rgb(15 23 42 / 0.08);
+  opacity: 0.48;
+}
+
+.figma-exact-carousel div.is-primary {
+  border-left: 5px solid #3b82f6;
+  opacity: 1;
+}
+
+.figma-exact-carousel span,
+.figma-exact-carousel em {
+  color: #3b82f6;
+  font-size: 0.76rem;
+  font-style: normal;
+  font-weight: 800;
+}
+
+.figma-exact-carousel em {
+  position: absolute;
+  top: 18px;
+  right: 18px;
+  border-radius: 999px;
+  background: rgb(220 252 231);
+  padding: 5px 9px;
+  color: #059669;
+}
+
+.figma-exact-validation-card {
+  display: grid;
+  gap: 12px;
+  border-top: 1px solid rgb(226 232 240 / 0.86);
+  padding: 18px 44px;
+}
+
+.figma-exact-validation-card dl {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.figma-exact-validation-card div {
+  border-radius: 12px;
+  background: #f8fafc;
+  padding: 12px;
+}
+
+.figma-exact-validation-card div:last-child {
+  grid-column: 1 / -1;
+}
+
+.figma-exact-validation-card dd {
+  color: #10b981;
+}
+
 @media (max-width: 1100px) {
   .aura-app-shell,
   .aura-app-shell.is-collapsed,
@@ -2295,7 +2794,14 @@ button,
   .figma-finalization-polish,
   .figma-wizard-board,
   .wizard-grid,
-  .aura-operations .panel-grid {
+  .aura-operations .panel-grid,
+  .figma-source-analytics-grid,
+  .figma-exact-editor-topbar,
+  .figma-exact-editor-topbar > div,
+  .figma-exact-editor-body,
+  .figma-exact-finalization-body,
+  .figma-exact-carousel,
+  .figma-exact-validation-card dl {
     grid-template-columns: 1fr;
   }
 
@@ -2308,6 +2814,26 @@ button,
   .dashboard-hero-metrics {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
+
+  .figma-exact-workspace-frame {
+    width: min(100% - 32px, 1360px);
+  }
+
+  .figma-exact-finalization-body {
+    height: auto;
+    overflow: visible;
+  }
+
+  .figma-exact-note-editor {
+    border-right: 0;
+    border-bottom: 1px solid rgb(226 232 240 / 0.86);
+  }
+
+  .figma-exact-progress-strip {
+    grid-template-columns: repeat(6, minmax(120px, 1fr));
+    overflow-x: auto;
+    padding-inline: 18px;
+  }
 }
 
 @media (max-width: 860px) {
@@ -2317,7 +2843,7 @@ button,
   .wizard-progress-header {
     display: grid;
     grid-template-columns: 1fr;
-    align-items: start;
+    align-items: flex-start;
     padding: 22px 16px;
   }
 
@@ -2618,7 +3144,7 @@ a svg {
   display: grid;
   grid-template-columns: minmax(0, 1.42fr) minmax(320px, 0.82fr);
   gap: 20px;
-  align-items: start;
+  align-items: flex-start;
 }
 
 .figma-source-card {
@@ -2831,7 +3357,7 @@ a svg {
   display: grid;
   grid-template-columns: 240px minmax(0, 1fr);
   gap: 18px;
-  align-items: start;
+  align-items: flex-start;
 }
 
 .figma-time-column,
@@ -4458,7 +4984,7 @@ a svg {
 
   .dashboard-schedule-list a {
     grid-template-columns: 1fr;
-    align-items: start;
+    align-items: flex-start;
   }
 
   .user-context {
@@ -4503,6 +5029,57 @@ a svg {
   .figma-note-editor-context p {
     white-space: normal;
     overflow-wrap: anywhere;
+  }
+
+  .figma-source-analytics-grid,
+  .figma-exact-editor-topbar,
+  .figma-exact-editor-topbar > div,
+  .figma-exact-editor-body,
+  .figma-exact-finalization-body,
+  .figma-exact-carousel,
+  .figma-exact-validation-card dl {
+    grid-template-columns: 1fr;
+  }
+
+  .figma-source-analytics-grid section:last-child {
+    grid-column: auto;
+  }
+
+  .figma-exact-workspace-frame {
+    width: calc(100% - 32px);
+    margin-top: 16px;
+  }
+
+  .figma-exact-editor-topbar nav {
+    flex-wrap: wrap;
+    align-items: flex-start;
+  }
+
+  .figma-exact-editor-body {
+    min-height: 0;
+  }
+
+  .figma-exact-editor-canvas {
+    border-right: 0;
+    border-bottom: 1px solid rgb(226 232 240 / 0.82);
+  }
+
+  .figma-exact-progress-strip {
+    grid-template-columns: repeat(6, minmax(104px, 1fr));
+    padding: 10px 14px 16px;
+  }
+
+  .figma-exact-carousel,
+  .figma-exact-validation-card {
+    padding-inline: 18px;
+  }
+
+  .figma-exact-note-editor header,
+  .figma-exact-step-review header,
+  .figma-exact-note-editor footer,
+  .figma-exact-step-review footer {
+    align-items: flex-start;
+    flex-direction: column;
   }
 
   .figma-schedule-source-shell,
